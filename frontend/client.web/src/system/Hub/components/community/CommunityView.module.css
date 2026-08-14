@@ -1,0 +1,311 @@
+.communityHintCard p {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.communityLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  gap: clamp(16px, 2vw, 24px);
+  min-height: 0;
+  overflow: hidden;
+  animation: communityPanelIn 220ms cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.communityMain,
+.communityAside {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.communityMain {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.communityAside {
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-content: stretch;
+}
+
+.communityStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.communityStats article,
+.communityHintCard {
+  border: 1px solid var(--theme-border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
+    color-mix(in srgb, var(--theme-surface-raised), transparent 8%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 18px 44px rgba(0, 0, 0, 0.12);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.communityStats article {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 62px;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.communityStats strong {
+  color: var(--color-text);
+  font-size: 21px;
+  line-height: 1;
+}
+
+.communityStats article div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.communityStatIcon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: #d9b8ff;
+  line-height: 1;
+  text-shadow:
+    0 0 12px rgba(188, 128, 255, 0.9),
+    0 0 26px rgba(123, 97, 255, 0.5);
+}
+
+.communityStatOnline {
+  color: var(--color-success);
+  text-shadow:
+    0 0 12px color-mix(in srgb, var(--color-success), transparent 22%),
+    0 0 26px color-mix(in srgb, var(--color-success), transparent 48%);
+}
+
+.communityStatVoice {
+  color: #b56bff;
+}
+
+.communityStatServer {
+  color: #4aa3ff;
+}
+
+.communityStats span {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.communityHintCard h2 {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 16px;
+  font-weight: 900;
+  text-transform: none;
+}
+
+.communitySvgIcon {
+  width: 21px;
+  height: 21px;
+  transition:
+    filter 180ms ease,
+    transform 180ms ease;
+}
+
+.communityStatIcon .communitySvgIcon {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 0 10px currentColor);
+  animation: communityIconBreath 4.2s ease-in-out infinite;
+}
+
+.communityHintCard {
+  display: grid;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 14px;
+  min-height: 0;
+}
+
+.communityPanelAction {
+  justify-self: stretch;
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft), transparent 14%);
+  border-radius: 9px;
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 900;
+  background: color-mix(in srgb, var(--theme-control-bg), transparent 18%);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.communityPanelAction:hover,
+.communityPanelAction:focus-visible {
+  border-color: color-mix(in srgb, var(--theme-border-accent), transparent 30%);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--theme-surface-raised), transparent 12%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-glow), transparent 46%);
+  outline: none;
+}
+
+.communityHintCard :global(.ui-action-button) {
+  align-self: end;
+  justify-self: stretch;
+  min-height: 46px;
+  max-height: 54px;
+}
+
+
+
+@keyframes communityPanelIn {
+  from {
+    opacity: 0.72;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes communityIconBreath {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px currentColor);
+    transform: translateY(0);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 15px currentColor);
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .communityLayout,
+  .communityStatIcon .communitySvgIcon {
+    animation: none;
+  }
+
+  .communityStats article,
+  .communityHintCard,
+  .communitySvgIcon {
+    transition: none;
+  }
+}
+
+@media (max-height: 900px) and (min-width: 1101px) {
+  .communityStats article {
+    min-height: 56px;
+    padding: 8px 11px;
+  }
+
+  .communityStats strong {
+    font-size: 19px;
+  }
+
+  .communityHintCard {
+    gap: 8px;
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .communityHintCard h2 {
+    font-size: 15px;
+  }
+
+  .communityPanelAction {
+    min-height: 32px;
+  }
+
+  .communityHintCard p {
+    font-size: 14px;
+    line-height: 1.22;
+  }
+
+  .communityHintCard :global(.ui-action-button) {
+    min-height: 42px;
+  }
+}
+
+@container community (max-width: 1280px) {
+  .communityLayout {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 310px);
+    gap: 14px;
+  }
+
+  .communityStats article {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+}
+
+@container community (max-width: 850px) {
+  .communityLayout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: start;
+    overflow: visible;
+  }
+
+  .communityStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .communityMain {
+    grid-template-rows: auto auto auto;
+    overflow: visible;
+  }
+
+  .communityAside {
+    grid-template-rows: repeat(2, minmax(210px, auto));
+    overflow: visible;
+  }
+
+}
+
+
+@container community (max-width: 760px) {
+  .communityLayout {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .communityStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .communityStats article {
+    min-height: 58px;
+  }
+
+  .communityMain {
+    grid-template-rows: auto auto auto;
+    overflow: visible;
+  }
+
+  .communityAside {
+    grid-template-rows: repeat(2, auto);
+    overflow: visible;
+  }
+
+}

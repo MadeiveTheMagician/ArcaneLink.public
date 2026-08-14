@@ -1,0 +1,26 @@
+.statuses {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-danger);
+}
+
+.statusIcon {
+  position: relative;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+}
+
+.crossed::after {
+  position: absolute;
+  width: 15px;
+  height: 1.5px;
+  border-radius: 999px;
+  content: "";
+  background: var(--color-danger);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--color-danger), transparent 46%);
+  transform: rotate(45deg);
+}

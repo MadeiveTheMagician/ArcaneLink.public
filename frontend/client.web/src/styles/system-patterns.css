@@ -1,0 +1,188 @@
+/* Shared low-level UI patterns used across feature areas. */
+
+.ui-scrollbar-none {
+  scrollbar-width: none;
+}
+
+.ui-scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Chromium on Windows still reserves native arrow buttons unless all sizes are reset. */
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button:single-button,
+*::-webkit-scrollbar-button:start:decrement,
+*::-webkit-scrollbar-button:end:increment,
+*::-webkit-scrollbar-button:vertical:start:decrement,
+*::-webkit-scrollbar-button:vertical:end:increment {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.ui-scroll-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ui-panel {
+  border: 1px solid var(--profile-border-soft, var(--theme-border-soft));
+  background: var(--profile-surface-panel, var(--theme-frame-bg));
+}
+
+.ui-dialog-shell {
+  border: 1px solid var(--profile-border-soft, var(--theme-border-soft));
+  color: var(--color-text);
+  background: var(
+    --profile-surface-raised,
+    var(--theme-surface-raised)
+  );
+  box-shadow: var(
+    --profile-shadow-raised,
+    0 22px 72px rgba(0, 0, 0, 0.44)
+  );
+}
+
+.ui-media-fit {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+}
+
+.ui-frame {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.ui-ellipsis {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-min-ellipsis {
+  min-width: 0;
+}
+
+.ui-context-menu {
+  border: 1px solid var(--theme-section-border);
+  padding: 6px;
+  background: var(--theme-control-bg-strong);
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--color-bg), #000 32%);
+  animation: uiMenuEnter 150ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.ui-context-menu-row {
+  border: 0;
+  padding: 0 12px;
+  color: var(--color-text);
+  text-align: left;
+  background: transparent;
+}
+
+.ui-context-menu-row:hover {
+  background: var(--theme-active-bg);
+}
+
+.ui-button {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--color-text);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.ui-action-button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 9px;
+  padding: 0 18px;
+  color: var(--theme-accent-contrast);
+  background: var(--theme-surface-accent);
+  box-shadow:
+    0 16px 36px var(--theme-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  font-weight: 850;
+  text-align: center;
+  line-height: 1.1;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.ui-action-button:hover:not(:disabled) {
+  box-shadow:
+    0 18px 42px var(--theme-glow-strong),
+    0 0 28px var(--theme-glow);
+  transform: translateY(-1px);
+}
+
+.ui-action-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ui-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.ui-icon-button {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+.ui-field-control {
+  min-width: 0;
+  border: 1px solid var(--profile-border-control, var(--theme-border-control));
+  color: var(--color-text);
+  background: var(--profile-surface-control, var(--theme-control-bg));
+}
+
+.ui-list-row {
+  min-width: 0;
+  color: var(--color-text);
+  text-align: left;
+}
+
+@keyframes uiMenuEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-context-menu {
+    animation: none;
+  }
+}
+
+.ui-empty-state {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.5;
+}

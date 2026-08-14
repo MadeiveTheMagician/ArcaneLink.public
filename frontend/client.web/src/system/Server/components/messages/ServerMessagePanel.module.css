@@ -1,0 +1,56 @@
+.assetDropOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 50% 46%,
+      color-mix(in srgb, var(--theme-accent), transparent 76%),
+      transparent 34%
+    ),
+    rgba(3, 6, 18, 0.62);
+  backdrop-filter: blur(10px);
+}
+
+.assetDropOverlay::before {
+  position: absolute;
+  inset: 18px;
+  border: 1px dashed color-mix(in srgb, var(--theme-accent-light), transparent 22%);
+  border-radius: 10px;
+  content: "";
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent), transparent 72%),
+    0 0 28px var(--theme-glow);
+}
+
+.assetDropDialog {
+  position: relative;
+  display: grid;
+  max-width: min(100%, 420px);
+  min-height: 62px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 38%);
+  border-radius: 8px;
+  padding: 18px 24px;
+  color: var(--color-text);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-control-bg-strong), #000 10%),
+    var(--theme-frame-bg)
+  );
+  box-shadow:
+    0 20px 70px rgba(0, 0, 0, 0.38),
+    0 0 32px var(--theme-glow);
+  text-align: center;
+}
+
+.assetDropDialog strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.35;
+}

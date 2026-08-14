@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="orb" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 190) rotate(52) scale(320)">
+      <stop stop-color="#79b7ff"/>
+      <stop offset="0.42" stop-color="#3f7cff"/>
+      <stop offset="0.76" stop-color="#845cff"/>
+      <stop offset="1" stop-color="#111936"/>
+    </radialGradient>
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.36 0 0 0 0 0.72 0 0 0 0 1 0 0 0 0.9 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <circle cx="256" cy="256" r="226" fill="url(#orb)"/>
+  <circle cx="256" cy="256" r="224" stroke="#1020A8" stroke-width="2"/>
+  <path d="M132 356L233 134H278L384 356H340L256 178L176 356H132Z" fill="white" filter="url(#glow)"/>
+  <path d="M215 356L256 258L278 306L258 356H215Z" fill="white" filter="url(#glow)"/>
+  <path d="M258 356L278 306L304 356H258Z" fill="white" filter="url(#glow)"/>
+  <path d="M215 356H384L362 320H231L215 356Z" fill="white" filter="url(#glow)"/>
+</svg>

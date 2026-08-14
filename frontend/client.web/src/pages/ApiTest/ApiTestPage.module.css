@@ -1,0 +1,190 @@
+.page {
+  min-height: 100vh;
+  color: #e9edf5;
+  background: #0d1117;
+}
+
+.shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+.header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.header p,
+.header h1 {
+  margin: 0;
+}
+
+.header p {
+  color: #8b949e;
+  font-size: 14px;
+}
+
+.header h1 {
+  margin-top: 4px;
+  font-size: 32px;
+  letter-spacing: 0;
+}
+
+.header a,
+.panel button {
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #f0f6fc;
+  background: #21262d;
+  text-decoration: none;
+}
+
+.header a {
+  padding: 10px 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #161b22;
+}
+
+.panel h2,
+.log h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.panel label {
+  display: grid;
+  gap: 6px;
+  color: #8b949e;
+  font-size: 13px;
+}
+
+.panel input,
+.panel textarea {
+  width: 100%;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: #f0f6fc;
+  background: #0d1117;
+}
+
+.panel textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.panel button {
+  min-height: 38px;
+  padding: 8px 12px;
+}
+
+.panel button:hover:not(:disabled),
+.header a:hover {
+  background: #30363d;
+}
+
+.actions {
+  align-content: start;
+}
+
+.session {
+  margin-top: 16px;
+}
+
+.session dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.session div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.session dt {
+  color: #8b949e;
+}
+
+.session dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.log {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.log > p {
+  margin: 0;
+  color: #8b949e;
+}
+
+.logEntry {
+  border: 1px solid #30363d;
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 14px;
+  background: #161b22;
+}
+
+.logEntry.isOk {
+  border-left-color: #3fb950;
+}
+
+.logEntry.isError {
+  border-left-color: #f85149;
+}
+
+.logEntry h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+.logEntry pre {
+  max-height: 360px;
+  margin: 0;
+  overflow: auto;
+  color: #c9d1d9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .session div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

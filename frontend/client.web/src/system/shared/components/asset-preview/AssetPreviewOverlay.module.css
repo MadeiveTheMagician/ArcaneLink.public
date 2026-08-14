@@ -1,0 +1,323 @@
+﻿.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: block;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.79);
+  backdrop-filter: none;
+  animation: backdropIn 140ms ease-out both;
+}
+
+.viewer {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: start center;
+  overflow: hidden;
+  color: var(--color-text);
+}
+
+.meta {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: min(440px, calc(100vw - 116px));
+  animation: chromeIn 180ms ease-out 60ms both;
+}
+
+.avatar {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 12px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 32% 24%, var(--theme-glow-strong), transparent 58%),
+    rgba(31, 25, 72, 0.95);
+  box-shadow: 0 0 22px var(--theme-glow);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.metaText {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  padding-top: 1px;
+}
+
+.metaText strong,
+.metaText span,
+.metaText time {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metaText strong {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.metaText time {
+  color: rgba(235, 240, 255, 0.74);
+  font-size: 11px;
+}
+
+.metaText span {
+  margin-top: 7px;
+  color: rgba(235, 240, 255, 0.84);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  display: grid;
+  width: 38px;
+  min-height: 38px;
+  place-items: center;
+  border: 1px solid rgba(235, 240, 255, 0.14);
+  border-radius: 7px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(22, 25, 34, 0.88);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.34);
+  font-weight: 900;
+  animation: chromeIn 180ms ease-out 60ms both;
+}
+
+.close:hover {
+  border-color: rgba(235, 240, 255, 0.28);
+  color: #fff;
+  background: rgba(46, 51, 66, 0.92);
+}
+
+.imageFrame {
+  display: grid;
+  margin-top: max(100px, 7vh);
+  max-width: min(76vw, 1220px);
+  max-height: min(78vh, 820px);
+  border: 1px solid var(--theme-accent-light);
+  border-radius: 6px;
+  place-items: center;
+  box-shadow:
+    0 0 0 1px rgba(68, 214, 255, 0.28),
+    0 0 18px var(--theme-glow-strong),
+    0 0 34px rgba(68, 214, 255, 0.24),
+    0 18px 84px rgba(0, 0, 0, 0.58);
+  animation: imageIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.image {
+  display: block;
+  max-width: min(76vw, 1220px);
+  max-height: min(78vh, 820px);
+  border-radius: 5px;
+  object-fit: contain;
+}
+
+.closing {
+  animation: backdropOut 220ms ease-in both;
+}
+
+.closing .meta,
+.closing .close {
+  animation: chromeOut 140ms ease-in both;
+}
+
+.closing .imageFrame {
+  animation: imageOut 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@media (max-width: 760px) {
+  .backdrop {
+    background:
+      radial-gradient(circle at 50% 46%, rgba(34, 47, 92, 0.18), transparent 48%),
+      rgba(0, 0, 0, 0.92);
+  }
+
+  .viewer {
+    place-items: center;
+  }
+
+  .meta {
+    top: 26px;
+    left: 18px;
+    max-width: calc(100vw - 92px);
+    transition:
+      opacity 160ms ease,
+      transform 180ms ease;
+  }
+
+  .close {
+    top: 22px;
+    right: 16px;
+    width: 40px;
+    min-height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--theme-accent-light);
+    filter:
+      drop-shadow(0 0 7px color-mix(in srgb, var(--theme-accent), transparent 42%))
+      drop-shadow(0 0 15px color-mix(in srgb, var(--theme-accent-light), transparent 72%));
+    transition:
+      opacity 160ms ease,
+      transform 180ms ease,
+      color 140ms ease,
+      filter 140ms ease;
+  }
+
+  .close:hover,
+  .close:focus-visible {
+    color: #fff;
+    background: transparent;
+    filter:
+      drop-shadow(0 0 8px color-mix(in srgb, var(--theme-accent-light), transparent 24%))
+      drop-shadow(0 0 18px color-mix(in srgb, var(--theme-accent), transparent 58%));
+  }
+
+  .imageFrame {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: calc(100dvh - 136px);
+    margin-top: 68px;
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+      0 0 32px color-mix(in srgb, var(--theme-accent), transparent 78%),
+      0 24px 82px rgba(0, 0, 0, 0.72);
+    animation: mobileImageIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .closing .imageFrame {
+    animation: mobileImageOut 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .image {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: calc(100dvh - 136px);
+    border-radius: 0;
+  }
+
+  .chromeHidden .meta,
+  .chromeHidden .close {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backdropOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes chromeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chromeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes imageIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes imageOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes mobileImageIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.82);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.018);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mobileImageOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(24px) scale(0.78);
+  }
+}

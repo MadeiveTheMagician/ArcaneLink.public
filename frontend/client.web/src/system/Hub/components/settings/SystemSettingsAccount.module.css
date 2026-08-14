@@ -1,0 +1,74 @@
+.sessionRow,
+.disclosure {
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  background: var(--theme-control-bg);
+}
+
+.sessionRow strong,
+.sessions h4 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.sessionRow small {
+  color: var(--color-muted);
+}
+
+.disclosure {
+  overflow: hidden;
+}
+
+.disclosureButton {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  padding: 0 14px;
+  color: var(--color-text);
+  background: transparent;
+  font: inherit;
+  font-weight: 900;
+}
+
+.disclosureButton em {
+  color: var(--color-muted);
+  font-style: normal;
+  font-size: 0.86em;
+}
+
+.sessions {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--theme-section-border);
+  padding: 10px;
+}
+
+.sessionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.sessionRow span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sessionRow small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessionRow em {
+  color: var(--color-sapphire-light);
+  font-style: normal;
+  font-weight: 900;
+}

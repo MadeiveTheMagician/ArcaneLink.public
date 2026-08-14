@@ -1,0 +1,338 @@
+.communityFriendToolbar {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(138px, 198px) 42px;
+  gap: 10px;
+}
+
+.communitySearch,
+.communityFilters {
+  border: 1px solid var(--theme-border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
+    color-mix(in srgb, var(--theme-surface-raised), transparent 8%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 18px 44px rgba(0, 0, 0, 0.12);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.communitySearch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  border-radius: 10px;
+  padding: 0 15px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent),
+    color-mix(in srgb, var(--theme-control-bg), transparent 12%);
+}
+
+.communitySearch:focus-within {
+  border-color: color-mix(in srgb, var(--theme-border-accent), transparent 18%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-border-accent), transparent 34%),
+    0 0 22px color-mix(in srgb, var(--theme-glow), transparent 38%);
+}
+
+.communitySearch span {
+  color: var(--color-muted);
+  font-weight: 900;
+}
+
+.communitySearch input {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  outline: none;
+  color: var(--color-text);
+  font: inherit;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.communitySearch input::placeholder {
+  color: color-mix(in srgb, var(--color-muted), transparent 20%);
+}
+
+.communityFilters {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.communitySelectLike,
+.communityIconButton {
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 900;
+  background: var(--theme-control-bg);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.communitySelectLike:hover,
+.communityIconButton:hover {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-surface-raised);
+  box-shadow: 0 0 18px var(--theme-glow);
+  transform: translateY(-1px);
+}
+
+.communitySelectLike {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 0 14px;
+  color: var(--color-muted);
+}
+
+.communityIconButton {
+  display: grid;
+  place-items: center;
+  min-height: 42px;
+  color: var(--color-muted);
+  font-size: 20px;
+}
+
+.communityFilters button,
+.communityTagGrid button {
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  background: var(--theme-control-bg);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.communityFilters button {
+  font-weight: 800;
+}
+
+.communityFilters button:hover,
+.communityFilters button:focus-visible,
+.communityTagGrid button:hover,
+.communityTagGrid button:focus-visible,
+.activeCommunityFilter {
+  border-color: color-mix(in srgb, var(--theme-border-accent), transparent 28%);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--theme-surface-accent), transparent 54%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-glow), transparent 46%);
+  outline: none;
+}
+
+.communityFilterAssetButton {
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-muted);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.communityFilterAssetButton:hover,
+.communityFilterAssetButton:focus-visible {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--theme-surface-accent), transparent 72%);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--theme-glow), transparent 40%);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.communityStatusMenu,
+.communityFilterCard,
+.communityFriendMenu {
+  position: absolute;
+  z-index: 12;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--theme-accent), transparent 76%), transparent 40%),
+    color-mix(in srgb, var(--theme-control-bg-strong), #000 12%);
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.36),
+    0 0 38px color-mix(in srgb, var(--theme-glow), transparent 52%);
+  animation: communityMenuIn 150ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  transform-origin: top right;
+}
+
+.communityStatusMenu {
+  top: calc(100% + 8px);
+  right: 52px;
+  display: grid;
+  min-width: 198px;
+  padding: 6px;
+}
+
+.communityFriendMenu {
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  min-width: 190px;
+  padding: 6px;
+}
+
+.communityStatusMenu button,
+.communityFriendMenu button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 12px;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.communityStatusMenu button:hover,
+.communityStatusMenu button:focus-visible,
+.communityFriendMenu button:hover,
+.communityFriendMenu button:focus-visible,
+.activeCommunityMenuItem {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--theme-surface-accent), transparent 70%);
+  outline: none;
+}
+
+.communityFilterCard {
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  gap: 12px;
+  width: min(330px, 100%);
+  padding: 14px;
+}
+
+.communityFilters + .communityFilterCard {
+  top: calc(100% + 8px);
+  right: 0;
+}
+
+.communityFilterCard header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.communityFilterCard h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.communityFilterCard header button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.communityTagGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.communityTagGrid > span {
+  grid-column: 1 / -1;
+}
+
+.communitySearch svg,
+.communitySelectLike svg,
+.communityIconButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.communityIconButton:hover svg {
+  filter: drop-shadow(0 0 10px currentColor);
+  transform: scale(1.05);
+}
+
+@keyframes communityMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .communityStatusMenu,
+  .communityFilterCard,
+  .communityFriendMenu {
+    animation: none;
+  }
+
+  .communitySearch,
+  .communityFilters,
+  .communitySelectLike,
+  .communityIconButton {
+    transition: none;
+  }
+}
+
+@container community (max-width: 1280px) {
+  .communityFilters {
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .communityFilters button,
+  .communityTagGrid button {
+    padding-inline: 10px;
+  }
+}
+
+@container community (max-width: 760px) {
+  .communityFriendToolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 150px) 42px;
+  }
+}

@@ -1,0 +1,21 @@
+map $uri $arcanelink_log_path {
+    ~^/api/server-invites/[^/]+/?$ "/api/server-invites/{code}";
+    ~^/invite/[^/]+/?$ "/invite/{code}";
+    default $uri;
+}
+
+log_format arcanelink_safe escape=json
+    '{"timestamp":"$time_iso8601","remote_addr":"$remote_addr",'
+    '"method":"$request_method","path":"$arcanelink_log_path",'
+    '"status":"$status","body_bytes_sent":"$body_bytes_sent",'
+    '"request_time":"$request_time","upstream_response_time":"$upstream_response_time"}';
+
+access_log /var/log/nginx/access.log arcanelink_safe;
+
+server {
+    listen 80 default_server;
+    server_name ${ARCANELINK_SERVER_NAME};
+    client_max_body_size ${ARCANELINK_MAX_BODY_SIZE};
+
+    include /etc/nginx/snippets/app-locations.inc;
+}

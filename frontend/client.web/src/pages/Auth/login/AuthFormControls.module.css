@@ -1,0 +1,217 @@
+.authForm {
+  display: grid;
+  gap: 18px;
+}
+
+.authField {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  min-height: 70px;
+  border: 1px solid rgba(79, 92, 153, 0.5);
+  border-radius: 9px;
+  padding: 0 20px;
+  color: var(--auth-muted);
+  background: rgba(1, 6, 19, 0.36);
+  backdrop-filter: blur(6px);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.authPasswordField {
+  grid-template-columns: 28px minmax(0, 1fr) 38px;
+}
+
+.authField i {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: var(--theme-accent-light);
+  font-style: normal;
+  font-size: 15px;
+}
+
+.authField i svg,
+.authPasswordToggle svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.authField span {
+  display: none;
+}
+
+.authField input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  color: var(--auth-text);
+  background: transparent;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.authField input::placeholder {
+  color: rgba(177, 184, 216, 0.54);
+}
+
+.authField:focus-within {
+  border-color: var(--auth-line-strong);
+  color: #fff;
+  background: rgba(8, 13, 32, 0.72);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--theme-accent), transparent 86%);
+}
+
+.authPasswordToggle {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  justify-self: end;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  color: rgba(168, 152, 255, 0.78);
+  background: transparent;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.authPasswordToggle:hover,
+.authPasswordToggle:focus-visible {
+  color: #fff;
+  background: rgba(123, 97, 255, 0.14);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-accent), transparent 82%);
+}
+
+.authPasswordToggle:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 22%);
+  outline-offset: 2px;
+}
+
+.authForm input:-webkit-autofill {
+  -webkit-text-fill-color: #f7f9ff;
+  caret-color: #f7f9ff;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.authSubmit {
+  min-height: 64px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent), transparent 36%);
+  border-radius: 9px;
+  color: #fff;
+  background:
+    var(--theme-surface-accent);
+  box-shadow:
+    0 16px 36px var(--theme-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  font-weight: 850;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.authSubmit:hover:not(:disabled) {
+  box-shadow:
+    0 18px 42px var(--theme-glow-strong),
+    0 0 28px color-mix(in srgb, var(--theme-accent), transparent 82%);
+  transform: translateY(-1px);
+}
+
+.authSubmit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.authSubmit:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+@media (max-width: 620px) {
+  .authForm {
+    align-content: start;
+    min-height: 0;
+    gap: 9px;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .authField {
+    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-rows: auto;
+    min-height: 52px;
+    border-color: rgba(92, 106, 172, 0.42);
+    border-radius: 10px;
+    padding: 0 14px;
+    background: rgba(4, 8, 23, 0.48);
+  }
+
+  .authPasswordField {
+    grid-template-columns: 28px minmax(0, 1fr) 36px;
+  }
+
+  .authField span {
+    display: none;
+  }
+
+  .authField i {
+    align-self: center;
+    font-size: 15px;
+  }
+
+  .authField i svg,
+  .authPasswordToggle svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .authField input {
+    align-self: center;
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  .authPasswordToggle {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+  }
+
+  .authSubmit {
+    min-height: 56px;
+    border-radius: 11px;
+    font-size: 17px;
+    margin-top: auto;
+  }
+
+}
+
+@media (max-width: 390px) {
+  .authForm {
+    gap: 7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authField,
+  .authSubmit {
+    transition: none;
+  }
+}

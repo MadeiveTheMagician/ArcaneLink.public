@@ -1,0 +1,974 @@
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { MobileHubNav } from '../../../Mobile/components/MobileHubNav'
+import { MobileMenuTab } from '../../../Mobile/components/MobileMenuTab'
+import { ServerRail } from '../../../Server/components/navigation/ServerRail'
+import { ProfileHeader } from '../../../Profile/components/page/ProfileHeader'
+import { HubVoiceAudioSinks } from '../voice/HubVoiceAudioSinks'
+import { HubVoiceDock } from '../voice/HubVoiceDock'
+import { HubPageDialogs } from './HubPageDialogs'
+import { HubWorkspacePane } from './HubWorkspacePane'
+import {
+  ContextMenu,
+  ContextMenuPositioningLayer,
+} from '../../../shared/components/context-menu/ContextMenu'
+import { useProfileSettings } from '../../../Profile/hooks/useProfileSettings'
+import { useProfileAvatar } from '../../../Profile/hooks/useProfileAvatar'
+import { useHubWorkspace } from './useHubWorkspace'
+import { useFriends } from '../community/useFriends'
+import { useHubRealtimeSync } from './useHubRealtimeSync'
+import { useServerGovernance } from '../../../Server/hooks/workspace/useServerGovernance'
+import { useServerDialog } from '../../../Server/hooks/workspace/useServerDialog'
+import { usePanelResize } from '../../../shared/hooks/usePanelResize'
+import { useServers } from '../../../Server/hooks/workspace/useServers'
+import { useServerSpaces } from '../../../Server/hooks/workspace/useServerSpaces'
+import { useVoiceChannel } from '../../../Server/hooks/voice/useVoiceChannel'
+import { rememberRecentServerDetail } from '../../../Server/utils/serverRecentSpace'
+import { resolveServerWorkspacePermissionCapabilities } from '../../../Server/utils/serverEffectivePermissions'
+import { usePrivateSpaces } from '../private-space/usePrivateSpaces'
+import { useHubDirectActions } from '../direct-messages/useHubDirectActions'
+import { useHubServerInvites } from '../utility/useHubServerInvites'
+import { useMobileHubNavigation } from './useMobileHubNavigation'
+import { useMobileBrowserHistory } from './useMobileBrowserHistory'
+import { useHubServerActions } from '../utility/useHubServerActions'
+import {
+  useHubInitialLayout,
+  useHubLayoutPersistence,
+} from './useHubLayoutPersistence'
+import { useVoicePlaybackPreferences } from '../settings/useVoicePlaybackPreferences'
+import { useCurrentHubUser } from './useCurrentHubUser'
+import { WebNotificationStack } from '../notifications/WebNotificationStack'
+import { useWebNotifications } from '../notifications/useWebNotifications'
+import { useHubProfileLifecycle } from './useHubProfileLifecycle'
+import { useHubWorkspaceRestore } from './useHubWorkspaceRestore'
+import { SystemErrorBoundary } from '../../../shared/errors/SystemErrorBoundary'
+import { WorkspaceTransitionSurface } from '../../../shared/ui/WorkspaceTransitionSurface'
+import {
+  clearUserDataCache,
+} from '../../../../shared/cache/clientCache'
+import {
+  DEFAULT_SYSTEM_THEME_CODE,
+} from '../../../../styles/systemThemes'
+import { buildServerContextMenuItems } from '../../utils/serverContextMenuItems'
+import { buildHubProfileStyle } from '../../utils/hubProfileStyle'
+import { resolveWorkspaceTransitionKey } from './workspaceTransitionModel'
+import type { ProfileSession } from '../../../../shared/types'
+import {
+  subscribeToSystemSettingsNavigation,
+  type SystemSettingsNavigationRequest,
+} from '../../../shared/navigation/systemSettingsNavigation'
+import styles from './HubPage.module.css'
+
+const ServerWorkspace = lazy(() =>
+  import('../../../Server/components/shell/ServerWorkspace').then((module) => ({
+    default: module.ServerWorkspace,
+  })),
+)
+
+type HubPageProps = {
+  session: ProfileSession
+  onLogout: () => Promise<void>
+}
+
+type AvatarSort = 'newest' | 'oldest'
+const defaultProfileSettings = {
+  interfaceScale: 1,
+  fontScale: 1,
+  serverInterfaceScale: 1,
+  isServerRailPinned: false,
+  showPrivateReadAllButton: true,
+  serverMessageDisplayFormat: 'wall-scroll' as const,
+  privateMessageDisplayFormat: 'wall-scroll' as const,
+  serverMessageBubbleAlignment: 'own-right' as const,
+  privateMessageBubbleAlignment: 'own-right' as const,
+  serverMessageBubbleWidth: 'standard' as const,
+  privateMessageBubbleWidth: 'standard' as const,
+  expandMessageAttachmentsByDefault: false,
+  loadExternalMediaPreviews: true,
+  horizontalVideoCardSize: 3,
+  verticalVideoCardSize: 3,
+  selectedThemeCode: DEFAULT_SYSTEM_THEME_CODE,
+  profileColor: null,
+  profileBackgroundAssetId: null,
+  applySystemThemeToOtherProfiles: true,
+  directMessagePermission: 'everyone' as const,
+  presenceVisibility: 'everyone' as const,
+  showLastSeen: true,
+  presenceMode: 'automatic' as const,
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(value))
+}
+
+export function HubPage({ session, onLogout }: HubPageProps) {
+  const layoutCache = useHubInitialLayout(session.user.id)
+  const initialProfileSettings = useMemo(
+    () => ({
+      ...session.profileSettings,
+      ...(layoutCache?.profileSettings ?? {}),
+    }),
+    [layoutCache?.profileSettings, session.profileSettings],
+  )
+  const { user, loadCurrentUser } = useCurrentHubUser(
+    session.accessToken,
+    session.user,
+  )
+  const voice = useVoiceChannel(session.accessToken, session.user.id)
+  const {
+    audioSettingsByUserId: voiceAudioSettingsByUserId,
+    playbackStatesByParticipantId: voicePlaybackStatesByParticipantId,
+    updatePlaybackState: updateVoicePlaybackState,
+    updateAudioSettings: updateVoiceAudioSettings,
+  } = useVoicePlaybackPreferences(session.user.id)
+  const {
+    profileSettings,
+    settingsDraft,
+    isProfileSettingsOpen,
+    isSavingProfileSettings,
+    setSettingsDraft,
+    setIsProfileSettingsOpen,
+    openProfileSettings,
+    loadProfileSettings,
+    persistProfileSettings,
+  } = useProfileSettings(session.accessToken, initialProfileSettings)
+  const [systemSettingsNavigationRequest, setSystemSettingsNavigationRequest] =
+    useState<SystemSettingsNavigationRequest | null>(null)
+
+  useEffect(
+    () =>
+      subscribeToSystemSettingsNavigation((request) => {
+        setSystemSettingsNavigationRequest(request)
+        openProfileSettings()
+      }),
+    [openProfileSettings],
+  )
+
+  function closeProfileSettings() {
+    setIsProfileSettingsOpen(false)
+    setSystemSettingsNavigationRequest(null)
+  }
+
+  const [avatarSort, setAvatarSort] = useState<AvatarSort>('newest')
+  const avatarState = useProfileAvatar({
+    accessToken: session.accessToken,
+    initialProfile: session.publicProfile,
+    sort: avatarSort,
+  })
+  const {
+    publicProfile,
+    avatarPicker,
+    avatarSrc,
+    avatarStyle,
+    isAvatarMenuOpen,
+    setIsAvatarMenuOpen,
+    markBrokenAvatar,
+    loadPublicProfile,
+    showAvatarLibrary,
+    openAvatarPicker,
+    selectAvatarFile,
+  } = avatarState
+  const {
+    serverMemberships,
+    setServerMemberships,
+    selectedServerMembership,
+    serverMembers,
+    setServerMembers,
+    isLoadingServers,
+    hasLoadedServers,
+    isLoadingServerMembers,
+    isLoadingMoreServerMembers,
+    hasMoreServerMembers,
+    serverMemberCount,
+    isMutatingServerMember,
+    loadServers,
+    loadServerMembers,
+    loadMoreServerMembers,
+    leaveServer,
+    removeServerMember,
+    updateServerMembership,
+    reorderServerMemberships,
+  } = useServers(session.accessToken, session.user.id)
+  const {
+    isServerPanelOpen,
+    activeWorkspace,
+    activeServerId,
+    activePrivateSpaceId,
+    focusedPrivateMessage,
+    serverContextMenu,
+    visibleServerMemberships,
+    setIsServerPanelOpen,
+    openServerWorkspace,
+    openServerContextMenu,
+    toggleServerPanel,
+    showProfileWorkspace,
+    showServersWorkspace,
+    showFriendsWorkspace,
+    showInvitesWorkspace,
+    openPrivateSpace,
+    openPrivateSearchResult,
+    closeServerContextMenu,
+    leaveServerFromContextMenu,
+  } = useHubWorkspace({
+    serverMemberships,
+    loadServers,
+    loadServerMembers,
+    leaveServer,
+    initialActiveWorkspace:
+      layoutCache?.activeWorkspace === 'server' && !layoutCache.activeServerId
+        ? 'profile'
+        : layoutCache?.activeWorkspace,
+    initialActivePrivateSpaceId: layoutCache?.activePrivateSpaceId,
+    initialIsServerPanelOpen: layoutCache?.isServerPanelOpen,
+    initialActiveServerId: layoutCache?.activeServerId,
+  })
+  const {
+    mobileTab,
+    isMobilePageTransitioning,
+    mobilePageTransitionDirection,
+    isMobilePrivateChatClosing,
+    openMobileServers,
+    openMobileMessages,
+    openMobileProfile,
+    openMobileMenu,
+    closeMobilePrivateChat,
+  } = useMobileHubNavigation({
+    activeWorkspace,
+    initialTab: layoutCache?.mobileTab,
+    showProfileWorkspace,
+    showServersWorkspace,
+  })
+  useHubProfileLifecycle({
+    isServerRailPinned: profileSettings.isServerRailPinned,
+    selectedThemeCode: profileSettings.selectedThemeCode,
+    setServerPanelOpen: setIsServerPanelOpen,
+  })
+  const {
+    friends,
+    incomingRequests,
+    outgoingRequests,
+    searchQuery,
+    isLoadingFriends,
+    isSearchingUsers,
+    isMutatingFriends,
+    friendNotice,
+    pendingOutgoingUserIds,
+    friendUserIds,
+    setSearchQuery,
+    loadFriends,
+    sendFriendRequest,
+    acceptFriendRequest,
+    declineFriendRequest,
+    cancelFriendRequest,
+    removeFriend,
+  } = useFriends(session.accessToken, session.user.id)
+  const {
+    privateSpaces,
+    isLoadingPrivateSpaces,
+    isMutatingPrivateSpaces,
+    loadPrivateSpaces,
+    openDirectSpace,
+    createPrivateSpace,
+    closePrivateSpace,
+    clearPrivateSpaceHistory,
+    addPrivateSpaceMember,
+    updatePersonalSettings,
+    uploadPersonalAvatar,
+    updateGroupSettings,
+    markPrivateSpaceRead,
+    markAllPrivateSpacesRead,
+  } = usePrivateSpaces(session.accessToken, session.user.id)
+  const {
+    pendingPrivateSpaceDroppedFiles,
+    openDirectSpaceForUser,
+    startDirectVoiceForUser,
+    dropFilesToPrivateSpace,
+    consumePendingPrivateSpaceDroppedFiles,
+  } = useHubDirectActions({
+    friends,
+    openDirectSpace,
+    openPrivateSpace,
+    joinVoiceChannel: voice.joinVoiceChannel,
+    setFriendSearchQuery: setSearchQuery,
+    showFriendsWorkspace,
+  })
+
+  const {
+    spacePanelWidth,
+    memberPanelWidth,
+    hubPanelWidth,
+    isMemberPanelCompact,
+    startPaneResize,
+  } = usePanelResize({
+    initialSidePanelWidth: layoutCache?.panelWidths.sidePanelWidth,
+    initialMemberPanelWidth: layoutCache?.panelWidths.memberPanelWidth,
+  })
+  const {
+    serverCoreTab,
+    serverInvites,
+    directServerInvites,
+    serverRoles,
+    serverPermissions,
+    serverEffectivePermissions,
+    memberRoles,
+    serverAuditLogs,
+    serverBans,
+    serverJoinRequests,
+    serverJoinRequestTotalCount,
+    serverJoinRequestError,
+    hasMoreServerJoinRequests,
+    isLoadingMoreServerJoinRequests,
+    isLoadingGovernance,
+    isMutatingGovernance,
+    loadServerGovernance,
+    reloadServerRoles,
+    loadDirectServerInvites,
+    openServerCoreTab,
+    createServerInvite,
+    revokeServerInvite,
+    loadMoreServerJoinRequests,
+    approveServerJoinRequest,
+    declineServerJoinRequest,
+    assignServerRole,
+    transferServerOwnership,
+    banServerMember,
+    unbanServerMember,
+    acceptDirectServerInvite,
+    declineDirectServerInvite,
+  } = useServerGovernance({
+    accessToken: session.accessToken,
+    currentUserId: user.id,
+    selectedServerMembership,
+    serverMembers,
+    loadServers,
+    loadServerMembers,
+  })
+  const {
+    isServerSettingsMenuOpen,
+    openServerSettingsMenu,
+    closeServerSettingsMenu,
+    updateServerSettings,
+  } = useHubServerActions({
+    accessToken: session.accessToken,
+    selectedServerMembership,
+    serverCoreTab,
+    loadServerGovernance,
+    updateServerMembership,
+  })
+  const {
+    createDirectServerInviteForUser,
+    loadInviteTargetServersForUser,
+  } = useHubServerInvites({
+    accessToken: session.accessToken,
+    loadDirectServerInvites,
+  })
+  const {
+    notifications: webNotifications,
+    closingNotificationIds: closingWebNotificationIds,
+    dismissNotification: dismissWebNotification,
+    placement: webNotificationPlacement,
+    pauseNotifications: pauseWebNotifications,
+    resumeNotifications: resumeWebNotifications,
+  } = useWebNotifications({
+    accessToken: session.accessToken,
+    currentUserId: user.id,
+    activePrivateSpaceId:
+      activeWorkspace === 'private-space' ? activePrivateSpaceId : null,
+  })
+  const {
+    serverSpaces,
+    spacePermissions,
+    isLoadingSpaces,
+    isMutatingSpaces,
+    loadServerSpaces,
+    createSpace,
+    updateSpace,
+    deleteSpace,
+    reorderSpaces,
+    upsertSpacePermissionOverride,
+    deleteSpacePermissionOverride,
+  } = useServerSpaces(session.accessToken, selectedServerMembership)
+  const serverDialogState = useServerDialog({
+    accessToken: session.accessToken,
+    assetSort: avatarSort,
+    loadServers,
+    updateServerMembership,
+    setServerMemberships,
+    onContextMenuClose: closeServerContextMenu,
+  })
+  const {
+    isServerIconLibraryOpen,
+    loadServerIconAssets,
+    serverDialog,
+    setServerDialog,
+    openCreateServerDialog,
+    openServerSettings,
+  } = serverDialogState
+
+  useMobileBrowserHistory({
+    tab: mobileTab,
+    workspace: activeWorkspace,
+    serverId: activeServerId,
+    privateSpaceId: activePrivateSpaceId,
+    overlay: isProfileSettingsOpen
+      ? 'settings'
+      : serverDialog?.mode === 'create'
+        ? 'create-server'
+        : null,
+    serverMemberships,
+    onOpenServers: openMobileServers,
+    onOpenMessages: openMobileMessages,
+    onOpenProfile: openMobileProfile,
+    onOpenMenu: openMobileMenu,
+    onOpenServer: (membership) => void openServerWorkspace(membership),
+    onOpenPrivateSpace: openPrivateSpace,
+    onOpenSettings: openProfileSettings,
+    onCloseSettings: closeProfileSettings,
+    onOpenCreateServer: openCreateServerDialog,
+    onCloseCreateServer: () => setServerDialog(null),
+  })
+
+  useHubRealtimeSync({
+    accessToken: session.accessToken,
+    currentUserId: user.id,
+    currentDeviceSessionId: session.deviceSessionId,
+    selectedServerMembership,
+    activeWorkspace,
+    serverCoreTab,
+    avatarLibraryIsOpen: avatarPicker.isLibraryOpen,
+    serverIconLibraryIsOpen: isServerIconLibraryOpen,
+    loadServers,
+    loadServerMembers,
+    loadServerGovernance,
+    loadServerSpaces,
+    loadPrivateSpaces,
+    loadFriends,
+    loadDirectServerInvites,
+    loadPublicProfile,
+    loadCurrentUser,
+    loadProfileSettings,
+    loadAvatarAssets: avatarPicker.loadAssets,
+    loadServerIconAssets,
+    onCurrentSessionRevoked: onLogout,
+  })
+
+  useHubWorkspaceRestore({
+    activeWorkspace,
+    activeServerId,
+    selectedServerMembership,
+    serverMemberships,
+    hasLoadedServers,
+    loadServerMembers,
+    showProfileWorkspace,
+  })
+
+  useHubLayoutPersistence({
+    userId: session.user.id,
+    activeWorkspace,
+    activeServerId,
+    selectedServerId: selectedServerMembership?.serverId ?? null,
+    activePrivateSpaceId,
+    isServerPanelOpen,
+    mobileTab,
+    sidePanelWidth: hubPanelWidth,
+    memberPanelWidth,
+    profileSettings,
+  })
+
+  const profileScaleStyle = buildHubProfileStyle({
+    profileSettings,
+    hubPanelWidth,
+    spacePanelWidth,
+    memberPanelWidth,
+  })
+  const workspaceTransitionKey = resolveWorkspaceTransitionKey({
+    activeWorkspace,
+    activeServerId,
+    activePrivateSpaceId,
+  })
+
+  function logoutAndClearCachedData() {
+    void clearUserDataCache(session.user.id)
+    void onLogout()
+  }
+
+  const selectedServerPermissionCapabilities =
+    resolveServerWorkspacePermissionCapabilities(
+      serverEffectivePermissions,
+      selectedServerMembership?.server.ownerUserId === user.id,
+      selectedServerMembership?.serverId,
+    )
+  const serverContextTargetsSelectedServer =
+    serverContextMenu?.membership.serverId ===
+    selectedServerMembership?.serverId
+  const serverContextItems = buildServerContextMenuItems({
+    membership: serverContextMenu?.membership ?? null,
+    currentUserId: user.id,
+    canManageServerProfile:
+      serverContextTargetsSelectedServer &&
+      selectedServerPermissionCapabilities.canManageServerProfile,
+    canManageServerSettings:
+      serverContextTargetsSelectedServer &&
+      selectedServerPermissionCapabilities.canManageServerSettings,
+    onOpenServerSettings: openServerSettings,
+    onLeaveServer: leaveServerFromContextMenu,
+  })
+
+  const connectedVoiceServerTitle = voice.connectedChannel
+    ? (serverMemberships.find(
+        (membership) => membership.serverId === voice.connectedChannel?.serverId,
+      )?.server.title ?? null)
+    : null
+  const selectedServerVoiceParticipants = useMemo(() => {
+    const voiceSpaceIds = new Set(
+      serverSpaces
+        .filter((space) => space.typeCode === 'voice_room')
+        .map((space) => space.id),
+    )
+    const seenParticipantIds = new Set<string>()
+
+    return Object.entries(voice.participantsBySpaceId).flatMap(
+      ([spaceId, participants]) => {
+        if (!voiceSpaceIds.has(spaceId)) return []
+
+        return participants.filter((participant) => {
+          if (seenParticipantIds.has(participant.participantId)) return false
+          seenParticipantIds.add(participant.participantId)
+          return true
+        })
+      },
+    )
+  }, [serverSpaces, voice.participantsBySpaceId])
+
+  function openConnectedVoiceWorkspace() {
+    const channel = voice.connectedChannel
+    if (!channel) return
+
+    if (channel.channelScope === 'private') {
+      openMobileMessages()
+      openPrivateSpace(channel.spaceId)
+      return
+    }
+
+    const membership = serverMemberships.find(
+      (item) => item.serverId === channel.serverId,
+    )
+    if (!membership || !channel.serverId) return
+
+    rememberRecentServerDetail(channel.serverId, {
+      type: 'channel',
+      kind: 'voice',
+      spaceId: channel.spaceId,
+      title: channel.title,
+    })
+    openMobileServers()
+    void openServerWorkspace(membership)
+  }
+
+  return (
+    <main
+      className={`${styles.page} profile-page is-mobile-tab-${mobileTab} ${
+        activeWorkspace === 'server' ? 'is-server-mode' : ''
+      } ${isServerPanelOpen ? 'is-bookmark-open' : ''} ${
+        voice.connectedChannel ? 'is-voice-connected' : ''
+      } ${
+        activeWorkspace === 'private-space' ? 'is-private-space' : ''
+      } ${
+        isMobilePrivateChatClosing ? 'is-private-chat-closing' : ''
+      } ${
+        isMobilePageTransitioning ? styles.mobilePageTransitioning : ''
+      } ${
+        mobilePageTransitionDirection === 'left'
+          ? styles.mobilePageTransitionLeft
+          : mobilePageTransitionDirection === 'right'
+            ? styles.mobilePageTransitionRight
+            : ''
+      }`}
+      style={profileScaleStyle}
+    >
+      <ContextMenuPositioningLayer />
+      <WebNotificationStack
+        notifications={webNotifications}
+        closingNotificationIds={closingWebNotificationIds}
+        onDismiss={dismissWebNotification}
+        onOpenPrivateSpace={openPrivateSpace}
+        onAcceptInvite={acceptDirectServerInvite}
+        onDeclineInvite={declineDirectServerInvite}
+        onPause={pauseWebNotifications}
+        onResume={resumeWebNotifications}
+        placement={webNotificationPlacement}
+      />
+      <ServerRail
+        avatarSrc={avatarSrc}
+        isOpen={isServerPanelOpen}
+        isLoadingServers={isLoadingServers}
+        memberships={serverMemberships}
+        selectedServerId={selectedServerMembership?.serverId}
+        selectedServerMembers={serverMembers}
+        selectedServerVoiceParticipants={selectedServerVoiceParticipants}
+        onOpenProfile={showProfileWorkspace}
+        onOpenServer={(membership) => void openServerWorkspace(membership)}
+        onOpenContextMenu={openServerContextMenu}
+        onReorderServers={reorderServerMemberships}
+        onCreateServer={openCreateServerDialog}
+        onShowAllServers={showServersWorkspace}
+        onShowFriends={showFriendsWorkspace}
+        onShowInvites={showInvitesWorkspace}
+      />
+      <section
+        className={`${styles.shell} profile-shell ${
+          activeWorkspace === 'server' ? `is-server-workspace-shell ${styles.serverShell}` : ''
+        } ${activeWorkspace !== 'server' ? 'is-hub-workspace-shell' : ''
+        } ${activeWorkspace !== 'server' ? styles.hubShell : ''}`}
+      >
+        <WorkspaceTransitionSurface transitionKey={workspaceTransitionKey}>
+        {activeWorkspace !== 'server' && (
+          <ProfileHeader
+            activeWorkspace={activeWorkspace}
+            selectedServerMembership={selectedServerMembership}
+            onToggleServers={toggleServerPanel}
+            onOpenServerSettings={openServerSettingsMenu}
+            onLogout={logoutAndClearCachedData}
+          />
+        )}
+
+        {activeWorkspace !== 'server' && (
+          <SystemErrorBoundary
+            boundaryName="hub-workspace-shell"
+            resetKeys={[activeWorkspace, activePrivateSpaceId]}
+          >
+            <HubWorkspacePane
+            accessToken={session.accessToken}
+            activeWorkspace={activeWorkspace}
+            activePrivateSpaceId={activePrivateSpaceId}
+            user={user}
+            publicProfile={publicProfile}
+            avatarSrc={avatarSrc}
+            avatarStyle={avatarStyle}
+            isAvatarDraftActive={Boolean(avatarPicker.draft)}
+            isAvatarMenuOpen={isAvatarMenuOpen}
+            avatarFileInputRef={avatarPicker.fileInputRef}
+            privateSpaces={privateSpaces}
+            friends={friends}
+            friendUserIds={friendUserIds}
+            directServerInvites={directServerInvites}
+            visibleServerMemberships={visibleServerMemberships}
+            incomingFriendRequests={incomingRequests}
+            outgoingFriendRequests={outgoingRequests}
+            friendSearchQuery={searchQuery}
+            isLoadingPrivateSpaces={isLoadingPrivateSpaces}
+            isMutatingPrivateSpaces={isMutatingPrivateSpaces}
+            isLoadingFriends={isLoadingFriends}
+            isSearchingUsers={isSearchingUsers}
+            isMutatingFriends={isMutatingFriends}
+            friendNotice={friendNotice}
+            pendingOutgoingUserIds={pendingOutgoingUserIds}
+            voice={voice}
+            voiceAudioSettingsByUserId={voiceAudioSettingsByUserId}
+            voicePlaybackStatesByParticipantId={voicePlaybackStatesByParticipantId}
+            isMemberPanelCompact={isMemberPanelCompact}
+            defaultAttachmentExpanded={
+              profileSettings.expandMessageAttachmentsByDefault
+            }
+            loadExternalMediaPreviews={profileSettings.loadExternalMediaPreviews}
+            horizontalVideoCardSize={profileSettings.horizontalVideoCardSize}
+            verticalVideoCardSize={profileSettings.verticalVideoCardSize}
+            privateMessageDisplayFormat={
+              profileSettings.privateMessageDisplayFormat
+            }
+            privateMessageBubbleAlignment={
+              profileSettings.privateMessageBubbleAlignment
+            }
+            privateMessageBubbleWidth={profileSettings.privateMessageBubbleWidth}
+            showPrivateReadAllButton={profileSettings.showPrivateReadAllButton}
+            pendingPrivateSpaceDroppedFiles={pendingPrivateSpaceDroppedFiles}
+            focusedPrivateMessage={focusedPrivateMessage}
+            onToggleAvatarMenu={() => setIsAvatarMenuOpen((current) => !current)}
+            onCloseAvatarMenu={() => setIsAvatarMenuOpen(false)}
+            onOpenAvatarPicker={openAvatarPicker}
+            onShowAvatarLibrary={showAvatarLibrary}
+            onSelectAvatarFile={selectAvatarFile}
+            onMarkBrokenAvatar={markBrokenAvatar}
+            onOpenPrivateSpace={openPrivateSpace}
+            onOpenPrivateSearchResult={openPrivateSearchResult}
+            onDropFilesToPrivateSpace={dropFilesToPrivateSpace}
+            onPendingPrivateSpaceDroppedFilesConsumed={
+              consumePendingPrivateSpaceDroppedFiles
+            }
+            onOpenDirectSpace={openDirectSpaceForUser}
+            onCreatePrivateSpace={async (memberUserIds, title) => {
+              const space = await createPrivateSpace(memberUserIds, title)
+              if (space) openPrivateSpace(space.spaceId)
+              return space
+            }}
+            onStartDirectVoice={startDirectVoiceForUser}
+            onLoadInviteTargetServers={loadInviteTargetServersForUser}
+            onClosePrivateSpace={async (spaceId) => {
+              await closePrivateSpace(spaceId)
+              if (activePrivateSpaceId === spaceId) {
+                showProfileWorkspace()
+              }
+            }}
+            onClearPrivateSpaceHistory={clearPrivateSpaceHistory}
+            onAddPrivateSpaceMember={(spaceId, userId) => {
+              return addPrivateSpaceMember(spaceId, userId).then((space) => {
+                if (space) openPrivateSpace(space.spaceId)
+                return space
+              })
+            }}
+            onUpdatePrivateSpacePersonalSettings={updatePersonalSettings}
+            onUploadPrivateSpacePersonalAvatar={uploadPersonalAvatar}
+            onUpdateGroupPrivateSpaceSettings={updateGroupSettings}
+            onMarkPrivateSpaceRead={markPrivateSpaceRead}
+            onMarkAllPrivateSpacesRead={markAllPrivateSpacesRead}
+            onChangeVoiceAudioSettings={updateVoiceAudioSettings}
+            onCreateDirectServerInvite={(serverId, targetUserId) =>
+              void createDirectServerInviteForUser(serverId, targetUserId)
+            }
+            onRemoveFriend={(userId) => void removeFriend(userId)}
+            onCreateServer={openCreateServerDialog}
+            onServerJoined={(membership) => {
+              setServerMemberships((current) => [
+                membership,
+                ...current.filter(
+                  (item) => item.serverId !== membership.serverId,
+                ),
+              ])
+              void openServerWorkspace(membership)
+            }}
+            onOpenServer={(membership) => void openServerWorkspace(membership)}
+            onAcceptDirectServerInvite={(inviteId) =>
+              void acceptDirectServerInvite(inviteId)
+            }
+            onDeclineDirectServerInvite={(inviteId) =>
+              void declineDirectServerInvite(inviteId)
+            }
+            onFriendSearchQueryChange={setSearchQuery}
+            onSendFriendRequest={(userId) => void sendFriendRequest(userId)}
+            onAcceptFriendRequest={(requestId) =>
+              void acceptFriendRequest(requestId)
+            }
+            onDeclineFriendRequest={(requestId) =>
+              void declineFriendRequest(requestId)
+            }
+            onCancelFriendRequest={(requestId) =>
+              void cancelFriendRequest(requestId)
+            }
+            onStartHubResize={(event) => startPaneResize('hub', event)}
+            onStartPrivateInfoResize={(event) =>
+              startPaneResize('members', event)
+            }
+            onReturnToDirectMessages={closeMobilePrivateChat}
+            formatDate={formatDate}
+          />
+          </SystemErrorBoundary>
+        )}
+        {activeWorkspace === 'server' && selectedServerMembership && (
+          <SystemErrorBoundary
+            boundaryName="server-workspace"
+            resetKeys={[selectedServerMembership.serverId]}
+          >
+            <Suspense fallback={null}>
+              <ServerWorkspace
+              key={selectedServerMembership.serverId}
+              accessToken={session.accessToken}
+              selectedServerMembership={selectedServerMembership}
+              serverMemberships={serverMemberships}
+              user={user}
+              serverMembers={serverMembers}
+              onResolveServerMember={(member) =>
+                setServerMembers((current) => {
+                  const existingIndex = current.findIndex(
+                    (candidate) => candidate.id === member.id,
+                  )
+                  if (existingIndex < 0) {
+                    return [...current, member]
+                  }
+
+                  return current.map((candidate, index) =>
+                    index === existingIndex ? member : candidate,
+                  )
+                })
+              }
+              friends={friends}
+              serverInvites={serverInvites}
+              serverRoles={serverRoles}
+              serverSpaces={serverSpaces}
+              spacePermissions={spacePermissions}
+              serverPermissions={serverPermissions}
+              serverEffectivePermissions={serverEffectivePermissions}
+              memberRoles={memberRoles}
+              serverAuditLogs={serverAuditLogs}
+              serverBans={serverBans}
+              serverJoinRequests={serverJoinRequests}
+              serverJoinRequestTotalCount={serverJoinRequestTotalCount}
+              serverJoinRequestError={serverJoinRequestError}
+              hasMoreServerJoinRequests={hasMoreServerJoinRequests}
+              serverCoreTab={serverCoreTab}
+              friendUserIds={friendUserIds}
+              pendingOutgoingUserIds={pendingOutgoingUserIds}
+              isMemberPanelCompact={isMemberPanelCompact}
+              isLoadingServerMembers={isLoadingServerMembers}
+              isLoadingMoreServerMembers={isLoadingMoreServerMembers}
+              hasMoreServerMembers={hasMoreServerMembers}
+              serverMemberCount={serverMemberCount}
+              isLoadingGovernance={isLoadingGovernance}
+              isLoadingMoreServerJoinRequests={
+                isLoadingMoreServerJoinRequests
+              }
+              isLoadingSpaces={isLoadingSpaces}
+              isMutatingServerMember={isMutatingServerMember}
+              isMutatingGovernance={isMutatingGovernance}
+              isMutatingSpaces={isMutatingSpaces}
+              isMutatingFriends={isMutatingFriends}
+              defaultAttachmentExpanded={
+                profileSettings.expandMessageAttachmentsByDefault
+              }
+              loadExternalMediaPreviews={profileSettings.loadExternalMediaPreviews}
+              horizontalVideoCardSize={profileSettings.horizontalVideoCardSize}
+              verticalVideoCardSize={profileSettings.verticalVideoCardSize}
+              messageDisplayFormat={profileSettings.serverMessageDisplayFormat}
+              messageBubbleAlignment={
+                profileSettings.serverMessageBubbleAlignment
+              }
+              messageBubbleWidth={profileSettings.serverMessageBubbleWidth}
+              isSettingsOpen={isServerSettingsMenuOpen}
+              voice={voice}
+              voiceAudioSettingsByUserId={
+                voiceAudioSettingsByUserId
+              }
+              voicePlaybackStatesByParticipantId={
+                voicePlaybackStatesByParticipantId
+              }
+              onStartPaneResize={startPaneResize}
+              onChangeVoiceAudioSettings={updateVoiceAudioSettings}
+              onOpenSettings={openServerSettingsMenu}
+              onOpenServerCoreTab={openServerCoreTab}
+              onLoadServerInvites={async () => {
+                await loadServerGovernance('invites')
+              }}
+              onCreateServerInvite={createServerInvite}
+              onUpdateServer={updateServerSettings}
+              onRevokeServerInvite={(inviteId) => void revokeServerInvite(inviteId)}
+              onLoadMoreServerJoinRequests={() =>
+                void loadMoreServerJoinRequests()
+              }
+              onApproveServerJoinRequest={(requestId) =>
+                void approveServerJoinRequest(requestId)
+              }
+              onDeclineServerJoinRequest={(requestId) =>
+                void declineServerJoinRequest(requestId)
+              }
+              onReloadServerRoles={() => reloadServerRoles(true)}
+              onReloadServerMembers={() =>
+                loadServerMembers(selectedServerMembership)
+              }
+              onCreateSpace={createSpace}
+              onUpdateSpace={updateSpace}
+              onDeleteSpace={deleteSpace}
+              onReorderSpaces={reorderSpaces}
+              onUpsertSpacePermissionOverride={upsertSpacePermissionOverride}
+              onDeleteSpacePermissionOverride={deleteSpacePermissionOverride}
+              onRemoveServerMember={(member) => void removeServerMember(member)}
+              onLoadMoreServerMembers={loadMoreServerMembers}
+              onBanServerMember={(member, reason) =>
+                void banServerMember(member, reason)
+              }
+              onUnbanServerMember={(memberId) =>
+                void unbanServerMember(memberId)
+              }
+              onTransferServerOwnership={(member) =>
+                void transferServerOwnership(member)
+              }
+              onAssignServerRole={(memberId, roleId) =>
+                void assignServerRole(memberId, roleId)
+              }
+              onSendFriendRequest={(userId) => void sendFriendRequest(userId)}
+              onRemoveFriend={(userId) => void removeFriend(userId)}
+              onStartDirectVoice={startDirectVoiceForUser}
+              onOpenDirectSpace={openDirectSpaceForUser}
+              onCloseSettings={closeServerSettingsMenu}
+            />
+            </Suspense>
+          </SystemErrorBoundary>
+        )}
+        </WorkspaceTransitionSurface>
+      </section>
+
+      <HubVoiceDock
+        avatarSrc={avatarSrc}
+        isServerPanelOpen={isServerPanelOpen}
+        isServerPanelPinned={profileSettings.isServerRailPinned}
+        onOpenSettings={openProfileSettings}
+        onOpenActiveVoiceSpace={openConnectedVoiceWorkspace}
+        onToggleServerPanel={toggleServerPanel}
+        serverTitle={connectedVoiceServerTitle}
+        user={user}
+        voice={voice}
+      />
+      <HubVoiceAudioSinks
+        audioSettingsByUserId={voiceAudioSettingsByUserId}
+        onPlaybackStateChange={updateVoicePlaybackState}
+        voice={voice}
+      />
+
+      {mobileTab === 'menu' && (
+        <div className={styles.mobileMenuSurface}>
+          <MobileMenuTab onOpenSystemSettings={openProfileSettings} />
+        </div>
+      )}
+
+      <MobileHubNav
+        activeTab={mobileTab}
+        messagesBadge={incomingRequests.length}
+        onOpenServers={openMobileServers}
+        onOpenMessages={openMobileMessages}
+        onOpenProfile={openMobileProfile}
+        onOpenMenu={openMobileMenu}
+      />
+
+      {serverContextMenu && (
+        <ContextMenu
+          x={serverContextMenu.x}
+          y={serverContextMenu.y}
+          items={serverContextItems}
+          onClose={closeServerContextMenu}
+        />
+      )}
+
+      <HubPageDialogs
+        accessToken={session.accessToken}
+        currentDeviceSessionId={session.deviceSessionId}
+        user={user}
+        serverMemberships={serverMemberships}
+        avatarSort={avatarSort}
+        defaultProfileSettings={defaultProfileSettings}
+        settingsDraft={settingsDraft}
+        settingsNavigationRequest={systemSettingsNavigationRequest}
+        voiceDiagnostics={voice.connectionDiagnostics}
+        voiceNoiseSuppressionTelemetry={voice.noiseSuppressionTelemetry}
+        isProfileSettingsOpen={isProfileSettingsOpen}
+        isSavingProfileSettings={isSavingProfileSettings}
+        onProfileSettingsChange={setSettingsDraft}
+        onProfileSettingsCommit={persistProfileSettings}
+        onProfileIdentityChanged={async () => {
+          await Promise.all([loadCurrentUser(), loadPublicProfile()])
+        }}
+        onProfileSettingsClose={closeProfileSettings}
+        onLogout={logoutAndClearCachedData}
+        avatarState={avatarState}
+        serverDialogState={serverDialogState}
+        onAvatarSortChange={setAvatarSort}
+        formatDate={formatDate}
+      />
+    </main>
+  )
+}
+
+
+
+
+

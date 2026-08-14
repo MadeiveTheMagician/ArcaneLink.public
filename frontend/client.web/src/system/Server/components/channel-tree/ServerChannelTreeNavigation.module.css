@@ -1,0 +1,449 @@
+.active {
+  composes: active from './ServerChannelTreeMobile.module.css';
+}
+
+.mobileSpacesReorderEnabled {
+  composes: mobileSpacesReorderEnabled from './ServerChannelTreeMobile.module.css';
+}
+
+.mobileSpacesPanelHidden {
+  composes: mobileSpacesPanelHidden from './ServerChannelTreeMobile.module.css';
+}
+
+.mobileSpaceVoiceAvatars {
+  composes: mobileSpaceVoiceAvatars from './ServerChannelTreeMobile.module.css';
+}
+
+.mobileSpaceVoiceAvatarStack {
+  composes: mobileSpaceVoiceAvatarStack from './ServerChannelTreeMobile.module.css';
+}
+
+.mobileSpaceChannelCount {
+  composes: mobileSpaceChannelCount from './ServerChannelTreeMobile.module.css';
+}
+
+.spacePanel {
+  composes: spacePanel from './ServerChannelTreeMobile.module.css';
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) var(--server-composer-height);
+  min-height: 0;
+  height: 100%;
+  gap: 10px;
+  border: 0;
+  border-right: 1px solid var(--theme-section-border);
+  border-radius: 0;
+  padding:
+    var(--server-panel-padding)
+    var(--server-panel-padding)
+    var(--profile-voice-dock-reserve);
+  background:
+    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-frame-bg-strong));
+  box-shadow: none;
+}
+
+.spacePanel:global(.ui-panel) {
+  border: 0;
+  border-right: 1px solid var(--theme-section-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.mobileSpaceChannelSubtitle,
+.mobileSpaceChannelMeta {
+  display: none;
+}
+
+.mobileSpaceChannelSubtitle {
+  composes: mobileSpaceChannelSubtitle from './ServerChannelTreeMobile.module.css';
+}
+
+.mobileSpaceChannelMeta {
+  composes: mobileSpaceChannelMeta from './ServerChannelTreeMobile.module.css';
+}
+
+.mobileSpaceChannelText {
+  composes: mobileSpaceChannelText from './ServerChannelTreeMobile.module.css';
+  display: grid;
+  min-width: 0;
+  place-items: initial;
+  justify-items: start;
+  color: inherit;
+  font-size: inherit;
+  text-transform: none;
+}
+
+.mobileSpaceChannelIcon {
+  composes: mobileSpaceChannelIcon from './ServerChannelTreeMobile.module.css';
+  min-width: 0;
+}
+
+.spacePanel nav button .mobileSpaceChannelText {
+  display: grid;
+  place-items: initial;
+  justify-items: start;
+  color: inherit;
+  font-size: inherit;
+  text-transform: none;
+}
+
+.spacePanel nav {
+  position: relative;
+  gap: 2px;
+}
+
+.spacePanel nav button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 8px;
+  color: var(--color-text);
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+.spaceLeaf > button {
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+}
+
+.voiceSpaceWithChat {
+  grid-template-columns: minmax(0, 1fr) 27px;
+  column-gap: 3px;
+}
+
+.voiceSpaceWithChat > button:first-child {
+  grid-column: 1;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.voiceSpaceWithChat > .voiceChatButton {
+  position: relative;
+  z-index: 3;
+  grid-column: 2;
+  grid-row: 1;
+  display: inline-flex;
+  width: 27px;
+  min-height: 24px;
+  align-self: center;
+  align-items: center;
+  justify-self: end;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid transparent;
+  padding: 0 4px;
+  color: var(--theme-text-faint);
+  opacity: 1;
+  transition:
+    opacity 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.voiceSpaceWithChat > .voiceChatButton::before,
+.voiceSpaceWithChat > .voiceChatButton::after {
+  display: none;
+}
+
+.voiceSpaceWithChat > .voiceChatButton:hover,
+.voiceSpaceWithChat > .voiceChatButton:focus-visible,
+.voiceSpaceWithChat > .voiceChatButton[data-open="true"] {
+  border-color: color-mix(in srgb, var(--theme-accent-light), transparent 66%);
+  color: var(--theme-accent-light);
+  background: var(--theme-hover-bg);
+  box-shadow: 0 0 14px var(--theme-glow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .voiceSpaceWithChat > .voiceChatButton {
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .voiceSpaceWithChat:hover > .voiceChatButton,
+  .voiceSpaceWithChat:focus-within > .voiceChatButton {
+    pointer-events: auto;
+    opacity: 1;
+  }
+}
+
+.voiceChatUnread {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  transform: scale(0.78);
+  transform-origin: center;
+}
+
+.spacePanel nav button::before,
+.spacePanel nav button::after {
+  position: absolute;
+  right: 10px;
+  left: 10px;
+  height: 1px;
+  pointer-events: none;
+  content: "";
+  opacity: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--theme-accent), transparent 10%),
+    transparent
+  );
+  box-shadow: 0 0 12px color-mix(in srgb, var(--theme-accent), transparent 58%);
+}
+
+.spacePanel nav button::before {
+  top: 0;
+}
+
+.spacePanel nav button::after {
+  bottom: 0;
+}
+
+.spacePanel nav button:hover,
+.spacePanel nav button.active {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 88%), color-mix(in srgb, var(--theme-accent), transparent 96%)),
+    transparent;
+}
+
+.spacePanel nav button.active::before,
+.spacePanel nav button.active::after {
+  opacity: 1;
+}
+
+.spacePanel nav button.active::before {
+  left: 5px;
+  right: auto;
+  top: 7px;
+  bottom: 7px;
+  width: 4px;
+  height: auto;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffffff, var(--theme-accent-light));
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--theme-accent-light), transparent 18%),
+    0 0 18px color-mix(in srgb, var(--theme-accent), transparent 34%);
+}
+
+.spacePanel nav button.active::after {
+  opacity: 0;
+}
+
+.spacePanel nav button:hover::before,
+.spacePanel nav button:hover::after {
+  opacity: 0.55;
+}
+
+.spacePanel nav button.active:hover::before {
+  opacity: 1;
+}
+
+.spacePanel nav button.active:hover::after {
+  opacity: 0;
+}
+
+.spacePanel nav button span {
+  display: grid;
+  place-items: center;
+  color: var(--theme-text-faint);
+  font-size: 15px;
+  text-transform: none;
+}
+
+.spacePanel nav button .mobileSpaceChannelText {
+  display: grid;
+  place-items: initial;
+  justify-items: start;
+  color: inherit;
+  font-size: inherit;
+  text-transform: none;
+}
+
+.spacePanel nav button .mobileSpaceChannelSubtitle,
+.spacePanel nav button .mobileSpaceChannelMeta {
+  display: none;
+}
+
+.spacePanel nav button .spaceUnreadMeta {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 6px;
+}
+
+.voiceSpaceIcon {
+  composes: voiceSpaceIcon from './ServerChannelTreeMobile.module.css';
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+}
+
+.spacePanel nav button strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--theme-text-soft);
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spacePanel nav button .mobileSpaceChannelText > strong {
+  width: 100%;
+  max-width: 100%;
+}
+
+.voiceChannelMembers {
+  composes: voiceChannelMembers from './ServerChannelTreeMobile.module.css';
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 1px;
+  margin: 0 0 1px 28px;
+  padding: 1px 4px 0 0;
+}
+
+.voiceChannelMembers > div {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  min-height: 28px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 2px 7px;
+  color: rgba(190, 200, 242, 0.78);
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.voiceChannelLocalStatuses {
+  justify-self: end;
+}
+
+.voiceChannelMember:hover,
+.voiceChannelMember:focus-visible {
+  border-color: color-mix(in srgb, var(--theme-accent-light), transparent 78%);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 86%), color-mix(in srgb, var(--theme-accent), transparent 96%)),
+    transparent;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 88%),
+    0 0 16px color-mix(in srgb, var(--theme-accent), transparent 86%);
+}
+
+.voiceChannelMembers > div[draggable="true"] {
+  cursor: grab;
+}
+
+.voiceChannelMembers > div[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.voiceChannelMembers > div.voiceChannelMemberSpeaking {
+  border-color: color-mix(in srgb, var(--color-success), transparent 62%);
+  background: color-mix(in srgb, var(--color-success), transparent 92%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-success), transparent 86%),
+    0 0 14px color-mix(in srgb, var(--color-success), transparent 78%);
+}
+
+.voiceChannelAvatar {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(121, 183, 255, 0.24);
+  border-radius: 6px;
+  color: rgba(235, 239, 255, 0.92);
+  background: rgba(18, 28, 58, 0.88);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.mobileSpaceVoiceAvatar {
+  composes: mobileSpaceVoiceAvatar from './ServerChannelTreeMobile.module.css';
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 54%);
+  border-radius: 999px;
+  color: rgba(235, 239, 255, 0.94);
+  background: rgba(18, 28, 58, 0.92);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.voiceChannelMembers strong {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(222, 228, 255, 0.9);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spacePanel p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.spaceCategory {
+  composes: spaceCategory from './ServerChannelTreeCategories.module.css';
+}
+
+.spaceLeaf {
+  composes: spaceLeaf from './ServerChannelTreeCategories.module.css';
+}
+
+.spaceCategoryButton {
+  composes: spaceCategoryButton from './ServerChannelTreeCategories.module.css';
+}
+
+.spaceCategoryChildren {
+  composes: spaceCategoryChildren from './ServerChannelTreeCategories.module.css';
+}
+
+.spaceCategoryChildrenInner {
+  composes: spaceCategoryChildrenInner from './ServerChannelTreeCategories.module.css';
+}
+
+@media (max-width: 760px) {
+  :global(.profile-page.is-server-mode) .voiceSpaceWithChat {
+    grid-template-columns: minmax(0, 1fr) 42px;
+    column-gap: 8px;
+  }
+
+  :global(.profile-page.is-server-mode) .voiceSpaceWithChat > button:first-child {
+    padding-right: 12px;
+  }
+
+  :global(.profile-page.is-server-mode) .voiceSpaceWithChat > .voiceChatButton {
+    width: 42px;
+    min-height: 42px;
+    grid-template-columns: 1fr;
+    place-items: center;
+    border-radius: 9px;
+    padding: 0;
+  }
+}

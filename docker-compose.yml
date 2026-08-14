@@ -1,0 +1,155 @@
+x-backend-environment: &backend-environment
+  ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+  ASPNETCORE_URLS: http://+:8080
+  ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-arcanelink};Username=${POSTGRES_USER:-arcanelink};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  JwtSettings__SecretKey: ${JWT_SECRET:?Set JWT_SECRET in .env}
+  AllowedHosts: "${ALLOWED_HOSTS:-localhost;127.0.0.1};localhost;127.0.0.1"
+  DataProtection__KeysPath: ${DATA_PROTECTION_KEYS_PATH:-/app/data-protection-keys}
+  ForwardedHeaders__KnownNetworks__0: ${FORWARDED_HEADERS_KNOWN_NETWORK:-172.28.250.0/24}
+  AssetCleanup__Enabled: ${ASSET_CLEANUP_ENABLED:-true}
+  AssetCleanup__DryRun: ${ASSET_CLEANUP_DRY_RUN:-true}
+  AssetCleanup__RetentionDays: ${ASSET_CLEANUP_RETENTION_DAYS:-7}
+  AssetCleanup__IntervalMinutes: ${ASSET_CLEANUP_INTERVAL_MINUTES:-60}
+  AssetCleanup__BatchSize: ${ASSET_CLEANUP_BATCH_SIZE:-100}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-arcanelink}
+      POSTGRES_USER: ${POSTGRES_USER:-arcanelink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "${POSTGRES_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - core
+    logging: &service-logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  migrations:
+    build:
+      context: .
+      dockerfile: backend/ArcaneLink/Dockerfile
+      target: migrations
+    restart: "no"
+    environment: *backend-environment
+    command:
+      - database
+      - update
+      - --project
+      - backend/ArcaneLink/ArcaneLink.csproj
+      - --startup-project
+      - backend/ArcaneLink/ArcaneLink.csproj
+      - --configuration
+      - Release
+      - --no-build
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - core
+    logging: *service-logging
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/ArcaneLink/Dockerfile
+      target: final
+    restart: unless-stopped
+    environment: *backend-environment
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    expose:
+      - "8080"
+    volumes:
+      - asset_storage:/app/storage
+      - data_protection_keys:/app/data-protection-keys
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8080/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    networks:
+      - core
+    logging: *service-logging
+
+  backend-tests:
+    build:
+      context: .
+      dockerfile: backend/ArcaneLink/Dockerfile
+      target: tests
+    profiles: ["tools"]
+    environment:
+      Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: "Warning"
+    command: ["/bin/true"]
+
+  frontend-tests:
+    build:
+      context: .
+      dockerfile: infrastructure/nginx/Dockerfile
+      target: web-tests
+    profiles: ["tools"]
+    environment:
+      CI: "1"
+    command: ["/bin/true"]
+
+  nginx:
+    build:
+      context: .
+      dockerfile: infrastructure/nginx/Dockerfile
+    restart: unless-stopped
+    environment:
+      ARCANELINK_SERVER_NAME: ${ARCANELINK_SERVER_NAME:-localhost}
+      ARCANELINK_TLS_MODE: ${ARCANELINK_TLS_MODE:-off}
+      ARCANELINK_MAX_BODY_SIZE: ${ARCANELINK_MAX_BODY_SIZE:-12m}
+      ARCANELINK_TLS_CERTIFICATE: ${ARCANELINK_TLS_CERTIFICATE:-/etc/letsencrypt/live/arcane-link.ru/fullchain.pem}
+      ARCANELINK_TLS_CERTIFICATE_KEY: ${ARCANELINK_TLS_CERTIFICATE_KEY:-/etc/letsencrypt/live/arcane-link.ru/privkey.pem}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${HTTP_BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-8080}:80"
+      - "${HTTPS_BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-8443}:443"
+    volumes:
+      - type: bind
+        source: ${TLS_CERTIFICATES_DIR:-./infrastructure/nginx/certs}
+        target: /etc/letsencrypt
+        read_only: true
+    networks:
+      - edge
+      - core
+    logging: *service-logging
+
+volumes:
+  postgres_data:
+  asset_storage:
+  data_protection_keys:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${ARCANELINK_DEFAULT_SUBNET:-172.28.248.0/24}
+  edge:
+    ipam:
+      config:
+        - subnet: ${ARCANELINK_EDGE_SUBNET:-172.28.249.0/24}
+  core:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${ARCANELINK_CORE_SUBNET:-172.28.250.0/24}

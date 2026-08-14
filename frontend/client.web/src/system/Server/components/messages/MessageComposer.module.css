@@ -1,0 +1,306 @@
+.composerContext {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--theme-border-soft);
+  padding: 8px 20px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 86%), transparent 62%),
+    var(--theme-control-bg-strong);
+}
+
+.composerContext div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.composerContext strong,
+.composerContext span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composerContext strong {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.composerContext span {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.composerContext button {
+  display: grid;
+  width: 28px;
+  min-height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  color: var(--theme-text-soft);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.composerContext button:hover {
+  color: var(--color-text);
+  background: var(--theme-hover-bg);
+}
+
+.composerRestriction {
+  margin: 0;
+  border-top: 1px solid var(--theme-border-soft);
+  padding: 8px 20px;
+  color: var(--theme-text-soft);
+  background: var(--theme-control-bg-strong);
+  font-size: 12px;
+}
+
+.composerAttachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--theme-border-soft);
+  padding: 9px 20px;
+  background: var(--theme-control-bg-strong);
+}
+
+.composerAttachments > span {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 22px;
+  align-items: center;
+  gap: 8px;
+  max-width: min(100%, 360px);
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 6px 7px 6px 10px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+}
+
+.composerAttachments strong,
+.composerAttachments small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composerAttachments strong {
+  font-size: 12px;
+}
+
+.composerAttachments small {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.composerAttachments button {
+  display: grid;
+  width: 22px;
+  min-height: 22px;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  color: var(--theme-text-soft);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.composerAttachments button:not(:disabled):hover {
+  color: var(--color-text);
+  background: var(--theme-hover-bg);
+}
+
+.fileInput {
+  display: none;
+}
+
+.composerInputRegion {
+  position: relative;
+  z-index: 5;
+  min-width: 0;
+}
+
+.textComposer {
+  display: grid;
+  box-sizing: border-box;
+  grid-template-columns: 26px minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 7px;
+  min-height: var(--server-composer-height);
+  height: auto;
+  margin: 0 14px 8px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 48%);
+  border-radius: 8px;
+  padding: var(--server-composer-padding-start) 8px
+    var(--server-composer-padding-end);
+  background: var(--theme-control-bg);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-accent), transparent 90%),
+    0 0 14px color-mix(in srgb, var(--theme-accent), transparent 92%),
+    0 6px 14px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  backdrop-filter: none;
+}
+
+.textComposerWithReply {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.messageInputShell {
+  position: relative;
+  display: block;
+  min-width: 0;
+  align-self: center;
+  font-family: inherit;
+  font-size: calc(14px * var(--profile-font-scale));
+  line-height: 1.4;
+}
+
+.attachButton {
+  position: relative;
+  z-index: 1;
+}
+
+.textComposer button,
+.textComposer textarea {
+  border: 0;
+  border-radius: 0;
+  color: var(--color-text);
+  background: transparent;
+  outline: none;
+}
+
+.textComposer button {
+  display: grid;
+  width: 26px;
+  min-height: var(--server-composer-control-height);
+  place-items: center;
+  padding: 0;
+  color: rgba(166, 178, 218, 0.82);
+}
+
+.textComposer .attachButton:not(:disabled):hover {
+  color: var(--color-text);
+  background: transparent;
+  filter:
+    drop-shadow(0 0 5px var(--theme-glow-strong))
+    drop-shadow(0 0 14px var(--theme-glow));
+}
+
+.textComposer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.textComposer textarea[name="messageBody"] {
+  position: relative;
+  z-index: 1;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--server-composer-control-height);
+  min-height: var(--server-composer-control-height);
+  resize: none;
+  align-self: center;
+  padding-block: max(
+    0px,
+    calc((var(--server-composer-control-height) - 1.4em) / 2)
+  );
+  padding-inline: 4px;
+  border-color: transparent;
+  appearance: none;
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--color-text);
+  font: inherit;
+  line-height: 1.4;
+  overflow-y: hidden;
+}
+
+.textComposer textarea[name="messageBody"]::placeholder {
+  color: rgba(166, 178, 218, 0.72);
+}
+
+.textComposer textarea[name="messageBody"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.sendButton {
+  position: relative;
+  justify-self: end;
+  color: var(--theme-accent-light);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.86);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    color 140ms ease;
+}
+
+.sendButtonVisible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.sendButton::before {
+  content: none;
+}
+
+.sendButtonIcon {
+  display: block;
+  transition: transform 160ms ease;
+}
+
+.sendButton:not(:disabled):hover {
+  color: rgba(226, 218, 255, 1);
+  background: transparent;
+  filter:
+    drop-shadow(0 0 5px var(--theme-glow-strong))
+    drop-shadow(0 0 14px var(--theme-glow));
+}
+
+.sendButton:not(:disabled):hover .sendButtonIcon {
+  transform: translate(1px, -1px);
+}
+
+.sendButton:disabled {
+  opacity: 0;
+}
+
+@media (min-width: 761px) {
+  .textComposer {
+    align-items: end;
+  }
+
+  .textComposer textarea[name="messageBody"] {
+    align-self: end;
+  }
+
+  .messageInputShell {
+    align-self: end;
+  }
+}
+
+@media (max-width: 760px) {
+  .textComposer {
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    gap: 8px;
+  }
+
+  .textComposer button {
+    width: 32px;
+  }
+}

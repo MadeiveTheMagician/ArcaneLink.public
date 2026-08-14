@@ -1,0 +1,141 @@
+.group {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.stats article {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 62px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--theme-surface-raised), transparent 8%);
+}
+
+.stats article > div {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 5px;
+}
+
+.personRow {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--theme-border-soft);
+  background: color-mix(in srgb, var(--theme-surface-raised), transparent 8%);
+}
+
+.personRow {
+  grid-template-columns: 50px minmax(136px, 1fr) minmax(88px, 0.34fr) minmax(190px, 1.15fr) auto;
+  gap: 10px;
+  min-height: 68px;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.searchPersonRow {
+  grid-template-columns: 50px minmax(180px, 1fr) minmax(88px, 0.34fr) minmax(132px, 164px);
+}
+
+.avatar,
+.requestAvatar {
+  border-radius: 12px;
+}
+
+.personIdentity,
+.requestRow > div:not(.requestActions) {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.personActions,
+.requestActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.personActions > span,
+.requestActions > span {
+  min-width: 0;
+  border-radius: 7px;
+}
+
+.requestList {
+  gap: 6px;
+}
+
+.requestRow {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 3px 0;
+}
+
+.requestAvatar {
+  border-radius: 10px;
+}
+
+@media (max-height: 900px) and (min-width: 1101px) {
+  .stats article {
+    min-height: 56px;
+    padding: 8px 11px;
+  }
+
+  .requestRow {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    min-height: 40px;
+    padding: 1px 0;
+  }
+
+  .requestAvatar {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 9px;
+  }
+}
+
+@container community (max-width: 850px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .personRow,
+  .searchPersonRow {
+    grid-template-columns: 50px minmax(0, 1fr) auto;
+  }
+
+  .personStatus,
+  .personServer {
+    display: none;
+  }
+}
+
+@container community (max-width: 760px) {
+  .personRow,
+  .searchPersonRow {
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+  }
+
+  .avatar {
+    width: 46px !important;
+    height: 46px !important;
+  }
+}

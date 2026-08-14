@@ -1,0 +1,6 @@
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header X-Frame-Options "DENY" always;
+add_header Permissions-Policy "autoplay=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\" \"https://player.twitch.tv\"), camera=(self), display-capture=(self), encrypted-media=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), fullscreen=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\" \"https://player.twitch.tv\" \"https://clips.twitch.tv\"), geolocation=(), microphone=(self), payment=(), picture-in-picture=(self \"https://www.youtube.com\" \"https://www.youtube-nocookie.com\"), usb=()" always;
+add_header Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; media-src 'self' blob: https:; connect-src 'self' https: wss:; worker-src 'self' blob:; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://clips.twitch.tv; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;

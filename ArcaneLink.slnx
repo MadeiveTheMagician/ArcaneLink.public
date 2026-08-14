@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="backend/ArcaneLink/ArcaneLink.csproj" />
+  <Project Path="backend/ArcaneLink.Tests/ArcaneLink.Tests.csproj" />
+</Solution>

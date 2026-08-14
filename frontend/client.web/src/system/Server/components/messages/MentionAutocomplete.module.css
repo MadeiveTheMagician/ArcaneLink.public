@@ -1,0 +1,137 @@
+.menu {
+  position: absolute;
+  z-index: 28;
+  right: 14px;
+  bottom: calc(100% + 6px);
+  left: 14px;
+  max-height: min(360px, 46vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid color-mix(in srgb, var(--theme-accent), transparent 65%);
+  border-radius: 12px;
+  padding: 7px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-accent), transparent 91%), transparent 58%),
+    color-mix(in srgb, var(--theme-control-bg-strong), #050817 10%);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.42),
+    0 0 24px color-mix(in srgb, var(--theme-accent), transparent 88%);
+  backdrop-filter: blur(18px);
+}
+
+.groupLabel {
+  display: block;
+  padding: 4px 8px 5px;
+  color: var(--theme-text-faint);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.option {
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 7px 9px;
+  color: var(--color-text);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+
+.option:hover,
+.optionActive {
+  border-color: color-mix(in srgb, var(--theme-accent-light), transparent 72%);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 78%), transparent 90%),
+    var(--theme-hover-bg);
+}
+
+.optionIcon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 72%);
+  border-radius: 9px;
+  color: var(--theme-accent-light);
+  background: color-mix(in srgb, var(--theme-accent), transparent 86%);
+}
+
+.avatarImage {
+  grid-area: 1 / 1;
+  border-radius: inherit;
+}
+
+.option[data-mention-kind="everyone"] .optionIcon {
+  color: #ffe1a6;
+  background: rgba(180, 111, 24, 0.22);
+}
+
+.optionText {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.optionText strong,
+.optionText small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionText strong {
+  font-size: 13px;
+}
+
+.optionText small {
+  color: var(--theme-text-soft);
+  font-size: 11px;
+}
+
+.kindBadge {
+  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 66%);
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: var(--theme-accent-light);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.roleDivider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 4px 3px;
+  color: var(--theme-text-faint);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.roleDivider::before,
+.roleDivider::after {
+  height: 1px;
+  content: "";
+  background: var(--theme-border-soft);
+}
+
+@media (max-width: 760px) {
+  .menu {
+    right: 8px;
+    left: 8px;
+    max-height: 40vh;
+  }
+}

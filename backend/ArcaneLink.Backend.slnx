@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ArcaneLink/ArcaneLink.csproj" />
+  <Project Path="ArcaneLink.Tests/ArcaneLink.Tests.csproj" />
+  <Project Path="tools/TestDataSeeder/TestDataSeeder.csproj" />
+</Solution>

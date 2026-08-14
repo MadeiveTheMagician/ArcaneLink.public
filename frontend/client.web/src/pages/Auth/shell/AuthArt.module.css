@@ -1,0 +1,61 @@
+.authArtLayer {
+  position: absolute;
+  z-index: 0;
+  left: var(--auth-art-left);
+  bottom: var(--auth-art-bottom);
+  height: var(--auth-art-height);
+  aspect-ratio: 16 / 9;
+  pointer-events: none;
+  background-image: var(--auth-art);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: saturate(0.92) contrast(0.96);
+  opacity: 0.96;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    #000 0%,
+    #000 58%,
+    rgba(0, 0, 0, 0.72) 70%,
+    rgba(0, 0, 0, 0.18) 84%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    #000 0%,
+    #000 58%,
+    rgba(0, 0, 0, 0.72) 70%,
+    rgba(0, 0, 0, 0.18) 84%,
+    transparent 100%
+  );
+}
+
+@media (max-width: 620px) {
+  .authArtLayer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: auto;
+    width: 100%;
+    height: var(--auth-art-height);
+    aspect-ratio: auto;
+    background-position: center top;
+    background-size: cover;
+    filter: saturate(0.96) contrast(0.98);
+    opacity: 0.94;
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      #000 0%,
+      #000 58%,
+      rgba(0, 0, 0, 0.72) 75%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      180deg,
+      #000 0%,
+      #000 58%,
+      rgba(0, 0, 0, 0.72) 75%,
+      transparent 100%
+    );
+  }
+}

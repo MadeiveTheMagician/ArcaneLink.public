@@ -1,0 +1,39 @@
+.surface {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.entering [data-workspace-transition-content="true"] {
+  will-change: opacity, transform;
+  animation: workspaceSurfaceEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes workspaceSurfaceEnter {
+  from {
+    opacity: 0.86;
+    transform: translateY(5px) scale(0.998);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 760px) {
+  .entering [data-workspace-transition-content="true"] {
+    will-change: auto;
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entering [data-workspace-transition-content="true"] {
+    will-change: auto;
+    animation: none;
+  }
+}

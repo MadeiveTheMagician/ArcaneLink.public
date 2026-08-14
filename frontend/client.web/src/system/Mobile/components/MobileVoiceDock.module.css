@@ -1,0 +1,260 @@
+.dock,
+.collapsedDock {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .dock {
+    position: fixed;
+    right: 18px;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 8px);
+    left: 18px;
+    z-index: 79;
+    display: grid;
+    box-sizing: border-box;
+    gap: 8px;
+    min-height: 116px;
+    border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 46%);
+    border-radius: 10px;
+    padding: 8px 10px;
+    background:
+      radial-gradient(circle at 22% 0%, color-mix(in srgb, var(--theme-accent), transparent 82%), transparent 42%),
+      linear-gradient(180deg, #0d1737 0%, #071025 100%);
+    box-shadow:
+      0 16px 34px rgba(0, 0, 0, 0.42),
+      0 0 22px color-mix(in srgb, var(--theme-accent), transparent 86%),
+      inset 0 1px 0 rgba(255, 255, 255, 0.035);
+    animation: mobileVoiceDockIn 220ms cubic-bezier(0.2, 0.82, 0.2, 1) both;
+  }
+
+  .closing {
+    pointer-events: none;
+    animation: mobileVoiceDockOut 180ms ease-in both;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 30px;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  .avatar {
+    display: block;
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border: 1px solid var(--theme-border-accent);
+    border-radius: 9px;
+    box-shadow: 0 0 14px var(--theme-glow);
+  }
+
+  .connectionText {
+    display: grid;
+    min-width: 0;
+    justify-items: start;
+    gap: 3px;
+    border: 0;
+    padding: 0;
+    color: var(--color-text);
+    background: transparent;
+    text-align: left;
+  }
+
+  .connectionText strong,
+  .connectionText small {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .connectionText strong {
+    color: color-mix(in srgb, var(--color-success), white 18%);
+    font-size: 12px;
+  }
+
+  .connectionText small {
+    color: var(--theme-text-faint);
+    font-size: 9px;
+  }
+
+  .connectionText:not(:disabled):hover,
+  .connectionText:not(:disabled):focus-visible {
+    background: transparent;
+    filter: drop-shadow(0 0 8px var(--theme-glow-strong));
+  }
+
+  .collapseButton,
+  .connectionActions button,
+  .userControls button {
+    display: grid;
+    place-items: center;
+    border: 0;
+    padding: 0;
+    color: var(--theme-text-soft);
+    background: transparent;
+  }
+
+  .collapseButton {
+    width: 30px;
+    height: 30px;
+  }
+
+  .collapseButton:not(:disabled):hover,
+  .collapseButton:not(:disabled):focus-visible,
+  .connectionActions button:not(:disabled):hover,
+  .connectionActions button:not(:disabled):focus-visible,
+  .userControls button:not(:disabled):hover,
+  .userControls button:not(:disabled):focus-visible {
+    color: var(--color-text);
+    background: transparent;
+    filter:
+      drop-shadow(0 0 5px var(--theme-glow-strong))
+      drop-shadow(0 0 12px var(--theme-glow));
+  }
+
+  .actionRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .connectionActions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(38px, 1fr));
+    gap: 6px;
+  }
+
+  .connectionActions button {
+    min-width: 38px;
+    height: 34px;
+    border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 52%);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--theme-control-bg), transparent 16%);
+  }
+
+  .connectionActions button:not(:disabled):hover,
+  .connectionActions button:not(:disabled):focus-visible {
+    background: color-mix(in srgb, var(--theme-accent), transparent 90%);
+  }
+
+  .leaveButton {
+    color: color-mix(in srgb, var(--color-danger), white 25%) !important;
+  }
+
+  .userName {
+    max-width: 84px;
+    overflow: hidden;
+    color: var(--theme-text-soft);
+    font-size: 10px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .userControls {
+    display: grid;
+    grid-template-columns: repeat(3, 28px);
+    align-items: center;
+    gap: 1px;
+  }
+
+  .userControls button {
+    width: 28px;
+    height: 30px;
+  }
+
+  .active {
+    color: var(--theme-accent-light) !important;
+    filter: drop-shadow(0 0 7px var(--theme-glow-strong));
+  }
+
+  .collapsedDock {
+    position: fixed;
+    right: 18px;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 10px);
+    z-index: 83;
+    display: grid;
+    width: 58px;
+    height: 58px;
+    touch-action: none;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--theme-border-accent), transparent 36%);
+    border-radius: 12px;
+    padding: 4px;
+    color: var(--theme-accent-light);
+    background:
+      linear-gradient(145deg, color-mix(in srgb, var(--theme-accent), transparent 76%), transparent 58%),
+      var(--theme-control-bg-strong);
+    box-shadow:
+      0 14px 30px rgba(0, 0, 0, 0.46),
+      0 0 20px var(--theme-glow-strong);
+    transform:
+      translate3d(
+        var(--mobile-voice-dock-x, 0),
+        var(--mobile-voice-dock-y, 0),
+        0
+      );
+  }
+
+  .collapsedDock img {
+    display: block;
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 9px;
+    pointer-events: none;
+  }
+
+  .collapsedCallIcon {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border: 1px solid var(--theme-border-accent);
+    border-radius: 7px;
+    background: var(--theme-surface-raised);
+    box-shadow: 0 0 12px var(--theme-glow-strong);
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .dock {
+    right: 10px;
+    left: 10px;
+  }
+
+  .userName {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock,
+  .closing {
+    animation: none;
+  }
+}
+
+@keyframes mobileVoiceDockIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+}
+
+@keyframes mobileVoiceDockOut {
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}

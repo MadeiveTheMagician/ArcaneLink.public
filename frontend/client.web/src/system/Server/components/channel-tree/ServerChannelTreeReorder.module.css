@@ -1,0 +1,69 @@
+.spaceRootDropTarget::after {
+  position: relative;
+  display: block;
+  height: 2px;
+  margin: 10px 4px 0;
+  border-radius: 999px;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(90deg, var(--theme-accent-light), var(--theme-accent));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 72%),
+    0 0 14px var(--theme-glow-strong);
+}
+
+.spaceDragSource {
+  opacity: 0.48;
+}
+
+.spaceDropBefore::before,
+.spaceDropAfter::after {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  z-index: 8;
+  height: 2px;
+  border-radius: 999px;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(90deg, var(--theme-accent-light), var(--theme-accent));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 72%),
+    0 0 14px var(--theme-glow-strong);
+}
+
+.spaceDropBefore::before {
+  top: 0;
+}
+
+.spaceDropAfter::after {
+  bottom: -1px;
+}
+
+.spaceDropInside > button {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 80%), color-mix(in srgb, var(--theme-accent), transparent 94%)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 58%),
+    0 0 18px color-mix(in srgb, var(--theme-accent), transparent 78%);
+}
+
+.voiceParticipantDragSource {
+  border-color: color-mix(in srgb, var(--theme-accent-light), transparent 58%) !important;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 78%), color-mix(in srgb, var(--theme-accent), transparent 94%)),
+    transparent !important;
+  opacity: 0.62;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 72%),
+    0 0 18px color-mix(in srgb, var(--theme-accent), transparent 78%);
+}
+
+.voiceParticipantDropTarget > button {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-success), transparent 82%), color-mix(in srgb, var(--theme-accent), transparent 94%)),
+    transparent !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--color-success), transparent 54%),
+    0 0 18px color-mix(in srgb, var(--color-success), transparent 76%);
+}

@@ -1,0 +1,19 @@
+node_modules/
+*.log
+
+# Capacitor copies the canonical web build into Android during `cap sync`.
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/main/res/xml/config.xml
+android/capacitor-cordova-android-plugins/
+
+# Android local and generated state.
+android/.gradle/
+android/**/build/
+android/local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+google-services.json

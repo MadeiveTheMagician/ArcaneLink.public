@@ -1,0 +1,37 @@
+.panel {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--theme-frame-bg);
+}
+
+.panel > section {
+  border: 0;
+}
+
+.closeButton {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 0;
+  color: var(--theme-text-soft);
+  background: transparent;
+  box-shadow: none;
+  transition:
+    border-color 140ms ease,
+    color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.closeButton:hover {
+  border-color: var(--theme-border-accent);
+  color: var(--color-text);
+  background: var(--theme-hover-bg);
+  box-shadow: 0 0 16px var(--theme-glow);
+}

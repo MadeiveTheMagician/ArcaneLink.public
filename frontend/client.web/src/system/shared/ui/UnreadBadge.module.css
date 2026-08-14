@@ -1,0 +1,17 @@
+.badge {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 42%);
+  border-radius: 999px;
+  padding: 0 5px;
+  color: var(--theme-accent-contrast);
+  background: var(--theme-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--theme-accent), transparent 54%);
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}

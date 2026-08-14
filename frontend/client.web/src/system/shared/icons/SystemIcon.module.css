@@ -1,0 +1,152 @@
+.icon {
+  display: inline-block;
+  width: var(--system-icon-size, 20px);
+  height: var(--system-icon-size, 20px);
+  color: var(--system-icon-color, currentColor);
+  filter: var(--system-icon-filter, none);
+  pointer-events: none;
+  vertical-align: middle;
+}
+
+.icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.stroke {
+  fill: none;
+  stroke: var(--system-icon-fill);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  shape-rendering: geometricPrecision;
+  filter: drop-shadow(0 0 0.22px rgb(202 150 255 / 58%));
+}
+
+.fill {
+  fill: var(--system-icon-fill);
+  shape-rendering: geometricPrecision;
+  filter: drop-shadow(0 0 0.22px rgb(202 150 255 / 58%));
+}
+
+.danger .stroke,
+.danger .arcaneStroke {
+  stroke: #ff6478;
+  filter: drop-shadow(0 0 1.6px rgb(255 62 88 / 62%));
+}
+
+.danger .fill,
+.danger .arcaneGlyph {
+  fill: #ff6478;
+  filter: drop-shadow(0 0 1.6px rgb(255 62 88 / 62%));
+}
+
+.danger.softGlow {
+  filter:
+    drop-shadow(0 0 5px rgb(255 62 88 / 58%))
+    drop-shadow(0 0 12px rgb(255 62 88 / 34%));
+}
+
+.arcaneGlyph {
+  fill: var(--system-icon-fill);
+  stroke: rgb(250 242 255 / 92%);
+  stroke-width: 0.42;
+  stroke-linejoin: round;
+  filter: var(--system-icon-glow);
+}
+
+.envelopeSeam {
+  fill: none;
+  stroke: rgb(250 242 255 / 94%);
+  stroke-width: 0.68;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 0.35px rgb(255 255 255 / 72%));
+}
+
+.paperPlaneBody {
+  fill: var(--system-icon-fill);
+  stroke: rgb(250 242 255 / 96%);
+  stroke-width: 0.72;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  shape-rendering: geometricPrecision;
+  filter: var(--system-icon-glow);
+}
+
+.paperPlaneSeam {
+  fill: none;
+  stroke: rgb(255 250 255 / 96%);
+  stroke-width: 1.05;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 0.45px rgb(255 255 255 / 82%));
+}
+
+.phoneCallWaves {
+  fill: none;
+  stroke: rgb(250 242 255 / 96%);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 0.35px rgb(218 168 255 / 72%));
+}
+
+.compact .phoneCallWaves {
+  stroke-width: 1.55;
+  filter: none;
+}
+
+.arcaneStroke {
+  fill: none;
+  stroke: var(--system-icon-fill);
+  stroke-width: 1.18;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: var(--system-icon-glow);
+}
+
+.referenceFriends {
+  fill: var(--system-icon-fill-box);
+  stroke: rgb(250 242 255 / 94%);
+  stroke-width: 0.52;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  shape-rendering: geometricPrecision;
+  filter: drop-shadow(0 0 0.22px rgb(218 168 255 / 52%));
+}
+
+.referenceFriends path {
+  stroke-linejoin: round;
+}
+
+.referenceFriendsBack {
+  opacity: 0.78;
+}
+
+.softGlow {
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, var(--theme-accent), transparent 44%))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--theme-accent-light), transparent 70%));
+}
+
+.compact.softGlow {
+  filter:
+    drop-shadow(0 0 2px color-mix(in srgb, var(--theme-accent), transparent 52%))
+    drop-shadow(0 0 5px color-mix(in srgb, var(--theme-accent-light), transparent 78%));
+}
+
+.compact .paperPlaneBody {
+  stroke-width: 0.62;
+  filter: none;
+}
+
+.compact .paperPlaneSeam {
+  stroke-width: 1.08;
+  filter: none;
+}
+
+.compact .referenceFriends {
+  stroke-width: 0.42;
+  filter: none;
+}

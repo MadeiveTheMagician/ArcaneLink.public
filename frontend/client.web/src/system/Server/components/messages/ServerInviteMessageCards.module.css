@@ -1,0 +1,260 @@
+.list {
+  display: grid;
+  width: min(100%, 520px);
+  justify-items: stretch;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.card {
+  display: grid;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 12px;
+  padding: 15px 17px;
+  color: var(--color-text);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 4%),
+      var(--theme-control-bg-strong)
+    );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 4%),
+    0 10px 24px rgb(0 0 0 / 16%);
+}
+
+.cardIntro,
+.invalidIntro {
+  color: var(--theme-text-faint);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.summary,
+.invalidSummary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+}
+
+.serverBadge,
+.invalidBadge,
+.loadingBadge {
+  position: relative;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 30% 20%, var(--theme-glow-strong), transparent 42%),
+    var(--theme-surface-accent);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.serverBadge img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+}
+
+.details {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+
+.titleLine {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.titleLine strong,
+.invalidTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.activeState {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--color-success), transparent 58%);
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: color-mix(in srgb, var(--color-success), white 18%);
+  background: color-mix(in srgb, var(--color-success), transparent 90%);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.activeState i,
+.onlineDot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 13px;
+  color: var(--theme-text-soft);
+  font-size: 11px;
+}
+
+.metrics span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.metrics svg {
+  flex: 0 0 auto;
+}
+
+.openLink {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--theme-border-soft);
+  padding-top: 10px;
+  color: var(--theme-accent-light);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.openLink:hover,
+.openLink:focus-visible {
+  color: var(--color-text);
+}
+
+.openLink:focus-visible {
+  outline: 2px solid var(--theme-accent-light);
+  outline-offset: 3px;
+}
+
+.invalidCard {
+  border-color: color-mix(in srgb, #ff667f, transparent 76%);
+  background: color-mix(in srgb, var(--theme-control-bg-strong), #5c2732 7%);
+}
+
+.invalidSummary {
+  gap: 18px;
+}
+
+.invalidBadge {
+  border-color: color-mix(in srgb, #ff667f, transparent 68%);
+  color: #ff858f;
+  background: rgb(101 35 48 / 46%);
+}
+
+.invalidTitle {
+  color: #ff737d;
+}
+
+.invalidDescription {
+  color: var(--theme-text-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.loadingCard {
+  pointer-events: none;
+}
+
+.loadingIntro,
+.loadingBadge,
+.loadingLines span {
+  background:
+    linear-gradient(
+      90deg,
+      rgb(255 255 255 / 4%) 0%,
+      rgb(255 255 255 / 9%) 45%,
+      rgb(255 255 255 / 4%) 100%
+    );
+  background-size: 220% 100%;
+  animation: invite-card-shimmer 1.3s linear infinite;
+}
+
+.loadingIntro {
+  width: 154px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.loadingSummary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 13px;
+}
+
+.loadingBadge {
+  border-color: var(--theme-border-soft);
+}
+
+.loadingLines {
+  display: grid;
+  gap: 9px;
+}
+
+.loadingLines span {
+  width: min(100%, 220px);
+  height: 11px;
+  border-radius: 999px;
+}
+
+.loadingLines span:last-child {
+  width: min(72%, 150px);
+  height: 9px;
+}
+
+@keyframes invite-card-shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .list {
+    width: 100%;
+  }
+
+  .card {
+    padding: 13px;
+  }
+
+  .activeState {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingIntro,
+  .loadingBadge,
+  .loadingLines span {
+    animation: none;
+  }
+}

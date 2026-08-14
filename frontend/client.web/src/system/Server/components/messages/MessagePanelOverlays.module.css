@@ -1,0 +1,213 @@
+.attachmentWarningOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(3, 6, 18, 0.72);
+  backdrop-filter: blur(12px);
+  animation: attachmentWarningBackdropIn 180ms ease-out;
+}
+
+.attachmentWarningOverlayClosing {
+  pointer-events: none;
+  animation: attachmentWarningBackdropOut
+    var(--attachment-warning-close-duration, 180ms) ease-in both;
+}
+
+.attachmentWarningDialog {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 440px);
+  border: 1px solid rgba(255, 180, 105, 0.34);
+  border-radius: 8px;
+  padding: 20px;
+  color: rgba(246, 241, 229, 0.96);
+  background: linear-gradient(
+    135deg,
+    rgba(52, 34, 18, 0.94),
+    rgba(10, 15, 34, 0.98)
+  );
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+  animation: attachmentWarningDialogIn 220ms ease-out;
+}
+
+.attachmentWarningDialogClosing {
+  animation: attachmentWarningDialogOut
+    var(--attachment-warning-close-duration, 180ms) ease-in both;
+}
+
+.attachmentWarningDialog h2,
+.attachmentWarningDialog p {
+  margin: 0;
+}
+
+.attachmentWarningDialog h2 {
+  font-size: 18px;
+}
+
+.attachmentWarningDialog p {
+  color: rgba(232, 226, 214, 0.82);
+  line-height: 1.45;
+}
+
+.attachmentWarningDialog dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.attachmentWarningDialog dl div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.attachmentWarningDialog dt,
+.attachmentWarningDialog dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.attachmentWarningDialog dt {
+  color: rgba(255, 204, 142, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.attachmentWarningDialog dd {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachmentWarningActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.attachmentWarningActions button {
+  border: 1px solid rgba(255, 214, 156, 0.3);
+  border-radius: 7px;
+  padding: 8px 13px;
+  color: rgba(246, 241, 229, 0.94);
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.attachmentWarningActions button:last-child {
+  border-color: rgba(255, 180, 105, 0.62);
+  background: rgba(255, 159, 79, 0.2);
+}
+
+.attachmentWarningActions button:disabled {
+  cursor: default;
+  opacity: 0.58;
+}
+
+.attachmentWarningDownload {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.attachmentWarningDownload::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, rgb(255 159 79), transparent 18%),
+    color-mix(in srgb, rgb(255 204 142), transparent 26%)
+  );
+  content: '';
+  transform: scaleX(var(--attachment-warning-progress, 0));
+  transform-origin: left center;
+  transition: transform 110ms linear;
+}
+
+.attachmentWarningDownload:disabled {
+  color: rgba(246, 241, 229, 0.9);
+  cursor: wait;
+  opacity: 1;
+}
+
+.attachmentWarningDownload > span {
+  position: relative;
+  z-index: 1;
+}
+
+.attachmentWarningHint {
+  color: rgba(232, 226, 214, 0.62);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.attachmentWarningHint button {
+  display: inline;
+  border: 0;
+  padding: 0;
+  color: var(--theme-accent-light);
+  background: transparent;
+  font: inherit;
+  font-weight: 850;
+  text-decoration: underline;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--theme-accent-light),
+    transparent 48%
+  );
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.attachmentWarningHint button:hover,
+.attachmentWarningHint button:focus-visible {
+  color: color-mix(in srgb, var(--theme-accent-light), white 24%);
+  text-decoration-color: currentColor;
+}
+
+.attachmentWarningHint button:disabled {
+  cursor: default;
+  opacity: 0.58;
+}
+
+@keyframes attachmentWarningBackdropIn {
+  from { opacity: 0; }
+}
+
+@keyframes attachmentWarningBackdropOut {
+  to {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+}
+
+@keyframes attachmentWarningDialogIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+}
+
+@keyframes attachmentWarningDialogOut {
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attachmentWarningOverlay,
+  .attachmentWarningDialog,
+  .attachmentWarningOverlayClosing,
+  .attachmentWarningDialogClosing {
+    animation: none;
+  }
+
+  .attachmentWarningDownload::before {
+    transition: none;
+  }
+}

@@ -1,0 +1,121 @@
+.dialog {
+  width: min(560px, 96vw);
+  max-height: min(720px, 92vh);
+  overflow: auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--theme-section-border);
+  padding-bottom: 16px;
+}
+
+.header div {
+  display: grid;
+  gap: 6px;
+}
+
+.header h2,
+.header p,
+.success p {
+  margin: 0;
+}
+
+.header p,
+.success p,
+.form label small {
+  color: var(--color-muted);
+}
+
+.header button {
+  display: grid;
+  flex: 0 0 auto;
+  width: 38px;
+  min-height: 38px;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: var(--color-text);
+  background: transparent;
+}
+
+.form,
+.success {
+  display: grid;
+  gap: 16px;
+  padding-top: 18px;
+}
+
+.form blockquote {
+  display: grid;
+  gap: 6px;
+  max-height: 126px;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid var(--theme-section-border);
+  border-left: 3px solid var(--theme-border-accent);
+  border-radius: 7px;
+  padding: 12px;
+  background: var(--theme-control-bg);
+}
+
+.form blockquote span {
+  color: var(--color-muted);
+  white-space: pre-wrap;
+}
+
+.form label {
+  display: grid;
+  gap: 7px;
+  color: var(--color-text);
+  font-weight: 850;
+}
+
+.form select,
+.form textarea {
+  width: 100%;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 7px;
+  padding: 10px 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg-strong);
+  font: inherit;
+}
+
+.form textarea {
+  resize: vertical;
+}
+
+.form label em {
+  justify-self: end;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+}
+
+.success strong {
+  font-size: 20px;
+}
+
+.success button {
+  justify-self: end;
+}
+
+@media (max-width: 560px) {
+  .dialog {
+    padding: 16px;
+  }
+
+  .form button {
+    flex: 1 1 0;
+  }
+}

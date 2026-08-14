@@ -1,0 +1,173 @@
+.privateInfoPanel {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--theme-border-soft);
+  padding: 14px;
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 84%),
+      transparent 38%
+    ),
+    var(--theme-surface-raised);
+}
+
+.compactPrivateInfo {
+  grid-template-rows: minmax(0, 1fr);
+  justify-items: center;
+  gap: 8px;
+  padding: 10px 7px;
+  overflow: hidden;
+}
+
+.compactPrivateInfo .privateSearch,
+.compactPrivateInfo .privateMembers h2,
+.compactPrivateInfo .privateProfileCard .privateName,
+.compactPrivateInfo .privateProfileCard strong,
+.compactPrivateInfo .privateProfileCard small,
+.compactPrivateInfo .privateProfileCard p {
+  display: none;
+}
+
+.compactPrivateInfo .privateMembers,
+.compactPrivateInfo .privateProfileCard {
+  justify-items: center;
+  align-content: start;
+  width: 100%;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.compactMembers {
+  display: grid;
+  width: 100%;
+  min-height: 0;
+  align-content: start;
+  justify-items: center;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.compactPrivateInfo .compactMembers {
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.compactMember {
+  grid-template-columns: 34px;
+  width: 42px;
+  min-height: 42px;
+  place-items: center;
+  padding: 4px;
+}
+
+.compactMember .memberIdentity {
+  display: none;
+}
+
+.privateSearch {
+  display: grid;
+  gap: 8px;
+}
+
+.privateSearch span,
+.privateMembers h2 {
+  margin: 0;
+  color: var(--theme-text-soft);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.privateSearch input {
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 7px;
+  padding: 0 10px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  outline: none;
+}
+
+.privateMembers,
+.privateProfileCard {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.privateProfileCard p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.memberCard {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--color-text);
+  background: transparent;
+  text-align: left;
+  transition: background 140ms ease;
+}
+
+.memberCard:hover {
+  background: var(--theme-hover-bg);
+}
+
+.memberIdentity {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.memberCard strong,
+.privateProfileCard strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberCard small,
+.privateProfileCard small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.privateProfileCard {
+  justify-items: center;
+  width: 100%;
+  overflow: hidden;
+  text-align: center;
+}
+
+.privateName {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateInfoPanel {
+    display: none;
+  }
+}

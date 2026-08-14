@@ -1,0 +1,55 @@
+﻿.channelPlaceholder {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--theme-border-soft);
+  border-top: 0;
+  border-bottom: 0;
+  background:
+    radial-gradient(circle at 82% 8%, var(--theme-backdrop-glow), transparent 30%),
+    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+}
+
+.channelPlaceholder header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 30px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  padding: 5px 18px;
+}
+
+.channelPlaceholder header div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.channelPlaceholder header strong {
+  font-size: 14px;
+}
+
+.channelPlaceholder header p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.channelPlaceholder header p,
+.placeholderFeed p {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.placeholderFeed {
+  display: grid;
+  align-content: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 24px 28px;
+  text-align: center;
+}
+

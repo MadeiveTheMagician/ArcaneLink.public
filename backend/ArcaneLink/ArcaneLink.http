@@ -1,0 +1,11 @@
+@ArcaneLink_HostAddress = http://localhost:5207
+
+GET {{ArcaneLink_HostAddress}}/Scalar
+Accept: application/json
+
+###
+
+GET {{ArcaneLink_HostAddress}}/Scalar
+Accept: application/json
+
+###

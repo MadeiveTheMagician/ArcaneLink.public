@@ -1,0 +1,235 @@
+.stack {
+  position: fixed;
+  z-index: 1400;
+  right: 24px;
+  bottom: 24px;
+  display: grid;
+  width: min(390px, calc(100vw - 48px));
+  gap: 10px;
+  pointer-events: none;
+}
+
+.bottomLeft {
+  right: auto;
+  left: 24px;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  min-height: 84px;
+  grid-template-columns: 54px minmax(0, 1fr) 24px;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid var(--theme-section-border);
+  border-left: 3px solid var(--notification-accent);
+  border-radius: 8px;
+  padding: 14px;
+  color: var(--color-text);
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--notification-accent), #0a1022 92%), #0a1022 58%),
+    #0a1022;
+  box-shadow:
+    0 18px 46px color-mix(in srgb, #000, transparent 40%),
+    -4px 0 10px color-mix(in srgb, var(--notification-accent), transparent 42%),
+    -8px 0 20px color-mix(in srgb, var(--notification-accent), transparent 76%);
+  animation: notification-enter 220ms cubic-bezier(.2, .8, .2, 1) both;
+  pointer-events: auto;
+}
+
+.closing {
+  animation: notification-exit 220ms cubic-bezier(.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+.private-message {
+  --notification-accent: #9b64ff;
+}
+
+.mention {
+  --notification-accent: #c77dff;
+}
+
+.server-invite {
+  --notification-accent: #39d98a;
+}
+
+.private-space-invite {
+  --notification-accent: #42d7c5;
+}
+
+.system {
+  --notification-accent: #4b9dff;
+}
+
+.icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--notification-accent), transparent 72%);
+  border-radius: 8px;
+  color: var(--notification-accent);
+  background: color-mix(in srgb, var(--notification-accent), transparent 88%);
+}
+
+.avatar {
+  overflow: hidden;
+  background: #080d1d;
+}
+
+.avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content {
+  min-width: 0;
+}
+
+.content header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.content header strong {
+  font-size: 14px;
+}
+
+.content time,
+.content > span,
+.detail {
+  color: var(--theme-text-faint);
+  font-size: 12px;
+}
+
+.private-message .detail,
+.mention .detail,
+.private-space-invite .detail {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.content > span {
+  display: block;
+  margin-top: 4px;
+}
+
+.detail {
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: var(--theme-text-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-invite .detail {
+  max-width: 96px;
+  color: var(--notification-accent);
+  font-weight: 900;
+}
+
+.server-invite .content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr;
+  column-gap: 8px;
+}
+
+.server-invite .content header {
+  grid-column: 1 / -1;
+}
+
+.server-invite .content > span {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  overflow: hidden;
+  color: var(--notification-accent);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close {
+  position: relative;
+  z-index: 2;
+  align-self: start;
+  border: 0;
+  padding: 2px;
+  color: var(--theme-text-faint);
+  background: transparent;
+}
+
+.close:hover {
+  color: var(--color-text);
+}
+
+.actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.server-invite .actions button {
+  padding: 6px 10px;
+}
+
+.actions button {
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.secondaryAction {
+  border: 1px solid var(--theme-section-border);
+  color: var(--theme-text-soft);
+  background: var(--theme-control-bg);
+}
+
+.primaryAction {
+  border: 1px solid color-mix(in srgb, var(--notification-accent), white 18%);
+  color: #effff6;
+  background: color-mix(in srgb, var(--notification-accent), #0d6a43 32%);
+}
+
+.openOverlay {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+@keyframes notification-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(24px, 12px, 0);
+  }
+}
+
+@keyframes notification-exit {
+  to {
+    opacity: 0;
+    transform: translate3d(32px, 0, 0) scale(.98);
+  }
+}
+
+@media (max-width: 760px) {
+  .stack {
+    display: none;
+  }
+}

@@ -1,0 +1,265 @@
+.backdrop {
+  z-index: 150;
+  padding: 20px;
+  background: rgba(2, 5, 14, 0.58);
+  -webkit-backdrop-filter: blur(12px) saturate(0.82);
+  backdrop-filter: blur(12px) saturate(0.82);
+  animation: serverRoleEditorBackdropIn 180ms ease-out both;
+}
+
+.dialog {
+  width: min(1180px, calc(100vw - 40px));
+  height: min(820px, calc(100vh - 40px));
+  height: min(820px, calc(100dvh - 40px));
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0;
+  overflow: hidden;
+  border-color: color-mix(
+    in srgb,
+    var(--theme-border-accent),
+    transparent 22%
+  );
+  border-radius: 14px;
+  padding: 0;
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 88%),
+      transparent 42%
+    ),
+    var(--theme-surface-raised);
+  box-shadow:
+    0 34px 96px rgba(0, 0, 0, 0.6),
+    0 0 44px color-mix(in srgb, var(--theme-accent), transparent 88%);
+  animation: serverRoleEditorDialogIn 220ms
+    cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  transform-origin: 50% 46%;
+  will-change: opacity, transform, filter;
+}
+
+.backdropClosing {
+  pointer-events: none;
+  animation: serverRoleEditorBackdropOut
+    var(--server-role-editor-close-duration, 200ms) ease-in both;
+}
+
+.dialogClosing {
+  animation: serverRoleEditorDialogOut
+    var(--server-role-editor-close-duration, 200ms) ease-in both;
+}
+
+.heading {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr);
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1px solid var(--theme-section-border);
+  padding: 14px 18px;
+  background: color-mix(in srgb, var(--theme-control-bg), transparent 10%);
+}
+
+.backButton,
+.closeButton {
+  border: 1px solid transparent;
+  color: var(--color-text);
+  background: transparent;
+  font: inherit;
+  font-weight: 850;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    filter 150ms ease;
+}
+
+.backButton {
+  display: inline-flex;
+  width: max-content;
+  min-height: 38px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 0 11px;
+}
+
+.backButton > span {
+  color: var(--theme-accent-light);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.closeButton {
+  display: grid;
+  width: 42px;
+  height: 38px;
+  place-items: center;
+  justify-self: end;
+  border-radius: 8px;
+  padding: 0;
+}
+
+.backButton:hover:not(:disabled),
+.backButton:focus-visible,
+.closeButton:hover:not(:disabled),
+.closeButton:focus-visible {
+  border-color: color-mix(in srgb, var(--theme-accent), transparent 58%);
+  color: var(--theme-accent-light);
+  background: var(--theme-hover-bg);
+  filter: drop-shadow(0 0 10px var(--theme-glow));
+}
+
+.backButton:disabled,
+.closeButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.headingCopy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  text-align: center;
+}
+
+.headingCopy span,
+.headingCopy h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headingCopy span {
+  color: var(--theme-text-faint);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.headingCopy h2 {
+  font-size: 19px;
+}
+
+.editorBody {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.editorBody > section {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+
+@keyframes serverRoleEditorBackdropIn {
+  from {
+    background: rgba(2, 5, 14, 0);
+    -webkit-backdrop-filter: blur(0) saturate(1);
+    backdrop-filter: blur(0) saturate(1);
+  }
+
+  to {
+    background: rgba(2, 5, 14, 0.58);
+    -webkit-backdrop-filter: blur(12px) saturate(0.82);
+    backdrop-filter: blur(12px) saturate(0.82);
+  }
+}
+
+@keyframes serverRoleEditorDialogIn {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(16px) scale(0.982);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes serverRoleEditorBackdropOut {
+  to {
+    background: rgba(2, 5, 14, 0);
+    -webkit-backdrop-filter: blur(0) saturate(1);
+    backdrop-filter: blur(0) saturate(1);
+  }
+}
+
+@keyframes serverRoleEditorDialogOut {
+  to {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(12px) scale(0.986);
+  }
+}
+
+@media (max-width: 760px) {
+  .backdrop {
+    padding: 10px;
+  }
+
+  .dialog {
+    width: 100%;
+    height: calc(100vh - 20px);
+    height: calc(100dvh - 20px);
+    border-radius: 12px;
+  }
+
+  .heading {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .backButton {
+    min-height: 40px;
+    padding: 0 9px;
+  }
+
+  .headingCopy span {
+    display: none;
+  }
+
+  .headingCopy h2 {
+    font-size: 16px;
+  }
+
+  .editorBody {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .backButton {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .backButton > span {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .dialog,
+  .backdropClosing,
+  .dialogClosing {
+    animation: none;
+  }
+
+  .backButton,
+  .closeButton {
+    transition: none;
+  }
+}

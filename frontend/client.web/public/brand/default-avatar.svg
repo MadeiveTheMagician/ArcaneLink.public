@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(186 154) rotate(50) scale(365)">
+      <stop stop-color="#b7dcff"/>
+      <stop offset="0.42" stop-color="#4f86ff"/>
+      <stop offset="0.78" stop-color="#8c66ff"/>
+      <stop offset="1" stop-color="#111936"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 236) scale(230)">
+      <stop stop-color="white" stop-opacity="0.95"/>
+      <stop offset="0.58" stop-color="#9ed0ff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#0b4dff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feBlend in="SourceGraphic" in2="blur"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="256" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="214" stroke="#BDE3FF" stroke-opacity="0.5" stroke-width="4"/>
+  <circle cx="256" cy="256" r="170" fill="url(#halo)"/>
+  <circle cx="256" cy="208" r="70" fill="white" fill-opacity="0.94" filter="url(#glow)"/>
+  <path d="M124 415C142 338 191 300 256 300C321 300 370 338 388 415C352 445 308 462 256 462C204 462 160 445 124 415Z" fill="white" fill-opacity="0.94" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="244" stroke="#06122F" stroke-opacity="0.72" stroke-width="18"/>
+</svg>

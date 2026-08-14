@@ -1,0 +1,261 @@
+.identityForm {
+  display: grid;
+  gap: 10px;
+}
+
+.scopePanel {
+  display: grid;
+  gap: 26px;
+  padding-top: 24px;
+}
+
+.identityField {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 14px;
+  background: var(--theme-control-bg);
+}
+
+.identityField > span {
+  display: grid;
+  gap: 4px;
+}
+
+.identityField strong {
+  color: var(--color-text);
+}
+
+.identityField small,
+.identityActions span {
+  color: var(--color-muted);
+}
+
+.identityField input {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 7px;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg-strong);
+  font: inherit;
+}
+
+.identityField input:focus {
+  border-color: var(--theme-border-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-accent), transparent 72%);
+  outline: none;
+}
+
+.identityField input[aria-invalid='true'] {
+  border-color: color-mix(in srgb, var(--color-danger), transparent 18%);
+}
+
+.identityActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.identityActions span {
+  font-size: 0.86rem;
+}
+
+.backgroundGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
+  gap: 10px;
+}
+
+.profileTagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profileTagGrid button {
+  min-height: 36px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 900;
+  background: color-mix(in srgb, var(--theme-control-bg), transparent 12%);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.profileTagGrid button:hover:not(:disabled),
+.profileTagGrid button:focus-visible,
+.activeProfileTag {
+  border-color: color-mix(in srgb, var(--theme-border-accent), transparent 26%);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--theme-surface-accent), transparent 50%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-glow), transparent 48%);
+  outline: none;
+}
+
+.profileTagGrid button.activeProfileTag {
+  border-color: color-mix(in srgb, var(--theme-accent), #fff 22%);
+  color: #fff;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-accent), #fff 10%),
+      color-mix(in srgb, var(--theme-surface-accent), transparent 18%)
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, #fff, transparent 78%),
+    0 0 24px color-mix(in srgb, var(--theme-glow-strong), transparent 24%);
+}
+
+.profileTagGrid button:disabled {
+  cursor: default;
+  opacity: 0.74;
+}
+
+.backgroundTile {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  min-height: 158px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 10px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  font: inherit;
+  text-align: left;
+}
+
+.backgroundTileShell {
+  position: relative;
+  min-width: 0;
+}
+
+.backgroundTileShell .backgroundTile {
+  width: 100%;
+  height: 100%;
+}
+
+.deleteBackgroundButton {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-danger), transparent 38%);
+  border-radius: 50%;
+  padding: 0;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 8%);
+  box-shadow: 0 4px 12px color-mix(in srgb, #000, transparent 52%);
+}
+
+.deleteBackgroundButton:hover,
+.deleteBackgroundButton:focus-visible {
+  border-color: var(--color-danger);
+  color: #fff;
+  background: var(--color-danger);
+  outline: none;
+}
+
+.deleteBackgroundButton:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.backgroundTile:hover,
+.activeBackgroundTile {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-hover-bg);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent), transparent 56%),
+    0 14px 32px color-mix(in srgb, var(--theme-accent), transparent 82%);
+}
+
+.backgroundTile:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.backgroundPreview {
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 70% 20%, var(--theme-backdrop-glow), transparent 34%),
+    var(--theme-control-bg-strong);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.bannerPreview {
+  aspect-ratio: 16 / 5;
+}
+
+.backgroundTile strong,
+.backgroundTile small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backgroundTile strong {
+  font-weight: 900;
+}
+
+.backgroundTile small {
+  color: var(--color-muted);
+  font-size: 0.86em;
+}
+
+.uploadBackgroundTile {
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.uploadBackgroundIcon {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  background: var(--theme-control-bg-strong);
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .identityField {
+    grid-template-columns: 1fr;
+  }
+
+  .identityActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .identityActions button {
+    width: 100%;
+  }
+}

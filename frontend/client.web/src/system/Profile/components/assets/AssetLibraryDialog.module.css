@@ -1,0 +1,127 @@
+﻿.dialog {
+  width: min(760px, 100%);
+  gap: 16px;
+  padding: 22px;
+  font-size: calc(16px * var(--profile-font-scale, 1));
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.heading h2 {
+  margin: 0;
+}
+
+.closeButton {
+  display: grid;
+  width: 34px;
+  min-height: 34px;
+  place-items: center;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 10px;
+  padding: 0;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 18px;
+  padding: 12px 14px;
+  background: var(--theme-control-bg);
+}
+
+.filter span {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.filter select {
+  min-height: 38px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 999px;
+  padding: 0 38px 0 14px;
+  color: var(--color-text);
+  background: var(--theme-control-bg-strong);
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 16px;
+  max-height: min(430px, 48vh);
+  overflow: auto;
+  padding: 4px 6px 4px 2px;
+}
+
+.list > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.item {
+  position: relative;
+  aspect-ratio: 1;
+}
+
+.assetButton {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 2px solid var(--theme-section-border);
+  border-radius: 50%;
+  padding: 0;
+  background: var(--theme-control-bg);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.assetButton:hover {
+  border-color: var(--theme-border-accent);
+  box-shadow: 0 0 24px var(--theme-glow);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.list img {
+  display: block;
+}
+
+.rounded .assetButton {
+  border-radius: 8px;
+}
+
+.deleteButton {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgba(255, 143, 154, 0.5);
+  border-radius: 50%;
+  color: #ffd0d5;
+  background: rgba(70, 18, 28, 0.88);
+}
+
+@media (max-width: 880px) {
+  .heading,
+  .filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

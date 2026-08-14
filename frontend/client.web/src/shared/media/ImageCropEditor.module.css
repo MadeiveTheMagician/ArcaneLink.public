@@ -1,0 +1,167 @@
+﻿.editor {
+  display: grid;
+  gap: 16px;
+}
+
+.frame {
+  position: relative;
+  width: min(
+    100%,
+    520px,
+    clamp(220px, calc(100dvh - 300px), 520px)
+  );
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--theme-section-border);
+  background: var(--theme-control-bg-strong);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.frame[data-shape='circle'] {
+  border-radius: 50%;
+}
+
+.frame[data-shape='square'] {
+  border-radius: 0;
+}
+
+.frame[data-shape='rounded'] {
+  border-radius: 8px;
+}
+
+.frame:active {
+  cursor: grabbing;
+}
+
+.frame img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.previewImage {
+  will-change: transform;
+  transition: transform 55ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .previewImage {
+    transition: none;
+  }
+}
+
+.mask {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(241, 246, 255, 0.9);
+  border-radius: inherit;
+  box-shadow: inset 0 0 42px rgba(2, 5, 14, 0.36);
+  pointer-events: none;
+}
+
+.mask::after {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  content: attr(data-label);
+  border: 1px solid var(--theme-section-border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.editor h2 {
+  margin: 0;
+}
+
+.editor p {
+  margin: 8px 0 0;
+  color: var(--color-muted);
+}
+
+.error {
+  margin: 0;
+  color: #ff9bab;
+  text-align: center;
+}
+
+.control {
+  display: grid;
+  gap: 8px;
+}
+
+.control span {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.control input {
+  width: 100%;
+  accent-color: var(--color-sapphire-light);
+}
+
+.control input:disabled,
+.frame[aria-disabled='true'] {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.actionButton {
+  min-height: 42px;
+}
+
+@media (max-height: 820px) {
+  .editor {
+    gap: 12px;
+  }
+
+  .editor p {
+    margin-top: 5px;
+  }
+
+  .mask::after {
+    right: 12px;
+    bottom: 10px;
+    padding: 4px 8px;
+  }
+
+  .actionButton {
+    min-height: 38px;
+  }
+}
+
+@media (max-height: 620px) {
+  .editor {
+    gap: 9px;
+  }
+
+  .editor h2 {
+    font-size: 1.25rem;
+  }
+
+  .editor p {
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .control {
+    gap: 5px;
+  }
+}

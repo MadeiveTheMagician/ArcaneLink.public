@@ -1,0 +1,37 @@
+.list {
+  display: grid;
+}
+
+.selectRow {
+  display: grid;
+  grid-template-columns: minmax(0, 420px);
+  gap: 12px;
+}
+
+.selectRow label {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--theme-text-soft);
+  background: var(--theme-control-bg);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.selectRow select {
+  min-height: 40px;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 7px;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg-strong);
+  font: inherit;
+}
+
+@media (max-width: 680px) {
+  .selectRow {
+    grid-template-columns: 1fr;
+  }
+}

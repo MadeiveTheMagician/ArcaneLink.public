@@ -1,0 +1,311 @@
+.gallery {
+  --attachment-tile-size: 292px;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  width: min(100%, 592px);
+  margin-top: 8px;
+}
+
+.gallery[data-expanded="true"] {
+  width: 100%;
+}
+
+.galleryFullWidth {
+  width: 100%;
+}
+
+.layoutToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  border: 0;
+  padding: 2px 3px;
+  color: var(--theme-text-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 150ms ease, text-shadow 150ms ease;
+}
+
+.layoutToggle:hover {
+  color: var(--theme-accent-light);
+  text-shadow: 0 0 12px var(--theme-glow);
+}
+
+.layoutViewport,
+.layoutContent {
+  width: 100%;
+  min-width: 0;
+}
+
+.layoutContent {
+  transform-origin: top center;
+}
+
+.fullGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.compactGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, var(--attachment-tile-size)));
+  gap: 8px;
+  width: 100%;
+}
+
+.previewGrid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  gap: 5px;
+}
+
+.previewCount1 { grid-template: 1fr / 1fr; }
+.previewCount2 { grid-template: repeat(2, 1fr) / 1fr; }
+.previewCount3 { grid-template: repeat(3, 1fr) / 1fr; }
+.previewCount4 { grid-template: repeat(2, 1fr) / repeat(2, 1fr); }
+.previewCount5,
+.previewCount6 { grid-template: repeat(3, 1fr) / repeat(2, 1fr); }
+.previewCount7,
+.previewCount8,
+.previewCount9 { grid-template: repeat(3, 1fr) / repeat(3, 1fr); }
+
+.previewCount5 .previewSlot:last-child { grid-column: 1 / -1; }
+.previewCount7 .previewSlot:last-child { grid-column: 1 / -1; }
+.previewCount8 .previewSlot:nth-last-child(2) { grid-column: span 2; }
+
+.previewSlot {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 0;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.tile:hover,
+.tile:focus-visible {
+  border-color: var(--theme-border-accent);
+  box-shadow: 0 0 20px var(--theme-glow);
+}
+
+.featured,
+.full {
+  width: 100%;
+  max-width: var(--attachment-tile-size);
+  aspect-ratio: 1;
+}
+
+.gallery[data-expanded="true"] .full {
+  max-width: none;
+}
+
+.galleryFullWidth .featured,
+.galleryFullWidth .full {
+  max-width: none;
+}
+
+.preview {
+  height: 100%;
+}
+
+.tile > img,
+.tile > video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  object-fit: cover;
+  background: var(--theme-control-bg-strong);
+  filter: blur(0) brightness(1) saturate(1);
+  transform: scale(1);
+  transition: filter 620ms ease, transform 680ms ease;
+}
+
+.videoPlay {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-text);
+  background: rgba(5, 8, 26, 0.74);
+  box-shadow: 0 0 20px var(--theme-glow);
+  transform: translate(-50%, -50%);
+}
+
+.preview .videoPlay {
+  width: 30px;
+  height: 30px;
+}
+
+.fileTile {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+}
+
+.preview.fileTile {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 4px;
+  padding: 7px;
+}
+
+.fileTile > svg,
+.singleFile > svg,
+.singleFileIcon {
+  color: var(--theme-accent-light);
+}
+
+.fileText {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.fileText strong,
+.fileText small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileText strong {
+  color: var(--theme-accent-light);
+  font-size: 12px;
+  text-shadow: 0 0 12px var(--theme-glow);
+}
+
+.fileText small {
+  color: var(--color-muted);
+  font-size: 10px;
+}
+
+.preview .fileText strong {
+  max-width: 100%;
+  font-size: 9px;
+  text-align: center;
+}
+
+.singleFile {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 24px;
+  width: min(100%, 400px);
+  min-height: 62px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 8px 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.singleFile:hover,
+.singleFile:focus-visible {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-control-bg-strong);
+  box-shadow: 0 0 18px var(--theme-glow);
+}
+
+.singleFileIcon {
+  display: grid;
+  place-items: center;
+}
+
+.concealed > img,
+.concealed > video {
+  filter: blur(46px) brightness(0.18) saturate(0.42);
+  transform: scale(1.24);
+}
+
+.spoilerLabel {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  color: var(--color-text);
+  font-size: 11px;
+  text-align: center;
+  text-shadow: 0 0 16px var(--theme-glow-strong);
+}
+
+.overflowCount {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  width: 100%;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: var(--color-text);
+  background: rgba(4, 7, 24, 0.72);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  backdrop-filter: blur(3px);
+}
+
+@media (max-width: 760px) {
+  .gallery {
+    --attachment-tile-size: min(46vw, 250px);
+    width: 100%;
+  }
+
+  .compactGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fullGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .full {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile > img,
+  .tile > video {
+    transition: none;
+  }
+}

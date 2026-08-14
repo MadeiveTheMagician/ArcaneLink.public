@@ -1,0 +1,61 @@
+{
+  "name": "arcanelink-desktop",
+  "version": "1.0.0-rc.1",
+  "private": true,
+  "description": "ArcaneLink desktop shell built with Electron",
+  "author": "ArcaneLink",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "check": "node --check electron/main.cjs",
+    "start": "electron .",
+    "dev": "electron .",
+    "web:dev": "npm --prefix ../client.web run dev",
+    "web:build": "npm --prefix ../client.web run build",
+    "pack:win": "electron-builder --win --x64 --dir",
+    "dist:win": "electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "ru.arcanelink.desktop",
+    "productName": "ArcaneLink",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "resources/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "ArcaneLink-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ArcaneLink"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://arcane-link.ru/downloads/desktop/windows"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "electron": "^43.1.1",
+    "electron-builder": "^26.0.12"
+  }
+}

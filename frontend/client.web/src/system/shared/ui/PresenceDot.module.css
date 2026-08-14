@@ -1,0 +1,24 @@
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--color-success), transparent 35%);
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.name {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+
+.name > :first-child {
+  min-width: 0;
+}

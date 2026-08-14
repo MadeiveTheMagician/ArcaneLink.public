@@ -1,0 +1,260 @@
+﻿.dialog {
+  width: min(560px, 100%);
+  gap: 18px;
+  padding: 24px;
+  font-size: calc(16px * var(--profile-font-scale, 1));
+}
+
+.header h2 {
+  margin: 0;
+}
+
+.header p {
+  margin: 8px 0 0;
+  color: var(--color-muted);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.form label {
+  display: grid;
+  gap: 7px;
+}
+
+.iconField {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--theme-control-bg);
+}
+
+.iconPicker {
+  display: grid;
+  width: 66px;
+  height: 66px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at 32% 24%, color-mix(in srgb, var(--theme-accent-light), transparent 46%), transparent 34%),
+    var(--theme-surface-accent);
+}
+
+.iconPicker:hover {
+  border-color: var(--theme-border-accent);
+}
+
+.iconPicker span {
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.iconField strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.iconField p {
+  margin: 4px 0 10px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.iconActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fileInput {
+  display: none;
+}
+
+.smallButton {
+  min-height: 32px;
+  font-size: 13px;
+}
+
+.form label > span {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+}
+
+.form textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.accessModeFieldset {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.accessModeFieldset legend {
+  padding: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.accessModeFieldset > p {
+  margin: 0;
+  color: var(--theme-text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.accessModeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.accessModeOption {
+  display: grid !important;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 9px !important;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 11px;
+  background: var(--theme-control-bg);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.accessModeOption:hover {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-hover-bg);
+}
+
+.accessModeOptionSelected {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-surface-accent);
+  box-shadow: 0 8px 22px var(--theme-glow);
+}
+
+.accessModeOption input {
+  width: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  accent-color: var(--theme-accent-light);
+}
+
+.accessModeOption span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.accessModeOption strong {
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.accessModeOption small {
+  color: var(--theme-text-soft);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.actions {
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  min-height: 42px;
+}
+
+.dangerZone {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 143, 154, 0.28);
+  border-radius: 6px;
+  padding: 8px;
+  background: rgba(68, 15, 28, 0.24);
+}
+
+.dangerToggle {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  border-radius: 4px;
+  padding: 0 10px;
+  color: #ffd8dd;
+  font-weight: 900;
+  text-align: left;
+  background: transparent;
+}
+
+.dangerToggle:hover {
+  background: rgba(255, 143, 154, 0.14);
+}
+
+.dangerToggle strong {
+  color: #ff8f9a;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.dangerContent {
+  display: grid;
+  gap: 10px;
+  padding: 0 6px 6px;
+  animation: dialogEnter 120ms ease-out both;
+}
+
+.dangerContent p {
+  margin: 0;
+}
+
+@keyframes dialogEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 620px) {
+  .accessModeGrid {
+    grid-template-columns: 1fr;
+  }
+}

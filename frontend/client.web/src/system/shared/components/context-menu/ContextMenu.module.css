@@ -1,0 +1,385 @@
+﻿.positioningLayer {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-context-menu) - 1);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  pointer-events: none;
+  opacity: 0;
+}
+
+.menu {
+  position: fixed;
+  z-index: var(--z-context-menu);
+  display: grid;
+  max-height: var(--profile-context-max-height, calc(100vh - 16px));
+  width: 264px;
+  gap: 3px;
+  border: 1px solid rgba(42, 47, 74, 0.96);
+  border-radius: 8px;
+  padding: 8px;
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-accent), transparent 90%), transparent 34%),
+    linear-gradient(180deg, rgba(12, 17, 34, 0.98), rgba(5, 9, 20, 0.98));
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.44),
+    0 0 24px color-mix(in srgb, var(--theme-accent), transparent 90%);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--theme-accent-light) transparent;
+  scrollbar-width: thin;
+  animation: contextMenuEnter 120ms ease-out both;
+}
+
+.menu::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.menu::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--theme-accent-light);
+}
+
+.menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rowWrap {
+  position: relative;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 16px;
+  align-items: center;
+  width: 100%;
+  min-height: 38px;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--color-text);
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.row:disabled {
+  pointer-events: none;
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.row:hover,
+.row:focus-visible,
+.rowWrap:hover > .row {
+  border-color: color-mix(in srgb, var(--theme-accent), transparent 38%);
+  color: var(--color-text);
+  background: var(--theme-hover-bg);
+}
+
+.row:active {
+  background: var(--theme-active-bg);
+}
+
+.danger {
+  color: var(--color-danger);
+}
+
+.danger:hover,
+.danger:focus-visible {
+  border-color: rgba(255, 98, 103, 0.5);
+  background: color-mix(in srgb, var(--color-danger), transparent 76%);
+}
+
+.row span,
+.row em {
+  display: grid;
+  place-items: center;
+  color: currentColor;
+}
+
+.row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.compactRow {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  min-height: 38px;
+  gap: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.compactRow strong {
+  overflow: visible;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.compactRow em {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  color: var(--color-text);
+  background: var(--theme-accent);
+}
+
+.compactRow[aria-pressed="true"] {
+  border-color: var(--theme-accent-light);
+  background: var(--theme-hover-bg);
+}
+
+.separator {
+  height: 1px;
+  margin: 5px 8px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--theme-accent), transparent 52%),
+    transparent
+  );
+}
+
+.rangeRow {
+  display: grid;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 8px 10px 10px;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.rangeRow:hover,
+.rangeRow:focus-within {
+  border-color: color-mix(in srgb, var(--theme-accent), transparent 52%);
+  background: color-mix(in srgb, var(--theme-hover-bg), transparent 18%);
+}
+
+.rangeLabel {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.rangeLabel strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.rangeLabel em {
+  color: var(--theme-text-soft);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.rangeRow input {
+  width: 100%;
+  accent-color: var(--theme-accent-light);
+}
+
+.rangeRow input:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.hint {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: calc(100% + 10px);
+  width: max-content;
+  max-width: min(40ch, calc(100vw - 32px));
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: var(--theme-text-soft);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 8%),
+      var(--theme-surface-raised)
+    );
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.4),
+    0 0 18px var(--theme-glow);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  transform: translateY(-50%) translateX(-4px);
+  transition:
+    opacity 120ms ease,
+    transform 140ms ease,
+    visibility 0ms linear 140ms;
+}
+
+.rowWrap:hover > .hint,
+.rowWrap:focus-within > .hint {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+  transition-delay: 180ms, 180ms, 180ms;
+}
+
+.submenuLeft .hint {
+  right: calc(100% + 10px);
+  left: auto;
+  transform: translateY(-50%) translateX(4px);
+}
+
+.submenuLeft .rowWrap:hover > .hint,
+.submenuLeft .rowWrap:focus-within > .hint {
+  transform: translateY(-50%) translateX(0);
+}
+
+.menu[data-context-row="5"] .hint,
+.menu[data-context-row="6"] .hint {
+  top: auto;
+  bottom: 0;
+  transform: translateX(-4px);
+}
+
+.menu[data-context-row="5"] .rowWrap:hover > .hint,
+.menu[data-context-row="5"] .rowWrap:focus-within > .hint,
+.menu[data-context-row="6"] .rowWrap:hover > .hint,
+.menu[data-context-row="6"] .rowWrap:focus-within > .hint {
+  transform: translateX(0);
+}
+
+.menu[data-context-row="5"].submenuLeft .hint,
+.menu[data-context-row="6"].submenuLeft .hint {
+  transform: translateX(4px);
+}
+
+.menu[data-context-row="5"].submenuLeft .rowWrap:hover > .hint,
+.menu[data-context-row="5"].submenuLeft .rowWrap:focus-within > .hint,
+.menu[data-context-row="6"].submenuLeft .rowWrap:hover > .hint,
+.menu[data-context-row="6"].submenuLeft .rowWrap:focus-within > .hint {
+  transform: translateX(0);
+}
+
+.submenu {
+  position: fixed;
+  z-index: calc(var(--z-context-menu) + 1);
+  display: grid;
+  width: 264px;
+  max-height: min(420px, calc(100vh - 18px));
+  border: 1px solid rgba(42, 47, 74, 0.96);
+  border-radius: 8px;
+  padding: 8px;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-accent), transparent 90%), transparent 34%),
+    linear-gradient(180deg, rgba(12, 17, 34, 0.98), rgba(5, 9, 20, 0.98));
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.44),
+    0 0 24px color-mix(in srgb, var(--theme-accent), transparent 90%);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--theme-accent-light) transparent;
+  scrollbar-width: thin;
+  animation: contextMenuEnter 120ms ease-out both;
+}
+
+.submenu::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.submenu::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--theme-accent-light);
+}
+
+.submenu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.submenuGrid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-content: start;
+  max-height: min(320px, calc(100vh - 32px));
+  gap: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-accent-light) transparent;
+}
+
+.submenuGrid::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.submenuGrid::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--theme-accent-light);
+}
+
+.submenuGrid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.submenuOpenLeft::before {
+  right: -24px;
+  left: auto;
+}
+
+.submenu::before {
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: -24px;
+  width: 24px;
+  content: "";
+}
+
+@keyframes contextMenuEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint {
+    transition: none;
+  }
+}

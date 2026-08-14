@@ -1,0 +1,329 @@
+.communityPersonCard {
+  border: 1px solid var(--theme-border-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
+    color-mix(in srgb, var(--theme-surface-raised), transparent 8%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 18px 44px rgba(0, 0, 0, 0.12);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.communityPersonCard,
+.communityRequestCard,
+.communityInviteCard {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.communityPersonCard {
+  grid-template-columns: 50px minmax(136px, 1fr) minmax(88px, 0.34fr) minmax(190px, 1.15fr) auto;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.communitySearchPersonCard {
+  grid-template-columns: 50px minmax(180px, 1fr) minmax(88px, 0.34fr) minmax(132px, 164px);
+}
+
+.communitySearchPersonCard :global(.ui-action-button) {
+  min-width: 132px;
+  min-height: 38px;
+  padding: 0 16px;
+}
+
+.communityRequestCard {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 9px;
+  border-bottom: 0;
+  padding: 3px 0;
+}
+
+.communityRequestCard:last-child {
+  border-bottom: 0;
+}
+
+.communityAvatar {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--theme-accent-contrast);
+  font-weight: 900;
+  background: var(--theme-surface-accent);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 0 22px var(--theme-glow);
+}
+
+.communityAvatar {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+}
+
+.communityRequestCard .communityAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.communityPersonBody,
+.communityRequestCard div,
+.communityInviteCard div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.communityPersonBody strong,
+.communityRequestCard strong,
+.communityInviteCard strong {
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.communityPersonBody small,
+.communityRequestCard small,
+.communityInviteCard small {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.communityStatus {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.communitySharedServer {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.communityFriendActions,
+.communityRequestActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.communityFriendActions {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: max-content;
+}
+
+.communityFriendActions button,
+.communityRequestActions button {
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 900;
+  background: var(--theme-control-bg);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.communityFriendActions button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-color: transparent;
+  color: var(--color-muted);
+  background: transparent;
+  box-shadow: none;
+}
+
+.communityFriendActions button:hover,
+.communityFriendActions button:focus-visible {
+  border-color: transparent;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--theme-surface-accent), transparent 76%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-glow), transparent 46%);
+  outline: none;
+}
+
+.communityRequestCard .communityRequestActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 72px;
+  gap: 5px;
+}
+
+.communityRequestActions button {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 28px;
+  border-radius: 6px;
+  padding: 0 8px;
+  color: var(--color-muted);
+}
+
+.communityRequestActions button:first-child {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success), transparent 88%);
+}
+
+.communityRequestActions .communityCancelButton {
+  color: color-mix(in srgb, var(--color-danger), var(--color-text) 42%);
+  font-size: 14px;
+  background: var(--theme-control-bg);
+}
+
+.communityFriendActions button:hover,
+.communityRequestActions button:hover {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-surface-raised);
+  box-shadow: 0 0 18px var(--theme-glow);
+  transform: translateY(-1px);
+}
+
+.communityFriendActions button:hover svg,
+.communityRequestActions button:hover svg {
+  filter: drop-shadow(0 0 10px currentColor);
+  transform: scale(1.05);
+}
+
+.communityInviteCard {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  padding: 10px 0;
+}
+
+.communityInviteCard:last-child {
+  border-bottom: 0;
+}
+
+.communityPersonCard:hover {
+  border-color: color-mix(in srgb, var(--theme-border-accent), transparent 36%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent),
+    color-mix(in srgb, var(--theme-surface-raised), transparent 2%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .communityPersonCard,
+  .communityFriendActions button,
+  .communityRequestActions button {
+    transition: none;
+  }
+}
+
+@media (max-height: 900px) and (min-width: 1101px) {
+  .communityRequestCard {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 1px 0;
+  }
+
+  .communityRequestCard .communityAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+  }
+
+  .communityRequestCard strong {
+    font-size: 15px;
+  }
+
+  .communityRequestCard small {
+    font-size: 12px;
+  }
+
+  .communityRequestCard .communityRequestActions {
+    min-width: 68px;
+    gap: 5px;
+  }
+
+  .communityRequestActions button {
+    min-width: 30px;
+    height: 26px;
+    padding: 0 7px;
+  }
+
+  .communityRequestCard > :global(.ui-action-button) {
+    width: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+  }
+}
+
+@container community (max-width: 1280px) {
+  .communityPersonCard {
+    grid-template-columns: 50px minmax(0, 1fr) minmax(138px, 0.8fr) auto;
+  }
+
+  .communitySearchPersonCard {
+    grid-template-columns: 50px minmax(0, 1fr) minmax(132px, 164px);
+  }
+
+  .communityPersonCard .communityStatus {
+    display: none;
+  }
+}
+
+@container community (max-width: 850px) {
+  .communityPersonCard,
+  .communitySearchPersonCard {
+    grid-template-columns: 50px minmax(0, 1fr) auto;
+  }
+
+  .communityPersonCard .communityStatus,
+  .communityPersonCard .communitySharedServer {
+    display: none;
+  }
+}
+
+@container community (max-width: 760px) {
+  .communityPersonCard,
+  .communitySearchPersonCard {
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+  }
+
+  .communityPersonCard .communityStatus,
+  .communityPersonCard .communitySharedServer {
+    display: none;
+  }
+
+  .communityFriendActions {
+    gap: 2px;
+  }
+
+  .communityFriendActions button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .communitySearchPersonCard :global(.ui-action-button) {
+    min-width: 112px;
+    padding-inline: 12px;
+  }
+}

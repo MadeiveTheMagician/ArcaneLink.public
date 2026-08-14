@@ -1,0 +1,506 @@
+.authRegisterCredentials,
+.authRegisterGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.authRegisterCredentials {
+  position: relative;
+  display: block;
+}
+
+.authRegisterGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.authRegisterWizard {
+  display: none;
+}
+
+.authValidatedField {
+  display: grid;
+  min-width: 0;
+}
+
+.authValidatedInput {
+  grid-template-rows: 15px auto;
+  row-gap: 4px;
+  align-items: center;
+  padding-block: 10px;
+}
+
+.authValidatedInput i {
+  grid-row: 1 / 3;
+}
+
+.authValidatedInput span {
+  display: block;
+  color: rgba(205, 211, 242, 0.72);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.authRequirementsPanel {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: calc(100% + 10px);
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 238px;
+  min-height: 0;
+  border: 1px solid rgba(79, 92, 153, 0.34);
+  border-radius: 9px;
+  padding: 11px 10px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(12px) scale(0.985);
+  transition:
+    opacity 180ms ease,
+    transform 220ms ease;
+  background:
+    linear-gradient(180deg, rgba(10, 15, 36, 0.78), rgba(3, 8, 22, 0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 24px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+.authRequirementsPanel.isVisible {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+.authRequirementsPanel h2 {
+  margin: 0;
+  color: rgba(232, 236, 255, 0.92);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.authRequirementsList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.authRequirementsList li {
+  display: grid;
+  grid-template-columns: 13px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  line-height: 1.25;
+  transition: color 160ms ease;
+}
+
+.authRequirementsList li span {
+  display: grid;
+  width: 13px;
+  height: 13px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 8px;
+  font-weight: 900;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.authRequirementsList li strong {
+  min-width: 0;
+  font-weight: 750;
+}
+
+.authRequirementMissing {
+  color: #ff8d99;
+}
+
+.authRequirementMissing span {
+  background: rgba(255, 87, 113, 0.12);
+}
+
+.authRequirementMet {
+  color: #74e4ac;
+}
+
+.authRequirementMet span {
+  background: rgba(116, 228, 172, 0.16);
+  box-shadow: 0 0 14px rgba(116, 228, 172, 0.14);
+}
+
+.authRegisterSteps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0 2px 2px;
+  list-style: none;
+}
+
+.authRegisterSteps li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: rgba(141, 147, 180, 0.7);
+}
+
+.authRegisterSteps li:not(:last-child)::after {
+  position: absolute;
+  top: 13px;
+  left: calc(50% + 18px);
+  width: calc(100% - 36px);
+  height: 1px;
+  content: "";
+  background: rgba(57, 68, 118, 0.58);
+}
+
+.authRegisterSteps span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(57, 68, 118, 0.72);
+  border-radius: 50%;
+  background: rgba(2, 7, 20, 0.72);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.authRegisterSteps strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authRegisterSteps li.isComplete {
+  color: #fff;
+}
+
+.authRegisterSteps li.isComplete span {
+  border-color: color-mix(in srgb, var(--theme-accent), transparent 22%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-accent), transparent 5%), color-mix(in srgb, var(--theme-accent), #000 24%));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-accent), transparent 70%);
+}
+
+.authRegisterWizardActions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.authRegisterBack {
+  min-height: 48px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0;
+  color: rgba(199, 189, 255, 0.78);
+  background: transparent;
+  font: inherit;
+  font-weight: 850;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    opacity 160ms ease;
+}
+
+.authRegisterBack:hover:not(:disabled),
+.authRegisterBack:focus-visible {
+  color: #fff;
+  background: rgba(123, 97, 255, 0.12);
+}
+
+.authRegisterBack:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+@media (max-width: 620px) {
+  .authRegisterGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .authRegisterCredentials {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .authRequirementsPanel {
+    position: static;
+    min-height: 0;
+    width: auto;
+    border-radius: 10px;
+    padding: 9px 10px;
+    transform: translateY(-8px);
+  }
+
+  .authRequirementsPanel.isVisible {
+    transform: translateY(0);
+  }
+
+  .authRequirementsPanel h2 {
+    font-size: 12px;
+  }
+
+  .authFormRegister {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    padding-right: 0;
+  }
+
+  .authRegisterStepsDesktop,
+  .authRegisterCredentialsDesktop,
+  .authRegisterSubmitDesktop {
+    display: none;
+  }
+
+  .authRegisterWizard {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100%;
+    min-height: 0;
+    gap: 12px;
+  }
+
+  .authRegisterWizardSteps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+    padding: 0 2px 2px;
+    list-style: none;
+  }
+
+  .authRegisterWizardSteps li {
+    position: relative;
+    min-width: 0;
+  }
+
+  .authRegisterWizardSteps li:not(:last-child)::after {
+    position: absolute;
+    top: 12px;
+    left: calc(50% + 17px);
+    width: calc(100% - 34px);
+    height: 1px;
+    content: "";
+    background: rgba(57, 68, 118, 0.58);
+  }
+
+  .authRegisterWizardSteps button {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 100%;
+    justify-items: center;
+    gap: 5px;
+    border: 0;
+    padding: 0;
+    color: rgba(141, 147, 180, 0.72);
+    background: transparent;
+    font: inherit;
+  }
+
+  .authRegisterWizardSteps span {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border: 1px solid rgba(57, 68, 118, 0.72);
+    border-radius: 50%;
+    background: rgba(2, 7, 20, 0.72);
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .authRegisterWizardSteps strong {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 9px;
+    font-weight: 850;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .authRegisterWizardSteps li.isActive button,
+  .authRegisterWizardSteps li.isComplete button {
+    color: #fff;
+  }
+
+  .authRegisterWizardSteps li.isActive span {
+    border-color: color-mix(in srgb, var(--theme-accent-light), transparent 8%);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--theme-accent), transparent 70%),
+      0 0 18px color-mix(in srgb, var(--theme-accent), transparent 42%);
+  }
+
+  .authRegisterWizardSteps li.isComplete span {
+    border-color: color-mix(in srgb, var(--theme-accent), transparent 22%);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--theme-accent), transparent 5%), color-mix(in srgb, var(--theme-accent), #000 24%));
+  }
+
+  .authRegisterWizardBody {
+    display: grid;
+    align-content: start;
+    gap: 9px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+
+  .authRegisterStepKicker {
+    margin: 0;
+    color: var(--theme-accent-light);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .authRegisterWizardBody h2 {
+    margin: 0;
+    color: #f7f8ff;
+    font-size: 22px;
+    font-weight: 850;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .authRegisterWizardBody .authRequirementsPanel {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  .authRegisterWizardActions {
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .authRegisterSubmit {
+    min-height: 54px;
+    margin-top: 0;
+  }
+
+  .authRegisterBack {
+    min-height: 54px;
+    font-size: 14px;
+  }
+
+  .authValidatedInput {
+    grid-template-rows: 12px auto;
+    min-height: 52px;
+    padding-block: 7px;
+  }
+
+  .authValidatedInput span {
+    display: block;
+    font-size: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  .authValidatedInput input {
+    min-height: 28px;
+  }
+
+  .authRequirementsList {
+    gap: 5px;
+  }
+
+  .authRequirementsList li {
+    grid-template-columns: 14px minmax(0, 1fr);
+    gap: 7px;
+    font-size: 10px;
+  }
+
+  .authRequirementsList li span {
+    width: 14px;
+    height: 14px;
+    font-size: 9px;
+  }
+
+  .authRegisterSteps {
+    padding: 0 4px 2px;
+  }
+
+  .authRegisterSteps strong {
+    font-size: 8px;
+  }
+
+  .authRegisterSteps span {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .authRegisterSteps li:not(:last-child)::after {
+    top: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .authRegisterWizard {
+    gap: 8px;
+  }
+
+  .authRegisterWizardSteps strong {
+    font-size: 8px;
+  }
+
+  .authRegisterWizardBody {
+    gap: 7px;
+  }
+
+  .authRegisterWizardBody h2 {
+    font-size: 19px;
+  }
+
+  .authRegisterStepKicker {
+    font-size: 9px;
+  }
+
+  .authRegisterWizardBody .authRequirementsPanel {
+    padding: 8px 9px;
+  }
+
+  .authRegisterWizardActions {
+    gap: 8px;
+  }
+
+  .authRegisterBack,
+  .authRegisterSubmit {
+    min-height: 50px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authValidatedField,
+  .authRequirementsList li,
+  .authRequirementsList li span {
+    transition: none;
+  }
+}

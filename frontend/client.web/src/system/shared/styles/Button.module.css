@@ -1,0 +1,80 @@
+.button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 9px;
+  padding: 0 18px;
+  color: var(--theme-accent-contrast);
+  background: var(--theme-surface-accent);
+  box-shadow:
+    0 16px 36px var(--theme-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  font-weight: 850;
+  text-align: center;
+  line-height: 1.1;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.button:hover:not(:disabled) {
+  box-shadow:
+    0 18px 42px var(--theme-glow-strong),
+    0 0 28px var(--theme-glow);
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.primary {
+  border-color: var(--theme-border-accent);
+  color: var(--theme-accent-contrast);
+  background: var(--theme-surface-accent);
+}
+
+.ghost {
+  border-color: var(--theme-border-control);
+  color: var(--color-text);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-control-bg), var(--theme-accent) 8%),
+      var(--theme-control-bg-strong)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-text), transparent 88%),
+    0 10px 24px color-mix(in srgb, var(--theme-accent), transparent 88%);
+}
+
+.danger {
+  border-color: color-mix(in srgb, var(--color-danger), transparent 34%);
+  color: #fff;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-danger), #000 18%),
+      color-mix(in srgb, var(--color-danger), #000 38%)
+    );
+  box-shadow:
+    0 16px 36px color-mix(in srgb, var(--color-danger), transparent 74%),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 0;
+}

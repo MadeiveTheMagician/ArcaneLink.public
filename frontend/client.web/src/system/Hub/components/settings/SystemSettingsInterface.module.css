@@ -1,0 +1,161 @@
+.scaleGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.messageFormatPanel,
+.messageFormatHeader,
+.messageFormatField {
+  display: grid;
+}
+
+.messageFormatPanel {
+  gap: 12px;
+}
+
+.messageFormatHeader {
+  gap: 4px;
+}
+
+.messageFormatHeader strong,
+.messageFormatField strong {
+  color: var(--color-text);
+}
+
+.messageFormatHeader small,
+.messageFormatField small {
+  color: var(--color-muted);
+  line-height: 1.4;
+}
+
+.messageFormatGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  align-items: start;
+  gap: 10px;
+}
+
+.messageFormatField {
+  align-content: start;
+  grid-auto-rows: max-content;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 14px;
+  background: var(--theme-control-bg);
+}
+
+.messageFormatField > span {
+  display: grid;
+  gap: 4px;
+}
+
+.messageFormatControl {
+  display: grid;
+  gap: 6px;
+}
+
+.messageFormatControl > span {
+  color: var(--theme-text-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.messageBubbleSettings {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--theme-section-border);
+  padding-top: 12px;
+}
+
+.themeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+}
+
+.themeTile {
+  display: grid;
+  gap: 10px;
+  min-height: 92px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 12px;
+  color: var(--color-text);
+  background:
+    radial-gradient(
+      circle at 84% 14%,
+      color-mix(in srgb, var(--theme-tile-dominant), transparent 64%),
+      transparent 44%
+    ),
+    var(--theme-control-bg);
+  font: inherit;
+  font-weight: 900;
+  text-align: left;
+}
+
+.themeTile:hover,
+.activeThemeTile {
+  border-color: var(--theme-tile-dominant);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-tile-dominant), transparent 42%),
+    0 14px 32px color-mix(in srgb, var(--theme-tile-dominant), transparent 78%);
+}
+
+.themeSwatches {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: 72px;
+}
+
+.themeSwatches span {
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+}
+
+.profileColorPanel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 12px 14px;
+  background: var(--theme-control-bg);
+}
+
+.profileColorPreview {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 7px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
+.profileColorPanel > span:last-child {
+  display: grid;
+  gap: 3px;
+}
+
+.profileColorPanel strong {
+  color: var(--color-text);
+}
+
+.profileColorPanel small {
+  color: var(--color-muted);
+}
+.videoCardSizes {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--theme-section-border);
+}
+
+.videoCardSizes > strong {
+  color: var(--theme-text-soft);
+  font-size: 13px;
+}

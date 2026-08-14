@@ -1,0 +1,130 @@
+.editor {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--profile-border-control);
+  border-radius: 8px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--theme-control-bg), transparent 10%);
+}
+
+.header h3,
+.header p,
+.empty,
+.error {
+  margin: 0;
+}
+
+.header p {
+  margin-top: 5px;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.controls label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.controls select {
+  width: 100%;
+  min-height: 38px;
+}
+
+.saveButton {
+  min-height: 40px;
+  align-self: end;
+  grid-column: 1 / -1;
+}
+
+.overrideList {
+  display: grid;
+  gap: 8px;
+}
+
+.overrideRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 9px 10px;
+  background: var(--theme-control-bg-strong);
+}
+
+.overrideRow div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.overrideRow strong,
+.overrideRow span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overrideRow span {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.overrideRow em {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.allow {
+  color: #b9f6d4;
+  background: rgba(38, 143, 91, 0.24);
+}
+
+.deny {
+  color: #ffc1ca;
+  background: rgba(172, 49, 72, 0.24);
+}
+
+.deleteButton {
+  min-height: 34px;
+  padding: 0 11px;
+}
+
+.empty {
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 640px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .overrideRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .deleteButton {
+    grid-column: 1 / -1;
+  }
+}

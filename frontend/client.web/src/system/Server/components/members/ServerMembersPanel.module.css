@@ -1,0 +1,189 @@
+﻿.memberPanel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+}
+
+.memberPanel > header {
+  display: grid;
+  gap: 7px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  min-height: 40px;
+  padding: 5px 12px 9px;
+}
+
+.memberSearchSlot {
+  min-width: 0;
+}
+
+.memberPanelHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.memberPanelHeading > div {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.memberPanel > header span {
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.memberPanel > header strong {
+  font-size: 16px;
+}
+
+.memberList {
+  padding: 4px 2px 0 0;
+}
+
+.memberLoadMore {
+  display: grid;
+  min-height: 32px;
+  place-items: center;
+  padding: 8px 12px;
+}
+
+.memberSkeletonList {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  align-content: start;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.memberSkeletonRow {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  min-height: 38px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+}
+
+.memberSkeletonAvatar {
+  border-radius: 8px;
+}
+
+.memberSkeletonText {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.memberCard {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  min-height: 38px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.memberCard:hover {
+  background: var(--theme-hover-bg);
+}
+
+.activeMember {
+  background: var(--theme-active-bg);
+  box-shadow: inset 3px 0 0 var(--theme-border-accent);
+}
+
+.memberAvatar {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 8px;
+  background: rgba(18, 28, 58, 0.92);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.memberCard strong {
+  font-size: 13px;
+}
+
+.memberCard small {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.compact {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  justify-items: center;
+  padding-inline: 0;
+}
+
+.compact > header {
+  width: 100%;
+  padding-inline: 0;
+  text-align: center;
+}
+
+.compact .memberPanelHeading {
+  display: grid;
+  justify-items: center;
+  justify-content: center;
+}
+
+.compact > header span {
+  display: none;
+}
+
+.compact .memberSearchSlot {
+  display: none;
+}
+
+.compact .memberList {
+  display: grid;
+  width: 100%;
+  align-content: start;
+  justify-items: center;
+  padding: 8px 0 0;
+}
+
+.compact .memberCard {
+  display: grid;
+  grid-template-columns: 34px;
+  width: 34px;
+  min-height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+}
+
+.compact .memberSkeletonList {
+  display: grid;
+}
+
+.compact .memberSkeletonRow {
+  grid-template-columns: 30px;
+  min-height: 38px;
+  place-items: center;
+  padding: 4px 0;
+}
+
+.compact .memberSkeletonText {
+  display: none;
+}
+
+.compact .memberCard div,
+.compact .memberCard button {
+  display: none;
+}
+

@@ -1,0 +1,30 @@
+{
+  "name": "@arcanelink/client-mobile",
+  "private": true,
+  "version": "1.0.0-rc.1",
+  "type": "module",
+  "scripts": {
+    "web:build": "npm --prefix ../client.web run build",
+    "android:sync": "npm run web:build && cap sync android",
+    "android:open": "cap open android",
+    "android:run": "npm run android:sync && cap run android",
+    "android:splash": "node scripts/generate-android-splash.mjs"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=11.0.0"
+  },
+  "packageManager": "npm@11.9.0",
+  "dependencies": {
+    "@capacitor/core": "^8.4.2"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@playwright/test": "^1.61.0",
+    "typescript": "~6.0.2"
+  }
+}

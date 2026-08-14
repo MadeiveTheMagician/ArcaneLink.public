@@ -1,0 +1,486 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "true"
+  NUGET_XMLDOC_MODE: skip
+
+jobs:
+  hygiene:
+    name: Release tree hygiene
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check release tree
+        shell: pwsh
+        run: ./infrastructure/scripts/check-release-tree.ps1
+
+      - name: Validate Compose files
+        run: |
+          docker compose --env-file .env.local.example -f docker-compose.yml config --quiet
+          docker compose --env-file .env.example -f docker-compose.yml config --quiet
+          docker compose \
+            --env-file .env.example \
+            --env-file .env.turn.example \
+            -f docker-compose.yml \
+            -f docker-compose.turn.yml \
+            config --quiet
+
+  web:
+    name: Web client
+    needs: hygiene
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: frontend/client.web
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: frontend/client.web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
+
+      - name: Run mocked browser smoke tests
+        run: npm run test:e2e:mock
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-failure-${{ github.run_attempt }}
+          path: |
+            frontend/client.web/playwright-report/
+            frontend/client.web/test-results/
+            frontend/client.web/blob-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  backend:
+    name: Backend
+    needs: hygiene
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.300
+
+      - name: Restore local .NET tools
+        run: dotnet tool restore
+
+      - name: Restore dependencies
+        run: dotnet restore ArcaneLink.slnx
+
+      - name: Build
+        run: dotnet build ArcaneLink.slnx -c Release --no-restore
+
+      - name: Run tests
+        run: >-
+          dotnet test backend/ArcaneLink.Tests/ArcaneLink.Tests.csproj
+          -c Release
+          --no-build
+          --filter "FullyQualifiedName!~ArcaneLink.Tests.PostgreSql"
+          --logger "trx;LogFileName=backend.trx"
+          --results-directory "${{ github.workspace }}/artifacts/test-results/backend"
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-failure-${{ github.run_attempt }}
+          path: artifacts/test-results/backend/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  desktop:
+    name: Desktop shell
+    needs: hygiene
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend/client.desktop
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: frontend/client.desktop/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Electron entry point
+        run: npm run check
+
+  mobile:
+    name: Android shell
+    needs:
+      - hygiene
+      - web
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: |
+            frontend/client.web/package-lock.json
+            frontend/client.mobile/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: |
+            frontend/client.mobile/android/*.gradle
+            frontend/client.mobile/android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Install web dependencies
+        working-directory: frontend/client.web
+        run: npm ci
+
+      - name: Install mobile dependencies
+        working-directory: frontend/client.mobile
+        run: npm ci
+
+      - name: Synchronize Capacitor project
+        working-directory: frontend/client.mobile
+        run: npm run android:sync
+
+      - name: Build debug APK
+        working-directory: frontend/client.mobile
+        run: |
+          chmod +x android/gradlew
+          ./android/gradlew --no-daemon :app:assembleDebug
+
+  postgres:
+    name: PostgreSQL migrations
+    needs: backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      ARCANELINK_RUN_POSTGRES_TESTS: "1"
+      ARCANELINK_TEST_POSTGRES_CONNECTION: >-
+        Host=127.0.0.1;Port=5432;Database=arcanelink_test_admin;Username=arcanelink_ci;Include Error Detail=true
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: arcanelink_test_admin
+          POSTGRES_USER: arcanelink_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanelink_ci -d arcanelink_test_admin"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.300
+
+      - name: Generate ephemeral JWT key
+        run: |
+          jwt_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$jwt_secret"
+          echo "JwtSettings__SecretKey=$jwt_secret" >> "$GITHUB_ENV"
+
+      - name: Restore local .NET tools
+        run: dotnet tool restore
+
+      - name: Restore dependencies
+        run: dotnet restore ArcaneLink.slnx
+
+      - name: Build
+        run: dotnet build ArcaneLink.slnx -c Release --no-restore
+
+      - name: Check EF model for pending changes
+        env:
+          ASPNETCORE_ENVIRONMENT: Testing
+          ConnectionStrings__DefaultConnection: >-
+            Host=127.0.0.1;Port=5432;Database=arcanelink_test_admin;Username=arcanelink_ci
+        run: >-
+          dotnet ef migrations has-pending-model-changes
+          --project backend/ArcaneLink/ArcaneLink.csproj
+          --startup-project backend/ArcaneLink/ArcaneLink.csproj
+          --configuration Release
+          --no-build
+
+      - name: Run isolated PostgreSQL tests
+        run: >-
+          dotnet test backend/ArcaneLink.Tests/ArcaneLink.Tests.csproj
+          -c Release
+          --no-build
+          --filter "FullyQualifiedName~ArcaneLink.Tests.PostgreSql"
+          --logger "trx;LogFileName=postgres.trx"
+          --results-directory "${{ github.workspace }}/artifacts/test-results/postgres"
+
+      - name: Collect PostgreSQL logs
+        if: failure()
+        run: |
+          mkdir -p artifacts/logs
+          docker logs "${{ job.services.postgres.id }}" > artifacts/logs/postgres-tests.log 2>&1 || true
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-failure-${{ github.run_attempt }}
+          path: |
+            artifacts/test-results/postgres/
+            artifacts/logs/postgres-tests.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  real-smoke:
+    name: Backend and web smoke
+    needs:
+      - web
+      - backend
+      - postgres
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ASPNETCORE_URLS: http://127.0.0.1:5207
+      ConnectionStrings__DefaultConnection: >-
+        Host=127.0.0.1;Port=5432;Database=arcanelink_test_smoke;Username=arcanelink_ci
+      ARCANELINK_API_TARGET: http://127.0.0.1:5207
+      ARCANELINK_REAL_E2E: "1"
+      ARCANELINK_REAL_BASE_URL: http://127.0.0.1:5173
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: arcanelink_test_smoke
+          POSTGRES_USER: arcanelink_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arcanelink_ci -d arcanelink_test_smoke"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.300
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: frontend/client.web/package-lock.json
+
+      - name: Generate ephemeral JWT key
+        run: |
+          jwt_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$jwt_secret"
+          echo "JwtSettings__SecretKey=$jwt_secret" >> "$GITHUB_ENV"
+
+      - name: Restore local .NET tools
+        run: dotnet tool restore
+
+      - name: Restore and build backend
+        run: |
+          dotnet restore ArcaneLink.slnx
+          dotnet build ArcaneLink.slnx -c Release --no-restore
+
+      - name: Apply EF Core migrations
+        run: >-
+          dotnet ef database update
+          --project backend/ArcaneLink/ArcaneLink.csproj
+          --startup-project backend/ArcaneLink/ArcaneLink.csproj
+          --configuration Release
+          --no-build
+
+      - name: Install web dependencies and Chromium
+        working-directory: frontend/client.web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Start backend
+        run: |
+          mkdir -p artifacts/logs
+          dotnet run \
+            --project backend/ArcaneLink/ArcaneLink.csproj \
+            -c Release \
+            --no-build \
+            --no-launch-profile \
+            > artifacts/logs/backend-real-smoke.log 2>&1 &
+          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Wait for backend readiness
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error --max-time 5 http://127.0.0.1:5207/health/ready; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat artifacts/logs/backend-real-smoke.log
+          exit 1
+
+      - name: Start Vite
+        run: |
+          npm --prefix frontend/client.web run dev -- --host 127.0.0.1 --port 5173 \
+            > artifacts/logs/vite-real-smoke.log 2>&1 &
+          echo "VITE_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Wait for Vite
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error --max-time 5 http://127.0.0.1:5173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat artifacts/logs/vite-real-smoke.log
+          exit 1
+
+      - name: Run real smoke tests
+        working-directory: frontend/client.web
+        run: npm run test:e2e:real
+
+      - name: Stop smoke processes
+        if: always()
+        run: |
+          if [ -n "${VITE_PID:-}" ]; then kill "$VITE_PID" 2>/dev/null || true; fi
+          if [ -n "${BACKEND_PID:-}" ]; then kill "$BACKEND_PID" 2>/dev/null || true; fi
+
+      - name: Collect PostgreSQL logs
+        if: failure()
+        run: |
+          mkdir -p artifacts/logs
+          docker logs "${{ job.services.postgres.id }}" > artifacts/logs/postgres-real-smoke.log 2>&1 || true
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-smoke-failure-${{ github.run_attempt }}
+          path: |
+            artifacts/logs/
+            frontend/client.web/playwright-report/
+            frontend/client.web/test-results/
+            frontend/client.web/blob-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deployment-smoke:
+    name: Clean-clone container deployment
+    needs:
+      - web
+      - backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build and start the application
+        run: >-
+          docker compose
+          --env-file .env.local.example
+          -f docker-compose.yml
+          up --detach --build --wait --wait-timeout 300
+
+      - name: Check readiness through Nginx
+        run: curl --fail --silent --show-error --max-time 20 http://127.0.0.1:8080/health/ready
+
+      - name: Collect container logs
+        if: failure()
+        run: |
+          mkdir -p artifacts/logs
+          docker compose --env-file .env.local.example -f docker-compose.yml logs --no-color \
+            > artifacts/logs/deployment-smoke.log 2>&1 || true
+
+      - name: Stop containers
+        if: always()
+        run: docker compose --env-file .env.local.example -f docker-compose.yml down --volumes --remove-orphans
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-smoke-failure-${{ github.run_attempt }}
+          path: artifacts/logs/deployment-smoke.log
+          if-no-files-found: ignore
+          retention-days: 7

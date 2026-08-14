@@ -1,0 +1,130 @@
+.icon {
+  display: inline-grid;
+  width: var(--voice-connection-icon-size, 22px);
+  height: var(--voice-connection-icon-size, 22px);
+  flex: 0 0 auto;
+  place-items: center;
+  color: currentColor;
+}
+
+.icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.receiver {
+  fill: currentColor;
+  stroke: color-mix(in srgb, currentColor, white 24%);
+  stroke-width: 0.45;
+  stroke-linejoin: round;
+}
+
+.wave,
+.slash {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wave {
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: left bottom;
+  transition: opacity 180ms ease;
+}
+
+.slash {
+  opacity: 0;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, currentColor, transparent 32%));
+  transition: opacity 160ms ease;
+}
+
+.icon[data-state='good'] .wave {
+  opacity: 1;
+}
+
+.icon[data-state='degraded'] .waveFar {
+  opacity: 0.18;
+}
+
+.icon[data-state='poor'] .waveMiddle,
+.icon[data-state='poor'] .waveFar {
+  opacity: 0.14;
+}
+
+.icon[data-state='unknown'] .wave {
+  opacity: 0.38;
+}
+
+.icon[data-state='disconnected'] .wave {
+  opacity: 0.1;
+}
+
+.icon[data-state='disconnected'] .slash {
+  opacity: 1;
+}
+
+.icon[data-state='connecting'] .wave,
+.icon[data-state='reconnecting'] .wave {
+  opacity: 0.14;
+  animation: voiceConnectionWave 1.35s ease-in-out infinite;
+}
+
+.icon[data-state='connecting'] .waveMiddle,
+.icon[data-state='reconnecting'] .waveMiddle {
+  animation-delay: 160ms;
+}
+
+.icon[data-state='connecting'] .waveFar,
+.icon[data-state='reconnecting'] .waveFar {
+  animation-delay: 320ms;
+}
+
+.icon[data-state='reconnecting'] .receiver {
+  animation: voiceConnectionReceiver 1.35s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes voiceConnectionWave {
+  0%,
+  72%,
+  100% {
+    opacity: 0.14;
+  }
+
+  30%,
+  52% {
+    opacity: 1;
+  }
+}
+
+@keyframes voiceConnectionReceiver {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon[data-state='connecting'] .wave,
+  .icon[data-state='reconnecting'] .wave,
+  .icon[data-state='reconnecting'] .receiver {
+    animation: none;
+  }
+
+  .icon[data-state='connecting'] .wave,
+  .icon[data-state='reconnecting'] .wave {
+    opacity: 0.72;
+  }
+}

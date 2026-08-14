@@ -1,0 +1,22 @@
+.dialog {
+  width: min(420px, 100%);
+  gap: 16px;
+  padding: 22px;
+  font-size: calc(16px * var(--profile-font-scale, 1));
+}
+
+.dialog h2 {
+  margin: 0;
+}
+
+.dialog p {
+  margin: 8px 0 0;
+  color: var(--color-muted);
+}
+
+.button {
+  min-height: 42px;
+}
+
+.secondary {
+}

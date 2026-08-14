@@ -1,0 +1,126 @@
+﻿.governancePanel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  height: 100%;
+  gap: 14px;
+  border: 1px solid var(--profile-border-control);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--color-text);
+  background:
+    linear-gradient(180deg, rgba(9, 17, 41, 0.74), rgba(4, 9, 22, 0.82)),
+    var(--profile-surface-control);
+}
+
+.governancePanelWithError {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.governanceError {
+  margin: 0;
+  color: var(--color-danger, #ff8f9a);
+  font-size: 12px;
+}
+
+.governancePanel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.governancePanel header div {
+  display: grid;
+  gap: 3px;
+}
+
+.governancePanel header span,
+.governanceList article > span {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.governancePanel button {
+  border-color: var(--profile-border-accent);
+  background: var(--profile-surface-accent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--theme-accent), transparent 82%);
+}
+
+.governanceList article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--profile-border-control);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(4, 9, 24, 0.64);
+}
+
+.governanceList small {
+  color: var(--color-muted);
+}
+
+.governanceList .joinRequestRow {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.joinRequestAvatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--profile-border-accent);
+  border-radius: 11px;
+  color: var(--theme-accent-light);
+  background: var(--theme-surface-accent);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.joinRequestAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.joinRequestIdentity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.joinRequestActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.governancePanel .joinRequestDecline {
+  border-color: var(--profile-border-control);
+  color: var(--color-muted);
+  background: transparent;
+  box-shadow: none;
+}
+
+.governancePanel .joinRequestLoadMore {
+  justify-self: center;
+  min-width: 160px;
+  margin-top: 2px;
+}
+
+@media (max-width: 620px) {
+  .governanceList .joinRequestRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .joinRequestActions {
+    grid-column: 1 / -1;
+  }
+}
+

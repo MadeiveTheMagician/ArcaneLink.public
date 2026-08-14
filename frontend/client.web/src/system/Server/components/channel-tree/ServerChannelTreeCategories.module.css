@@ -1,0 +1,186 @@
+.spaceCategory,
+.spaceLeaf {
+  --space-tree-branch: 8px;
+  --space-tree-line: var(--theme-accent-light);
+  --space-tree-line-cyan: color-mix(in srgb, var(--theme-accent-light), transparent 52%);
+  --space-tree-line-core: rgba(246, 248, 255, 0.86);
+
+  position: relative;
+  display: grid;
+  gap: 1px;
+}
+
+.spaceCategory {
+  composes: spaceCategory from './ServerChannelTreeMobile.module.css';
+}
+
+.spaceLeaf {
+  composes: spaceLeaf from './ServerChannelTreeMobile.module.css';
+}
+
+.spaceCategoryButton {
+  composes: spaceCategoryButton from './ServerChannelTreeMobile.module.css';
+  grid-template-columns: 14px minmax(0, 1fr) !important;
+  min-height: 24px !important;
+  margin: 4px 0 1px;
+  padding: 0 4px !important;
+  color: rgba(187, 198, 236, 0.68) !important;
+  text-transform: uppercase;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    filter 160ms ease;
+}
+
+.spaceCategoryButton span {
+  color: rgba(204, 190, 255, 0.82) !important;
+  font-size: 11px !important;
+  filter:
+    drop-shadow(0 0 5px var(--theme-glow-strong))
+    drop-shadow(0 0 12px var(--theme-glow));
+  transform: rotate(0deg);
+  transition:
+    color 160ms ease,
+    filter 160ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.spaceCategoryButton:hover span,
+.spaceCategoryButton:hover strong {
+  color: rgba(226, 232, 255, 0.86) !important;
+  filter:
+    drop-shadow(0 0 6px rgba(145, 116, 255, 0.45))
+    drop-shadow(0 0 14px rgba(72, 184, 255, 0.2));
+}
+
+.spaceCategory[data-collapsed="true"] > .spaceCategoryButton span {
+  transform: rotate(-90deg);
+}
+
+.spaceCategoryButton strong {
+  color: rgba(205, 214, 255, 0.78) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.03em;
+}
+
+.spaceCategoryChildren {
+  composes: spaceCategoryChildren from './ServerChannelTreeMobile.module.css';
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr;
+  gap: 1px;
+  margin-left: 9px;
+  padding-left: var(--space-tree-branch);
+  overflow: hidden;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition:
+    grid-template-rows 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 160ms ease,
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 0s;
+}
+
+.spaceCategory[data-collapsed="true"] > .spaceCategoryChildren {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    grid-template-rows 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 120ms ease,
+    transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 180ms;
+}
+
+.spaceCategoryChildrenInner {
+  composes: spaceCategoryChildrenInner from './ServerChannelTreeMobile.module.css';
+  position: relative;
+  display: grid;
+  min-height: 0;
+  gap: 1px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.spaceCategoryChildren::before {
+  position: absolute;
+  top: 0;
+  bottom: 4px;
+  left: 0;
+  z-index: 2;
+  width: 2px;
+  border-radius: 999px;
+  content: "";
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      var(--space-tree-line-core) 3%,
+      var(--space-tree-line) 9%,
+      var(--space-tree-line-cyan) 88%,
+      transparent
+    );
+  mask-image:
+    linear-gradient(
+      180deg,
+      transparent 0,
+      #000 4px,
+      #000 calc(100% - 8px),
+      transparent 100%
+    );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 84%),
+    0 0 10px rgba(122, 91, 255, 0.62),
+    0 0 22px var(--theme-glow),
+    0 0 34px rgba(122, 91, 255, 0.2);
+  opacity: 0.94;
+  transition:
+    opacity 160ms ease,
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.spaceCategory[data-collapsed="true"] > .spaceCategoryChildren::before {
+  opacity: 0;
+  transform: scaleY(0.4);
+  transform-origin: top;
+}
+
+.spaceCategoryChildrenInner > .spaceCategory::before,
+.spaceCategoryChildrenInner > .spaceLeaf::before {
+  position: absolute;
+  top: 18px;
+  left: calc(-1 * var(--space-tree-branch));
+  width: var(--space-tree-branch);
+  height: 2px;
+  border-radius: 0 999px 999px 0;
+  z-index: 3;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(
+      90deg,
+      var(--space-tree-line-core),
+      var(--space-tree-line),
+      var(--space-tree-line-cyan) 72%,
+      transparent 100%
+    );
+  mask-image:
+    linear-gradient(
+      90deg,
+      #000 0,
+      #000 calc(100% - 3px),
+      transparent 100%
+    );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 88%),
+    0 0 10px rgba(122, 91, 255, 0.56),
+    0 0 22px var(--theme-glow);
+  opacity: 0.94;
+}
+
+.spaceLeaf > button {
+  width: 100%;
+}

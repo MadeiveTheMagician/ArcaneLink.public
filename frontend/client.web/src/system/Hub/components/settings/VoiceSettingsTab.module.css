@@ -1,0 +1,226 @@
+.deviceGrid,
+.levelGrid,
+.choiceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.choiceFieldset {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.deviceField,
+.rangeField,
+.testPanel,
+.keyCapturePanel {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 14px;
+  background: var(--theme-control-bg);
+}
+
+.deviceField strong,
+.rangeField strong,
+.testPanel strong,
+.keyCapturePanel strong,
+.choiceCard strong {
+  color: var(--color-text);
+}
+
+.deviceField small,
+.rangeField small,
+.keyCapturePanel small,
+.choiceCard small {
+  color: var(--color-muted);
+}
+
+.deviceField > span {
+  width: 100%;
+}
+
+.deviceField select {
+  width: 100%;
+}
+
+.rangeField > span,
+.keyCapturePanel > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.rangeField em {
+  color: var(--theme-accent-light);
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.rangeField input {
+  width: 100%;
+  accent-color: var(--theme-accent-light);
+}
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.testPanel {
+  gap: 12px;
+}
+
+.toggleList {
+  display: grid;
+  gap: 10px;
+}
+
+.noiseRuntimePanel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-success, #6ee7a7), transparent 55%);
+  border-radius: 7px;
+  padding: 13px;
+  background: color-mix(in srgb, var(--color-success, #6ee7a7), transparent 92%);
+}
+
+.noiseRuntimePanelDegraded {
+  border-color: color-mix(in srgb, var(--color-warning, #f6b85f), transparent 48%);
+  background: color-mix(in srgb, var(--color-warning, #f6b85f), transparent 92%);
+}
+
+.noiseRuntimePanel header {
+  display: grid;
+  gap: 4px;
+}
+
+.noiseRuntimePanel header span,
+.noiseRuntimePanel dt {
+  color: var(--color-muted);
+}
+
+.noiseRuntimePanel dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.noiseRuntimePanel dl > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border-radius: 6px;
+  padding: 8px 9px;
+  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 10%);
+}
+
+.noiseRuntimePanel dt,
+.noiseRuntimePanel dd {
+  overflow-wrap: anywhere;
+}
+
+.noiseRuntimePanel dt {
+  font-size: 0.72rem;
+}
+
+.noiseRuntimePanel dd {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.choiceCard {
+  position: relative;
+  display: flex;
+  gap: 11px;
+  min-width: 0;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 14px;
+  background: var(--theme-control-bg);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.choiceCard:hover:not(:has(input:disabled)) {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-hover-bg);
+}
+
+.choiceCardActive {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-surface-accent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--theme-accent), transparent 86%);
+}
+
+.choiceCard input {
+  flex: 0 0 auto;
+  margin: 3px 0 0;
+  accent-color: var(--theme-accent-light);
+}
+
+.choiceCard span {
+  display: grid;
+  gap: 5px;
+}
+
+.choiceCard:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.keyCapturePanel {
+  margin-top: 2px;
+}
+
+.notice,
+.errorText {
+  margin: 0;
+  border-radius: 7px;
+  padding: 9px 11px;
+  color: var(--color-muted);
+  background: color-mix(in srgb, var(--theme-control-bg), transparent 12%);
+}
+
+.errorText {
+  color: rgb(255, 178, 190);
+  background: rgba(112, 26, 46, 0.28);
+}
+
+@media (max-width: 760px) {
+  .deviceGrid,
+  .levelGrid,
+  .choiceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rangeField > span,
+  .keyCapturePanel > span {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .actionRow > button {
+    flex: 1 1 180px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choiceCard {
+    transition: none;
+  }
+}

@@ -1,0 +1,93 @@
+﻿.panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 18px;
+  min-height: 0;
+  border: 1px solid var(--theme-border-soft);
+  border-right: 0;
+  border-radius: 0;
+  padding: 18px 18px calc(18px + var(--profile-voice-dock-reserve));
+  background:
+    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+  font-family: var(--profile-fantasy-font);
+}
+
+.header {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--theme-text-soft);
+}
+
+.header span {
+  color: var(--theme-text-faint);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.header strong {
+  font-size: 18px;
+}
+
+.list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.participant {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 8px;
+  color: var(--theme-accent-contrast);
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.38), transparent 28%),
+    var(--theme-surface-accent);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.participant strong,
+.participant small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participant strong {
+  font-size: 15px;
+}
+
+.participant small {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .panel {
+    display: none;
+  }
+}

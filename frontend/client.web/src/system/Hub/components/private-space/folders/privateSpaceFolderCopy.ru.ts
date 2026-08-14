@@ -1,0 +1,32 @@
+import { privateSpaceFolderNameMaxLength } from './privateSpaceFolderModel'
+
+export const privateSpaceFolderCopy = {
+  all: 'Все',
+  create: 'Создать папку',
+  edit: 'Настроить папку',
+  delete: 'Удалить папку',
+  collapse: 'Свернуть папки',
+  expand: 'Развернуть папки',
+  lock: 'Заблокировать перетаскивание',
+  unlock: 'Разблокировать перетаскивание',
+  lockOrder: 'Зафиксировать порядок переписок',
+  unlockOrder: 'Разрешить автоматический порядок',
+  lockOrderHint:
+    'Закрепляет порядок переписок в конкретной папке и не даёт новым сообщениям автоматически перемещать их.',
+  name: 'Название',
+  namePlaceholder: `Название папки, до ${privateSpaceFolderNameMaxLength} символов`,
+  icon: 'Иконка',
+  color: 'Цвет',
+  noColor: 'Без цвета',
+  conversations: 'Переписки в папке',
+  conversationSearch: 'Поиск переписок',
+  panelSearch: 'Поиск переписок и сообщений',
+  emptyConversations: 'Личных переписок пока нет.',
+  noSearchResults: 'Переписки с таким названием не найдены.',
+  readAll: 'Прочитать все',
+  save: 'Сохранить',
+  cancel: 'Отмена',
+  limitReached: 'Достигнут лимит папок для текущего тарифа.',
+  invalidFolder: 'Не удалось сохранить папку.',
+  dropHint: 'Добавить переписку в папку',
+} as const

@@ -1,0 +1,203 @@
+.list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  border-top: 1px solid var(--theme-border-soft);
+  padding: 10px 14px;
+  background: var(--theme-control-bg-strong);
+  scrollbar-width: thin;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  width: 190px;
+  grid-template-rows: 124px auto;
+  overflow: hidden;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  cursor: grab;
+  touch-action: none;
+}
+
+.card:active { cursor: grabbing; }
+
+.dragging {
+  z-index: 20;
+  opacity: 0.84;
+  box-shadow:
+    0 0 0 2px var(--theme-border-accent),
+    0 14px 34px rgba(0, 0, 0, 0.5),
+    0 0 24px var(--theme-glow-strong);
+}
+
+.dropSlot {
+  position: relative;
+  flex: 0 0 190px;
+  width: 190px;
+}
+
+.dropSlot::before,
+.dropSlot::after {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  z-index: 24;
+  width: 3px;
+  border-radius: 999px;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(
+    180deg,
+    var(--theme-border-accent),
+    color-mix(in srgb, var(--theme-accent), #ffffff 18%)
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-border-accent), transparent 42%),
+    0 0 14px var(--theme-glow-strong);
+  opacity: 0;
+  transform: scaleY(0.76);
+  transition: opacity 90ms ease, transform 90ms ease;
+}
+
+.dropSlot::before { left: -6px; }
+.dropSlot::after { right: -6px; }
+.dropBefore::before,
+.dropAfter::after { opacity: 1; transform: scaleY(1); }
+
+.preview {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  overflow: hidden;
+  color: var(--theme-accent-light);
+  background: var(--theme-control-bg-strong);
+}
+
+.preview img,
+.preview video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(0) brightness(1);
+  transform: scale(1);
+  transition: filter 420ms ease, transform 520ms ease;
+}
+
+.spoiler .preview img,
+.spoiler .preview video {
+  filter: blur(34px) brightness(0.32) saturate(0.65);
+  transform: scale(1.16);
+}
+
+.actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  border-radius: 6px;
+  padding: 2px;
+  background: rgba(4, 8, 24, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.actions button {
+  width: 28px;
+  min-height: 28px;
+  border: 0;
+  padding: 0;
+}
+
+.card footer {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding: 8px 10px;
+}
+
+.card footer strong,
+.card footer small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card footer strong { font-size: 12px; }
+.card footer small { color: var(--color-muted); font-size: 11px; }
+
+.editorBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 5, 17, 0.78);
+  backdrop-filter: blur(12px);
+  animation: attachmentBackdropIn 160ms ease-out;
+}
+
+.editor {
+  display: grid;
+  width: min(100%, 460px);
+  gap: 18px;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 8px;
+  padding: 20px;
+  background: var(--theme-control-bg-strong);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48), 0 0 30px var(--theme-glow);
+  animation: attachmentEditorIn 180ms ease-out;
+}
+
+.editor header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.editor header div { display: grid; gap: 3px; }
+.editor header span { color: var(--theme-accent-light); font-size: 11px; text-transform: uppercase; }
+.editor h3 { margin: 0; font-size: 18px; }
+.editor header button { width: 30px; min-height: 30px; border: 0; }
+
+.editor label { display: grid; gap: 7px; }
+.editor label span { color: var(--color-muted); font-size: 12px; }
+.editor input {
+  min-height: 42px;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 7px;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  outline: none;
+}
+
+.spoilerToggle {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 7px;
+  padding: 10px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  text-align: left;
+}
+
+.spoilerToggle span { display: grid; gap: 3px; }
+.spoilerToggle small { color: var(--color-muted); }
+
+@keyframes attachmentBackdropIn { from { opacity: 0; } }
+@keyframes attachmentEditorIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .editorBackdrop,
+  .editor { animation: none; }
+}

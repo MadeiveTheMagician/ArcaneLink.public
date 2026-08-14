@@ -1,0 +1,154 @@
+.selectField {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 260px);
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 14px;
+  background: var(--theme-control-bg);
+}
+
+.selectField > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.selectField strong {
+  color: var(--color-text);
+}
+
+.selectField small {
+  color: var(--color-muted);
+}
+
+.permissionHint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.permissionList {
+  overflow: hidden;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 9px;
+  background: var(--theme-control-bg);
+}
+
+.permissionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 66px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.permissionRow:hover {
+  background: var(--theme-hover-bg);
+}
+
+.permissionRow:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.permissionRow > span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.permissionRow strong {
+  color: var(--color-text);
+}
+
+.permissionRow small {
+  color: var(--color-muted);
+  line-height: 1.4;
+}
+
+.permissionRow input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--theme-accent-light);
+}
+
+.permissionRowSelected {
+  background: var(--theme-surface-accent);
+  box-shadow: inset 3px 0 0 var(--theme-accent-light);
+}
+
+.permissionRowSelected:hover {
+  background: var(--theme-active-bg);
+}
+
+.permissionSeparator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 1px;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.permissionSeparator::before,
+.permissionSeparator::after {
+  height: 1px;
+  background: var(--theme-section-border);
+  content: '';
+}
+
+.permissionSeparator::before {
+  flex: 0 0 14px;
+}
+
+.permissionSeparator::after {
+  flex: 1 1 auto;
+}
+
+.permissionSeparator:empty::before {
+  display: none;
+}
+
+.permissionSeparator:empty::after {
+  flex-basis: 100%;
+}
+
+.permissionSeparator span {
+  padding: 7px 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger, #ff8ea1);
+}
+
+@media (max-width: 680px) {
+  .selectField {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+}

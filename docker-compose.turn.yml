@@ -1,0 +1,86 @@
+services:
+  backend:
+    environment:
+      TurnCredentials__Enabled: "true"
+      TurnCredentials__SharedSecret: ${TURN_SHARED_SECRET:?Set TURN_SHARED_SECRET in .env.turn}
+      TurnCredentials__TtlSeconds: ${TURN_CREDENTIAL_TTL_SECONDS:-600}
+      TurnCredentials__Urls__0: turn:${TURN_PUBLIC_HOST:?Set TURN_PUBLIC_HOST in .env.turn}:3478?transport=udp
+      TurnCredentials__Urls__1: turn:${TURN_PUBLIC_HOST:?Set TURN_PUBLIC_HOST in .env.turn}:3478?transport=tcp
+      RateLimiting__TurnCredentials__PermitLimit: ${TURN_CREDENTIAL_PERMIT_LIMIT:-12}
+      RateLimiting__TurnCredentials__WindowSeconds: ${TURN_CREDENTIAL_WINDOW_SECONDS:-60}
+    depends_on:
+      turn:
+        condition: service_healthy
+
+  migrations:
+    environment:
+      TurnCredentials__Enabled: "true"
+      TurnCredentials__SharedSecret: ${TURN_SHARED_SECRET:?Set TURN_SHARED_SECRET in .env.turn}
+      TurnCredentials__TtlSeconds: ${TURN_CREDENTIAL_TTL_SECONDS:-600}
+      TurnCredentials__Urls__0: turn:${TURN_PUBLIC_HOST:?Set TURN_PUBLIC_HOST in .env.turn}:3478?transport=udp
+      TurnCredentials__Urls__1: turn:${TURN_PUBLIC_HOST:?Set TURN_PUBLIC_HOST in .env.turn}:3478?transport=tcp
+
+  turn:
+    image: coturn/coturn:4.15.0-r0-alpine@sha256:b73dfc469b30ee62ba6c0a1824c502e24438f15e49b5f2dec81fa10315410509
+    restart: unless-stopped
+    environment:
+      TURN_SHARED_SECRET: ${TURN_SHARED_SECRET:?Set TURN_SHARED_SECRET in .env.turn}
+    ports:
+      - "${TURN_BIND_ADDRESS:-0.0.0.0}:3478:3478/tcp"
+      - "${TURN_BIND_ADDRESS:-0.0.0.0}:3478:3478/udp"
+      - "${TURN_BIND_ADDRESS:-0.0.0.0}:${TURN_MIN_PORT:-49160}-${TURN_MAX_PORT:-49200}:${TURN_MIN_PORT:-49160}-${TURN_MAX_PORT:-49200}/udp"
+    command:
+      - --listening-port=3478
+      - --min-port=${TURN_MIN_PORT:-49160}
+      - --max-port=${TURN_MAX_PORT:-49200}
+      - --realm=${TURN_REALM:?Set TURN_REALM in .env.turn}
+      - --server-name=${TURN_REALM:?Set TURN_REALM in .env.turn}
+      - --external-ip=${TURN_EXTERNAL_IP:?Set TURN_EXTERNAL_IP in .env.turn}
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SHARED_SECRET:?Set TURN_SHARED_SECRET in .env.turn}
+      - --user-quota=${TURN_USER_QUOTA:?Set TURN_USER_QUOTA in .env.turn}
+      - --total-quota=${TURN_TOTAL_QUOTA:?Set TURN_TOTAL_QUOTA in .env.turn}
+      - --max-bps=${TURN_MAX_BPS:?Set TURN_MAX_BPS in .env.turn}
+      - --bps-capacity=${TURN_BPS_CAPACITY:?Set TURN_BPS_CAPACITY in .env.turn}
+      - --fingerprint
+      - --no-stun
+      - --no-tls
+      - --no-dtls
+      - --no-tcp-relay
+      - --no-software-attribute
+      - --unauthorized-ratelimit
+      - --no-multicast-peers
+      - --denied-peer-ip=0.0.0.0-0.255.255.255
+      - --denied-peer-ip=10.0.0.0-10.255.255.255
+      - --denied-peer-ip=100.64.0.0-100.127.255.255
+      - --denied-peer-ip=127.0.0.0-127.255.255.255
+      - --denied-peer-ip=169.254.0.0-169.254.255.255
+      - --denied-peer-ip=172.16.0.0-172.31.255.255
+      - --denied-peer-ip=192.0.0.0-192.0.0.255
+      - --denied-peer-ip=192.0.2.0-192.0.2.255
+      - --allowed-peer-ip=192.0.2.1
+      - --denied-peer-ip=192.88.99.0-192.88.99.255
+      - --denied-peer-ip=192.168.0.0-192.168.255.255
+      - --denied-peer-ip=198.18.0.0-198.19.255.255
+      - --denied-peer-ip=198.51.100.0-198.51.100.255
+      - --denied-peer-ip=203.0.113.0-203.0.113.255
+      - --denied-peer-ip=240.0.0.0-255.255.255.255
+      - --denied-peer-ip=::1-::1
+      - --denied-peer-ip=2001:db8::-2001:db8:ffff:ffff:ffff:ffff:ffff:ffff
+      - --denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+      - --denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+      - --log-file=stdout
+      - --simple-log
+    healthcheck:
+      test: ["CMD", "nc", "-z", "-w", "3", "127.0.0.1", "3478"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 10s
+    networks:
+      - edge
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

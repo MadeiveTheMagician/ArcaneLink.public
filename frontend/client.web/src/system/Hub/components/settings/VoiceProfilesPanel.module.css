@@ -1,0 +1,83 @@
+.profilePanel {
+  display: grid;
+  gap: 12px;
+}
+
+.profileSelect {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.45fr) minmax(220px, 1fr);
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 14px;
+  background: var(--theme-control-bg);
+}
+
+.profileSelect > span {
+  width: 100%;
+}
+
+.profileActions,
+.profileEditor,
+.deleteConfirmation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+}
+
+.profileEditor,
+.deleteConfirmation {
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--theme-control-bg), transparent 4%);
+}
+
+.profileEditor input {
+  flex: 1 1 240px;
+  min-width: 0;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 7px;
+  padding: 10px 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg-strong);
+  outline: none;
+}
+
+.profileEditor input:focus {
+  border-color: var(--theme-border-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-accent), transparent 76%);
+}
+
+.deleteConfirmation span {
+  flex: 1 1 280px;
+  color: rgb(255, 190, 198);
+}
+
+.profileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  color: var(--color-muted);
+  font-size: 0.83rem;
+}
+
+.error {
+  margin: 0;
+  color: rgb(255, 178, 190);
+}
+
+@media (max-width: 760px) {
+  .profileSelect {
+    grid-template-columns: 1fr;
+  }
+
+  .profileActions > button,
+  .profileEditor > button,
+  .deleteConfirmation > button {
+    flex: 1 1 150px;
+  }
+}

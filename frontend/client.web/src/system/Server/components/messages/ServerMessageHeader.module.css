@@ -1,0 +1,60 @@
+.messageHeaderActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pinnedToggle {
+  position: relative;
+  display: grid;
+  width: 24px;
+  min-height: 24px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  color: var(--theme-text-soft);
+  background: transparent;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    filter 150ms ease;
+}
+
+.pinnedToggle:hover,
+.pinnedToggle[aria-pressed="true"] {
+  color: var(--color-text);
+  filter: drop-shadow(0 0 12px var(--theme-glow-strong));
+  transform: scale(1.06);
+}
+
+.pinnedToggleIcon {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  filter:
+    drop-shadow(0 0 5px var(--theme-glow-strong))
+    drop-shadow(0 0 10px var(--theme-glow));
+}
+
+.pinnedToggleIcon svg {
+  display: block;
+}
+
+.pinnedToggle em {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  display: grid;
+  min-width: 15px;
+  min-height: 15px;
+  place-items: center;
+  border-radius: 999px;
+  padding: 0 4px;
+  color: var(--theme-accent-contrast);
+  background: color-mix(in srgb, var(--theme-accent), transparent 5%);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}

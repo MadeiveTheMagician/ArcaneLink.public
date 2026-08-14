@@ -1,0 +1,217 @@
+.overlay {
+  position: fixed;
+  z-index: 1500;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background:
+    radial-gradient(circle at 50% 8%, color-mix(in srgb, var(--theme-accent), transparent 84%), transparent 36%),
+    rgb(2 5 14 / 82%);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  animation: overlay-enter 220ms ease-out both;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  width: min(720px, calc(100vw - 56px));
+  gap: 20px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent), transparent 50%);
+  border-radius: 14px;
+  padding: 30px;
+  color: var(--color-text);
+  background:
+    linear-gradient(135deg, rgb(16 20 40 / 96%), rgb(11 16 32 / 100%) 54%),
+    radial-gradient(circle at 24% 18%, color-mix(in srgb, var(--theme-accent), transparent 86%), transparent 34%);
+  box-shadow:
+    0 26px 90px rgb(0 0 0 / 56%),
+    0 0 54px color-mix(in srgb, var(--theme-accent), transparent 88%),
+    inset 0 1px 0 rgb(230 233 245 / 8%);
+  transform-origin: 50% 46%;
+  animation: card-enter 280ms cubic-bezier(0.2, 0.82, 0.25, 1) both;
+}
+
+.overlay.closing {
+  animation: overlay-exit 240ms ease-in both;
+}
+
+.overlay.closing .card {
+  pointer-events: none;
+  animation: card-exit 240ms cubic-bezier(0.55, 0, 0.85, 0.35) both;
+}
+
+.close {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+  border: 0;
+  color: var(--theme-text-faint);
+  background: transparent;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 30px;
+  align-items: center;
+}
+
+.serverAvatar {
+  position: relative;
+  display: grid;
+  width: 150px;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-accent), transparent 34%);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--theme-accent), transparent 66%), transparent 50%),
+    linear-gradient(180deg, #151936, var(--color-bg));
+  box-shadow:
+    inset 0 0 44px color-mix(in srgb, var(--theme-accent), transparent 84%),
+    0 0 34px color-mix(in srgb, var(--theme-accent), transparent 78%);
+  font-size: 64px;
+  font-weight: 900;
+}
+
+.serverAvatar img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+}
+
+.serverDetails {
+  min-width: 0;
+}
+
+.eyebrow {
+  color: var(--theme-accent-light);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.serverDetails h2 {
+  margin: 10px 0 16px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(34px, 5vw, 48px);
+  line-height: 1.04;
+  overflow-wrap: anywhere;
+  text-shadow: 0 0 24px color-mix(in srgb, var(--theme-accent), transparent 82%);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 15px;
+}
+
+.stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stats i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--color-success), transparent 45%);
+}
+
+.description {
+  margin: 0;
+  border-top: 1px solid var(--theme-section-border);
+  padding-top: 18px;
+  color: var(--theme-text-soft);
+  font-size: 15px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.actions button {
+  min-height: 50px;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 9px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  font: inherit;
+  font-weight: 900;
+}
+
+.actions .accept {
+  background: var(--theme-surface-accent);
+  box-shadow:
+    0 0 28px color-mix(in srgb, var(--theme-accent), transparent 74%),
+    inset 0 1px 0 rgb(255 255 255 / 14%);
+}
+
+.actions .decline {
+  border-color: rgb(255 105 130 / 32%);
+  color: #ff9aae;
+  background: rgb(88 22 42 / 28%);
+}
+
+@keyframes overlay-enter {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+}
+
+@keyframes overlay-exit {
+  to {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+}
+
+@keyframes card-exit {
+  to {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .card,
+  .overlay.closing,
+  .overlay.closing .card {
+    animation-duration: 1ms;
+  }
+}
+
+@media (max-width: 680px) {
+  .summary {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .serverDetails {
+    display: grid;
+    justify-items: center;
+  }
+}

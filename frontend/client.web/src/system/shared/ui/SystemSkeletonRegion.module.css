@@ -1,0 +1,26 @@
+.region {
+  min-width: 0;
+  transition: opacity 160ms ease;
+  will-change: opacity;
+}
+
+.hidden,
+.waiting,
+.exiting {
+  opacity: 0;
+}
+
+.entering,
+.visible {
+  opacity: 1;
+}
+
+.exiting {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .region {
+    transition: none;
+  }
+}

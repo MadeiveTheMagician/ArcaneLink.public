@@ -1,0 +1,16 @@
+.icon {
+  --system-icon-color: var(--color-text);
+  pointer-events: none;
+}
+
+.small {
+  --system-icon-size: 16px;
+}
+
+.medium {
+  --system-icon-size: 32px;
+}
+
+.large {
+  --system-icon-size: 64px;
+}

@@ -1,0 +1,137 @@
+.preview {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+  margin: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent), transparent 68%);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  padding: 8px 10px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 86%), transparent 70%),
+    var(--theme-control-bg-strong);
+  box-shadow: inset 3px 0 0 var(--theme-accent-light);
+}
+
+.avatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--theme-section-border);
+  border-radius: 10px;
+  color: var(--theme-accent-contrast);
+  background: var(--theme-control-bg);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.previewText,
+.referenceText {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  text-align: left;
+}
+
+.previewHeading {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.previewHeading strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewHeading time,
+.referenceHeading {
+  color: var(--theme-accent-light);
+  font-size: 11px;
+}
+
+.previewBody,
+.referenceBody {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--theme-text-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cancel {
+  display: grid;
+  width: 32px;
+  min-height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: var(--theme-text-soft);
+  background: transparent;
+}
+
+.cancel:hover {
+  color: var(--color-text);
+  background: var(--theme-hover-bg);
+}
+
+.reference {
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0 6px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft), transparent 36%);
+  border-left: 2px solid var(--theme-accent-light);
+  border-radius: 6px;
+  padding: 6px 9px;
+  color: inherit;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 88%), transparent 72%),
+    color-mix(in srgb, var(--theme-control-bg-strong), transparent 18%);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--theme-accent), transparent 92%);
+}
+
+.referenceButton {
+  cursor: pointer;
+  font: inherit;
+}
+
+.referenceButton:hover,
+.referenceButton:focus-visible {
+  border-color: color-mix(in srgb, var(--theme-accent-light), transparent 48%);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 78%), transparent 78%),
+    var(--theme-control-bg-strong);
+}
+
+.referenceButton:focus-visible {
+  outline: 2px solid var(--theme-accent-light);
+  outline-offset: 2px;
+}
+
+.referenceMark {
+  color: var(--theme-accent-light);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.referenceBody {
+  color: var(--theme-text-soft);
+}
+
+@media (max-width: 760px) {
+  .preview {
+    margin-inline: 8px;
+  }
+}

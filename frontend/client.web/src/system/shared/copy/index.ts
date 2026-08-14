@@ -1,0 +1,8 @@
+export { authCopy } from './auth.ru'
+export { commonCopy } from './common.ru'
+export { communityCopy } from './community.ru'
+export { notificationCopy } from './notifications.ru'
+export { profileCopy } from './profile.ru'
+export { serverCopy } from './server.ru'
+export { settingsCopy } from './settings.ru'
+export { voiceCopy } from './voice.ru'

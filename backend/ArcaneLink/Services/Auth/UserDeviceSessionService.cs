@@ -21,9 +21,9 @@ namespace ArcaneLink.Services.Auth
             AppDbContext db,
             IRealtimeNotificationService realtime)
         {
-            _requestInfoService = requestInfoService;
-            _db = db;
-            _realtime = realtime;
+            this._requestInfoService = requestInfoService;
+            this._db = db;
+            this._realtime = realtime;
         }
 
         public Task<UserDeviceSession> CreateSessionAsync(
@@ -40,8 +40,8 @@ namespace ArcaneLink.Services.Auth
                 User = user,
                 CreatedAt = now,
                 LastUsedAt = now,
-                IpAddress = _requestInfoService.GetClientIpAddress(),
-                UserAgent = _requestInfoService.GetUserAgent(),
+                IpAddress = this._requestInfoService.GetClientIpAddress(),
+                UserAgent = this._requestInfoService.GetUserAgent(),
                 DeviceName = string.IsNullOrWhiteSpace(deviceName)
                     ? null
                     : deviceName.Trim()
@@ -55,7 +55,7 @@ namespace ArcaneLink.Services.Auth
             Guid? currentDeviceSessionId,
             CancellationToken cancellationToken = default)
         {
-            return await _db.UserDeviceSessions
+            return await this._db.UserDeviceSessions
                 .AsNoTracking()
                 .Where(x => x.UserId == userId && x.RevokedAt == null)
                 .OrderByDescending(x => x.LastUsedAt)
@@ -84,7 +84,7 @@ namespace ArcaneLink.Services.Auth
                 return false;
             }
 
-            var session = await _db.UserDeviceSessions
+            var session = await this._db.UserDeviceSessions
                 .FirstOrDefaultAsync(
                     x => x.Id == sessionId &&
                          x.Id != currentDeviceSessionId &&
@@ -101,12 +101,12 @@ namespace ArcaneLink.Services.Auth
             session.RevokedAt = now;
             session.LastUsedAt = now;
 
-            var sessionRefreshTokens = await _db.UserRefreshTokens
+            var sessionRefreshTokens = await this._db.UserRefreshTokens
                 .Where(x => x.DeviceSessionId == session.Id &&
                             x.RevokedAt == null)
                 .ToListAsync(cancellationToken);
 
-            var revokedByIp = _requestInfoService.GetClientIpAddress();
+            var revokedByIp = this._requestInfoService.GetClientIpAddress();
 
             foreach (var token in sessionRefreshTokens)
             {
@@ -114,13 +114,13 @@ namespace ArcaneLink.Services.Auth
                 token.RevokedByIp = revokedByIp;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserSessionsChanged,
                 new { sessionId },
                 cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.CurrentSessionRevoked,
                 new { sessionId },
@@ -134,7 +134,7 @@ namespace ArcaneLink.Services.Auth
             Guid currentDeviceSessionId,
             CancellationToken cancellationToken = default)
         {
-            var sessions = await _db.UserDeviceSessions
+            var sessions = await this._db.UserDeviceSessions
                 .Where(x => x.UserId == userId &&
                             x.Id != currentDeviceSessionId &&
                             x.RevokedAt == null)
@@ -147,7 +147,7 @@ namespace ArcaneLink.Services.Auth
 
             var sessionIds = sessions.Select(x => x.Id).ToArray();
             var now = DateTime.UtcNow;
-            var revokedByIp = _requestInfoService.GetClientIpAddress();
+            var revokedByIp = this._requestInfoService.GetClientIpAddress();
 
             foreach (var session in sessions)
             {
@@ -155,7 +155,7 @@ namespace ArcaneLink.Services.Auth
                 session.LastUsedAt = now;
             }
 
-            var sessionRefreshTokens = await _db.UserRefreshTokens
+            var sessionRefreshTokens = await this._db.UserRefreshTokens
                 .Where(x => x.DeviceSessionId != null &&
                             sessionIds.Contains(x.DeviceSessionId.Value) &&
                             x.RevokedAt == null)
@@ -167,8 +167,8 @@ namespace ArcaneLink.Services.Auth
                 token.RevokedByIp = revokedByIp;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserSessionsChanged,
                 new { sessionIds },
@@ -176,7 +176,7 @@ namespace ArcaneLink.Services.Auth
 
             foreach (var sessionId in sessionIds)
             {
-                await _realtime.NotifyUserAsync(
+                await this._realtime.NotifyUserAsync(
                     userId,
                     RealtimeEventNames.CurrentSessionRevoked,
                     new { sessionId },
@@ -190,14 +190,14 @@ namespace ArcaneLink.Services.Auth
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var sessions = await _db.UserDeviceSessions
+            var sessions = await this._db.UserDeviceSessions
                 .Where(x => x.UserId == userId && x.RevokedAt == null)
                 .ToListAsync(cancellationToken);
-            var tokens = await _db.UserRefreshTokens
+            var tokens = await this._db.UserRefreshTokens
                 .Where(x => x.UserId == userId && x.RevokedAt == null)
                 .ToListAsync(cancellationToken);
             var now = DateTime.UtcNow;
-            var revokedByIp = _requestInfoService.GetClientIpAddress();
+            var revokedByIp = this._requestInfoService.GetClientIpAddress();
 
             foreach (var session in sessions)
             {
@@ -211,13 +211,13 @@ namespace ArcaneLink.Services.Auth
                 token.RevokedByIp = revokedByIp;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserSessionsChanged,
                 new { all = true },
                 cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.CurrentSessionRevoked,
                 new { all = true },

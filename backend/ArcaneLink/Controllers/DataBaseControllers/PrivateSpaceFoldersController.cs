@@ -15,16 +15,16 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         public PrivateSpaceFoldersController(IPrivateSpaceFolderService folderService)
         {
-            _folderService = folderService;
+            this._folderService = folderService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<PrivateSpaceFolderResponse>>> GetFolders(CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             return userId == null
-                ? Unauthorized()
-                : Ok(await _folderService.GetFoldersAsync(userId.Value, cancellationToken));
+                ? this.Unauthorized()
+                : this.Ok(await this._folderService.GetFoldersAsync(userId.Value, cancellationToken));
         }
 
         [HttpPost]
@@ -32,13 +32,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpsertPrivateSpaceFolderRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var result = await _folderService.CreateFolderAsync(userId.Value, request, cancellationToken);
-            if (result.Folder != null) return Ok(result.Folder);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var result = await this._folderService.CreateFolderAsync(userId.Value, request, cancellationToken);
+            if (result.Folder != null) return this.Ok(result.Folder);
             return result.ErrorCode == "folder_limit_reached"
-                ? Conflict(new { code = result.ErrorCode })
-                : BadRequest(new { code = result.ErrorCode });
+                ? this.Conflict(new { code = result.ErrorCode })
+                : this.BadRequest(new { code = result.ErrorCode });
         }
 
         [HttpPut("{folderId:guid}")]
@@ -47,52 +47,52 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpsertPrivateSpaceFolderRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var result = await _folderService.UpdateFolderAsync(userId.Value, folderId, request, cancellationToken);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var result = await this._folderService.UpdateFolderAsync(userId.Value, folderId, request, cancellationToken);
             return result.Folder == null
-                ? BadRequest(new { code = result.ErrorCode })
-                : Ok(result.Folder);
+                ? this.BadRequest(new { code = result.ErrorCode })
+                : this.Ok(result.Folder);
         }
 
         [HttpDelete("{folderId:guid}")]
         public async Task<IActionResult> DeleteFolder(Guid folderId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return await _folderService.DeleteFolderAsync(userId.Value, folderId, cancellationToken) ? NoContent() : NotFound();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return await this._folderService.DeleteFolderAsync(userId.Value, folderId, cancellationToken) ? this.NoContent() : this.NotFound();
         }
 
         [HttpPut("{folderId:guid}/spaces/{spaceId:guid}")]
         public async Task<IActionResult> AddSpace(Guid folderId, Guid spaceId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return await _folderService.AddSpaceAsync(userId.Value, folderId, spaceId, cancellationToken) ? NoContent() : NotFound();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return await this._folderService.AddSpaceAsync(userId.Value, folderId, spaceId, cancellationToken) ? this.NoContent() : this.NotFound();
         }
 
         [HttpDelete("{folderId:guid}/spaces/{spaceId:guid}")]
         public async Task<IActionResult> RemoveSpace(Guid folderId, Guid spaceId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return await _folderService.RemoveSpaceAsync(userId.Value, folderId, spaceId, cancellationToken) ? NoContent() : NotFound();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return await this._folderService.RemoveSpaceAsync(userId.Value, folderId, spaceId, cancellationToken) ? this.NoContent() : this.NotFound();
         }
 
         [HttpPut("reorder")]
         public async Task<IActionResult> ReorderFolders([FromBody] ReorderPrivateSpaceFoldersRequest request, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return await _folderService.ReorderFoldersAsync(userId.Value, request.FolderIds, cancellationToken) ? NoContent() : BadRequest();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return await this._folderService.ReorderFoldersAsync(userId.Value, request.FolderIds, cancellationToken) ? this.NoContent() : this.BadRequest();
         }
 
         [HttpPut("{folderId:guid}/spaces/reorder")]
         public async Task<IActionResult> ReorderItems(Guid folderId, [FromBody] ReorderPrivateSpaceFolderItemsRequest request, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return await _folderService.ReorderItemsAsync(userId.Value, folderId, request.SpaceIds, cancellationToken) ? NoContent() : BadRequest();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return await this._folderService.ReorderItemsAsync(userId.Value, folderId, request.SpaceIds, cancellationToken) ? this.NoContent() : this.BadRequest();
         }
 
         [HttpPut("{folderId:guid}/spaces/{spaceId:guid}/pin")]
@@ -102,15 +102,15 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] SetPrivateSpacePinnedRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var folder = await _folderService.SetPinnedAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var folder = await this._folderService.SetPinnedAsync(
                 userId.Value,
                 folderId,
                 spaceId,
                 request.IsPinned,
                 cancellationToken);
-            return folder == null ? NotFound() : Ok(folder);
+            return folder == null ? this.NotFound() : this.Ok(folder);
         }
 
         [HttpPut("{folderId:guid}/order-lock")]
@@ -120,20 +120,20 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 [FromBody] SetPrivateSpaceFolderOrderLockRequest request,
                 CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var folder = await _folderService.SetOrderLockedAsync(
+            var folder = await this._folderService.SetOrderLockedAsync(
                 userId.Value,
                 folderId,
                 request.IsLocked,
                 cancellationToken);
-            return folder == null ? NotFound() : Ok(folder);
+            return folder == null ? this.NotFound() : this.Ok(folder);
         }
 
         private Guid? GetCurrentUserId()
         {
-            var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+            var rawUserId = this.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? this.User.FindFirstValue("sub");
             return Guid.TryParse(rawUserId, out var userId) ? userId : null;
         }
     }

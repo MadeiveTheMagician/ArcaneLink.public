@@ -33,14 +33,14 @@ namespace ArcaneLink.Services.Messages
             SpaceMessageMentionService mentions,
             ILogger<SpaceMessageCommandService> logger)
         {
-            _db = db;
-            _assetService = assetService;
-            _attachments = attachments;
-            _access = access;
-            _notifier = notifier;
-            _notifications = notifications;
-            _mentions = mentions;
-            _logger = logger;
+            this._db = db;
+            this._assetService = assetService;
+            this._attachments = attachments;
+            this._access = access;
+            this._notifier = notifier;
+            this._notifications = notifications;
+            this._mentions = mentions;
+            this._logger = logger;
         }
 
         public async Task<SpaceMessageResponse?> CreateMessageAsync(
@@ -50,54 +50,54 @@ namespace ArcaneLink.Services.Messages
             CreateSpaceMessageRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (await _access.GetWritableMessageSpaceAsync(
+            if (await this._access.GetWritableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
                     cancellationToken) == null)
             {
-                LogMessageSendFailed(currentUserId, serverId, spaceId, "space_not_accessible");
+                this.LogMessageSendFailed(currentUserId, serverId, spaceId, "space_not_accessible");
                 return null;
             }
 
             if (!HasMessageContent(request))
             {
-                LogMessageSendFailed(currentUserId, serverId, spaceId, "empty_message");
+                this.LogMessageSendFailed(currentUserId, serverId, spaceId, "empty_message");
                 return null;
             }
 
             var requestedAttachments = ResolveAttachments(request);
             if (requestedAttachments.Count > 0 &&
-                await _access.GetAttachableMessageSpaceAsync(
+                await this._access.GetAttachableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
                     cancellationToken) == null)
             {
-                LogMessageSendFailed(currentUserId, serverId, spaceId, "attach_files_denied");
+                this.LogMessageSendFailed(currentUserId, serverId, spaceId, "attach_files_denied");
                 return null;
             }
 
             if (SpaceMessageContentPolicy.ContainsExternalLink(request.Body) &&
-                await _access.GetLinkWritableMessageSpaceAsync(
+                await this._access.GetLinkWritableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
                     cancellationToken) == null)
             {
-                LogMessageSendFailed(currentUserId, serverId, spaceId, "send_links_denied");
+                this.LogMessageSendFailed(currentUserId, serverId, spaceId, "send_links_denied");
                 return null;
             }
 
-            if (!await IsValidReplyAsync(spaceId, request.ReplyToMessageId, cancellationToken))
+            if (!await this.IsValidReplyAsync(spaceId, request.ReplyToMessageId, cancellationToken))
             {
-                LogMessageSendFailed(currentUserId, serverId, spaceId, "invalid_reply");
+                this.LogMessageSendFailed(currentUserId, serverId, spaceId, "invalid_reply");
                 return null;
             }
 
             var now = DateTime.UtcNow;
             var messageId = Guid.NewGuid();
-            var attachmentValidation = await _attachments.BuildAttachmentsAsync(
+            var attachmentValidation = await this._attachments.BuildAttachmentsAsync(
                 currentUserId,
                 messageId,
                 requestedAttachments,
@@ -105,7 +105,7 @@ namespace ArcaneLink.Services.Messages
 
             if (!attachmentValidation.IsValid)
             {
-                LogMessageSendFailed(currentUserId, serverId, spaceId, "invalid_attachments");
+                this.LogMessageSendFailed(currentUserId, serverId, spaceId, "invalid_attachments");
                 return null;
             }
 
@@ -131,8 +131,8 @@ namespace ArcaneLink.Services.Messages
                 message.Assets.Add(attachment);
             }
 
-            _db.SpaceMessages.Add(message);
-            var mentionResult = await _mentions.ResolveAndStageServerAsync(
+            this._db.SpaceMessages.Add(message);
+            var mentionResult = await this._mentions.ResolveAndStageServerAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -143,21 +143,21 @@ namespace ArcaneLink.Services.Messages
                 cancellationToken);
             if (mentionResult == null)
             {
-                LogMessageSendFailed(currentUserId, serverId, spaceId, "invalid_mentions");
+                this.LogMessageSendFailed(currentUserId, serverId, spaceId, "invalid_mentions");
                 return null;
             }
-            await _db.SaveChangesAsync(cancellationToken);
-            await _notifications.NotifyChangedAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._notifications.NotifyChangedAsync(
                 mentionResult.NotifiedUserIds,
                 CancellationToken.None);
-            await _notifier.NotifyMessagesChangedAsync(
+            await this._notifier.NotifyMessagesChangedAsync(
                 serverId,
                 spaceId,
                 message.Id,
                 cancellationToken);
 
             return await SpaceMessageQueryService.LoadMutationResponseAsync(
-                _db,
+                this._db,
                 currentUserId,
                 serverId,
                 spaceId,
@@ -172,7 +172,7 @@ namespace ArcaneLink.Services.Messages
             IFormFile file,
             CancellationToken cancellationToken = default)
         {
-            if (await _access.GetAttachableMessageSpaceAsync(
+            if (await this._access.GetAttachableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -181,7 +181,7 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            return await _assetService.UploadMessageAttachmentAsync(
+            return await this._assetService.UploadMessageAttachmentAsync(
                 currentUserId,
                 file,
                 cancellationToken);
@@ -195,7 +195,7 @@ namespace ArcaneLink.Services.Messages
             UpdateSpaceMessageRequest request,
             CancellationToken cancellationToken = default)
         {
-            var message = await _db.SpaceMessages
+            var message = await this._db.SpaceMessages
                 .Include(x => x.Space)
                 .Include(x => x.Mentions)
                 .FirstOrDefaultAsync(
@@ -206,7 +206,7 @@ namespace ArcaneLink.Services.Messages
                     cancellationToken);
 
             if (message == null ||
-                !await _access.CanEditMessageAsync(
+                !await this._access.CanEditMessageAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -218,7 +218,7 @@ namespace ArcaneLink.Services.Messages
             }
 
             if (SpaceMessageContentPolicy.ContainsExternalLink(request.Body) &&
-                await _access.GetLinkWritableMessageSpaceAsync(
+                await this._access.GetLinkWritableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -228,7 +228,7 @@ namespace ArcaneLink.Services.Messages
             }
 
             var normalizedBody = NormalizeOptional(request.Body);
-            var mentionResult = await _mentions.ResolveAndStageServerAsync(
+            var mentionResult = await this._mentions.ResolveAndStageServerAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -251,18 +251,18 @@ namespace ArcaneLink.Services.Messages
 
             message.UpdatedAt = now;
             message.EditedAt = now;
-            await _db.SaveChangesAsync(cancellationToken);
-            await _notifications.NotifyChangedAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._notifications.NotifyChangedAsync(
                 mentionResult.NotifiedUserIds,
                 CancellationToken.None);
-            await _notifier.NotifyMessagesChangedAsync(
+            await this._notifier.NotifyMessagesChangedAsync(
                 serverId,
                 spaceId,
                 message.Id,
                 cancellationToken);
 
             return await SpaceMessageQueryService.LoadMutationResponseAsync(
-                _db,
+                this._db,
                 currentUserId,
                 serverId,
                 spaceId,
@@ -277,7 +277,7 @@ namespace ArcaneLink.Services.Messages
             Guid messageId,
             CancellationToken cancellationToken = default)
         {
-            var message = await _db.SpaceMessages
+            var message = await this._db.SpaceMessages
                 .Include(x => x.Space)
                 .FirstOrDefaultAsync(
                     x => x.Id == messageId &&
@@ -287,7 +287,7 @@ namespace ArcaneLink.Services.Messages
                     cancellationToken);
 
             if (message == null ||
-                !await _access.CanMutateMessageAsync(
+                !await this._access.CanMutateMessageAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -302,8 +302,8 @@ namespace ArcaneLink.Services.Messages
             message.Payload = null;
             message.DeletedAt = now;
             message.UpdatedAt = now;
-            await _db.SaveChangesAsync(cancellationToken);
-            await _notifier.NotifyMessagesChangedAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._notifier.NotifyMessagesChangedAsync(
                 serverId,
                 spaceId,
                 message.Id,
@@ -319,7 +319,7 @@ namespace ArcaneLink.Services.Messages
             Guid messageId,
             CancellationToken cancellationToken = default)
         {
-            if (await _access.GetPinnableMessageSpaceAsync(
+            if (await this._access.GetPinnableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -328,7 +328,7 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            var message = await _db.SpaceMessages
+            var message = await this._db.SpaceMessages
                 .Include(x => x.Space)
                 .FirstOrDefaultAsync(
                     x => x.Id == messageId &&
@@ -343,7 +343,7 @@ namespace ArcaneLink.Services.Messages
             }
 
             var now = DateTime.UtcNow;
-            var pinnedMessage = await _db.SpacePinnedMessages
+            var pinnedMessage = await this._db.SpacePinnedMessages
                 .FirstOrDefaultAsync(
                     x => x.SpaceId == spaceId && x.MessageId == messageId,
                     cancellationToken);
@@ -351,7 +351,7 @@ namespace ArcaneLink.Services.Messages
 
             if (pinnedMessage == null)
             {
-                _db.SpacePinnedMessages.Add(new SpacePinnedMessage
+                this._db.SpacePinnedMessages.Add(new SpacePinnedMessage
                 {
                     Id = Guid.NewGuid(),
                     SpaceId = spaceId,
@@ -372,7 +372,7 @@ namespace ArcaneLink.Services.Messages
             if (!wasPinned)
             {
                 eventMessageId = Guid.NewGuid();
-                _db.SpaceMessages.Add(new SpaceMessage
+                this._db.SpaceMessages.Add(new SpaceMessage
                 {
                     Id = eventMessageId.Value,
                     SpaceId = spaceId,
@@ -385,15 +385,15 @@ namespace ArcaneLink.Services.Messages
                 });
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _notifier.NotifyMessagesChangedAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._notifier.NotifyMessagesChangedAsync(
                 serverId,
                 spaceId,
                 eventMessageId ?? messageId,
                 cancellationToken);
 
             return await SpaceMessageQueryService.LoadMutationResponseAsync(
-                _db,
+                this._db,
                 currentUserId,
                 serverId,
                 spaceId,
@@ -408,7 +408,7 @@ namespace ArcaneLink.Services.Messages
             Guid messageId,
             CancellationToken cancellationToken = default)
         {
-            if (await _access.GetPinnableMessageSpaceAsync(
+            if (await this._access.GetPinnableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -417,7 +417,7 @@ namespace ArcaneLink.Services.Messages
                 return false;
             }
 
-            var messageExists = await _db.SpaceMessages
+            var messageExists = await this._db.SpaceMessages
                 .AnyAsync(
                     x => x.Id == messageId &&
                          x.SpaceId == spaceId &&
@@ -429,7 +429,7 @@ namespace ArcaneLink.Services.Messages
                 return false;
             }
 
-            var pinnedMessage = await _db.SpacePinnedMessages
+            var pinnedMessage = await this._db.SpacePinnedMessages
                 .FirstOrDefaultAsync(
                     x => x.SpaceId == spaceId &&
                          x.MessageId == messageId &&
@@ -442,8 +442,8 @@ namespace ArcaneLink.Services.Messages
 
             pinnedMessage.UnpinnedAt = DateTime.UtcNow;
             pinnedMessage.UnpinnedByUserId = currentUserId;
-            await _db.SaveChangesAsync(cancellationToken);
-            await _notifier.NotifyMessagesChangedAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._notifier.NotifyMessagesChangedAsync(
                 serverId,
                 spaceId,
                 messageId,
@@ -457,7 +457,7 @@ namespace ArcaneLink.Services.Messages
             CancellationToken cancellationToken)
         {
             return replyToMessageId == null ||
-                   await _db.SpaceMessages.AnyAsync(
+                   await this._db.SpaceMessages.AnyAsync(
                        x => x.Id == replyToMessageId &&
                             x.SpaceId == spaceId &&
                             x.DeletedAt == null,
@@ -525,7 +525,7 @@ namespace ArcaneLink.Services.Messages
             string reason)
         {
             ArcaneLinkDiagnostics.MessageSendFailedCounter.Add(1);
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 ObservabilityEventIds.MessageSendFailed,
                 "Message send failed. UserId={UserId} ServerId={ServerId} SpaceId={SpaceId} Reason={Reason}",
                 currentUserId,

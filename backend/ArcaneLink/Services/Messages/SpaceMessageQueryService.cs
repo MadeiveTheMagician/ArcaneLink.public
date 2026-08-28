@@ -16,8 +16,8 @@ namespace ArcaneLink.Services.Messages
             AppDbContext db,
             SpaceMessageAccessService access)
         {
-            _db = db;
-            _access = access;
+            this._db = db;
+            this._access = access;
         }
 
         public async Task<IReadOnlyList<SpaceMessageResponse>?> GetMessagesAsync(
@@ -29,7 +29,7 @@ namespace ArcaneLink.Services.Messages
             Guid? beforeId = null,
             CancellationToken cancellationToken = default)
         {
-            if (await _access.GetReadableMessageSpaceAsync(
+            if (await this._access.GetReadableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -39,7 +39,7 @@ namespace ArcaneLink.Services.Messages
             }
 
             var take = Math.Clamp(limit, 1, 100);
-            var query = LoadMessagesQuery(_db, serverId)
+            var query = LoadMessagesQuery(this._db, serverId)
                 .Where(x => x.SpaceId == spaceId && x.DeletedAt == null);
 
             if (beforeCreatedAt.HasValue && beforeId.HasValue)
@@ -79,7 +79,7 @@ namespace ArcaneLink.Services.Messages
             int limit = 30,
             CancellationToken cancellationToken = default)
         {
-            var spaceIds = await _access.GetReadableMessageSpaceIdsAsync(
+            var spaceIds = await this._access.GetReadableMessageSpaceIdsAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -100,7 +100,7 @@ namespace ArcaneLink.Services.Messages
             }
 
             var take = Math.Clamp(limit, 1, 50);
-            var messageQuery = LoadMessagesQuery(_db, serverId)
+            var messageQuery = LoadMessagesQuery(this._db, serverId)
                 .Where(
                     x => spaceIds.Contains(x.SpaceId) &&
                          x.DeletedAt == null);
@@ -146,7 +146,7 @@ namespace ArcaneLink.Services.Messages
             Guid messageId,
             CancellationToken cancellationToken = default)
         {
-            if (await _access.GetReadableMessageSpaceAsync(
+            if (await this._access.GetReadableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -155,7 +155,7 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            var message = await LoadMessagesQuery(_db, serverId)
+            var message = await LoadMessagesQuery(this._db, serverId)
                 .FirstOrDefaultAsync(
                     x => x.Id == messageId &&
                          x.SpaceId == spaceId &&
@@ -173,7 +173,7 @@ namespace ArcaneLink.Services.Messages
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            if (await _access.GetReadableMessageSpaceAsync(
+            if (await this._access.GetReadableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -182,14 +182,14 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            var pinnedMessageIds = await _db.SpacePinnedMessages
+            var pinnedMessageIds = await this._db.SpacePinnedMessages
                 .AsNoTracking()
                 .Where(x => x.SpaceId == spaceId && x.UnpinnedAt == null)
                 .OrderByDescending(x => x.PinnedAt)
                 .Select(x => x.MessageId)
                 .ToListAsync(cancellationToken);
 
-            var messagesById = await LoadMessagesQuery(_db, serverId)
+            var messagesById = await LoadMessagesQuery(this._db, serverId)
                 .Where(x => pinnedMessageIds.Contains(x.Id))
                 .Where(x => x.DeletedAt == null)
                 .ToDictionaryAsync(x => x.Id, cancellationToken);

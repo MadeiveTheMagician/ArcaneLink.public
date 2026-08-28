@@ -31,13 +31,13 @@ namespace ArcaneLink.Services.Servers
             IUserNotificationService notifications,
             ILogger<ServerInviteService> logger)
         {
-            _db = db;
-            _realtime = realtime;
-            _access = access;
-            _permissionAudience = permissionAudience;
-            _eligibility = eligibility;
-            _notifications = notifications;
-            _logger = logger;
+            this._db = db;
+            this._realtime = realtime;
+            this._access = access;
+            this._permissionAudience = permissionAudience;
+            this._eligibility = eligibility;
+            this._notifications = notifications;
+            this._logger = logger;
         }
 
         public async Task<ServerInviteResponse?> CreateInviteAsync(
@@ -46,7 +46,7 @@ namespace ArcaneLink.Services.Servers
             CreateServerInviteRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (!await _access.CanCreateInvitesAsync(currentUserId, serverId, cancellationToken))
+            if (!await this._access.CanCreateInvitesAsync(currentUserId, serverId, cancellationToken))
             {
                 return null;
             }
@@ -61,11 +61,11 @@ namespace ArcaneLink.Services.Servers
             {
                 if (request.TargetUserId == null ||
                     request.TargetUserId == currentUserId ||
-                    await _eligibility.IsActiveServerMemberAsync(
+                    await this._eligibility.IsActiveServerMemberAsync(
                         request.TargetUserId.Value,
                         serverId,
                         cancellationToken) ||
-                    await _eligibility.IsBannedServerMemberAsync(
+                    await this._eligibility.IsBannedServerMemberAsync(
                         request.TargetUserId.Value,
                         serverId,
                         cancellationToken))
@@ -73,7 +73,7 @@ namespace ArcaneLink.Services.Servers
                     return null;
                 }
 
-                var existingDirectInvite = await _eligibility.LoadActiveDirectInviteAsync(
+                var existingDirectInvite = await this._eligibility.LoadActiveDirectInviteAsync(
                     currentUserId,
                     serverId,
                     request.TargetUserId,
@@ -85,7 +85,7 @@ namespace ArcaneLink.Services.Servers
                     return existingDirectInvite;
                 }
 
-                if (!await _eligibility.CanCreateDirectInviteToTargetAsync(
+                if (!await this._eligibility.CanCreateDirectInviteToTargetAsync(
                         currentUserId,
                         serverId,
                         request.TargetUserId.Value,
@@ -102,7 +102,7 @@ namespace ArcaneLink.Services.Servers
                 CreatedByUserId = currentUserId,
                 KindId = kindId,
                 Code = kindCode == ServerInviteRules.LinkKindCode
-                    ? await GenerateInviteCodeAsync(cancellationToken)
+                    ? await this.GenerateInviteCodeAsync(cancellationToken)
                     : null,
                 TargetUserId = kindCode == ServerInviteRules.DirectKindCode
                     ? request.TargetUserId
@@ -117,8 +117,8 @@ namespace ArcaneLink.Services.Servers
                 CreatedAt = now
             };
 
-            _db.ServerInvites.Add(invite);
-            _access.AddAudit(
+            this._db.ServerInvites.Add(invite);
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditInviteCreated,
                 currentUserId,
@@ -126,15 +126,15 @@ namespace ArcaneLink.Services.Servers
                 relatedInviteId: invite.Id);
             if (invite.TargetUserId != null)
             {
-                await _notifications.StageDirectInviteAsync(
+                await this._notifications.StageDirectInviteAsync(
                     invite.TargetUserId.Value,
                     currentUserId,
                     serverId,
                     invite.Id,
                     cancellationToken);
             }
-            await _db.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation(
+            await this._db.SaveChangesAsync(cancellationToken);
+            this._logger.LogInformation(
                 ObservabilityEventIds.ServerInviteCreated,
                 "Server invite created. ServerId={ServerId} InviteId={InviteId} CreatedByUserId={CreatedByUserId} Kind={Kind} TargetUserId={TargetUserId} ExpiresAt={ExpiresAt} MaxUses={MaxUses}",
                 serverId,
@@ -145,7 +145,7 @@ namespace ArcaneLink.Services.Servers
                 invite.ExpiresAt,
                 invite.MaxUses);
 
-            await NotifyInviteAudienceAsync(
+            await this.NotifyInviteAudienceAsync(
                 serverId,
                 invite.Id,
                 [currentUserId],
@@ -153,18 +153,18 @@ namespace ArcaneLink.Services.Servers
 
             if (invite.TargetUserId != null)
             {
-                await _notifications.NotifyChangedAsync(
+                await this._notifications.NotifyChangedAsync(
                     [invite.TargetUserId.Value],
                     CancellationToken.None);
-                await _realtime.NotifyUserBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUserBestEffortAsync(
+                    this._logger,
                     invite.TargetUserId.Value,
                     RealtimeEventNames.ServerInviteReceived,
                     new { serverId, inviteId = invite.Id },
                     CancellationToken.None);
             }
 
-            invite.Kind = await _db.ServerInviteKinds.FindAsync([kindId], cancellationToken)
+            invite.Kind = await this._db.ServerInviteKinds.FindAsync([kindId], cancellationToken)
                 ?? new ServerInviteKind { Id = kindId, Code = kindCode, Title = kindCode };
 
             return ServerGovernanceMapper.ToInviteResponse(invite, now);
@@ -176,11 +176,11 @@ namespace ArcaneLink.Services.Servers
             Guid inviteId,
             CancellationToken cancellationToken = default)
         {
-            var canCreateInvites = await _access.CanCreateInvitesAsync(
+            var canCreateInvites = await this._access.CanCreateInvitesAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
-            var canManageInvites = await _access.HasGranularPermissionAsync(
+            var canManageInvites = await this._access.HasGranularPermissionAsync(
                 currentUserId,
                 serverId,
                 "MANAGE_INVITES",
@@ -190,7 +190,7 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            var invite = await _db.ServerInvites.FirstOrDefaultAsync(
+            var invite = await this._db.ServerInvites.FirstOrDefaultAsync(
                 x => x.Id == inviteId &&
                      x.ServerId == serverId,
                 cancellationToken);
@@ -207,20 +207,20 @@ namespace ArcaneLink.Services.Servers
 
             invite.RevokedAt = DateTime.UtcNow;
             invite.RevokedByUserId = currentUserId;
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditInviteRevoked,
                 currentUserId,
                 invite.TargetUserId,
                 relatedInviteId: invite.Id);
             var notificationChanged = invite.TargetUserId != null &&
-                await _notifications.StageInviteReadAsync(
+                await this._notifications.StageInviteReadAsync(
                     invite.TargetUserId.Value,
                     invite.Id,
                     cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
 
-            await NotifyInviteAudienceAsync(
+            await this.NotifyInviteAudienceAsync(
                 serverId,
                 invite.Id,
                 [currentUserId, invite.CreatedByUserId],
@@ -230,12 +230,12 @@ namespace ArcaneLink.Services.Servers
             {
                 if (notificationChanged)
                 {
-                    await _notifications.NotifyChangedAsync(
+                    await this._notifications.NotifyChangedAsync(
                         [invite.TargetUserId.Value],
                         cancellationToken);
                 }
-                await _realtime.NotifyUserBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUserBestEffortAsync(
+                    this._logger,
                     invite.TargetUserId.Value,
                     RealtimeEventNames.ServerInviteReceived,
                     new { serverId, inviteId = invite.Id },
@@ -254,7 +254,7 @@ namespace ArcaneLink.Services.Servers
             var ownInviteAudience = new List<Guid>();
             foreach (var userId in explicitlyIncludedUserIds.Distinct())
             {
-                if (await _access.HasGranularPermissionAsync(
+                if (await this._access.HasGranularPermissionAsync(
                         userId,
                         serverId,
                         "CREATE_INVITES",
@@ -264,13 +264,13 @@ namespace ArcaneLink.Services.Servers
                 }
             }
 
-            var audience = await _permissionAudience.ResolveAsync(
+            var audience = await this._permissionAudience.ResolveAsync(
                 serverId,
                 ["VIEW_INVITE_LOG", "MANAGE_INVITES"],
                 ownInviteAudience,
                 cancellationToken: cancellationToken);
-            await _realtime.NotifyUsersBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyUsersBestEffortAsync(
+                this._logger,
                 audience,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, inviteId },
@@ -282,7 +282,7 @@ namespace ArcaneLink.Services.Servers
             for (var attempt = 0; attempt < 20; attempt++)
             {
                 var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
-                var exists = await _db.ServerInvites.AnyAsync(x => x.Code == code, cancellationToken);
+                var exists = await this._db.ServerInvites.AnyAsync(x => x.Code == code, cancellationToken);
                 if (!exists)
                 {
                     return code;

@@ -19,10 +19,10 @@ namespace ArcaneLink.Services.PrivateSpaces
             IUserNotificationService notifications,
             TimeProvider timeProvider)
         {
-            _db = db;
-            _notifier = notifier;
-            _notifications = notifications;
-            _timeProvider = timeProvider;
+            this._db = db;
+            this._notifier = notifier;
+            this._notifications = notifications;
+            this._timeProvider = timeProvider;
         }
 
         public async Task<bool> ClearAsync(
@@ -31,7 +31,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             bool hideDirectFromList,
             CancellationToken cancellationToken = default)
         {
-            var membership = await _db.PrivateSpaceMembers
+            var membership = await this._db.PrivateSpaceMembers
                 .Include(member => member.PrivateSpace)
                     .ThenInclude(space => space.Space)
                 .FirstOrDefaultAsync(
@@ -50,8 +50,8 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return false;
             }
 
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
-            var latestVisibleMessage = await _db.SpaceMessages
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
+            var latestVisibleMessage = await this._db.SpaceMessages
                 .AsNoTracking()
                 .Where(message =>
                     message.SpaceId == spaceId &&
@@ -83,7 +83,7 @@ namespace ArcaneLink.Services.PrivateSpaces
 
             if (latestVisibleMessage != null)
             {
-                var readState = await _db.SpaceReadStates
+                var readState = await this._db.SpaceReadStates
                     .FirstOrDefaultAsync(
                         state =>
                             state.UserId == currentUserId &&
@@ -91,7 +91,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                         cancellationToken);
                 if (readState == null)
                 {
-                    _db.SpaceReadStates.Add(new SpaceReadState
+                    this._db.SpaceReadStates.Add(new SpaceReadState
                     {
                         UserId = currentUserId,
                         SpaceId = spaceId,
@@ -115,7 +115,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 }
             }
 
-            var mentionNotifications = await _db.UserNotifications
+            var mentionNotifications = await this._db.UserNotifications
                 .Where(notification =>
                     notification.UserId == currentUserId &&
                     notification.SpaceId == spaceId &&
@@ -129,18 +129,18 @@ namespace ArcaneLink.Services.PrivateSpaces
                 notification.ReadAt = now;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _notifier.NotifySpacesChangedForUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._notifier.NotifySpacesChangedForUserAsync(
                 currentUserId,
                 spaceId,
                 CancellationToken.None);
-            await _notifier.NotifyMessagesChangedAsync(
+            await this._notifier.NotifyMessagesChangedAsync(
                 spaceId,
                 messageId: null,
                 CancellationToken.None);
             if (mentionNotifications.Count > 0)
             {
-                await _notifications.NotifyChangedAsync(
+                await this._notifications.NotifyChangedAsync(
                     [currentUserId],
                     CancellationToken.None);
             }

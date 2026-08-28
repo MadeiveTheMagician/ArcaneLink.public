@@ -18,7 +18,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         public ModerationController(IModerationService moderation)
         {
-            _moderation = moderation;
+            this._moderation = moderation;
         }
 
         [HttpPost("api/servers/{serverId:guid}/spaces/{spaceId:guid}/messages/{messageId:guid}/reports")]
@@ -30,13 +30,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] CreateModerationReportRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var result = await _moderation.CreateMessageReportAsync(
+            var result = await this._moderation.CreateMessageReportAsync(
                 userId.Value,
                 serverId,
                 spaceId,
@@ -46,10 +46,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
             return result.Status switch
             {
-                CreateModerationReportStatus.Success => Ok(result.Report),
-                CreateModerationReportStatus.InvalidReason => BadRequest(
+                CreateModerationReportStatus.Success => this.Ok(result.Report),
+                CreateModerationReportStatus.InvalidReason => this.BadRequest(
                     new { code = "invalid_moderation_reason" }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
 
@@ -57,13 +57,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<ModerationReportResponse>>> GetMyReports(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _moderation.GetMyReportsAsync(
+            return this.Ok(await this._moderation.GetMyReportsAsync(
                 userId.Value,
                 cancellationToken));
         }
@@ -77,20 +77,20 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] int limit = 50,
             CancellationToken cancellationToken = default)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
             if ((status != null && !ModerationCaseStatuses.All.Contains(status)) ||
                 (beforeUpdatedAt == null) != (beforeId == null) ||
                 limit is < 1 or > 100)
             {
-                return BadRequest(new { code = "invalid_moderation_case_query" });
+                return this.BadRequest(new { code = "invalid_moderation_case_query" });
             }
 
-            var response = await _moderation.GetCasesAsync(
+            var response = await this._moderation.GetCasesAsync(
                 userId.Value,
                 serverId,
                 status,
@@ -99,7 +99,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 limit,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpGet("api/servers/{serverId:guid}/moderation/cases/{caseId:guid}")]
@@ -108,19 +108,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid caseId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _moderation.GetCaseAsync(
+            var response = await this._moderation.GetCaseAsync(
                 userId.Value,
                 serverId,
                 caseId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPatch("api/servers/{serverId:guid}/moderation/cases/{caseId:guid}")]
@@ -130,13 +130,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpdateModerationCaseRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var result = await _moderation.UpdateCaseAsync(
+            var result = await this._moderation.UpdateCaseAsync(
                 userId.Value,
                 serverId,
                 caseId,
@@ -145,12 +145,12 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
             return result.Status switch
             {
-                UpdateModerationCaseStatus.Success => Ok(result.Case),
-                UpdateModerationCaseStatus.InvalidStatus => BadRequest(
+                UpdateModerationCaseStatus.Success => this.Ok(result.Case),
+                UpdateModerationCaseStatus.InvalidStatus => this.BadRequest(
                     new { code = "invalid_moderation_case_update" }),
-                UpdateModerationCaseStatus.Conflict => Conflict(
+                UpdateModerationCaseStatus.Conflict => this.Conflict(
                     new { code = "moderation_case_conflict" }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
 
@@ -161,13 +161,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid evidenceAssetId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _moderation.GetEvidenceAssetContentAsync(
+            var response = await this._moderation.GetEvidenceAssetContentAsync(
                 userId.Value,
                 serverId,
                 caseId,
@@ -175,20 +175,20 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 cancellationToken);
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            Response.Headers["X-Content-Type-Options"] = "nosniff";
-            Response.Headers["Cache-Control"] = "private, no-store";
-            Response.Headers["ETag"] = $"\"{response.Sha256}\"";
-            Response.Headers["Last-Modified"] = response.CreatedAt
+            this.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            this.Response.Headers["Cache-Control"] = "private, no-store";
+            this.Response.Headers["ETag"] = $"\"{response.Sha256}\"";
+            this.Response.Headers["Last-Modified"] = response.CreatedAt
                 .ToUniversalTime()
                 .ToString("R", CultureInfo.InvariantCulture);
-            Response.Headers["Content-Disposition"] = BuildContentDisposition(
+            this.Response.Headers["Content-Disposition"] = BuildContentDisposition(
                 response.IsSafeInline,
                 response.FileName);
 
-            return File(
+            return this.File(
                 response.Content,
                 response.IsSafeInline
                     ? response.MimeType
@@ -198,7 +198,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
             return Guid.TryParse(userIdValue, out var userId) ? userId : null;
         }
 

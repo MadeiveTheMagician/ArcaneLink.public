@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.DTOs.Logout;
+using ArcaneLink.DataBase.DTOs.Logout;
 
 namespace ArcaneLink.Services.Logout.Abstraction
 {
@@ -12,7 +12,7 @@ namespace ArcaneLink.Services.Logout.Abstraction
         Task LogoutAllAsync
             (
                 Guid userId,
-                CancellationToken cancellationToken = default   
+                CancellationToken cancellationToken = default
             );
     }
 }

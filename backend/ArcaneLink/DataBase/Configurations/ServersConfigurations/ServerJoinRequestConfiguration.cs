@@ -46,12 +46,12 @@ namespace ArcaneLink.DataBase.Configurations.ServersConfigurations
                 .HasFilter($"\"status_code\" = '{ServerJoinRequestStatusCodes.Pending}'")
                 .HasDatabaseName("UX_ServerJoinRequests_Server_User_Pending");
             entity.HasIndex(x => new
-                {
-                    x.ServerId,
-                    x.StatusCode,
-                    x.CreatedAt,
-                    x.Id
-                })
+            {
+                x.ServerId,
+                x.StatusCode,
+                x.CreatedAt,
+                x.Id
+            })
                 .HasDatabaseName("IX_ServerJoinRequests_Server_Status_Time");
             entity.HasIndex(x => new { x.UserId, x.StatusCode, x.UpdatedAt })
                 .HasDatabaseName("IX_ServerJoinRequests_User_Status_Time");

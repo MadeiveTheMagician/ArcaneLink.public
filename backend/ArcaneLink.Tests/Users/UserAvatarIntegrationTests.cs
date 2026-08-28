@@ -16,15 +16,15 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
 
     public UserAvatarIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _factory = factory;
-        _client = factory.CreateClient();
+        this._factory = factory;
+        this._client = factory.CreateClient();
     }
 
     [Fact]
     public async Task UploadAndReuseAvatar_PreservesSourceAndReplacesOptimizedCurrent()
     {
-        var accessToken = await _client.LoginAsync("owner");
-        _client.AuthorizeWith(accessToken);
+        var accessToken = await this._client.LoginAsync("owner");
+        this._client.AuthorizeWith(accessToken);
         await using var source = CreateSourcePng();
         var sourceBytes = source.ToArray();
         Guid? sourceAssetId = null;
@@ -37,7 +37,7 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
                 cropOffsetX: 0.12,
                 cropOffsetY: -0.08,
                 cropZoom: 1.65);
-            var uploadResponse = await _client.PostAsync(
+            var uploadResponse = await this._client.PostAsync(
                 "/api/users/me/profile/avatar/upload",
                 upload);
             await ApiClientExtensions.EnsureSuccessWithBodyAsync(uploadResponse);
@@ -51,7 +51,7 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
             Assert.Equal(0, profile.AvatarCropOffsetY);
             Assert.Equal(1, profile.AvatarCropZoom);
 
-            var currentAsset = await _client.GetFromJsonAsync<AssetResponse>(
+            var currentAsset = await this._client.GetFromJsonAsync<AssetResponse>(
                 $"/api/assets/{currentAssetId}");
 
             Assert.NotNull(currentAsset);
@@ -61,7 +61,7 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
             Assert.Equal(512, currentAsset.Height);
             Assert.True(currentAsset.SizeBytes < sourceBytes.Length);
 
-            var currentContent = await _client.GetByteArrayAsync(
+            var currentContent = await this._client.GetByteArrayAsync(
                 $"/api/assets/{currentAssetId}/content");
             Assert.Equal("RIFF", System.Text.Encoding.ASCII.GetString(
                 currentContent,
@@ -72,7 +72,7 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
                 8,
                 4));
 
-            var library = await _client.GetFromJsonAsync<List<AssetResponse>>(
+            var library = await this._client.GetFromJsonAsync<List<AssetResponse>>(
                 "/api/assets/me/avatar");
             var sourceAsset = Assert.Single(
                 library!,
@@ -84,7 +84,7 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
             Assert.Equal(sourceBytes.Length, sourceAsset.SizeBytes);
             Assert.NotEqual(currentAssetId, sourceAsset.Id);
 
-            using (var anonymousClient = _factory.CreateClient())
+            using (var anonymousClient = this._factory.CreateClient())
             {
                 var publicProfile = await anonymousClient.GetFromJsonAsync<JsonElement>(
                     $"/api/users/{ArcaneLinkApiFactory.OwnerUserId}");
@@ -104,7 +104,7 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
                 Assert.Equal(HttpStatusCode.OK, publicCurrentResponse.StatusCode);
             }
 
-            var reuseResponse = await _client.PostAsJsonAsync(
+            var reuseResponse = await this._client.PostAsJsonAsync(
                 $"/api/users/me/profile/avatar/{sourceAsset.Id}",
                 new SetAvatarRequest
                 {
@@ -124,11 +124,11 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
             Assert.Equal(0, reusedProfile.AvatarCropOffsetY);
             Assert.Equal(1, reusedProfile.AvatarCropZoom);
 
-            var oldCurrentResponse = await _client.GetAsync(
+            var oldCurrentResponse = await this._client.GetAsync(
                 $"/api/assets/{currentAssetId}/content");
             Assert.Equal(HttpStatusCode.NotFound, oldCurrentResponse.StatusCode);
 
-            var libraryAfterReuse = await _client
+            var libraryAfterReuse = await this._client
                 .GetFromJsonAsync<List<AssetResponse>>("/api/assets/me/avatar");
             Assert.Contains(
                 libraryAfterReuse!,
@@ -140,12 +140,12 @@ public sealed class UserAvatarIntegrationTests : IClassFixture<ArcaneLinkApiFact
         {
             if (sourceAssetId != null)
             {
-                await _client.DeleteAsync($"/api/assets/{sourceAssetId}");
+                await this._client.DeleteAsync($"/api/assets/{sourceAssetId}");
             }
 
             if (currentAssetId != null)
             {
-                await _client.DeleteAsync($"/api/assets/{currentAssetId}");
+                await this._client.DeleteAsync($"/api/assets/{currentAssetId}");
             }
         }
     }

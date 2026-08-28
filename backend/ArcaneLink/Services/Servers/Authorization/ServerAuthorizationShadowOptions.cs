@@ -9,15 +9,15 @@ namespace ArcaneLink.Services.Servers.Authorization
 
         public bool IsEnforced(string permissionCode)
         {
-            return EnforcedPermissionCodes?.Contains(
+            return this.EnforcedPermissionCodes?.Contains(
                        permissionCode,
                        StringComparer.OrdinalIgnoreCase) == true;
         }
 
         public bool HasValidEnforcementConfiguration()
         {
-            return EnforcedPermissionCodes != null &&
-                   EnforcedPermissionCodes.All(
+            return this.EnforcedPermissionCodes != null &&
+                   this.EnforcedPermissionCodes.All(
                        LegacyServerPermissionMaskAdapter
                            .IsRepresentativePermissionCode);
         }

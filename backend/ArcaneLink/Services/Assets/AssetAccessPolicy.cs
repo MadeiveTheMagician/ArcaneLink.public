@@ -16,8 +16,8 @@ namespace ArcaneLink.Services.Assets
             AppDbContext db,
             SpaceMessageAccessService messageAccess)
         {
-            _db = db;
-            _messageAccess = messageAccess;
+            this._db = db;
+            this._messageAccess = messageAccess;
         }
 
         public async Task<AssetReadScope> GetReadScopeAsync(
@@ -28,12 +28,12 @@ namespace ArcaneLink.Services.Assets
             if (asset.AssetTypeId == AssetTypeIds.Avatar)
             {
                 var isLegacyPublicAvatar =
-                    await _db.UserProfiles
+                    await this._db.UserProfiles
                         .AsNoTracking()
                         .AnyAsync(
                             profile => profile.AvatarAssetId == asset.Id,
                             cancellationToken) ||
-                    await _db.ServerMemberProfiles
+                    await this._db.ServerMemberProfiles
                         .AsNoTracking()
                         .AnyAsync(
                             profile => profile.AvatarAssetId == asset.Id,
@@ -60,7 +60,7 @@ namespace ArcaneLink.Services.Assets
                 return AssetReadScope.Denied;
             }
 
-            var liveLinks = await _db.SpaceMessageAssets
+            var liveLinks = await this._db.SpaceMessageAssets
                 .AsNoTracking()
                 .Where(link =>
                     link.AssetId == asset.Id &&
@@ -91,7 +91,7 @@ namespace ArcaneLink.Services.Assets
                 .Distinct()
                 .ToList();
             if (privateSpaceIds.Count > 0 &&
-                await _db.PrivateSpaceMembers
+                await this._db.PrivateSpaceMembers
                     .AsNoTracking()
                     .AnyAsync(
                         member =>
@@ -108,7 +108,7 @@ namespace ArcaneLink.Services.Assets
                          !link.IsPrivate &&
                          link.ServerId.HasValue))
             {
-                if (await _messageAccess.GetReadableMessageSpaceAsync(
+                if (await this._messageAccess.GetReadableMessageSpaceAsync(
                         currentUserId.Value,
                         serverLink.ServerId!.Value,
                         serverLink.SpaceId,

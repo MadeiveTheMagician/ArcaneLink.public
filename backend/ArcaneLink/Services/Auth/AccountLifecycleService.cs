@@ -48,22 +48,22 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         IRequestInfoService requestInfoService,
         IRealtimeNotificationService realtime)
     {
-        _db = db;
-        _passwordService = passwordService;
-        _passwordValidator = passwordValidator;
-        _emailOutbox = emailOutbox;
-        _emailTemplates = emailTemplates;
-        _options = options.Value;
-        _logger = logger;
-        _requestInfoService = requestInfoService;
-        _realtime = realtime;
+        this._db = db;
+        this._passwordService = passwordService;
+        this._passwordValidator = passwordValidator;
+        this._emailOutbox = emailOutbox;
+        this._emailTemplates = emailTemplates;
+        this._options = options.Value;
+        this._logger = logger;
+        this._requestInfoService = requestInfoService;
+        this._realtime = realtime;
     }
 
     public async Task QueueRegistrationVerificationAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(
+        var user = await this._db.Users.FirstOrDefaultAsync(
             x => x.Id == userId &&
                  x.DeletedAt == null &&
                  x.StatusId == UserStatusIds.PendingEmailVerification,
@@ -73,14 +73,14 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
             return;
         }
 
-        var rawToken = await CreateTokenAsync(
+        var rawToken = await this.CreateTokenAsync(
             user.Id,
             AccountActionTokenPurposes.EmailVerification,
             pendingValue: user.EmailNorm,
-            DateTime.UtcNow.AddHours(_options.EmailVerificationLifetimeHours),
+            DateTime.UtcNow.AddHours(this._options.EmailVerificationLifetimeHours),
             cancellationToken);
-        _emailOutbox.EnqueueEmail(CreateVerificationEmail(user.Email, rawToken));
-        await _db.SaveChangesAsync(cancellationToken);
+        this._emailOutbox.EnqueueEmail(this.CreateVerificationEmail(user.Email, rawToken));
+        await this._db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task QueueVerificationResendAsync(
@@ -89,17 +89,17 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
     {
         // Eligibility is deliberately resolved by the worker. Existing and
         // non-existing accounts therefore follow the same request path.
-        _emailOutbox.EnqueueLookup(
+        this._emailOutbox.EnqueueLookup(
             EmailOutboxKinds.VerificationLookup,
             Normalize(email));
-        await _db.SaveChangesAsync(cancellationToken);
+        await this._db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<ConfirmEmailResponse> ConfirmEmailAsync(
         string token,
         CancellationToken cancellationToken = default)
     {
-        var actionToken = await FindValidTokenAsync(
+        var actionToken = await this.FindValidTokenAsync(
             token,
             [AccountActionTokenPurposes.EmailVerification, AccountActionTokenPurposes.EmailChange],
             cancellationToken);
@@ -117,7 +117,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
             actionToken.User.StatusId = UserStatusIds.Active;
             actionToken.User.UpdatedAt = now;
             actionToken.ConsumedAt = now;
-            await SaveConsumedTokenAsync(cancellationToken);
+            await this.SaveConsumedTokenAsync(cancellationToken);
             return new ConfirmEmailResponse(true, false, false);
         }
 
@@ -128,7 +128,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         }
 
         var newEmailNorm = Normalize(newEmail);
-        var isOccupied = await _db.Users.AnyAsync(
+        var isOccupied = await this._db.Users.AnyAsync(
             x => x.Id != actionToken.UserId && x.EmailNorm == newEmailNorm,
             cancellationToken);
         if (isOccupied)
@@ -142,8 +142,8 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         actionToken.User.EmailConfirmedAt = now;
         actionToken.User.UpdatedAt = now;
         actionToken.ConsumedAt = now;
-        _emailOutbox.EnqueueEmail(CreateEmailChangedSecurityNotice(oldEmail));
-        await CommitAccountMutationAndRevokeSessionsAsync(
+        this._emailOutbox.EnqueueEmail(this.CreateEmailChangedSecurityNotice(oldEmail));
+        await this.CommitAccountMutationAndRevokeSessionsAsync(
             actionToken.UserId,
             tokenBackedMutation: true,
             invalidateActionTokens: true,
@@ -156,10 +156,10 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         string loginOrEmail,
         CancellationToken cancellationToken = default)
     {
-        _emailOutbox.EnqueueLookup(
+        this._emailOutbox.EnqueueLookup(
             EmailOutboxKinds.PasswordResetLookup,
             Normalize(loginOrEmail));
-        await _db.SaveChangesAsync(cancellationToken);
+        await this._db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task ResetPasswordAsync(
@@ -167,19 +167,19 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         string newPassword,
         CancellationToken cancellationToken = default)
     {
-        await ValidateNewPasswordAsync(newPassword);
-        var actionToken = await FindValidTokenAsync(
+        await this.ValidateNewPasswordAsync(newPassword);
+        var actionToken = await this.FindValidTokenAsync(
             token,
             [AccountActionTokenPurposes.PasswordReset],
             cancellationToken);
         var now = DateTime.UtcNow;
-        actionToken.User.PasswordHash = _passwordService.HashPassword(
+        actionToken.User.PasswordHash = this._passwordService.HashPassword(
             actionToken.User,
             newPassword);
         actionToken.User.PasswordChangedAt = now;
         actionToken.User.UpdatedAt = now;
         actionToken.ConsumedAt = now;
-        await CommitAccountMutationAndRevokeSessionsAsync(
+        await this.CommitAccountMutationAndRevokeSessionsAsync(
             actionToken.UserId,
             tokenBackedMutation: true,
             invalidateActionTokens: true,
@@ -191,8 +191,8 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         ChangeLoginRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await GetActiveUserAsync(userId, cancellationToken);
-        EnsureCurrentPassword(user, request.CurrentPassword);
+        var user = await this.GetActiveUserAsync(userId, cancellationToken);
+        this.EnsureCurrentPassword(user, request.CurrentPassword);
         var newLogin = request.NewLogin.Trim();
         if (newLogin.Length is < 3 or > 50)
         {
@@ -200,7 +200,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
                 "Login must contain between 3 and 50 non-whitespace characters.");
         }
         var newLoginNorm = Normalize(newLogin);
-        if (await _db.Users.AnyAsync(
+        if (await this._db.Users.AnyAsync(
                 x => x.Id != userId && x.LoginNorm == newLoginNorm,
                 cancellationToken))
         {
@@ -210,7 +210,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         user.Login = newLogin;
         user.LoginNorm = newLoginNorm;
         user.UpdatedAt = DateTime.UtcNow;
-        await CommitAccountMutationAndRevokeSessionsAsync(
+        await this.CommitAccountMutationAndRevokeSessionsAsync(
             userId,
             tokenBackedMutation: false,
             invalidateActionTokens: false,
@@ -223,8 +223,8 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         ChangeEmailRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await GetActiveUserAsync(userId, cancellationToken);
-        EnsureCurrentPassword(user, request.CurrentPassword);
+        var user = await this.GetActiveUserAsync(userId, cancellationToken);
+        this.EnsureCurrentPassword(user, request.CurrentPassword);
         var newEmail = request.NewEmail.Trim();
         if (string.IsNullOrWhiteSpace(newEmail) ||
             newEmail.Length > 254 ||
@@ -235,24 +235,24 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
                 "Email address is invalid.");
         }
         var newEmailNorm = Normalize(newEmail);
-        if (await _db.Users.AnyAsync(
+        if (await this._db.Users.AnyAsync(
                 x => x.Id != userId && x.EmailNorm == newEmailNorm,
                 cancellationToken))
         {
             throw new EmailAlreadyExistsException();
         }
 
-        await using var transaction = await _db.Database.BeginTransactionAsync(
+        await using var transaction = await this._db.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
-        var rawToken = await CreateTokenAsync(
+        var rawToken = await this.CreateTokenAsync(
             user.Id,
             AccountActionTokenPurposes.EmailChange,
             newEmail,
-            DateTime.UtcNow.AddHours(_options.EmailChangeLifetimeHours),
+            DateTime.UtcNow.AddHours(this._options.EmailChangeLifetimeHours),
             cancellationToken);
-        _emailOutbox.EnqueueEmail(CreateEmailChangeEmail(newEmail, rawToken));
-        await _db.SaveChangesAsync(cancellationToken);
+        this._emailOutbox.EnqueueEmail(this.CreateEmailChangeEmail(newEmail, rawToken));
+        await this._db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
 
@@ -261,14 +261,14 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         ChangePasswordRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await GetActiveUserAsync(userId, cancellationToken);
-        EnsureCurrentPassword(user, request.CurrentPassword);
-        await ValidateNewPasswordAsync(request.NewPassword);
+        var user = await this.GetActiveUserAsync(userId, cancellationToken);
+        this.EnsureCurrentPassword(user, request.CurrentPassword);
+        await this.ValidateNewPasswordAsync(request.NewPassword);
         var now = DateTime.UtcNow;
-        user.PasswordHash = _passwordService.HashPassword(user, request.NewPassword);
+        user.PasswordHash = this._passwordService.HashPassword(user, request.NewPassword);
         user.PasswordChangedAt = now;
         user.UpdatedAt = now;
-        await CommitAccountMutationAndRevokeSessionsAsync(
+        await this.CommitAccountMutationAndRevokeSessionsAsync(
             userId,
             tokenBackedMutation: false,
             invalidateActionTokens: true,
@@ -283,7 +283,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
-        var previousTokens = await _db.UserAccountActionTokens
+        var previousTokens = await this._db.UserAccountActionTokens
             .Where(x => x.UserId == userId &&
                         x.Purpose == purpose &&
                         x.ConsumedAt == null)
@@ -297,7 +297,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
             .TrimEnd('=')
             .Replace('+', '-')
             .Replace('/', '_');
-        _db.UserAccountActionTokens.Add(new UserAccountActionToken
+        this._db.UserAccountActionTokens.Add(new UserAccountActionToken
         {
             Id = Guid.NewGuid(),
             UserId = userId,
@@ -315,7 +315,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         DateTime consumedAt,
         CancellationToken cancellationToken)
     {
-        var activeTokens = await _db.UserAccountActionTokens
+        var activeTokens = await this._db.UserAccountActionTokens
             .Where(x => x.UserId == userId && x.ConsumedAt == null)
             .ToListAsync(cancellationToken);
         foreach (var activeToken in activeTokens)
@@ -335,7 +335,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         }
 
         var tokenHash = HashToken(rawToken.Trim());
-        var actionToken = await _db.UserAccountActionTokens
+        var actionToken = await this._db.UserAccountActionTokens
             .Include(x => x.User)
             .FirstOrDefaultAsync(
                 x => x.TokenHash == tokenHash && purposes.Contains(x.Purpose),
@@ -355,7 +355,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
     {
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -369,16 +369,16 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         bool invalidateActionTokens,
         CancellationToken cancellationToken)
     {
-        await using var transaction = await _db.Database
+        await using var transaction = await this._db.Database
             .BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var now = DateTime.UtcNow;
         if (invalidateActionTokens)
         {
-            await InvalidateActiveAccountTokensAsync(userId, now, cancellationToken);
+            await this.InvalidateActiveAccountTokensAsync(userId, now, cancellationToken);
         }
 
-        var revokedByIp = _requestInfoService.GetClientIpAddress();
-        var tokens = await _db.UserRefreshTokens
+        var revokedByIp = this._requestInfoService.GetClientIpAddress();
+        var tokens = await this._db.UserRefreshTokens
             .Where(x => x.UserId == userId && x.RevokedAt == null)
             .ToListAsync(cancellationToken);
         foreach (var token in tokens)
@@ -387,7 +387,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
             token.RevokedByIp = revokedByIp;
         }
 
-        var sessions = await _db.UserDeviceSessions
+        var sessions = await this._db.UserDeviceSessions
             .Where(x => x.UserId == userId && x.RevokedAt == null)
             .ToListAsync(cancellationToken);
         foreach (var session in sessions)
@@ -398,7 +398,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
 
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException) when (tokenBackedMutation)
@@ -412,12 +412,12 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         // state, and clients can reconcile from the sessions endpoint.
         try
         {
-            await _realtime.NotifyUserAsync(
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserSessionsChanged,
                 new { all = true },
                 cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.CurrentSessionRevoked,
                 new { all = true },
@@ -425,7 +425,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 exception,
                 "Account security state committed, but session revocation realtime delivery failed. UserId={UserId}",
                 userId);
@@ -440,7 +440,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         var normalized = Normalize(lookup);
         if (kind == EmailOutboxKinds.VerificationLookup)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(
+            var user = await this._db.Users.FirstOrDefaultAsync(
                 x => x.EmailNorm == normalized &&
                      x.DeletedAt == null &&
                      x.StatusId == UserStatusIds.PendingEmailVerification,
@@ -450,18 +450,18 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
                 return null;
             }
 
-            var token = await CreateTokenAsync(
+            var token = await this.CreateTokenAsync(
                 user.Id,
                 AccountActionTokenPurposes.EmailVerification,
                 user.EmailNorm,
-                DateTime.UtcNow.AddHours(_options.EmailVerificationLifetimeHours),
+                DateTime.UtcNow.AddHours(this._options.EmailVerificationLifetimeHours),
                 cancellationToken);
-            return CreateVerificationEmail(user.Email, token);
+            return this.CreateVerificationEmail(user.Email, token);
         }
 
         if (kind == EmailOutboxKinds.PasswordResetLookup)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(
+            var user = await this._db.Users.FirstOrDefaultAsync(
                 x => (x.LoginNorm == normalized || x.EmailNorm == normalized) &&
                      x.DeletedAt == null &&
                      x.StatusId == UserStatusIds.Active &&
@@ -472,13 +472,13 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
                 return null;
             }
 
-            var token = await CreateTokenAsync(
+            var token = await this.CreateTokenAsync(
                 user.Id,
                 AccountActionTokenPurposes.PasswordReset,
                 pendingValue: null,
-                DateTime.UtcNow.AddMinutes(_options.PasswordResetLifetimeMinutes),
+                DateTime.UtcNow.AddMinutes(this._options.PasswordResetLifetimeMinutes),
                 cancellationToken);
-            return CreatePasswordResetEmail(user.Email, token);
+            return this.CreatePasswordResetEmail(user.Email, token);
         }
 
         throw new InvalidOperationException("Unsupported deferred email kind.");
@@ -486,45 +486,45 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
 
     private OutboxEmail CreateVerificationEmail(string email, string token)
     {
-        return CreateTemplatedEmail(
+        return this.CreateTemplatedEmail(
             email,
             EmailTemplateNames.EmailVerification,
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["link"] = BuildLink("confirm-email", token),
-                ["lifetime_hours"] = _options.EmailVerificationLifetimeHours
+                ["link"] = this.BuildLink("confirm-email", token),
+                ["lifetime_hours"] = this._options.EmailVerificationLifetimeHours
                     .ToString(CultureInfo.InvariantCulture)
             });
     }
 
     private OutboxEmail CreatePasswordResetEmail(string email, string token)
     {
-        return CreateTemplatedEmail(
+        return this.CreateTemplatedEmail(
             email,
             EmailTemplateNames.PasswordReset,
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["link"] = BuildLink("reset-password", token),
-                ["lifetime_minutes"] = _options.PasswordResetLifetimeMinutes
+                ["link"] = this.BuildLink("reset-password", token),
+                ["lifetime_minutes"] = this._options.PasswordResetLifetimeMinutes
                     .ToString(CultureInfo.InvariantCulture)
             });
     }
 
     private OutboxEmail CreateEmailChangeEmail(string email, string token)
     {
-        return CreateTemplatedEmail(
+        return this.CreateTemplatedEmail(
             email,
             EmailTemplateNames.EmailChange,
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["link"] = BuildLink("confirm-email", token),
-                ["lifetime_hours"] = _options.EmailChangeLifetimeHours
+                ["link"] = this.BuildLink("confirm-email", token),
+                ["lifetime_hours"] = this._options.EmailChangeLifetimeHours
                     .ToString(CultureInfo.InvariantCulture)
             });
     }
 
     private OutboxEmail CreateEmailChangedSecurityNotice(string oldEmail) =>
-        CreateTemplatedEmail(
+        this.CreateTemplatedEmail(
             oldEmail,
             EmailTemplateNames.EmailChangedSecurityNotice);
 
@@ -533,7 +533,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         string templateName,
         IReadOnlyDictionary<string, string>? variables = null)
     {
-        var template = _emailTemplates.Render(templateName, variables);
+        var template = this._emailTemplates.Render(templateName, variables);
         return new OutboxEmail(
             recipient,
             template.Subject,
@@ -542,13 +542,13 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
     }
 
     private string BuildLink(string action, string token) =>
-        $"{_options.PublicOrigin.TrimEnd('/')}/#action={Uri.EscapeDataString(action)}&token={Uri.EscapeDataString(token)}";
+        $"{this._options.PublicOrigin.TrimEnd('/')}/#action={Uri.EscapeDataString(action)}&token={Uri.EscapeDataString(token)}";
 
     private async Task<DataBase.Models.UsersModels.User> GetActiveUserAsync(
         Guid userId,
         CancellationToken cancellationToken)
     {
-        return await _db.Users.FirstOrDefaultAsync(
+        return await this._db.Users.FirstOrDefaultAsync(
                    x => x.Id == userId &&
                         x.DeletedAt == null &&
                         x.StatusId == UserStatusIds.Active &&
@@ -561,7 +561,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
         DataBase.Models.UsersModels.User user,
         string currentPassword)
     {
-        if (_passwordService.VerifyPassword(user, user.PasswordHash, currentPassword) ==
+        if (this._passwordService.VerifyPassword(user, user.PasswordHash, currentPassword) ==
             PasswordVerificationResult.Failed)
         {
             throw new InvalidCurrentPasswordException();
@@ -570,7 +570,7 @@ public sealed class AccountLifecycleService : IAccountLifecycleService
 
     private async Task ValidateNewPasswordAsync(string password)
     {
-        var validation = await _passwordValidator.ValidateDetailedAsync(password);
+        var validation = await this._passwordValidator.ValidateDetailedAsync(password);
         if (!validation.IsValid)
         {
             throw new InvalidUserRegistrationDataException(

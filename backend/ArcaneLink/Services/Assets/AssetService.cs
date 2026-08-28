@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Assets;
@@ -12,7 +13,6 @@ using ArcaneLink.Services.Realtime;
 using ArcaneLink.Services.Realtime.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System.Security.Cryptography;
 
 namespace ArcaneLink.Services.Assets
 {
@@ -33,12 +33,12 @@ namespace ArcaneLink.Services.Assets
             IOptions<AssetUploadOptions> uploadOptions,
             ILogger<AssetService> logger)
         {
-            _db = db;
-            _assetStorageService = assetStorageService;
-            _assetAccessPolicy = assetAccessPolicy;
-            _realtime = realtime;
-            _uploadOptions = uploadOptions.Value;
-            _logger = logger;
+            this._db = db;
+            this._assetStorageService = assetStorageService;
+            this._assetAccessPolicy = assetAccessPolicy;
+            this._realtime = realtime;
+            this._uploadOptions = uploadOptions.Value;
+            this._logger = logger;
         }
 
         public Task<AssetResponse> UploadAssetAsync(
@@ -46,7 +46,7 @@ namespace ArcaneLink.Services.Assets
             UploadAssetRequest request,
             CancellationToken cancellationToken = default)
         {
-            return UploadImageAssetAsync(
+            return this.UploadImageAssetAsync(
                 ownerUserId,
                 request,
                 width: null,
@@ -65,7 +65,7 @@ namespace ArcaneLink.Services.Assets
                 throw new ArgumentOutOfRangeException(nameof(sizePixels));
             }
 
-            return UploadImageAssetAsync(
+            return this.UploadImageAssetAsync(
                 ownerUserId,
                 new UploadAssetRequest
                 {
@@ -86,27 +86,27 @@ namespace ArcaneLink.Services.Assets
         {
             try
             {
-                ValidateUploadRequest(request);
+                this.ValidateUploadRequest(request);
             }
             catch (InvalidAssetDataException exception)
             {
-                LogAssetUploadRejected(ownerUserId, request.File?.FileName, request.File?.ContentType, request.File?.Length, exception.Message);
+                this.LogAssetUploadRejected(ownerUserId, request.File?.FileName, request.File?.ContentType, request.File?.Length, exception.Message);
                 throw;
             }
 
-            var assetType = await GetAssetTypeAsync(
+            var assetType = await this.GetAssetTypeAsync(
                 request.AssetTypeId,
                 cancellationToken);
 
             if (assetType.Id == AssetTypeIds.ProfileBackground)
             {
-                await EnsureCanUploadProfileBackgroundAsync(
+                await this.EnsureCanUploadProfileBackgroundAsync(
                     ownerUserId,
                     cancellationToken);
             }
             else if (assetType.Id == AssetTypeIds.Banner)
             {
-                await EnsureCanUploadProfileBannerAsync(
+                await this.EnsureCanUploadProfileBannerAsync(
                     ownerUserId,
                     cancellationToken);
             }
@@ -116,7 +116,7 @@ namespace ArcaneLink.Services.Assets
             await inputStream.CopyToAsync(buffer, cancellationToken);
             var inspectedFileType = ValidateTrustedFileType(
                 buffer,
-                _uploadOptions.AllowedImageMimeTypes);
+                this._uploadOptions.AllowedImageMimeTypes);
 
             buffer.Position = 0;
             var sha256 = Convert.ToHexString(
@@ -124,7 +124,7 @@ namespace ArcaneLink.Services.Assets
 
             var assetId = Guid.NewGuid();
 
-            var storageResult = await _assetStorageService.SaveAsync(
+            var storageResult = await this._assetStorageService.SaveAsync(
                 assetId,
                 ownerUserId,
                 assetType.Code,
@@ -148,23 +148,23 @@ namespace ArcaneLink.Services.Assets
                 CreatedAt = DateTime.UtcNow
             };
 
-            _db.Assets.Add(asset);
+            this._db.Assets.Add(asset);
             try
             {
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
             }
             catch
             {
-                _db.Entry(asset).State = EntityState.Detached;
+                this._db.Entry(asset).State = EntityState.Detached;
                 try
                 {
-                    await _assetStorageService.DeleteAsync(
+                    await this._assetStorageService.DeleteAsync(
                         storageResult.StorageKey,
                         CancellationToken.None);
                 }
                 catch (Exception cleanupException)
                 {
-                    _logger.LogError(
+                    this._logger.LogError(
                         cleanupException,
                         "Failed to compensate stored asset {AssetId} after metadata save failure.",
                         assetId);
@@ -172,7 +172,7 @@ namespace ArcaneLink.Services.Assets
 
                 throw;
             }
-            await NotifyOwnerAssetsChangedAsync(asset, cancellationToken);
+            await this.NotifyOwnerAssetsChangedAsync(asset, cancellationToken);
 
             return ToResponse(asset);
         }
@@ -182,21 +182,21 @@ namespace ArcaneLink.Services.Assets
             IFormFile file,
             CancellationToken cancellationToken = default)
         {
-            var subscriptionPlan = await GetOwnerSubscriptionPlanAsync(
+            var subscriptionPlan = await this.GetOwnerSubscriptionPlanAsync(
                 ownerUserId,
                 cancellationToken);
 
             try
             {
-                ValidateAttachmentUpload(file, subscriptionPlan);
+                this.ValidateAttachmentUpload(file, subscriptionPlan);
             }
             catch (InvalidAssetDataException exception)
             {
-                LogAssetUploadRejected(ownerUserId, file?.FileName, file?.ContentType, file?.Length, exception.Message);
+                this.LogAssetUploadRejected(ownerUserId, file?.FileName, file?.ContentType, file?.Length, exception.Message);
                 throw;
             }
 
-            var assetType = await GetAssetTypeAsync(
+            var assetType = await this.GetAssetTypeAsync(
                 AssetTypeIds.MessageAttachment,
                 cancellationToken);
 
@@ -212,7 +212,7 @@ namespace ArcaneLink.Services.Assets
                 await SHA256.HashDataAsync(buffer, cancellationToken));
 
             var assetId = Guid.NewGuid();
-            var storageResult = await _assetStorageService.SaveAsync(
+            var storageResult = await this._assetStorageService.SaveAsync(
                 assetId,
                 ownerUserId,
                 assetType.Code,
@@ -236,9 +236,9 @@ namespace ArcaneLink.Services.Assets
                 CreatedAt = DateTime.UtcNow
             };
 
-            _db.Assets.Add(asset);
-            await _db.SaveChangesAsync(cancellationToken);
-            await NotifyOwnerAssetsChangedAsync(asset, cancellationToken);
+            this._db.Assets.Add(asset);
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this.NotifyOwnerAssetsChangedAsync(asset, cancellationToken);
 
             return ToResponse(asset);
         }
@@ -248,7 +248,7 @@ namespace ArcaneLink.Services.Assets
             Guid assetId,
             CancellationToken cancellationToken = default)
         {
-            var asset = await _db.Assets
+            var asset = await this._db.Assets
                 .AsNoTracking()
                 .Include(x => x.AssetType)
                 .FirstOrDefaultAsync(
@@ -257,7 +257,7 @@ namespace ArcaneLink.Services.Assets
                     cancellationToken);
 
             if (asset == null ||
-                await _assetAccessPolicy.GetReadScopeAsync(
+                await this._assetAccessPolicy.GetReadScopeAsync(
                     currentUserId,
                     asset,
                     cancellationToken) == AssetReadScope.Denied)
@@ -273,7 +273,7 @@ namespace ArcaneLink.Services.Assets
             Guid? assetTypeId = null,
             CancellationToken cancellationToken = default)
         {
-            var query = _db.Assets
+            var query = this._db.Assets
                 .AsNoTracking()
                 .Include(x => x.AssetType)
                 .Where(x => x.OwnerUserId == ownerUserId &&
@@ -298,7 +298,7 @@ namespace ArcaneLink.Services.Assets
             Guid assetId,
             CancellationToken cancellationToken = default)
         {
-            return await GetAssetContentCoreAsync(
+            return await this.GetAssetContentCoreAsync(
                 assetId,
                 currentUserId,
                 enforceReadPolicy: true,
@@ -310,7 +310,7 @@ namespace ArcaneLink.Services.Assets
             Guid assetId,
             CancellationToken cancellationToken = default)
         {
-            return await GetAssetContentCoreAsync(
+            return await this.GetAssetContentCoreAsync(
                 assetId,
                 currentUserId: null,
                 enforceReadPolicy: false,
@@ -322,7 +322,7 @@ namespace ArcaneLink.Services.Assets
             Guid assetId,
             CancellationToken cancellationToken = default)
         {
-            return await GetAssetContentCoreAsync(
+            return await this.GetAssetContentCoreAsync(
                 assetId,
                 currentUserId: null,
                 enforceReadPolicy: false,
@@ -337,7 +337,7 @@ namespace ArcaneLink.Services.Assets
             bool allowSoftDeleted,
             CancellationToken cancellationToken)
         {
-            var asset = await _db.Assets
+            var asset = await this._db.Assets
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.Id == assetId &&
@@ -355,7 +355,7 @@ namespace ArcaneLink.Services.Assets
                 : AssetReadScope.Public;
             if (enforceReadPolicy)
             {
-                readScope = await _assetAccessPolicy.GetReadScopeAsync(
+                readScope = await this._assetAccessPolicy.GetReadScopeAsync(
                     currentUserId,
                     asset,
                     cancellationToken);
@@ -365,7 +365,7 @@ namespace ArcaneLink.Services.Assets
                 }
             }
 
-            var storageResult = await _assetStorageService.OpenReadAsync(
+            var storageResult = await this._assetStorageService.OpenReadAsync(
                 asset.StorageKey,
                 cancellationToken);
 
@@ -391,7 +391,7 @@ namespace ArcaneLink.Services.Assets
             Guid assetId,
             CancellationToken cancellationToken = default)
         {
-            var asset = await _db.Assets
+            var asset = await this._db.Assets
                 .FirstOrDefaultAsync(
                     x => x.Id == assetId &&
                          x.OwnerUserId == ownerUserId &&
@@ -404,16 +404,16 @@ namespace ArcaneLink.Services.Assets
             }
 
             var isManagedByDomain =
-                await _db.ServerMemberProfiles.AsNoTracking().AnyAsync(
+                await this._db.ServerMemberProfiles.AsNoTracking().AnyAsync(
                     profile =>
                         profile.AvatarAssetId == asset.Id ||
                         profile.AvatarSourceAssetId == asset.Id ||
                         profile.BannerAssetId == asset.Id,
                     cancellationToken) ||
-                await _db.Servers.AsNoTracking().AnyAsync(
+                await this._db.Servers.AsNoTracking().AnyAsync(
                     server => server.IconAssetId == asset.Id,
                     cancellationToken) ||
-                await _db.SpaceMessageAssets.AsNoTracking().AnyAsync(
+                await this._db.SpaceMessageAssets.AsNoTracking().AnyAsync(
                     attachment => attachment.AssetId == asset.Id,
                     cancellationToken);
             if (isManagedByDomain)
@@ -421,7 +421,7 @@ namespace ArcaneLink.Services.Assets
                 return OwnedAssetDeleteResult.ManagedByDomain;
             }
 
-            var profilesUsingAvatar = await _db.UserProfiles
+            var profilesUsingAvatar = await this._db.UserProfiles
                 .Where(x => x.AvatarAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
 
@@ -435,7 +435,7 @@ namespace ArcaneLink.Services.Assets
                 profile.UpdatedAt = DateTime.UtcNow;
             }
 
-            var profilesUsingAvatarSource = await _db.UserProfiles
+            var profilesUsingAvatarSource = await this._db.UserProfiles
                 .Where(x => x.AvatarSourceAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
 
@@ -445,7 +445,7 @@ namespace ArcaneLink.Services.Assets
                 profile.UpdatedAt = DateTime.UtcNow;
             }
 
-            var profilesUsingBanner = await _db.UserProfiles
+            var profilesUsingBanner = await this._db.UserProfiles
                 .Where(x => x.BannerAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
 
@@ -455,7 +455,7 @@ namespace ArcaneLink.Services.Assets
                 profile.UpdatedAt = DateTime.UtcNow;
             }
 
-            var serverProfilesUsingAvatar = await _db.ServerMemberProfiles
+            var serverProfilesUsingAvatar = await this._db.ServerMemberProfiles
                 .Where(x => x.AvatarAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
             foreach (var profile in serverProfilesUsingAvatar)
@@ -468,7 +468,7 @@ namespace ArcaneLink.Services.Assets
                 profile.UpdatedAt = DateTime.UtcNow;
             }
 
-            var serverProfilesUsingAvatarSource = await _db.ServerMemberProfiles
+            var serverProfilesUsingAvatarSource = await this._db.ServerMemberProfiles
                 .Where(x => x.AvatarSourceAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
             foreach (var profile in serverProfilesUsingAvatarSource)
@@ -477,7 +477,7 @@ namespace ArcaneLink.Services.Assets
                 profile.UpdatedAt = DateTime.UtcNow;
             }
 
-            var serverProfilesUsingBanner = await _db.ServerMemberProfiles
+            var serverProfilesUsingBanner = await this._db.ServerMemberProfiles
                 .Where(x => x.BannerAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
             foreach (var profile in serverProfilesUsingBanner)
@@ -497,7 +497,7 @@ namespace ArcaneLink.Services.Assets
                 .ToArray();
             var affectedServerMembers = affectedServerMemberIds.Length == 0
                 ? new List<ServerMember>()
-                : await _db.ServerMembers
+                : await this._db.ServerMembers
                     .Where(member => affectedServerMemberIds.Contains(member.Id))
                     .ToListAsync(cancellationToken);
             var serverProfileChangedAt = DateTime.UtcNow;
@@ -509,11 +509,11 @@ namespace ArcaneLink.Services.Assets
             {
                 if (!HasServerProfileOverrides(profile))
                 {
-                    _db.ServerMemberProfiles.Remove(profile);
+                    this._db.ServerMemberProfiles.Remove(profile);
                 }
             }
 
-            var serversUsingIcon = await _db.Servers
+            var serversUsingIcon = await this._db.Servers
                 .Where(x => x.IconAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
 
@@ -526,7 +526,7 @@ namespace ArcaneLink.Services.Assets
                 server.UpdatedAt = DateTime.UtcNow;
             }
 
-            var privateMembersUsingPeerAvatar = await _db.PrivateSpaceMembers
+            var privateMembersUsingPeerAvatar = await this._db.PrivateSpaceMembers
                 .Where(member => member.PeerAvatarAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
             foreach (var member in privateMembersUsingPeerAvatar)
@@ -538,7 +538,7 @@ namespace ArcaneLink.Services.Assets
                 member.UpdatedAt = DateTime.UtcNow;
             }
 
-            var groupsUsingAvatar = await _db.PrivateSpaces
+            var groupsUsingAvatar = await this._db.PrivateSpaces
                 .Where(space => space.AvatarAssetId == asset.Id)
                 .ToListAsync(cancellationToken);
             foreach (var privateSpace in groupsUsingAvatar)
@@ -550,18 +550,18 @@ namespace ArcaneLink.Services.Assets
                 privateSpace.UpdatedAt = DateTime.UtcNow;
             }
 
-            var isHeldByModerationEvidence = await _db.ModerationEvidenceAssets
+            var isHeldByModerationEvidence = await this._db.ModerationEvidenceAssets
                 .AsNoTracking()
                 .AnyAsync(x => x.AssetId == asset.Id, cancellationToken);
 
             asset.DeletedAt = DateTime.UtcNow;
 
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
 
             foreach (var member in privateMembersUsingPeerAvatar)
             {
-                await _realtime.NotifyUserBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUserBestEffortAsync(
+                    this._logger,
                     member.UserId,
                     RealtimeEventNames.PrivateSpacesChanged,
                     new { spaceId = member.SpaceId },
@@ -569,7 +569,7 @@ namespace ArcaneLink.Services.Assets
             }
             foreach (var privateSpace in groupsUsingAvatar)
             {
-                var recipientUserIds = await _db.PrivateSpaceMembers
+                var recipientUserIds = await this._db.PrivateSpaceMembers
                     .AsNoTracking()
                     .Where(member =>
                         member.SpaceId == privateSpace.SpaceId &&
@@ -577,8 +577,8 @@ namespace ArcaneLink.Services.Assets
                         PrivateSpaceIds.MemberStatusActive)
                     .Select(member => member.UserId)
                     .ToArrayAsync(CancellationToken.None);
-                await _realtime.NotifyUsersBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUsersBestEffortAsync(
+                    this._logger,
                     recipientUserIds,
                     RealtimeEventNames.PrivateSpacesChanged,
                     new { spaceId = privateSpace.SpaceId },
@@ -589,17 +589,17 @@ namespace ArcaneLink.Services.Assets
             {
                 if (!isHeldByModerationEvidence)
                 {
-                    await _assetStorageService.DeleteAsync(
+                    await this._assetStorageService.DeleteAsync(
                         asset.StorageKey,
                         cancellationToken);
                     asset.PhysicalDeletedAt = DateTime.UtcNow;
-                    await _db.SaveChangesAsync(cancellationToken);
+                    await this._db.SaveChangesAsync(cancellationToken);
                 }
             }
             catch (Exception exception)
             {
                 ArcaneLinkDiagnostics.AssetPhysicalDeleteFailedCounter.Add(1);
-                _logger.LogError(
+                this._logger.LogError(
                     ObservabilityEventIds.AssetPhysicalDeleteFailed,
                     exception,
                     "Failed to delete asset bytes. AssetId={AssetId} StorageKey={StorageKey}",
@@ -607,13 +607,13 @@ namespace ArcaneLink.Services.Assets
                     asset.StorageKey);
             }
 
-            await NotifyOwnerAssetsChangedAsync(asset, cancellationToken);
+            await this.NotifyOwnerAssetsChangedAsync(asset, cancellationToken);
             foreach (var userId in profilesUsingAvatar
                          .Concat(profilesUsingBanner)
                          .Select(x => x.UserId)
                          .Distinct())
             {
-                await _realtime.NotifyUserAsync(
+                await this._realtime.NotifyUserAsync(
                     userId,
                     RealtimeEventNames.UserProfileChanged,
                     new { userId, assetId = asset.Id },
@@ -622,12 +622,12 @@ namespace ArcaneLink.Services.Assets
 
             foreach (var serverId in serversUsingIcon.Select(x => x.Id).Distinct())
             {
-                await _realtime.NotifyServerAsync(
+                await this._realtime.NotifyServerAsync(
                     serverId,
                     RealtimeEventNames.ServerUpdated,
                     new { serverId, assetId = asset.Id },
                     cancellationToken);
-                await _realtime.NotifyServerAsync(
+                await this._realtime.NotifyServerAsync(
                     serverId,
                     RealtimeEventNames.ServerMembersChanged,
                     new { serverId, assetId = asset.Id },
@@ -639,7 +639,7 @@ namespace ArcaneLink.Services.Assets
                          .Select(member => member.ServerId)
                          .Distinct())
             {
-                await _realtime.NotifyServerAsync(
+                await this._realtime.NotifyServerAsync(
                     serverId,
                     RealtimeEventNames.ServerMembersChanged,
                     new { serverId, assetId = asset.Id },
@@ -668,8 +668,8 @@ namespace ArcaneLink.Services.Assets
                 return;
             }
 
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 asset.OwnerUserId.Value,
                 RealtimeEventNames.UserAssetsChanged,
                 new { assetId = asset.Id, assetTypeId = asset.AssetTypeId },
@@ -680,7 +680,7 @@ namespace ArcaneLink.Services.Assets
             Guid assetTypeId,
             CancellationToken cancellationToken)
         {
-            return await _db.AssetTypes
+            return await this._db.AssetTypes
                 .FirstOrDefaultAsync(
                     x => x.Id == assetTypeId,
                     cancellationToken)
@@ -691,16 +691,16 @@ namespace ArcaneLink.Services.Assets
             Guid ownerUserId,
             CancellationToken cancellationToken)
         {
-            var currentCount = await _db.Assets.CountAsync(
+            var currentCount = await this._db.Assets.CountAsync(
                 x => x.OwnerUserId == ownerUserId &&
                      x.AssetTypeId == AssetTypeIds.ProfileBackground &&
                      x.DeletedAt == null,
                 cancellationToken);
-            var subscriptionPlan = await GetOwnerSubscriptionPlanAsync(
+            var subscriptionPlan = await this.GetOwnerSubscriptionPlanAsync(
                 ownerUserId,
                 cancellationToken);
 
-            if (currentCount >= _uploadOptions.GetProfileBackgroundAssetLimit(subscriptionPlan))
+            if (currentCount >= this._uploadOptions.GetProfileBackgroundAssetLimit(subscriptionPlan))
             {
                 throw new InvalidAssetDataException(
                     ExceptionMessages.ProfileBackgroundAssetCountIsTooLarge);
@@ -711,14 +711,14 @@ namespace ArcaneLink.Services.Assets
             Guid ownerUserId,
             CancellationToken cancellationToken)
         {
-            var currentCount = await _db.Assets.CountAsync(
+            var currentCount = await this._db.Assets.CountAsync(
                 asset =>
                     asset.OwnerUserId == ownerUserId &&
                     asset.AssetTypeId == AssetTypeIds.Banner &&
                     asset.DeletedAt == null,
                 cancellationToken);
 
-            if (currentCount >= _uploadOptions.MaxProfileBannerAssets)
+            if (currentCount >= this._uploadOptions.MaxProfileBannerAssets)
             {
                 throw new InvalidAssetDataException(
                     ExceptionMessages.ProfileBannerAssetCountIsTooLarge);
@@ -729,7 +729,7 @@ namespace ArcaneLink.Services.Assets
             Guid ownerUserId,
             CancellationToken cancellationToken)
         {
-            return await _db.Users
+            return await this._db.Users
                 .AsNoTracking()
                 .Where(x => x.Id == ownerUserId)
                 .Select(x => x.SubscriptionType.Code)
@@ -744,7 +744,7 @@ namespace ArcaneLink.Services.Assets
                     ExceptionMessages.AssetFileIsRequired);
             }
 
-            if (request.File.Length > _uploadOptions.MaxImageUploadSizeBytes)
+            if (request.File.Length > this._uploadOptions.MaxImageUploadSizeBytes)
             {
                 throw new InvalidAssetDataException(
                     ExceptionMessages.AssetFileIsTooLarge);
@@ -759,7 +759,7 @@ namespace ArcaneLink.Services.Assets
             string reason)
         {
             ArcaneLinkDiagnostics.AssetUploadRejectedCounter.Add(1);
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 ObservabilityEventIds.AssetUploadRejected,
                 "Asset upload rejected. OwnerUserId={OwnerUserId} FileName={FileName} ContentType={ContentType} SizeBytes={SizeBytes} Reason={Reason}",
                 ownerUserId,
@@ -777,7 +777,7 @@ namespace ArcaneLink.Services.Assets
                     ExceptionMessages.AssetFileIsRequired);
             }
 
-            if (file.Length > _uploadOptions.GetAttachmentUploadLimitBytes(subscriptionPlan))
+            if (file.Length > this._uploadOptions.GetAttachmentUploadLimitBytes(subscriptionPlan))
             {
                 throw new InvalidAssetDataException(
                     ExceptionMessages.AssetFileIsTooLarge);

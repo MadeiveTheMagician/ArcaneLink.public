@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.Services.JwtService
+namespace ArcaneLink.Services.JwtService
 {
     public class JwtSettings
     {

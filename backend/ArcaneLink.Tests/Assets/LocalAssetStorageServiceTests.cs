@@ -41,7 +41,7 @@ public sealed class LocalAssetStorageServiceTests
     {
         public TestWebHostEnvironment(string contentRootPath)
         {
-            ContentRootPath = contentRootPath;
+            this.ContentRootPath = contentRootPath;
         }
 
         public string ApplicationName { get; set; } = "ArcaneLink.Tests";

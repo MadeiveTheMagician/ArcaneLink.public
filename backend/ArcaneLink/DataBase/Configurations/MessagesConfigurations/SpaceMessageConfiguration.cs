@@ -38,12 +38,12 @@ namespace ArcaneLink.DataBase.Configurations.MessagesConfigurations
                 .HasFilter("\"deleted_at\" IS NOT NULL")
                 .HasDatabaseName("IX_SpaceMessages_PrivateTrashExpiry");
             entity.HasIndex(x => new
-                {
-                    x.SpaceId,
-                    x.DeletedByUserId,
-                    x.DeletedAt,
-                    x.Id
-                })
+            {
+                x.SpaceId,
+                x.DeletedByUserId,
+                x.DeletedAt,
+                x.Id
+            })
                 .HasFilter("\"deleted_at\" IS NOT NULL")
                 .HasDatabaseName("IX_SpaceMessages_PrivateTrashPage");
 

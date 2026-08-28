@@ -13,8 +13,8 @@ namespace ArcaneLink.Services.Messages
             ISpaceMessageQueryService queries,
             ISpaceMessageCommandService commands)
         {
-            _queries = queries;
-            _commands = commands;
+            this._queries = queries;
+            this._commands = commands;
         }
 
         public Task<IReadOnlyList<SpaceMessageResponse>?> GetMessagesAsync(
@@ -26,7 +26,7 @@ namespace ArcaneLink.Services.Messages
             Guid? beforeId = null,
             CancellationToken cancellationToken = default)
         {
-            return _queries.GetMessagesAsync(
+            return this._queries.GetMessagesAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -46,7 +46,7 @@ namespace ArcaneLink.Services.Messages
             int limit = 30,
             CancellationToken cancellationToken = default)
         {
-            return _queries.SearchMessagesAsync(
+            return this._queries.SearchMessagesAsync(
                 currentUserId,
                 serverId,
                 query,
@@ -64,7 +64,7 @@ namespace ArcaneLink.Services.Messages
             CreateSpaceMessageRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _commands.CreateMessageAsync(
+            return this._commands.CreateMessageAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -79,7 +79,7 @@ namespace ArcaneLink.Services.Messages
             IFormFile file,
             CancellationToken cancellationToken = default)
         {
-            return _commands.UploadAttachmentAsync(
+            return this._commands.UploadAttachmentAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -95,7 +95,7 @@ namespace ArcaneLink.Services.Messages
             UpdateSpaceMessageRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _commands.UpdateMessageAsync(
+            return this._commands.UpdateMessageAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -111,7 +111,7 @@ namespace ArcaneLink.Services.Messages
             Guid messageId,
             CancellationToken cancellationToken = default)
         {
-            return _commands.DeleteMessageAsync(
+            return this._commands.DeleteMessageAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -126,7 +126,7 @@ namespace ArcaneLink.Services.Messages
             Guid messageId,
             CancellationToken cancellationToken = default)
         {
-            return _commands.PinMessageAsync(
+            return this._commands.PinMessageAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -141,7 +141,7 @@ namespace ArcaneLink.Services.Messages
             Guid messageId,
             CancellationToken cancellationToken = default)
         {
-            return _commands.UnpinMessageAsync(
+            return this._commands.UnpinMessageAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -155,7 +155,7 @@ namespace ArcaneLink.Services.Messages
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            return _queries.GetPinnedMessagesAsync(
+            return this._queries.GetPinnedMessagesAsync(
                 currentUserId,
                 serverId,
                 spaceId,

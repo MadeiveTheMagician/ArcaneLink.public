@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.DTOs.Users;
+using ArcaneLink.DataBase.DTOs.Users;
 
 namespace ArcaneLink.Services.Users.Abstractions
 {

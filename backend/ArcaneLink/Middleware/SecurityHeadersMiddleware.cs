@@ -18,19 +18,19 @@ public sealed class SecurityHeadersMiddleware
         RequestDelegate next,
         IOptions<SecurityHeadersOptions> options)
     {
-        _next = next;
-        _options = options.Value;
+        this._next = next;
+        this._options = options.Value;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
         context.Response.OnStarting(() =>
         {
-            ApplyHeaders(context.Response.Headers, _options);
+            ApplyHeaders(context.Response.Headers, this._options);
             return Task.CompletedTask;
         });
 
-        await _next(context);
+        await this._next(context);
     }
 
     public static void ApplyHeaders(

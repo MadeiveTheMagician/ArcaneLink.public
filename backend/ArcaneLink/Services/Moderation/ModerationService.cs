@@ -44,15 +44,15 @@ namespace ArcaneLink.Services.Moderation
             TimeProvider timeProvider,
             ILogger<ModerationService> logger)
         {
-            _db = db;
-            _spaceAuthorization = spaceAuthorization;
-            _messageAccess = messageAccess;
-            _serverAccess = serverAccess;
-            _permissionAudience = permissionAudience;
-            _assetService = assetService;
-            _realtime = realtime;
-            _timeProvider = timeProvider;
-            _logger = logger;
+            this._db = db;
+            this._spaceAuthorization = spaceAuthorization;
+            this._messageAccess = messageAccess;
+            this._serverAccess = serverAccess;
+            this._permissionAudience = permissionAudience;
+            this._assetService = assetService;
+            this._realtime = realtime;
+            this._timeProvider = timeProvider;
+            this._logger = logger;
         }
 
         public async Task<CreateModerationReportResult> CreateMessageReportAsync(
@@ -68,7 +68,7 @@ namespace ArcaneLink.Services.Moderation
                 return CreateModerationReportResult.InvalidReason();
             }
 
-            var readableSpace = await _messageAccess.GetReadableMessageSpaceAsync(
+            var readableSpace = await this._messageAccess.GetReadableMessageSpaceAsync(
                 reporterUserId,
                 serverId,
                 spaceId,
@@ -78,7 +78,7 @@ namespace ArcaneLink.Services.Moderation
                 return CreateModerationReportResult.NotFound();
             }
 
-            var message = await _db.SpaceMessages
+            var message = await this._db.SpaceMessages
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(x => x.Assets)
@@ -99,7 +99,7 @@ namespace ArcaneLink.Services.Moderation
                 return CreateModerationReportResult.NotFound();
             }
 
-            var eligibleMemberCount = await _db.ServerMembers
+            var eligibleMemberCount = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == serverId &&
@@ -121,7 +121,7 @@ namespace ArcaneLink.Services.Moderation
             {
                 try
                 {
-                    var result = await CreateReportTransactionAsync(
+                    var result = await this.CreateReportTransactionAsync(
                         reporterUserId,
                         serverId,
                         spaceId,
@@ -131,7 +131,7 @@ namespace ArcaneLink.Services.Moderation
 
                     if (result.IsNewSubmission)
                     {
-                        await NotifyReportCommittedAsync(
+                        await this.NotifyReportCommittedAsync(
                             reporterUserId,
                             result.CaseId,
                             serverId,
@@ -146,7 +146,7 @@ namespace ArcaneLink.Services.Moderation
                     // The unique case/message and case/reporter constraints are
                     // the final guard for concurrent submissions. Reload once
                     // and turn the losing request into the same idempotent 200.
-                    _db.ChangeTracker.Clear();
+                    this._db.ChangeTracker.Clear();
                     if (attempt == 1)
                     {
                         break;
@@ -154,7 +154,7 @@ namespace ArcaneLink.Services.Moderation
                 }
             }
 
-            var concurrentDuplicate = await LoadExistingReportAsync(
+            var concurrentDuplicate = await this.LoadExistingReportAsync(
                 reporterUserId,
                 messageId,
                 cancellationToken);
@@ -171,7 +171,7 @@ namespace ArcaneLink.Services.Moderation
             Guid reporterUserId,
             CancellationToken cancellationToken = default)
         {
-            var isActive = await _db.Users.AsNoTracking().AnyAsync(
+            var isActive = await this._db.Users.AsNoTracking().AnyAsync(
                 x => x.Id == reporterUserId &&
                      x.DeletedAt == null &&
                      x.StatusId == UserStatusIds.Active,
@@ -181,7 +181,7 @@ namespace ArcaneLink.Services.Moderation
                 return [];
             }
 
-            var submissions = await _db.ModerationSubmissions
+            var submissions = await this._db.ModerationSubmissions
                 .AsNoTracking()
                 .Include(x => x.Case)
                 .Where(x => x.ReporterUserId == reporterUserId)
@@ -202,7 +202,7 @@ namespace ArcaneLink.Services.Moderation
             int limit,
             CancellationToken cancellationToken = default)
         {
-            var visibleSpaceIds = await GetReviewableSpaceIdsAsync(
+            var visibleSpaceIds = await this.GetReviewableSpaceIdsAsync(
                 reviewerUserId,
                 serverId,
                 cancellationToken);
@@ -211,7 +211,7 @@ namespace ArcaneLink.Services.Moderation
                 return null;
             }
 
-            var query = _db.ModerationCases
+            var query = this._db.ModerationCases
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(x => x.ReportedUser)
@@ -270,7 +270,7 @@ namespace ArcaneLink.Services.Moderation
             Guid caseId,
             CancellationToken cancellationToken = default)
         {
-            var visibleSpaceIds = await GetReviewableSpaceIdsAsync(
+            var visibleSpaceIds = await this.GetReviewableSpaceIdsAsync(
                 reviewerUserId,
                 serverId,
                 cancellationToken);
@@ -279,7 +279,7 @@ namespace ArcaneLink.Services.Moderation
                 return null;
             }
 
-            var moderationCase = await LoadCaseForReviewerAsync(
+            var moderationCase = await this.LoadCaseForReviewerAsync(
                 reviewerUserId,
                 serverId,
                 caseId,
@@ -305,7 +305,7 @@ namespace ArcaneLink.Services.Moderation
                 return UpdateModerationCaseResult.InvalidStatus();
             }
 
-            var visibleSpaceIds = await GetReviewableSpaceIdsAsync(
+            var visibleSpaceIds = await this.GetReviewableSpaceIdsAsync(
                 reviewerUserId,
                 serverId,
                 cancellationToken);
@@ -314,7 +314,7 @@ namespace ArcaneLink.Services.Moderation
                 return UpdateModerationCaseResult.NotFound();
             }
 
-            var moderationCase = await LoadCaseForReviewerAsync(
+            var moderationCase = await this.LoadCaseForReviewerAsync(
                 reviewerUserId,
                 serverId,
                 caseId,
@@ -341,7 +341,7 @@ namespace ArcaneLink.Services.Moderation
             }
 
             var previousStatus = moderationCase.Status;
-            var now = NextTimestamp(moderationCase.UpdatedAt);
+            var now = this.NextTimestamp(moderationCase.UpdatedAt);
             moderationCase.Status = request.Status;
             moderationCase.UpdatedAt = now;
             moderationCase.Actions.Add(new ModerationCaseAction
@@ -357,14 +357,14 @@ namespace ArcaneLink.Services.Moderation
 
             try
             {
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
             }
             catch (DbUpdateConcurrencyException)
             {
                 return UpdateModerationCaseResult.Conflict();
             }
 
-            await NotifyCaseUpdatedAsync(
+            await this.NotifyCaseUpdatedAsync(
                 moderationCase.Id,
                 serverId,
                 moderationCase.MessageId,
@@ -381,7 +381,7 @@ namespace ArcaneLink.Services.Moderation
             Guid evidenceAssetId,
             CancellationToken cancellationToken = default)
         {
-            var visibleSpaceIds = await GetReviewableSpaceIdsAsync(
+            var visibleSpaceIds = await this.GetReviewableSpaceIdsAsync(
                 reviewerUserId,
                 serverId,
                 cancellationToken);
@@ -390,7 +390,7 @@ namespace ArcaneLink.Services.Moderation
                 return null;
             }
 
-            var assetId = await _db.ModerationEvidenceAssets
+            var assetId = await this._db.ModerationEvidenceAssets
                 .AsNoTracking()
                 .Where(x =>
                     x.Id == evidenceAssetId &&
@@ -408,7 +408,7 @@ namespace ArcaneLink.Services.Moderation
                 return null;
             }
 
-            return await _assetService.GetRetainedAssetContentAsync(
+            return await this._assetService.GetRetainedAssetContentAsync(
                 assetId.Value,
                 cancellationToken);
         }
@@ -421,17 +421,17 @@ namespace ArcaneLink.Services.Moderation
             CreateModerationReportRequest request,
             CancellationToken cancellationToken)
         {
-            await using var transaction = await _db.Database.BeginTransactionAsync(
+            await using var transaction = await this._db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 cancellationToken);
 
-            var moderationCase = await _db.ModerationCases
+            var moderationCase = await this._db.ModerationCases
                 .FirstOrDefaultAsync(
                     x => x.MessageId == message.Id,
                     cancellationToken);
             if (moderationCase != null)
             {
-                var existing = await _db.ModerationSubmissions
+                var existing = await this._db.ModerationSubmissions
                     .AsNoTracking()
                     .Include(x => x.Case)
                     .FirstOrDefaultAsync(
@@ -448,7 +448,7 @@ namespace ArcaneLink.Services.Moderation
                 }
             }
 
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
             if (moderationCase == null)
             {
                 moderationCase = new ModerationCase
@@ -462,11 +462,11 @@ namespace ArcaneLink.Services.Moderation
                     CreatedAt = now,
                     UpdatedAt = now
                 };
-                _db.ModerationCases.Add(moderationCase);
+                this._db.ModerationCases.Add(moderationCase);
             }
             else
             {
-                now = NextTimestamp(moderationCase.UpdatedAt);
+                now = this.NextTimestamp(moderationCase.UpdatedAt);
                 if (moderationCase.Status is
                     ModerationCaseStatuses.Resolved or
                     ModerationCaseStatuses.Dismissed)
@@ -536,7 +536,7 @@ namespace ArcaneLink.Services.Moderation
 
             submission.Evidence = evidence;
             moderationCase.Submissions.Add(submission);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
             return new CreatedReport(
@@ -550,7 +550,7 @@ namespace ArcaneLink.Services.Moderation
             Guid messageId,
             CancellationToken cancellationToken)
         {
-            var submission = await _db.ModerationSubmissions
+            var submission = await this._db.ModerationSubmissions
                 .AsNoTracking()
                 .Include(x => x.Case)
                 .FirstOrDefaultAsync(
@@ -569,7 +569,7 @@ namespace ArcaneLink.Services.Moderation
             bool tracked,
             CancellationToken cancellationToken)
         {
-            IQueryable<ModerationCase> query = _db.ModerationCases;
+            IQueryable<ModerationCase> query = this._db.ModerationCases;
             if (!tracked)
             {
                 query = query.AsNoTracking();
@@ -598,7 +598,7 @@ namespace ArcaneLink.Services.Moderation
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return _serverAccess.HasGranularPermissionAsync(
+            return this._serverAccess.HasGranularPermissionAsync(
                 reviewerUserId,
                 serverId,
                 "MANAGE_REPORTS",
@@ -610,7 +610,7 @@ namespace ArcaneLink.Services.Moderation
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            if (!await CanReviewAsync(
+            if (!await this.CanReviewAsync(
                     reviewerUserId,
                     serverId,
                     cancellationToken))
@@ -618,7 +618,7 @@ namespace ArcaneLink.Services.Moderation
                 return null;
             }
 
-            var visibleSpaceIds = await _spaceAuthorization.GetAllowedSpaceIdsAsync(
+            var visibleSpaceIds = await this._spaceAuthorization.GetAllowedSpaceIdsAsync(
                 reviewerUserId,
                 serverId,
                 SpaceAction.View,
@@ -631,7 +631,7 @@ namespace ArcaneLink.Services.Moderation
             var readableSpaceIds = new List<Guid>(visibleSpaceIds.Count);
             foreach (var spaceId in visibleSpaceIds)
             {
-                if (await _messageAccess.GetReadableMessageSpaceAsync(
+                if (await this._messageAccess.GetReadableMessageSpaceAsync(
                         reviewerUserId,
                         serverId,
                         spaceId,
@@ -651,16 +651,16 @@ namespace ArcaneLink.Services.Moderation
             Guid messageId,
             DateTime updatedAt)
         {
-            await TryNotifyAsync(async () =>
+            await this.TryNotifyAsync(async () =>
             {
-                await _realtime.NotifyUserAsync(
+                await this._realtime.NotifyUserAsync(
                     reporterUserId,
                     RealtimeEventNames.MyModerationReportsChanged,
                     new { serverId, messageId, updatedAt },
                     CancellationToken.None);
             }, caseId, "reporter");
 
-            await NotifyReviewersAsync(caseId, serverId, updatedAt);
+            await this.NotifyReviewersAsync(caseId, serverId, updatedAt);
         }
 
         private async Task NotifyCaseUpdatedAsync(
@@ -669,23 +669,23 @@ namespace ArcaneLink.Services.Moderation
             Guid messageId,
             DateTime updatedAt)
         {
-            await TryNotifyAsync(async () =>
+            await this.TryNotifyAsync(async () =>
             {
-                var reporterIds = await _db.ModerationSubmissions
+                var reporterIds = await this._db.ModerationSubmissions
                     .AsNoTracking()
                     .Where(x => x.CaseId == caseId)
                     .Select(x => x.ReporterUserId)
                     .Distinct()
                     .ToListAsync(CancellationToken.None);
 
-                await _realtime.NotifyUsersAsync(
+                await this._realtime.NotifyUsersAsync(
                     reporterIds,
                     RealtimeEventNames.MyModerationReportsChanged,
                     new { serverId, messageId, updatedAt },
                     CancellationToken.None);
             }, caseId, "reporters");
 
-            await NotifyReviewersAsync(caseId, serverId, updatedAt);
+            await this.NotifyReviewersAsync(caseId, serverId, updatedAt);
         }
 
         private async Task NotifyReviewersAsync(
@@ -693,21 +693,21 @@ namespace ArcaneLink.Services.Moderation
             Guid serverId,
             DateTime updatedAt)
         {
-            await TryNotifyAsync(async () =>
+            await this.TryNotifyAsync(async () =>
             {
-                var excludedUserIds = await _db.ModerationSubmissions
+                var excludedUserIds = await this._db.ModerationSubmissions
                     .AsNoTracking()
                     .Where(x => x.CaseId == caseId)
                     .Select(x => x.ReporterUserId)
                     .ToListAsync(CancellationToken.None);
-                var caseAudience = await _db.ModerationCases
+                var caseAudience = await this._db.ModerationCases
                     .AsNoTracking()
                     .Where(x => x.Id == caseId)
                     .Select(x => new { x.ReportedUserId, x.SpaceId })
                     .SingleAsync(CancellationToken.None);
                 excludedUserIds.Add(caseAudience.ReportedUserId);
 
-                var candidateReviewerIds = await _permissionAudience.ResolveAsync(
+                var candidateReviewerIds = await this._permissionAudience.ResolveAsync(
                     serverId,
                     ["MANAGE_REPORTS"],
                     excludedUserIds: excludedUserIds,
@@ -715,7 +715,7 @@ namespace ArcaneLink.Services.Moderation
                 var reviewerIds = new List<Guid>(candidateReviewerIds.Count);
                 foreach (var reviewerId in candidateReviewerIds)
                 {
-                    if (await _messageAccess.GetReadableMessageSpaceAsync(
+                    if (await this._messageAccess.GetReadableMessageSpaceAsync(
                             reviewerId,
                             serverId,
                             caseAudience.SpaceId,
@@ -725,7 +725,7 @@ namespace ArcaneLink.Services.Moderation
                     }
                 }
 
-                await _realtime.NotifyUsersAsync(
+                await this._realtime.NotifyUsersAsync(
                     reviewerIds,
                     RealtimeEventNames.ModerationCaseChanged,
                     new { serverId, caseId, updatedAt },
@@ -744,7 +744,7 @@ namespace ArcaneLink.Services.Moderation
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Moderation realtime delivery failed after commit. CaseId={CaseId} Audience={Audience}",
                     caseId,
@@ -754,7 +754,7 @@ namespace ArcaneLink.Services.Moderation
 
         private DateTime NextTimestamp(DateTime current)
         {
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
             return now > current ? now : current.AddTicks(10);
         }
 

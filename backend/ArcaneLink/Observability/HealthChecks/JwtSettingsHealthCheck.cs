@@ -10,14 +10,14 @@ namespace ArcaneLink.Observability.HealthChecks
 
         public JwtSettingsHealthCheck(IOptions<JwtSettings> settings)
         {
-            _settings = settings;
+            this._settings = settings;
         }
 
         public Task<HealthCheckResult> CheckHealthAsync(
             HealthCheckContext context,
             CancellationToken cancellationToken = default)
         {
-            var settings = _settings.Value;
+            var settings = this._settings.Value;
             var isHealthy =
                 !string.IsNullOrWhiteSpace(settings.Issuer) &&
                 !string.IsNullOrWhiteSpace(settings.Audience) &&

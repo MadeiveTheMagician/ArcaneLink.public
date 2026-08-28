@@ -14,16 +14,16 @@ namespace ArcaneLink.Services.Realtime
             RealtimeConnectionRegistry connections,
             ILogger<RealtimeServerGroupMembershipService> logger)
         {
-            _hubContext = hubContext;
-            _connections = connections;
-            _logger = logger;
+            this._hubContext = hubContext;
+            this._connections = connections;
+            this._logger = logger;
         }
 
         public async Task RemoveUserBestEffortAsync(
             Guid userId,
             Guid serverId)
         {
-            await UpdateUserBestEffortAsync(
+            await this.UpdateUserBestEffortAsync(
                 userId,
                 serverId,
                 add: false);
@@ -33,7 +33,7 @@ namespace ArcaneLink.Services.Realtime
             Guid userId,
             Guid serverId)
         {
-            await UpdateUserBestEffortAsync(
+            await this.UpdateUserBestEffortAsync(
                 userId,
                 serverId,
                 add: true);
@@ -44,21 +44,21 @@ namespace ArcaneLink.Services.Realtime
             Guid serverId,
             bool add)
         {
-            var connectionIds = _connections.GetConnectionIds(userId);
+            var connectionIds = this._connections.GetConnectionIds(userId);
             foreach (var connectionId in connectionIds)
             {
                 try
                 {
                     if (add)
                     {
-                        await _hubContext.Groups.AddToGroupAsync(
+                        await this._hubContext.Groups.AddToGroupAsync(
                             connectionId,
                             RealtimeGroups.Server(serverId),
                             CancellationToken.None);
                     }
                     else
                     {
-                        await _hubContext.Groups.RemoveFromGroupAsync(
+                        await this._hubContext.Groups.RemoveFromGroupAsync(
                             connectionId,
                             RealtimeGroups.Server(serverId),
                             CancellationToken.None);
@@ -66,7 +66,7 @@ namespace ArcaneLink.Services.Realtime
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogWarning(
+                    this._logger.LogWarning(
                         exception,
                         "Failed to update a realtime connection's server group after membership changed. UserId={UserId} ServerId={ServerId} ConnectionId={ConnectionId} Add={Add}",
                         userId,

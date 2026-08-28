@@ -57,12 +57,12 @@ namespace ArcaneLink.DataBase.Configurations.SpacesConfigurations
                 .HasDatabaseName("IX_PrivateSpaceFolderItems_Folder_PinnedAt");
 
             entity.HasIndex(x => new
-                {
-                    x.FolderId,
-                    x.PinnedAt,
-                    x.ActivityAt,
-                    x.Position
-                })
+            {
+                x.FolderId,
+                x.PinnedAt,
+                x.ActivityAt,
+                x.Position
+            })
                 .HasDatabaseName(
                     "IX_PrivateSpaceFolderItems_Folder_Activity");
 

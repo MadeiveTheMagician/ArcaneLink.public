@@ -33,11 +33,11 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             SpaceMessageMentionService mentionService,
             AppDbContext db)
         {
-            _messageService = messageService;
-            _reactionService = reactionService;
-            _readStateService = readStateService;
-            _mentionService = mentionService;
-            _db = db;
+            this._messageService = messageService;
+            this._reactionService = reactionService;
+            this._readStateService = readStateService;
+            this._mentionService = mentionService;
+            this._db = db;
         }
 
         [NonAction]
@@ -45,7 +45,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             ActionExecutingContext context,
             ActionExecutionDelegate next)
         {
-            if (Request.Path.Value?.Contains(
+            if (this.Request.Path.Value?.Contains(
                     "/voice-spaces/",
                     StringComparison.OrdinalIgnoreCase) == true &&
                 context.ActionArguments.TryGetValue("serverId", out var serverValue) &&
@@ -53,13 +53,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 context.ActionArguments.TryGetValue("spaceId", out var spaceValue) &&
                 spaceValue is Guid spaceId)
             {
-                var messageSpaceId = await ResolveRoutedMessageSpaceIdAsync(
+                var messageSpaceId = await this.ResolveRoutedMessageSpaceIdAsync(
                     serverId,
                     spaceId,
                     context.HttpContext.RequestAborted);
                 if (!messageSpaceId.HasValue)
                 {
-                    context.Result = NotFound();
+                    context.Result = this.NotFound();
                     return;
                 }
 
@@ -76,16 +76,16 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] string? query = null,
             CancellationToken cancellationToken = default)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var response = await _mentionService.GetServerAutocompleteAsync(
+            var response = await this._mentionService.GetServerAutocompleteAsync(
                 userId.Value,
                 serverId,
                 spaceId,
                 query,
                 cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpGet]
@@ -97,14 +97,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] Guid? beforeId = null,
             CancellationToken cancellationToken = default)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
             if (beforeId.HasValue && !beforeCreatedAt.HasValue)
             {
-                return BadRequest(new { code = "invalid_message_cursor" });
+                return this.BadRequest(new { code = "invalid_message_cursor" });
             }
 
-            var response = await _messageService.GetMessagesAsync(
+            var response = await this._messageService.GetMessagesAsync(
                 userId.Value,
                 serverId,
                 spaceId,
@@ -113,7 +113,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 beforeId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpGet("/api/servers/{serverId:guid}/messages/search")]
@@ -127,10 +127,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] int limit = 30,
             CancellationToken cancellationToken = default)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var response = await _messageService.SearchMessagesAsync(
+            var response = await this._messageService.SearchMessagesAsync(
                 userId.Value,
                 serverId,
                 query ?? string.Empty,
@@ -140,7 +140,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 limit,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost]
@@ -150,17 +150,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] CreateSpaceMessageRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var response = await _messageService.CreateMessageAsync(
+            var response = await this._messageService.CreateMessageAsync(
                 userId.Value,
                 serverId,
                 spaceId,
                 request,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpGet("pinned")]
@@ -169,16 +169,16 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var response = await _messageService.GetPinnedMessagesAsync(
+            var response = await this._messageService.GetPinnedMessagesAsync(
                 userId.Value,
                 serverId,
                 spaceId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("attachments")]
@@ -190,17 +190,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromForm] IFormFile file,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var response = await _messageService.UploadAttachmentAsync(
+            var response = await this._messageService.UploadAttachmentAsync(
                 userId.Value,
                 serverId,
                 spaceId,
                 file,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPatch("{messageId:guid}")]
@@ -211,10 +211,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpdateSpaceMessageRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var response = await _messageService.UpdateMessageAsync(
+            var response = await this._messageService.UpdateMessageAsync(
                 userId.Value,
                 serverId,
                 spaceId,
@@ -222,7 +222,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 request,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpDelete("{messageId:guid}")]
@@ -232,17 +232,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid messageId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            return await _messageService.DeleteMessageAsync(
+            return await this._messageService.DeleteMessageAsync(
                 userId.Value,
                 serverId,
                 spaceId,
                 messageId,
                 cancellationToken)
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [HttpPost("{messageId:guid}/pin")]
@@ -252,17 +252,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid messageId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var response = await _messageService.PinMessageAsync(
+            var response = await this._messageService.PinMessageAsync(
                 userId.Value,
                 serverId,
                 spaceId,
                 messageId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpDelete("{messageId:guid}/pin")]
@@ -272,17 +272,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid messageId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            return await _messageService.UnpinMessageAsync(
+            return await this._messageService.UnpinMessageAsync(
                 userId.Value,
                 serverId,
                 spaceId,
                 messageId,
                 cancellationToken)
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [HttpPut("read-state")]
@@ -292,17 +292,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] MarkSpaceReadRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var response = await _readStateService.MarkServerSpaceReadAsync(
+            var response = await this._readStateService.MarkServerSpaceReadAsync(
                 userId.Value,
                 serverId,
                 spaceId,
                 request.ThroughMessageId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPut("{messageId:guid}/reactions")]
@@ -313,10 +313,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] SetSpaceMessageReactionRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var result = await _reactionService.SetServerReactionAsync(
+            var result = await this._reactionService.SetServerReactionAsync(
                 userId.Value,
                 serverId,
                 spaceId,
@@ -325,7 +325,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 isPresent: true,
                 cancellationToken);
 
-            return ToReactionActionResult(result);
+            return this.ToReactionActionResult(result);
         }
 
         [HttpDelete("{messageId:guid}/reactions")]
@@ -336,10 +336,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] SetSpaceMessageReactionRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
 
-            var result = await _reactionService.SetServerReactionAsync(
+            var result = await this._reactionService.SetServerReactionAsync(
                 userId.Value,
                 serverId,
                 spaceId,
@@ -348,7 +348,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 isPresent: false,
                 cancellationToken);
 
-            return ToReactionActionResult(result);
+            return this.ToReactionActionResult(result);
         }
 
         private ActionResult<SpaceMessageResponse> ToReactionActionResult(
@@ -356,10 +356,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         {
             return result.Status switch
             {
-                MessageReactionMutationStatus.Success => Ok(result.Message),
-                MessageReactionMutationStatus.InvalidEmoji => BadRequest(
+                MessageReactionMutationStatus.Success => this.Ok(result.Message),
+                MessageReactionMutationStatus.InvalidEmoji => this.BadRequest(
                     new { code = "invalid_emoji" }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
 
@@ -368,7 +368,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return await _db.Spaces
+            return await this._db.Spaces
                 .AsNoTracking()
                 .Where(space =>
                     space.Id == spaceId &&
@@ -383,7 +383,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
             return Guid.TryParse(userIdValue, out var userId) ? userId : null;
         }
     }

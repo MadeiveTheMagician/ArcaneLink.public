@@ -19,15 +19,15 @@ namespace ArcaneLink.Services.Spaces
             ISpaceAuthorizationService authorization,
             UnreadCountService unreadCounts)
         {
-            _db = db;
-            _authorization = authorization;
-            _unreadCounts = unreadCounts;
+            this._db = db;
+            this._authorization = authorization;
+            this._unreadCounts = unreadCounts;
         }
 
         public async Task<IReadOnlyList<SpaceTypeResponse>> GetSpaceTypesAsync(
             CancellationToken cancellationToken = default)
         {
-            return await _db.SpaceTypes
+            return await this._db.SpaceTypes
                 .AsNoTracking()
                 .OrderBy(x => x.Code)
                 .Select(x => new SpaceTypeResponse
@@ -45,7 +45,7 @@ namespace ArcaneLink.Services.Spaces
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            var snapshot = await _authorization.GetSnapshotAsync(
+            var snapshot = await this._authorization.GetSnapshotAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -54,7 +54,7 @@ namespace ArcaneLink.Services.Spaces
                 return null;
             }
 
-            var spaces = await LoadServerSpacesQuery(serverId)
+            var spaces = await this.LoadServerSpacesQuery(serverId)
                 .AsNoTracking()
                 .OrderBy(x => x.ParentSpaceId == null ? 0 : 1)
                 .ThenBy(x => x.Position)
@@ -67,7 +67,7 @@ namespace ArcaneLink.Services.Spaces
             foreach (var space in spaces)
             {
                 var capabilities =
-                    await _authorization.GetGranularCapabilitiesAsync(
+                    await this._authorization.GetGranularCapabilitiesAsync(
                         currentUserId,
                         serverId,
                         space.Id,
@@ -109,7 +109,7 @@ namespace ArcaneLink.Services.Spaces
                     space.Id,
                     new HashSet<Guid>()))
                 .ToList();
-            var unreadCounts = await _unreadCounts.GetServerSpaceUnreadCountsAsync(
+            var unreadCounts = await this._unreadCounts.GetServerSpaceUnreadCountsAsync(
                 currentUserId,
                 serverId,
                 visibleSpaces
@@ -133,7 +133,7 @@ namespace ArcaneLink.Services.Spaces
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            var space = await _db.Spaces
+            var space = await this._db.Spaces
                 .AsNoTracking()
                 .Include(x => x.Type)
                 .Include(x => x.VoiceChatSpace)
@@ -152,13 +152,13 @@ namespace ArcaneLink.Services.Spaces
             }
 
             var capabilities =
-                await _authorization.GetGranularCapabilitiesAsync(
+                await this._authorization.GetGranularCapabilitiesAsync(
                     currentUserId,
                     serverId,
                     spaceId,
                     cancellationToken);
             if (capabilities?.CanView != true ||
-                !await HasVisibleAncestorPathAsync(
+                !await this.HasVisibleAncestorPathAsync(
                     currentUserId,
                     serverId,
                     space.ParentSpaceId,
@@ -170,7 +170,7 @@ namespace ArcaneLink.Services.Spaces
             var unreadCounts =
                 space.TypeId == SpaceIds.TypeTextRoom ||
                 space.TypeId == SpaceIds.TypeVoiceRoom
-                ? await _unreadCounts.GetServerSpaceUnreadCountsAsync(
+                ? await this._unreadCounts.GetServerSpaceUnreadCountsAsync(
                     currentUserId,
                     serverId,
                     [space.Id],
@@ -197,7 +197,7 @@ namespace ArcaneLink.Services.Spaces
                     return false;
                 }
 
-                var parent = await _db.Spaces
+                var parent = await this._db.Spaces
                     .AsNoTracking()
                     .Where(space =>
                         space.Id == currentId.Value &&
@@ -216,7 +216,7 @@ namespace ArcaneLink.Services.Spaces
                 }
 
                 var capabilities =
-                    await _authorization.GetGranularCapabilitiesAsync(
+                    await this._authorization.GetGranularCapabilitiesAsync(
                         currentUserId,
                         serverId,
                         parent.Id,
@@ -234,7 +234,7 @@ namespace ArcaneLink.Services.Spaces
 
         private IQueryable<Space> LoadServerSpacesQuery(Guid serverId)
         {
-            return _db.Spaces
+            return this._db.Spaces
                 .Include(x => x.Type)
                 .Include(x => x.VoiceChatSpace)
                 .Include(x => x.PermissionOverrides)

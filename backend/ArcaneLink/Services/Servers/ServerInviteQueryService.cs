@@ -21,10 +21,10 @@ namespace ArcaneLink.Services.Servers
             ServerInviteEligibilityService eligibility,
             IUserPresencePolicyService presencePolicy)
         {
-            _db = db;
-            _access = access;
-            _eligibility = eligibility;
-            _presencePolicy = presencePolicy;
+            this._db = db;
+            this._access = access;
+            this._eligibility = eligibility;
+            this._presencePolicy = presencePolicy;
         }
 
         public async Task<IReadOnlyList<ServerInviteResponse>?> GetInvitesAsync(
@@ -32,16 +32,16 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            var canCreateInvites = await _access.CanCreateInvitesAsync(
+            var canCreateInvites = await this._access.CanCreateInvitesAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
-            var canViewInviteLog = await _access.HasGranularPermissionAsync(
+            var canViewInviteLog = await this._access.HasGranularPermissionAsync(
                 currentUserId,
                 serverId,
                 "VIEW_INVITE_LOG",
                 cancellationToken);
-            var canManageInvites = await _access.HasGranularPermissionAsync(
+            var canManageInvites = await this._access.HasGranularPermissionAsync(
                 currentUserId,
                 serverId,
                 "MANAGE_INVITES",
@@ -52,7 +52,7 @@ namespace ArcaneLink.Services.Servers
             }
 
             var now = DateTime.UtcNow;
-            var invites = await _db.ServerInvites
+            var invites = await this._db.ServerInvites
                 .AsNoTracking()
                 .Include(x => x.Kind)
                 .Include(x => x.Server)
@@ -80,7 +80,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var invite = await _db.ServerInvites
+            var invite = await this._db.ServerInvites
                 .AsNoTracking()
                 .Include(x => x.Server)
                 .FirstOrDefaultAsync(
@@ -101,14 +101,14 @@ namespace ArcaneLink.Services.Servers
             var isActive = !isServerDeleted && !isRevoked && !isExpired && !isMaxedOut;
             var memberCount = isServerDeleted
                 ? 0
-                : await _db.ServerMembers.CountAsync(
+                : await this._db.ServerMembers.CountAsync(
                     x => x.ServerId == invite.ServerId &&
                          x.StatusId == ServerMemberStatusIds.Active &&
                          x.BannedAt == null,
                     cancellationToken);
             var onlineCounts = isServerDeleted
                 ? []
-                : await GetOnlineMemberCountsAsync(
+                : await this.GetOnlineMemberCountsAsync(
                     viewerUserId,
                     [invite.ServerId],
                     cancellationToken);
@@ -148,7 +148,7 @@ namespace ArcaneLink.Services.Servers
             CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
-            var invites = await _db.ServerInvites
+            var invites = await this._db.ServerInvites
                 .AsNoTracking()
                 .Include(x => x.Kind)
                 .Include(x => x.Server)
@@ -163,7 +163,7 @@ namespace ArcaneLink.Services.Servers
                 .Where(x => ServerInviteRules.IsActive(x, now))
                 .ToList();
             var serverIds = activeInvites.Select(x => x.ServerId).Distinct().ToList();
-            var memberCounts = await _db.ServerMembers
+            var memberCounts = await this._db.ServerMembers
                 .Where(x =>
                     serverIds.Contains(x.ServerId) &&
                     x.StatusId == ServerMemberStatusIds.Active &&
@@ -171,7 +171,7 @@ namespace ArcaneLink.Services.Servers
                 .GroupBy(x => x.ServerId)
                 .Select(group => new { ServerId = group.Key, Count = group.Count() })
                 .ToDictionaryAsync(x => x.ServerId, x => x.Count, cancellationToken);
-            var onlineCounts = await GetOnlineMemberCountsAsync(
+            var onlineCounts = await this.GetOnlineMemberCountsAsync(
                 currentUserId,
                 serverIds,
                 cancellationToken);
@@ -190,7 +190,7 @@ namespace ArcaneLink.Services.Servers
             Guid? targetUserId = null,
             CancellationToken cancellationToken = default)
         {
-            var memberships = await _db.ServerMembers
+            var memberships = await this._db.ServerMembers
                 .AsNoTracking()
                 .Include(x => x.Status)
                 .Include(x => x.Server)
@@ -204,7 +204,7 @@ namespace ArcaneLink.Services.Servers
 
             foreach (var membership in memberships)
             {
-                if (!await _access.CanCreateInvitesAsync(
+                if (!await this._access.CanCreateInvitesAsync(
                         currentUserId,
                         membership.ServerId,
                         cancellationToken))
@@ -213,7 +213,7 @@ namespace ArcaneLink.Services.Servers
                 }
 
                 if (targetUserId.HasValue &&
-                    !await _eligibility.CanCreateDirectInviteToTargetAsync(
+                    !await this._eligibility.CanCreateDirectInviteToTargetAsync(
                         currentUserId,
                         membership.ServerId,
                         targetUserId.Value,
@@ -238,7 +238,7 @@ namespace ArcaneLink.Services.Servers
                 return [];
             }
 
-            var activeMembers = await _db.ServerMembers
+            var activeMembers = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     serverIds.Contains(member.ServerId) &&
@@ -246,7 +246,7 @@ namespace ArcaneLink.Services.Servers
                     member.BannedAt == null)
                 .Select(member => new { member.ServerId, member.UserId })
                 .ToListAsync(cancellationToken);
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 viewerUserId,
                 activeMembers.Select(member => member.UserId),
                 cancellationToken);

@@ -36,12 +36,12 @@ namespace ArcaneLink.Services.Servers
             IServerGovernanceAccessService access,
             ILogger<ServerMemberProfileService> logger)
         {
-            _db = db;
-            _assets = assets;
-            _avatarImageProcessor = avatarImageProcessor;
-            _realtime = realtime;
-            _access = access;
-            _logger = logger;
+            this._db = db;
+            this._assets = assets;
+            this._avatarImageProcessor = avatarImageProcessor;
+            this._realtime = realtime;
+            this._access = access;
+            this._logger = logger;
         }
 
         public async Task<ServerMemberViewerProfileResponse?> GetAsync(
@@ -50,7 +50,7 @@ namespace ArcaneLink.Services.Servers
             Guid targetUserId,
             CancellationToken cancellationToken = default)
         {
-            if (!await IsActiveMemberAsync(
+            if (!await this.IsActiveMemberAsync(
                     currentUserId,
                     serverId,
                     cancellationToken))
@@ -58,7 +58,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var member = await LoadActiveMemberAsync(
+            var member = await this.LoadActiveMemberAsync(
                 serverId,
                 targetUserId,
                 tracking: false,
@@ -71,7 +71,7 @@ namespace ArcaneLink.Services.Servers
             var response = ToViewerResponse(member);
             if (currentUserId != targetUserId)
             {
-                await PopulateMutualContextAsync(
+                await this.PopulateMutualContextAsync(
                     response,
                     currentUserId,
                     targetUserId,
@@ -85,7 +85,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            if (!await IsActiveMemberAsync(
+            if (!await this.IsActiveMemberAsync(
                     currentUserId,
                     serverId,
                     cancellationToken))
@@ -93,7 +93,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var member = await LoadActiveMemberAsync(
+            var member = await this.LoadActiveMemberAsync(
                 serverId,
                 currentUserId,
                 tracking: false,
@@ -109,7 +109,7 @@ namespace ArcaneLink.Services.Servers
         {
             if (request.DisplayName != null &&
                 !request.UseGlobalDisplayName &&
-                !await _access.HasGranularPermissionAsync(
+                !await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "CHANGE_OWN_NICKNAME",
@@ -118,7 +118,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var member = await LoadActiveMemberAsync(
+            var member = await this.LoadActiveMemberAsync(
                 serverId,
                 currentUserId,
                 tracking: true,
@@ -144,7 +144,7 @@ namespace ArcaneLink.Services.Servers
                     UpdatedAt = DateTime.UtcNow
                 };
                 member.ServerProfile = profile;
-                _db.ServerMemberProfiles.Add(profile);
+                this._db.ServerMemberProfiles.Add(profile);
             }
 
             var previousOptimizedAvatarId = profile.AvatarAssetId;
@@ -177,7 +177,7 @@ namespace ArcaneLink.Services.Servers
             }
             else if (request.BannerAssetId.HasValue)
             {
-                var banner = await GetOwnedAssetAsync(
+                var banner = await this.GetOwnedAssetAsync(
                     currentUserId,
                     request.BannerAssetId.Value,
                     cancellationToken);
@@ -218,22 +218,22 @@ namespace ArcaneLink.Services.Servers
             member.UpdatedAt = now;
             if (!HasOverrides(profile))
             {
-                _db.ServerMemberProfiles.Remove(profile);
+                this._db.ServerMemberProfiles.Remove(profile);
                 member.ServerProfile = null;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             if (request.UseGlobalAvatar &&
                 previousOptimizedAvatarId.HasValue)
             {
                 await OptimizedAvatarAssetCleanup.DeleteOwnedIfOrphanedAsync(
-                    _db,
-                    _assets,
+                    this._db,
+                    this._assets,
                     currentUserId,
                     previousOptimizedAvatarId.Value,
                     CancellationToken.None);
             }
-            await NotifyChangedAsync(serverId, currentUserId, cancellationToken);
+            await this.NotifyChangedAsync(serverId, currentUserId, cancellationToken);
             return ToOwnResponse(member);
         }
 
@@ -246,7 +246,7 @@ namespace ArcaneLink.Services.Servers
         {
             ValidateAvatarCrop(request);
 
-            var member = await LoadActiveMemberAsync(
+            var member = await this.LoadActiveMemberAsync(
                 serverId,
                 currentUserId,
                 tracking: true,
@@ -256,7 +256,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var sourceAsset = await GetOwnedAssetAsync(
+            var sourceAsset = await this.GetOwnedAssetAsync(
                 currentUserId,
                 sourceAssetId,
                 cancellationToken);
@@ -271,7 +271,7 @@ namespace ArcaneLink.Services.Servers
                     ExceptionMessages.ProfileAvatarAssetTypeIsInvalid);
             }
 
-            var sourceContent = await _assets.GetAssetContentAsync(
+            var sourceContent = await this._assets.GetAssetContentAsync(
                 sourceAsset.Id,
                 cancellationToken);
             if (sourceContent == null)
@@ -281,13 +281,13 @@ namespace ArcaneLink.Services.Servers
 
             await using var sourceStream = sourceContent.Content;
             await using var optimizedContent =
-                await _avatarImageProcessor.ProcessAsync(
+                await this._avatarImageProcessor.ProcessAsync(
                     sourceStream,
                     request.CropOffsetX,
                     request.CropOffsetY,
                     request.CropZoom,
                     cancellationToken);
-            var optimizedAssetId = await UploadOptimizedAvatarAssetAsync(
+            var optimizedAssetId = await this.UploadOptimizedAvatarAssetAsync(
                 currentUserId,
                 optimizedContent,
                 sourceAsset.OriginalFileName,
@@ -304,7 +304,7 @@ namespace ArcaneLink.Services.Servers
                         ServerMemberId = member.Id
                     };
                     member.ServerProfile = profile;
-                    _db.ServerMemberProfiles.Add(profile);
+                    this._db.ServerMemberProfiles.Add(profile);
                 }
 
                 profile.AvatarAssetId = optimizedAssetId;
@@ -316,11 +316,11 @@ namespace ArcaneLink.Services.Servers
                 var now = DateTime.UtcNow;
                 profile.UpdatedAt = now;
                 member.UpdatedAt = now;
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
             }
             catch
             {
-                await DeleteCompensatingAssetAsync(
+                await this.DeleteCompensatingAssetAsync(
                     currentUserId,
                     optimizedAssetId);
                 throw;
@@ -330,14 +330,14 @@ namespace ArcaneLink.Services.Servers
                 previousOptimizedAvatarId != optimizedAssetId)
             {
                 await OptimizedAvatarAssetCleanup.DeleteOwnedIfOrphanedAsync(
-                    _db,
-                    _assets,
+                    this._db,
+                    this._assets,
                     currentUserId,
                     previousOptimizedAvatarId.Value,
                     CancellationToken.None);
             }
 
-            await NotifyChangedAsync(
+            await this.NotifyChangedAsync(
                 serverId,
                 currentUserId,
                 cancellationToken);
@@ -349,7 +349,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            var member = await LoadActiveMemberAsync(
+            var member = await this.LoadActiveMemberAsync(
                 serverId,
                 currentUserId,
                 tracking: true,
@@ -363,20 +363,20 @@ namespace ArcaneLink.Services.Servers
             {
                 var previousOptimizedAvatarId =
                     member.ServerProfile.AvatarAssetId;
-                _db.ServerMemberProfiles.Remove(member.ServerProfile);
+                this._db.ServerMemberProfiles.Remove(member.ServerProfile);
                 member.ServerProfile = null;
                 member.UpdatedAt = DateTime.UtcNow;
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
                 if (previousOptimizedAvatarId.HasValue)
                 {
                     await OptimizedAvatarAssetCleanup.DeleteOwnedIfOrphanedAsync(
-                        _db,
-                        _assets,
+                        this._db,
+                        this._assets,
                         currentUserId,
                         previousOptimizedAvatarId.Value,
                         CancellationToken.None);
                 }
-                await NotifyChangedAsync(serverId, currentUserId, cancellationToken);
+                await this.NotifyChangedAsync(serverId, currentUserId, cancellationToken);
             }
 
             return ToOwnResponse(member);
@@ -387,7 +387,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return _db.ServerMembers.AsNoTracking().AnyAsync(
+            return this._db.ServerMembers.AsNoTracking().AnyAsync(
                 member =>
                     member.ServerId == serverId &&
                     member.UserId == userId &&
@@ -406,7 +406,7 @@ namespace ArcaneLink.Services.Servers
             bool tracking,
             CancellationToken cancellationToken)
         {
-            IQueryable<ServerMember> query = _db.ServerMembers
+            IQueryable<ServerMember> query = this._db.ServerMembers
                 .Include(member => member.User)
                     .ThenInclude(user => user.Profile)
                 .Include(member => member.User)
@@ -443,8 +443,8 @@ namespace ArcaneLink.Services.Servers
             CancellationToken cancellationToken)
         {
             var mutualFriendIdsQuery = (
-                from viewerFriend in _db.UserFriends.AsNoTracking()
-                join targetFriend in _db.UserFriends.AsNoTracking()
+                from viewerFriend in this._db.UserFriends.AsNoTracking()
+                join targetFriend in this._db.UserFriends.AsNoTracking()
                     on viewerFriend.FriendUserId equals targetFriend.FriendUserId
                 where viewerFriend.UserId == currentUserId &&
                       targetFriend.UserId == targetUserId &&
@@ -457,7 +457,7 @@ namespace ArcaneLink.Services.Servers
 
             response.MutualFriendCount = await mutualFriendIdsQuery.CountAsync(
                 cancellationToken);
-            response.MutualFriends = await _db.Users
+            response.MutualFriends = await this._db.Users
                 .AsNoTracking()
                 .Where(user => mutualFriendIdsQuery.Contains(user.Id))
                 .OrderBy(user => user.Profile.DisplayNameNorm)
@@ -476,8 +476,8 @@ namespace ArcaneLink.Services.Servers
                 .ToListAsync(cancellationToken);
 
             var mutualServerIdsQuery = (
-                from viewerMember in _db.ServerMembers.AsNoTracking()
-                join targetMember in _db.ServerMembers.AsNoTracking()
+                from viewerMember in this._db.ServerMembers.AsNoTracking()
+                join targetMember in this._db.ServerMembers.AsNoTracking()
                     on viewerMember.ServerId equals targetMember.ServerId
                 where viewerMember.UserId == currentUserId &&
                       viewerMember.StatusId == ServerMemberStatusIds.Active &&
@@ -493,7 +493,7 @@ namespace ArcaneLink.Services.Servers
 
             response.MutualServerCount = await mutualServerIdsQuery.CountAsync(
                 cancellationToken);
-            response.MutualServers = await _db.Servers
+            response.MutualServers = await this._db.Servers
                 .AsNoTracking()
                 .Where(server => mutualServerIdsQuery.Contains(server.Id))
                 .OrderBy(server => server.Title)
@@ -516,7 +516,7 @@ namespace ArcaneLink.Services.Servers
             Guid assetId,
             CancellationToken cancellationToken)
         {
-            return _db.Assets.AsNoTracking().FirstOrDefaultAsync(
+            return this._db.Assets.AsNoTracking().FirstOrDefaultAsync(
                 asset =>
                     asset.Id == assetId &&
                     asset.OwnerUserId == userId &&
@@ -543,10 +543,10 @@ namespace ArcaneLink.Services.Servers
                 Headers = new HeaderDictionary(),
                 ContentType = "image/webp"
             };
-            var asset = await _assets.UploadOptimizedAvatarAsync(
+            var asset = await this._assets.UploadOptimizedAvatarAsync(
                 userId,
                 formFile,
-                _avatarImageProcessor.OutputSizePixels,
+                this._avatarImageProcessor.OutputSizePixels,
                 cancellationToken);
             return asset.Id;
         }
@@ -557,14 +557,14 @@ namespace ArcaneLink.Services.Servers
             CancellationToken cancellationToken)
         {
             var payload = new { serverId, userId };
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 payload,
                 cancellationToken);
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 userId,
                 RealtimeEventNames.UserProfileChanged,
                 payload,
@@ -739,14 +739,14 @@ namespace ArcaneLink.Services.Servers
         {
             try
             {
-                await _assets.DeleteOwnedAssetAsync(
+                await this._assets.DeleteOwnedAssetAsync(
                     userId,
                     assetId,
                     CancellationToken.None);
             }
             catch (Exception exception)
             {
-                _logger.LogError(
+                this._logger.LogError(
                     exception,
                     "Failed to compensate server profile avatar {AssetId} for user {UserId}.",
                     assetId,

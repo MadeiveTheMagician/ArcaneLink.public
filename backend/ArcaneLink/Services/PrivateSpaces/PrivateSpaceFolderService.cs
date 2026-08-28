@@ -18,19 +18,19 @@ namespace ArcaneLink.Services.PrivateSpaces
 
         public PrivateSpaceFolderService(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         public async Task<IReadOnlyList<PrivateSpaceFolderResponse>> GetFoldersAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var accessibleSpaceIds = await GetAccessibleSpaceIdsAsync(userId, cancellationToken);
+            var accessibleSpaceIds = await this.GetAccessibleSpaceIdsAsync(userId, cancellationToken);
             var accessibleSet = accessibleSpaceIds.ToHashSet();
-            var isAllOrderLocked = await IsAllOrderLockedAsync(
+            var isAllOrderLocked = await this.IsAllOrderLockedAsync(
                 userId,
                 cancellationToken);
-            var folders = await _db.PrivateSpaceFolders
+            var folders = await this._db.PrivateSpaceFolders
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
                 .Include(x => x.Items)
@@ -49,7 +49,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                         IsSystem = true,
                         IsOrderLocked = isAllOrderLocked,
                         SpaceIds = accessibleSpaceIds,
-                        PinnedSpaceIds = await GetSystemPinnedSpaceIdsAsync(
+                        PinnedSpaceIds = await this.GetSystemPinnedSpaceIdsAsync(
                             userId,
                             cancellationToken)
                     }
@@ -69,7 +69,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return new(null, "invalid_folder");
             }
 
-            var subscriptionTypeId = await _db.Users
+            var subscriptionTypeId = await this._db.Users
                 .Where(x => x.Id == userId && x.DeletedAt == null)
                 .Select(x => (Guid?)x.SubscriptionTypeId)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -78,14 +78,14 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return new(null, "user_not_found");
             }
 
-            var folderCount = await _db.PrivateSpaceFolders.CountAsync(x => x.UserId == userId, cancellationToken);
+            var folderCount = await this._db.PrivateSpaceFolders.CountAsync(x => x.UserId == userId, cancellationToken);
             if (folderCount >= GetFolderLimit(subscriptionTypeId.Value))
             {
                 return new(null, "folder_limit_reached");
             }
 
             var now = DateTime.UtcNow;
-            var nextPosition = await _db.PrivateSpaceFolders
+            var nextPosition = await this._db.PrivateSpaceFolders
                 .Where(x => x.UserId == userId)
                 .Select(x => (int?)x.Position)
                 .MaxAsync(cancellationToken) ?? -1;
@@ -102,10 +102,10 @@ namespace ArcaneLink.Services.PrivateSpaces
                 UpdatedAt = now
             };
 
-            var spaceIds = await FilterAccessibleSpaceIdsAsync(userId, request.SpaceIds, cancellationToken);
+            var spaceIds = await this.FilterAccessibleSpaceIdsAsync(userId, request.SpaceIds, cancellationToken);
             AddItems(folder, spaceIds, now);
-            _db.PrivateSpaceFolders.Add(folder);
-            await _db.SaveChangesAsync(cancellationToken);
+            this._db.PrivateSpaceFolders.Add(folder);
+            await this._db.SaveChangesAsync(cancellationToken);
 
             return new(ToResponse(folder, spaceIds.ToHashSet()));
         }
@@ -127,7 +127,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return new(null, "invalid_folder");
             }
 
-            var folder = await _db.PrivateSpaceFolders
+            var folder = await this._db.PrivateSpaceFolders
                 .Include(x => x.Items)
                 .FirstOrDefaultAsync(x => x.Id == folderId && x.UserId == userId, cancellationToken);
             if (folder == null)
@@ -136,14 +136,14 @@ namespace ArcaneLink.Services.PrivateSpaces
             }
 
             var now = DateTime.UtcNow;
-            var spaceIds = await FilterAccessibleSpaceIdsAsync(userId, request.SpaceIds, cancellationToken);
+            var spaceIds = await this.FilterAccessibleSpaceIdsAsync(userId, request.SpaceIds, cancellationToken);
             folder.Name = normalized.Value.Name;
             folder.Icon = normalized.Value.Icon;
             folder.Color = normalized.Value.Color;
             folder.UpdatedAt = now;
             var requestedSet = spaceIds.ToHashSet();
             var removedItems = folder.Items.Where(item => !requestedSet.Contains(item.SpaceId)).ToList();
-            _db.PrivateSpaceFolderItems.RemoveRange(removedItems);
+            this._db.PrivateSpaceFolderItems.RemoveRange(removedItems);
             foreach (var item in removedItems) folder.Items.Remove(item);
             for (var index = 0; index < spaceIds.Count; index++)
             {
@@ -165,7 +165,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                     item.ActivityAt = now;
                 }
             }
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
 
             return new(ToResponse(folder, requestedSet));
         }
@@ -173,17 +173,17 @@ namespace ArcaneLink.Services.PrivateSpaces
         public async Task<bool> DeleteFolderAsync(Guid userId, Guid folderId, CancellationToken cancellationToken = default)
         {
             if (folderId == AllFolderId) return false;
-            var folder = await _db.PrivateSpaceFolders.FirstOrDefaultAsync(x => x.Id == folderId && x.UserId == userId, cancellationToken);
+            var folder = await this._db.PrivateSpaceFolders.FirstOrDefaultAsync(x => x.Id == folderId && x.UserId == userId, cancellationToken);
             if (folder == null) return false;
-            _db.PrivateSpaceFolders.Remove(folder);
-            await _db.SaveChangesAsync(cancellationToken);
+            this._db.PrivateSpaceFolders.Remove(folder);
+            await this._db.SaveChangesAsync(cancellationToken);
             return true;
         }
 
         public async Task<bool> AddSpaceAsync(Guid userId, Guid folderId, Guid spaceId, CancellationToken cancellationToken = default)
         {
-            if (folderId == AllFolderId || !await IsAccessibleSpaceAsync(userId, spaceId, cancellationToken)) return false;
-            var folder = await _db.PrivateSpaceFolders.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == folderId && x.UserId == userId, cancellationToken);
+            if (folderId == AllFolderId || !await this.IsAccessibleSpaceAsync(userId, spaceId, cancellationToken)) return false;
+            var folder = await this._db.PrivateSpaceFolders.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == folderId && x.UserId == userId, cancellationToken);
             if (folder == null) return false;
             if (folder.Items.Any(x => x.SpaceId == spaceId)) return true;
 
@@ -196,27 +196,27 @@ namespace ArcaneLink.Services.PrivateSpaces
                 CreatedAt = DateTime.UtcNow
             });
             folder.UpdatedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             return true;
         }
 
         public async Task<bool> RemoveSpaceAsync(Guid userId, Guid folderId, Guid spaceId, CancellationToken cancellationToken = default)
         {
             if (folderId == AllFolderId) return false;
-            var item = await _db.PrivateSpaceFolderItems.FirstOrDefaultAsync(x => x.FolderId == folderId && x.SpaceId == spaceId && x.Folder.UserId == userId, cancellationToken);
+            var item = await this._db.PrivateSpaceFolderItems.FirstOrDefaultAsync(x => x.FolderId == folderId && x.SpaceId == spaceId && x.Folder.UserId == userId, cancellationToken);
             if (item == null) return false;
-            _db.PrivateSpaceFolderItems.Remove(item);
-            await _db.SaveChangesAsync(cancellationToken);
+            this._db.PrivateSpaceFolderItems.Remove(item);
+            await this._db.SaveChangesAsync(cancellationToken);
             return true;
         }
 
         public async Task<bool> ReorderFoldersAsync(Guid userId, IReadOnlyList<Guid> folderIds, CancellationToken cancellationToken = default)
         {
-            var folders = await _db.PrivateSpaceFolders.Where(x => x.UserId == userId).ToListAsync(cancellationToken);
+            var folders = await this._db.PrivateSpaceFolders.Where(x => x.UserId == userId).ToListAsync(cancellationToken);
             var requestedIds = folderIds.Where(x => x != AllFolderId).Distinct().ToList();
             if (folders.Count != requestedIds.Count || folders.Any(x => !requestedIds.Contains(x.Id))) return false;
             for (var index = 0; index < requestedIds.Count; index++) folders.First(x => x.Id == requestedIds[index]).Position = index;
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             return true;
         }
 
@@ -226,10 +226,10 @@ namespace ArcaneLink.Services.PrivateSpaces
             var requestedIdSet = requestedIds.ToHashSet();
             if (folderId == AllFolderId)
             {
-                var isOrderLocked = await IsAllOrderLockedAsync(
+                var isOrderLocked = await this.IsAllOrderLockedAsync(
                     userId,
                     cancellationToken);
-                var memberships = await _db.PrivateSpaceMembers
+                var memberships = await this._db.PrivateSpaceMembers
                     .Where(member =>
                         member.UserId == userId &&
                         member.StatusId == PrivateSpaceIds.MemberStatusActive &&
@@ -268,11 +268,11 @@ namespace ArcaneLink.Services.PrivateSpaces
                     }
                 }
 
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
                 return true;
             }
 
-            var folder = await _db.PrivateSpaceFolders.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == folderId && x.UserId == userId, cancellationToken);
+            var folder = await this._db.PrivateSpaceFolders.Include(x => x.Items).FirstOrDefaultAsync(x => x.Id == folderId && x.UserId == userId, cancellationToken);
             if (folder == null) return false;
             if (folder.Items.Count != requestedIds.Count || folder.Items.Any(x => !requestedIdSet.Contains(x.SpaceId))) return false;
             var folderPinnedIds = folder.Items
@@ -300,7 +300,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                     }
                 }
             }
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             return true;
         }
 
@@ -311,7 +311,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             bool isPinned,
             CancellationToken cancellationToken = default)
         {
-            if (!await IsAccessibleSpaceAsync(
+            if (!await this.IsAccessibleSpaceAsync(
                     userId,
                     spaceId,
                     cancellationToken))
@@ -322,7 +322,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             var pinnedAt = isPinned ? DateTime.UtcNow : (DateTime?)null;
             if (folderId == AllFolderId)
             {
-                var membership = await _db.PrivateSpaceMembers
+                var membership = await this._db.PrivateSpaceMembers
                     .FirstOrDefaultAsync(
                         member =>
                             member.UserId == userId &&
@@ -340,7 +340,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             }
             else
             {
-                var item = await _db.PrivateSpaceFolderItems
+                var item = await this._db.PrivateSpaceFolderItems
                     .FirstOrDefaultAsync(
                         folderItem =>
                             folderItem.FolderId == folderId &&
@@ -355,8 +355,8 @@ namespace ArcaneLink.Services.PrivateSpaces
                 item.PinnedAt = pinnedAt;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            return (await GetFoldersAsync(userId, cancellationToken))
+            await this._db.SaveChangesAsync(cancellationToken);
+            return (await this.GetFoldersAsync(userId, cancellationToken))
                 .First(folder => folder.Id == folderId);
         }
 
@@ -368,7 +368,7 @@ namespace ArcaneLink.Services.PrivateSpaces
         {
             if (folderId == AllFolderId)
             {
-                var settings = await _db.UserProfileSettings
+                var settings = await this._db.UserProfileSettings
                     .FirstOrDefaultAsync(
                         item => item.UserId == userId,
                         cancellationToken);
@@ -380,7 +380,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 if (isLocked &&
                     !settings.IsAllPrivateSpaceOrderLocked)
                 {
-                    var memberships = await _db.PrivateSpaceMembers
+                    var memberships = await this._db.PrivateSpaceMembers
                         .Where(member =>
                             member.UserId == userId &&
                             member.StatusId ==
@@ -403,7 +403,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             }
             else
             {
-                var folder = await _db.PrivateSpaceFolders
+                var folder = await this._db.PrivateSpaceFolders
                     .Include(item => item.Items)
                     .FirstOrDefaultAsync(
                         item =>
@@ -433,8 +433,8 @@ namespace ArcaneLink.Services.PrivateSpaces
                 folder.UpdatedAt = DateTime.UtcNow;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            return (await GetFoldersAsync(userId, cancellationToken))
+            await this._db.SaveChangesAsync(cancellationToken);
+            return (await this.GetFoldersAsync(userId, cancellationToken))
                 .First(folder => folder.Id == folderId);
         }
 
@@ -446,10 +446,10 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid userId,
             CancellationToken cancellationToken)
         {
-            var isOrderLocked = await IsAllOrderLockedAsync(
+            var isOrderLocked = await this.IsAllOrderLockedAsync(
                 userId,
                 cancellationToken);
-            var memberships = _db.PrivateSpaceMembers
+            var memberships = this._db.PrivateSpaceMembers
                 .Where(x =>
                     x.UserId == userId &&
                     x.StatusId == PrivateSpaceIds.MemberStatusActive &&
@@ -474,7 +474,7 @@ namespace ArcaneLink.Services.PrivateSpaces
         private async Task<IReadOnlyList<Guid>> GetSystemPinnedSpaceIdsAsync(
             Guid userId,
             CancellationToken cancellationToken) =>
-            await _db.PrivateSpaceMembers
+            await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.UserId == userId &&
@@ -490,14 +490,14 @@ namespace ArcaneLink.Services.PrivateSpaces
         private async Task<List<Guid>> FilterAccessibleSpaceIdsAsync(Guid userId, IEnumerable<Guid> requestedSpaceIds, CancellationToken cancellationToken)
         {
             var requested = requestedSpaceIds.Distinct().ToList();
-            return await _db.PrivateSpaceMembers
+            return await this._db.PrivateSpaceMembers
                 .Where(x => requested.Contains(x.SpaceId) && x.UserId == userId && x.StatusId == PrivateSpaceIds.MemberStatusActive && x.HiddenFromListAt == null && x.PrivateSpace.DeletedAt == null)
                 .Select(x => x.SpaceId)
                 .ToListAsync(cancellationToken);
         }
 
         private Task<bool> IsAccessibleSpaceAsync(Guid userId, Guid spaceId, CancellationToken cancellationToken) =>
-            _db.PrivateSpaceMembers.AnyAsync(x => x.SpaceId == spaceId && x.UserId == userId && x.StatusId == PrivateSpaceIds.MemberStatusActive && x.HiddenFromListAt == null && x.PrivateSpace.DeletedAt == null, cancellationToken);
+            this._db.PrivateSpaceMembers.AnyAsync(x => x.SpaceId == spaceId && x.UserId == userId && x.StatusId == PrivateSpaceIds.MemberStatusActive && x.HiddenFromListAt == null && x.PrivateSpace.DeletedAt == null, cancellationToken);
 
         private static void AddItems(PrivateSpaceFolder folder, IReadOnlyList<Guid> spaceIds, DateTime now)
         {
@@ -550,7 +550,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid userId,
             CancellationToken cancellationToken)
         {
-            return await _db.UserProfileSettings
+            return await this._db.UserProfileSettings
                 .AsNoTracking()
                 .Where(settings => settings.UserId == userId)
                 .Select(settings =>

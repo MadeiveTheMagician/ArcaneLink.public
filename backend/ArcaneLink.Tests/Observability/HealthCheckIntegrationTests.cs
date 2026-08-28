@@ -11,13 +11,13 @@ public sealed class HealthCheckIntegrationTests : IClassFixture<ArcaneLinkApiFac
 
     public HealthCheckIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _client = factory.CreateClient();
+        this._client = factory.CreateClient();
     }
 
     [Fact]
     public async Task LiveHealth_ReturnsHealthyJson()
     {
-        var response = await _client.GetAsync("/health/live");
+        var response = await this._client.GetAsync("/health/live");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
@@ -31,7 +31,7 @@ public sealed class HealthCheckIntegrationTests : IClassFixture<ArcaneLinkApiFac
     [Fact]
     public async Task ReadyHealth_ReturnsJsonWithDependencyChecks()
     {
-        var response = await _client.GetAsync("/health/ready");
+        var response = await this._client.GetAsync("/health/ready");
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);

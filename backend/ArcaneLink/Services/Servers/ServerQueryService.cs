@@ -3,8 +3,8 @@ using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Servers;
 using ArcaneLink.Exceptions;
 using ArcaneLink.Exceptions.ServerExceptions;
-using ArcaneLink.Services.Servers.Abstractions;
 using ArcaneLink.Services.Messages;
+using ArcaneLink.Services.Servers.Abstractions;
 using ArcaneLink.Services.Spaces;
 using ArcaneLink.Services.Spaces.Abstractions;
 using Microsoft.EntityFrameworkCore;
@@ -25,17 +25,17 @@ namespace ArcaneLink.Services.Servers
             ISpaceAuthorizationService spaceAuthorization,
             UnreadCountService unreadCounts)
         {
-            _db = db;
-            _lastMessages = lastMessages;
-            _spaceAuthorization = spaceAuthorization;
-            _unreadCounts = unreadCounts;
+            this._db = db;
+            this._lastMessages = lastMessages;
+            this._spaceAuthorization = spaceAuthorization;
+            this._unreadCounts = unreadCounts;
         }
 
         public async Task<IReadOnlyList<ServerMemberResponse>> GetMyServersAsync(
             Guid currentUserId,
             CancellationToken cancellationToken = default)
         {
-            var memberships = await _db.ServerMembers
+            var memberships = await this._db.ServerMembers
                 .AsNoTracking()
                 .Include(x => x.Status)
                 .Include(x => x.Server)
@@ -46,16 +46,16 @@ namespace ArcaneLink.Services.Servers
                 .OrderByDescending(x => x.UpdatedAt)
                 .ToListAsync(cancellationToken);
             var serverIds = memberships.Select(x => x.ServerId).ToList();
-            var snapshots = await _spaceAuthorization.GetSnapshotsAsync(
+            var snapshots = await this._spaceAuthorization.GetSnapshotsAsync(
                 currentUserId,
                 serverIds,
                 cancellationToken);
-            var lastMessages = await _lastMessages.GetAsync(
+            var lastMessages = await this._lastMessages.GetAsync(
                 currentUserId,
                 serverIds,
                 snapshots,
                 cancellationToken);
-            var unreadCounts = await _unreadCounts.GetServerUnreadCountsAsync(
+            var unreadCounts = await this._unreadCounts.GetServerUnreadCountsAsync(
                 currentUserId,
                 serverIds,
                 snapshots,
@@ -70,7 +70,7 @@ namespace ArcaneLink.Services.Servers
             foreach (var response in responses)
             {
                 response.Server.DefaultTextSpaceId =
-                    await ResolveVisibleDefaultTextSpaceIdAsync(
+                    await this.ResolveVisibleDefaultTextSpaceIdAsync(
                         currentUserId,
                         response.ServerId,
                         response.Server.DefaultTextSpaceId,
@@ -85,7 +85,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId &&
@@ -105,7 +105,7 @@ namespace ArcaneLink.Services.Servers
 
             var response = ToServerResponse(server);
             response.DefaultTextSpaceId =
-                await ResolveVisibleDefaultTextSpaceIdAsync(
+                await this.ResolveVisibleDefaultTextSpaceIdAsync(
                     currentUserId,
                     server.Id,
                     server.DefaultTextSpaceId,
@@ -119,7 +119,7 @@ namespace ArcaneLink.Services.Servers
             CancellationToken cancellationToken = default)
         {
             var normalizedSlug = NormalizeSlug(slug);
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.Slug == normalizedSlug &&
@@ -139,7 +139,7 @@ namespace ArcaneLink.Services.Servers
 
             var response = ToServerResponse(server);
             response.DefaultTextSpaceId =
-                await ResolveVisibleDefaultTextSpaceIdAsync(
+                await this.ResolveVisibleDefaultTextSpaceIdAsync(
                     currentUserId,
                     server.Id,
                     server.DefaultTextSpaceId,
@@ -158,7 +158,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var capabilities = await _spaceAuthorization
+            var capabilities = await this._spaceAuthorization
                 .GetGranularCapabilitiesAsync(
                     currentUserId,
                     serverId,

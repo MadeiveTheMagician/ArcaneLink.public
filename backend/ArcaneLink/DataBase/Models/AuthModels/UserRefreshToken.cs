@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.Models.UsersModels;
+using ArcaneLink.DataBase.Models.UsersModels;
 
 namespace ArcaneLink.DataBase.Models.AuthModels
 {
@@ -26,8 +26,8 @@ namespace ArcaneLink.DataBase.Models.AuthModels
 
         public string? UserAgent { get; set; }
 
-        public bool IsRevoked => RevokedAt != null;
-        public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
-        public bool IsActive => !IsRevoked && !IsExpired;
+        public bool IsRevoked => this.RevokedAt != null;
+        public bool IsExpired => DateTime.UtcNow >= this.ExpiresAt;
+        public bool IsActive => !this.IsRevoked && !this.IsExpired;
     }
 }

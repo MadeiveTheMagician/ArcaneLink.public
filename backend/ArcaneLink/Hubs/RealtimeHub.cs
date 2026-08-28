@@ -41,27 +41,27 @@ namespace ArcaneLink.Hubs
             IUserPresenceCoordinator presenceCoordinator,
             ILogger<RealtimeHub> logger)
         {
-            _db = db;
-            _voiceConnections = voiceConnections;
-            _realtime = realtime;
-            _audience = audience;
-            _connections = connections;
-            _presenceCoordinator = presenceCoordinator;
-            _logger = logger;
+            this._db = db;
+            this._voiceConnections = voiceConnections;
+            this._realtime = realtime;
+            this._audience = audience;
+            this._connections = connections;
+            this._presenceCoordinator = presenceCoordinator;
+            this._logger = logger;
         }
 
         public override async Task OnConnectedAsync()
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var userId = this.GetCurrentUserId();
                 if (userId != null)
                 {
-                    await Groups.AddToGroupAsync(
-                        Context.ConnectionId,
+                    await this.Groups.AddToGroupAsync(
+                        this.Context.ConnectionId,
                         RealtimeGroups.User(userId.Value));
 
-                    var serverIds = await _db.ServerMembers
+                    var serverIds = await this._db.ServerMembers
                         .AsNoTracking()
                         .Where(
                             x => x.UserId == userId.Value &&
@@ -71,95 +71,95 @@ namespace ArcaneLink.Hubs
                                  x.User.DeletedAt == null &&
                                  x.User.StatusId == UserStatusIds.Active)
                         .Select(x => x.ServerId)
-                        .ToListAsync(Context.ConnectionAborted);
+                        .ToListAsync(this.Context.ConnectionAborted);
 
                     foreach (var serverId in serverIds)
                     {
-                        await Groups.AddToGroupAsync(
-                            Context.ConnectionId,
+                        await this.Groups.AddToGroupAsync(
+                            this.Context.ConnectionId,
                             RealtimeGroups.Server(serverId));
                     }
 
-                    var registration = _connections.Register(
+                    var registration = this._connections.Register(
                         userId.Value,
-                        Context.ConnectionId);
-                    await _presenceCoordinator.ConnectionRegisteredAsync(
+                        this.Context.ConnectionId);
+                    await this._presenceCoordinator.ConnectionRegisteredAsync(
                         registration,
                         CancellationToken.None);
 
-                    var incomingCalls = await _voiceConnections
+                    var incomingCalls = await this._voiceConnections
                         .GetIncomingPrivateCallsAsync(
                             userId.Value,
                             CancellationToken.None);
                     foreach (var incomingCall in incomingCalls)
                     {
-                        await Clients.Caller.SendAsync(
+                        await this.Clients.Caller.SendAsync(
                             RealtimeEventNames.IncomingPrivateCall,
                             incomingCall,
                             CancellationToken.None);
                     }
                 }
 
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     ObservabilityEventIds.SignalRConnectionOpened,
                     "SignalR connection opened. ConnectionId={ConnectionId} UserId={UserId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     userId);
 
                 await base.OnConnectedAsync();
             }
-            catch (OperationCanceledException) when (Context.ConnectionAborted.IsCancellationRequested)
+            catch (OperationCanceledException) when (this.Context.ConnectionAborted.IsCancellationRequested)
             {
-                await UnregisterPresenceAsync();
-                _logger.LogDebug(
+                await this.UnregisterPresenceAsync();
+                this._logger.LogDebug(
                     "Realtime connection setup canceled because the client disconnected. ConnectionId={ConnectionId}",
-                    Context.ConnectionId);
+                    this.Context.ConnectionId);
             }
             catch
             {
-                await UnregisterPresenceAsync();
+                await this.UnregisterPresenceAsync();
                 throw;
             }
         }
 
         public async Task JoinServer(Guid serverId)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 return;
             }
 
-            if (!await IsActiveServerMemberAsync(
+            if (!await this.IsActiveServerMemberAsync(
                     userId.Value,
                     serverId,
-                    Context.ConnectionAborted))
+                    this.Context.ConnectionAborted))
             {
-                await Groups.RemoveFromGroupAsync(
-                    Context.ConnectionId,
+                await this.Groups.RemoveFromGroupAsync(
+                    this.Context.ConnectionId,
                     RealtimeGroups.Server(serverId));
                 return;
             }
 
-            await Groups.AddToGroupAsync(
-                Context.ConnectionId,
+            await this.Groups.AddToGroupAsync(
+                this.Context.ConnectionId,
                 RealtimeGroups.Server(serverId));
 
-            if (!await IsActiveServerMemberAsync(
+            if (!await this.IsActiveServerMemberAsync(
                     userId.Value,
                     serverId,
-                    Context.ConnectionAborted))
+                    this.Context.ConnectionAborted))
             {
-                await Groups.RemoveFromGroupAsync(
-                    Context.ConnectionId,
+                await this.Groups.RemoveFromGroupAsync(
+                    this.Context.ConnectionId,
                     RealtimeGroups.Server(serverId));
             }
         }
 
         public async Task LeaveServer(Guid serverId)
         {
-            await Groups.RemoveFromGroupAsync(
-                Context.ConnectionId,
+            await this.Groups.RemoveFromGroupAsync(
+                this.Context.ConnectionId,
                 RealtimeGroups.Server(serverId));
         }
 
@@ -171,24 +171,24 @@ namespace ArcaneLink.Hubs
             bool isCameraEnabled = false,
             bool isScreenSharing = false)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 ArcaneLinkDiagnostics.VoiceJoinFailedCounter.Add(1);
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     ObservabilityEventIds.VoiceJoinFailed,
                     "Voice join rejected. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     userId,
                     serverId,
                     spaceId);
                 return null;
             }
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 ObservabilityEventIds.VoiceJoinStarted,
                 "Voice join started. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId} IsMuted={IsMuted} IsDeafened={IsDeafened} IsCameraEnabled={IsCameraEnabled} IsScreenSharing={IsScreenSharing}",
-                Context.ConnectionId,
+                this.Context.ConnectionId,
                 userId,
                 serverId,
                 spaceId,
@@ -197,8 +197,8 @@ namespace ArcaneLink.Hubs
                 isCameraEnabled,
                 isScreenSharing);
 
-            var result = await _voiceConnections.JoinAsync(
-                Context.ConnectionId,
+            var result = await this._voiceConnections.JoinAsync(
+                this.Context.ConnectionId,
                 userId.Value,
                 serverId,
                 spaceId,
@@ -207,45 +207,45 @@ namespace ArcaneLink.Hubs
                     isDeafened,
                     isCameraEnabled,
                     isScreenSharing),
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
 
             if (result == null)
             {
                 ArcaneLinkDiagnostics.VoiceJoinFailedCounter.Add(1);
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     ObservabilityEventIds.VoiceJoinFailed,
                     "Voice join failed. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     userId,
                     serverId,
                     spaceId);
                 return null;
             }
 
-            await SynchronizeRemovedPrivateCallsAsync(
+            await this.SynchronizeRemovedPrivateCallsAsync(
                 result.RemovedConnections.Concat(result.ReplacedConnections),
                 result.SpaceId,
                 "participant_moved");
-            await NotifyVoiceConnectionsReplacedBestEffortAsync(
+            await this.NotifyVoiceConnectionsReplacedBestEffortAsync(
                 result.ReplacedConnections);
-            await BroadcastVoiceJoinStatesBestEffortAsync(result);
+            await this.BroadcastVoiceJoinStatesBestEffortAsync(result);
             try
             {
-                await JoinServer(serverId);
+                await this.JoinServer(serverId);
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Server group join failed after committed voice join. ConnectionId={ConnectionId} ServerId={ServerId} SpaceId={SpaceId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     serverId,
                     spaceId);
             }
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 ObservabilityEventIds.VoiceJoinSucceeded,
                 "Voice join succeeded. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId} ReplacedConnections={ReplacedConnectionCount} RemovedConnections={RemovedConnectionCount}",
-                Context.ConnectionId,
+                this.Context.ConnectionId,
                 userId,
                 serverId,
                 spaceId,
@@ -262,23 +262,23 @@ namespace ArcaneLink.Hubs
             bool isCameraEnabled = false,
             bool isScreenSharing = false)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 ArcaneLinkDiagnostics.VoiceJoinFailedCounter.Add(1);
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     ObservabilityEventIds.VoiceJoinFailed,
                     "Private voice join rejected. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     userId,
                     spaceId);
                 return null;
             }
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 ObservabilityEventIds.VoiceJoinStarted,
                 "Private voice join started. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId} IsMuted={IsMuted} IsDeafened={IsDeafened} IsCameraEnabled={IsCameraEnabled} IsScreenSharing={IsScreenSharing}",
-                Context.ConnectionId,
+                this.Context.ConnectionId,
                 userId,
                 spaceId,
                 isMuted,
@@ -286,13 +286,13 @@ namespace ArcaneLink.Hubs
                 isCameraEnabled,
                 isScreenSharing);
 
-            if (await ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId))
+            if (await this.ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId))
             {
                 return null;
             }
 
-            var result = await _voiceConnections.RejoinPrivateCallAsync(
-                Context.ConnectionId,
+            var result = await this._voiceConnections.RejoinPrivateCallAsync(
+                this.Context.ConnectionId,
                 userId.Value,
                 spaceId,
                 new VoiceStateUpdate(
@@ -300,20 +300,20 @@ namespace ArcaneLink.Hubs
                     isDeafened,
                     isCameraEnabled,
                     isScreenSharing),
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
             if (result == null)
             {
-                await ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId);
+                await this.ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId);
                 return null;
             }
 
-            await HandlePrivateVoiceJoinAsync(result.Voice);
-            var synchronized = await _voiceConnections.SynchronizePrivateCallAsync(
+            await this.HandlePrivateVoiceJoinAsync(result.Voice);
+            var synchronized = await this._voiceConnections.SynchronizePrivateCallAsync(
                 spaceId,
                 cancellationToken: CancellationToken.None);
             if (synchronized != null)
             {
-                await BroadcastPrivateCallTransitionAsync(synchronized);
+                await this.BroadcastPrivateCallTransitionAsync(synchronized);
             }
             return result.ParticipantId;
         }
@@ -325,14 +325,14 @@ namespace ArcaneLink.Hubs
             bool isCameraEnabled = false,
             bool isScreenSharing = false)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 return null;
             }
 
-            var result = await _voiceConnections.StartPrivateCallAsync(
-                Context.ConnectionId,
+            var result = await this._voiceConnections.StartPrivateCallAsync(
+                this.Context.ConnectionId,
                 userId.Value,
                 spaceId,
                 new VoiceStateUpdate(
@@ -340,22 +340,22 @@ namespace ArcaneLink.Hubs
                     isDeafened,
                     isCameraEnabled,
                     isScreenSharing),
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
 
             if (result == null)
             {
                 ArcaneLinkDiagnostics.VoiceJoinFailedCounter.Add(1);
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     ObservabilityEventIds.VoiceJoinFailed,
                     "Private voice join failed. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     userId,
                     spaceId);
                 return null;
             }
 
-            await HandlePrivateVoiceJoinAsync(result.Voice);
-            await BroadcastPrivateCallTransitionAsync(
+            await this.HandlePrivateVoiceJoinAsync(result.Voice);
+            await this.BroadcastPrivateCallTransitionAsync(
                 new PrivateCallTransitionResult(result.Call, result.IncomingUserIds));
             return result;
         }
@@ -368,19 +368,19 @@ namespace ArcaneLink.Hubs
             bool isCameraEnabled = false,
             bool isScreenSharing = false)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 return null;
             }
 
-            if (await ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId))
+            if (await this.ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId))
             {
                 return null;
             }
 
-            var result = await _voiceConnections.AcceptPrivateCallAsync(
-                Context.ConnectionId,
+            var result = await this._voiceConnections.AcceptPrivateCallAsync(
+                this.Context.ConnectionId,
                 userId.Value,
                 spaceId,
                 callId,
@@ -389,67 +389,67 @@ namespace ArcaneLink.Hubs
                     isDeafened,
                     isCameraEnabled,
                     isScreenSharing),
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
             if (result == null)
             {
-                await ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId);
+                await this.ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId);
                 return null;
             }
 
-            await HandlePrivateVoiceJoinAsync(result.Voice);
-            await BroadcastPrivateCallTransitionAsync(
+            await this.HandlePrivateVoiceJoinAsync(result.Voice);
+            await this.BroadcastPrivateCallTransitionAsync(
                 new PrivateCallTransitionResult(result.Call, []));
             return result;
         }
 
         public async Task<bool> DeclinePrivateCall(Guid spaceId, Guid callId)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 return false;
             }
 
-            var result = await _voiceConnections.DeclinePrivateCallAsync(
+            var result = await this._voiceConnections.DeclinePrivateCallAsync(
                 userId.Value,
                 spaceId,
                 callId,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
             if (result == null)
             {
                 return false;
             }
 
-            await BroadcastPrivateCallTransitionAsync(result);
+            await this.BroadcastPrivateCallTransitionAsync(result);
             if (result.Call.Phase == PrivateCallPhases.Ended)
             {
-                await BroadcastPrivateVoiceStateAsync(spaceId);
+                await this.BroadcastPrivateVoiceStateAsync(spaceId);
             }
             return true;
         }
 
         public async Task<bool> CancelPrivateCall(Guid spaceId, Guid callId)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 return false;
             }
 
-            var result = await _voiceConnections.CancelPrivateCallAsync(
+            var result = await this._voiceConnections.CancelPrivateCallAsync(
                 userId.Value,
                 spaceId,
                 callId,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
             if (result == null)
             {
                 return false;
             }
 
-            await BroadcastPrivateCallTransitionAsync(
+            await this.BroadcastPrivateCallTransitionAsync(
                 result,
                 CancellationToken.None);
-            await BroadcastPrivateVoiceStateAsync(
+            await this.BroadcastPrivateVoiceStateAsync(
                 spaceId,
                 CancellationToken.None);
             return true;
@@ -457,38 +457,38 @@ namespace ArcaneLink.Hubs
 
         public Task<PrivateCallState?> GetPrivateCallState(Guid spaceId)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             return userId == null
                 ? Task.FromResult<PrivateCallState?>(null)
-                : _voiceConnections.GetPrivateCallStateAsync(
+                : this._voiceConnections.GetPrivateCallStateAsync(
                     userId.Value,
                     spaceId,
-                    Context.ConnectionAborted);
+                    this.Context.ConnectionAborted);
         }
 
         public Task<IReadOnlyList<PrivateCallState>> GetIncomingPrivateCalls()
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             return userId == null
                 ? Task.FromResult<IReadOnlyList<PrivateCallState>>([])
-                : _voiceConnections.GetIncomingPrivateCallsAsync(
+                : this._voiceConnections.GetIncomingPrivateCallsAsync(
                     userId.Value,
-                    Context.ConnectionAborted);
+                    this.Context.ConnectionAborted);
         }
 
         private async Task HandlePrivateVoiceJoinAsync(VoiceJoinResult result)
         {
-            await SynchronizeRemovedPrivateCallsAsync(
+            await this.SynchronizeRemovedPrivateCallsAsync(
                 result.RemovedConnections.Concat(result.ReplacedConnections),
                 result.SpaceId,
                 "participant_moved");
-            await NotifyVoiceConnectionsReplacedBestEffortAsync(
+            await this.NotifyVoiceConnectionsReplacedBestEffortAsync(
                 result.ReplacedConnections);
-            await BroadcastVoiceJoinStatesBestEffortAsync(result);
-            _logger.LogInformation(
+            await this.BroadcastVoiceJoinStatesBestEffortAsync(result);
+            this._logger.LogInformation(
                 ObservabilityEventIds.VoiceJoinSucceeded,
                 "Private voice join succeeded. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId} ParticipantId={ParticipantId} ReplacedConnections={ReplacedConnectionCount} RemovedConnections={RemovedConnectionCount}",
-                Context.ConnectionId,
+                this.Context.ConnectionId,
                 result.UserId,
                 result.SpaceId,
                 result.ParticipantId,
@@ -498,20 +498,20 @@ namespace ArcaneLink.Hubs
 
         public async Task LeaveVoiceChannel(Guid spaceId)
         {
-            var removed = await _voiceConnections.LeaveAsync(
-                Context.ConnectionId,
+            var removed = await this._voiceConnections.LeaveAsync(
+                this.Context.ConnectionId,
                 spaceId,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
 
             if (removed != null)
             {
-                await SynchronizeRemovedPrivateCallsAsync(
+                await this.SynchronizeRemovedPrivateCallsAsync(
                     [removed],
                     retainedSpaceId: null,
                     endReason: "participant_left");
                 try
                 {
-                    await BroadcastVoiceStateAsync(
+                    await this.BroadcastVoiceStateAsync(
                         removed.ServerId,
                         removed.SpaceId,
                         removed.ChannelScope,
@@ -519,17 +519,17 @@ namespace ArcaneLink.Hubs
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogWarning(
+                    this._logger.LogWarning(
                         exception,
                         "Voice roster broadcast failed after committed leave. ServerId={ServerId} SpaceId={SpaceId} ChannelScope={ChannelScope}",
                         removed.ServerId,
                         removed.SpaceId,
                         removed.ChannelScope);
                 }
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     ObservabilityEventIds.VoiceLeaveCompleted,
                     "Voice leave completed. ConnectionId={ConnectionId} ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     removed.ServerId,
                     removed.SpaceId,
                     removed.ParticipantId);
@@ -545,8 +545,8 @@ namespace ArcaneLink.Hubs
             bool isScreenSharing = false,
             Guid? participantId = null)
         {
-            var result = await _voiceConnections.UpdateStateAsync(
-                Context.ConnectionId,
+            var result = await this._voiceConnections.UpdateStateAsync(
+                this.Context.ConnectionId,
                 spaceId,
                 new VoiceStateUpdate(
                     isMuted,
@@ -554,11 +554,11 @@ namespace ArcaneLink.Hubs
                     isCameraEnabled,
                     isScreenSharing),
                 participantId,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
 
             if (result != null)
             {
-                await BroadcastVoiceStateAsync(
+                await this.BroadcastVoiceStateAsync(
                     result.Connection.ServerId,
                     result.Connection.SpaceId,
                     result.Connection.ChannelScope);
@@ -572,26 +572,26 @@ namespace ArcaneLink.Hubs
             Guid targetSpaceId,
             Guid participantId)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 return;
             }
 
-            var result = await _voiceConnections.MoveParticipantAsync(
+            var result = await this._voiceConnections.MoveParticipantAsync(
                 userId.Value,
                 serverId,
                 sourceSpaceId,
                 targetSpaceId,
                 participantId,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
 
             if (result == null)
             {
                 return;
             }
 
-            var targetTitle = await _db.Spaces
+            var targetTitle = await this._db.Spaces
                 .AsNoTracking()
                 .Where(x =>
                     x.Id == targetSpaceId &&
@@ -599,13 +599,13 @@ namespace ArcaneLink.Hubs
                     x.TypeId == SpaceIds.TypeVoiceRoom &&
                     x.DeletedAt == null)
                 .Select(x => x.Title)
-                .FirstOrDefaultAsync(Context.ConnectionAborted);
+                .FirstOrDefaultAsync(this.Context.ConnectionAborted);
             if (string.IsNullOrWhiteSpace(targetTitle))
             {
                 return;
             }
 
-            await Clients.Client(result.MovedConnection.ConnectionId).SendAsync(
+            await this.Clients.Client(result.MovedConnection.ConnectionId).SendAsync(
                 "VoiceParticipantMoved",
                 new
                 {
@@ -615,13 +615,13 @@ namespace ArcaneLink.Hubs
                     title = targetTitle,
                     result.MovedConnection.ParticipantId
                 },
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
 
-            await BroadcastVoiceStateAsync(
+            await this.BroadcastVoiceStateAsync(
                 result.PreviousConnection.ServerId,
                 result.PreviousConnection.SpaceId,
                 result.PreviousConnection.ChannelScope);
-            await BroadcastVoiceStateAsync(
+            await this.BroadcastVoiceStateAsync(
                 result.MovedConnection.ServerId,
                 result.MovedConnection.SpaceId,
                 result.MovedConnection.ChannelScope);
@@ -634,26 +634,26 @@ namespace ArcaneLink.Hubs
             bool? isServerMuted,
             bool? isServerDeafened)
         {
-            var actorUserId = GetCurrentUserId();
+            var actorUserId = this.GetCurrentUserId();
             if (actorUserId == null)
             {
                 return false;
             }
 
-            var result = await _voiceConnections.UpdateParticipantModerationAsync(
+            var result = await this._voiceConnections.UpdateParticipantModerationAsync(
                 actorUserId.Value,
                 serverId,
                 spaceId,
                 participantId,
                 isServerMuted,
                 isServerDeafened,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
             if (result == null)
             {
                 return false;
             }
 
-            await BroadcastVoiceStateAsync(
+            await this.BroadcastVoiceStateAsync(
                 result.Connection.ServerId,
                 result.Connection.SpaceId,
                 result.Connection.ChannelScope);
@@ -665,18 +665,18 @@ namespace ArcaneLink.Hubs
             Guid spaceId,
             Guid participantId)
         {
-            var actorUserId = GetCurrentUserId();
+            var actorUserId = this.GetCurrentUserId();
             if (actorUserId == null)
             {
                 return false;
             }
 
-            var removed = await _voiceConnections.DisconnectParticipantAsync(
+            var removed = await this._voiceConnections.DisconnectParticipantAsync(
                 actorUserId.Value,
                 serverId,
                 spaceId,
                 participantId,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
             if (removed == null)
             {
                 return false;
@@ -684,7 +684,7 @@ namespace ArcaneLink.Hubs
 
             try
             {
-                await Clients.Client(removed.ConnectionId).SendAsync(
+                await this.Clients.Client(removed.ConnectionId).SendAsync(
                     RealtimeEventNames.VoiceAccessRevoked,
                     new
                     {
@@ -697,7 +697,7 @@ namespace ArcaneLink.Hubs
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Voice disconnect notification failed after participant removal. ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId}",
                     serverId,
@@ -707,7 +707,7 @@ namespace ArcaneLink.Hubs
 
             try
             {
-                await BroadcastVoiceStateAsync(
+                await this.BroadcastVoiceStateAsync(
                     removed.ServerId,
                     removed.SpaceId,
                     removed.ChannelScope,
@@ -715,7 +715,7 @@ namespace ArcaneLink.Hubs
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Voice roster broadcast failed after participant disconnect. ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId}",
                     serverId,
@@ -727,12 +727,12 @@ namespace ArcaneLink.Hubs
 
         public async Task SendVoiceSignal(Guid spaceId, Guid targetParticipantId, string kind, string payload)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                _logger.LogDebug(
+                this._logger.LogDebug(
                     "Voice signal ignored because user is missing. ConnectionId={ConnectionId} SpaceId={SpaceId} TargetUserId={TargetUserId} Kind={Kind}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     spaceId,
                     targetParticipantId,
                     kind);
@@ -743,9 +743,9 @@ namespace ArcaneLink.Hubs
                 string.IsNullOrWhiteSpace(payload) ||
                 payload.Length > MaxVoiceSignalPayloadLength)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Voice signal rejected. ConnectionId={ConnectionId} SpaceId={SpaceId} TargetParticipantId={TargetParticipantId} Kind={Kind} PayloadLength={PayloadLength}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     spaceId,
                     targetParticipantId,
                     kind,
@@ -753,12 +753,12 @@ namespace ArcaneLink.Hubs
                 return;
             }
 
-            var route = await _voiceConnections.GetSignalRouteAsync(
-                Context.ConnectionId,
+            var route = await this._voiceConnections.GetSignalRouteAsync(
+                this.Context.ConnectionId,
                 userId.Value,
                 spaceId,
                 targetParticipantId,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
 
             if (route == null)
             {
@@ -767,9 +767,9 @@ namespace ArcaneLink.Hubs
 
             if (targetParticipantId == route.Sender.ParticipantId)
             {
-                _logger.LogDebug(
+                this._logger.LogDebug(
                     "Voice signal ignored because target is sender. ConnectionId={ConnectionId} UserId={UserId} ParticipantId={ParticipantId} SpaceId={SpaceId} Kind={Kind}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     route.Sender.UserId,
                     route.Sender.ParticipantId,
                     spaceId,
@@ -777,7 +777,7 @@ namespace ArcaneLink.Hubs
                 return;
             }
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 "Voice signal routed. SpaceId={SpaceId} FromUserId={FromUserId} FromParticipantId={FromParticipantId} TargetParticipantId={TargetParticipantId} Kind={Kind} PayloadLength={PayloadLength} TargetConnections={TargetConnectionCount}",
                 spaceId,
                 route.Sender.UserId,
@@ -789,7 +789,7 @@ namespace ArcaneLink.Hubs
 
             foreach (var connectionId in route.TargetConnectionIds)
             {
-                await Clients.Client(connectionId).SendAsync(
+                await this.Clients.Client(connectionId).SendAsync(
                     "VoiceSignal",
                     new
                     {
@@ -799,38 +799,38 @@ namespace ArcaneLink.Hubs
                         kind,
                         payload
                     },
-                    Context.ConnectionAborted);
+                    this.Context.ConnectionAborted);
             }
         }
 
         public async Task GetVoiceChannelState(Guid serverId, Guid spaceId)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null ||
-                !await _voiceConnections.CanViewVoiceChannelAsync(
+                !await this._voiceConnections.CanViewVoiceChannelAsync(
                     userId.Value,
                     serverId,
                     spaceId,
                     CancellationToken.None))
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Voice state request rejected. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     userId,
                     serverId,
                     spaceId);
                 return;
             }
 
-            _logger.LogDebug(
+            this._logger.LogDebug(
                 "Voice state requested. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId}",
-                Context.ConnectionId,
+                this.Context.ConnectionId,
                 userId,
                 serverId,
                 spaceId);
-            await Clients.Caller.SendAsync(
+            await this.Clients.Caller.SendAsync(
                 "VoiceChannelStateChanged",
-                await _voiceConnections.GetChannelStatePayloadAsync(
+                await this._voiceConnections.GetChannelStatePayloadAsync(
                     serverId,
                     spaceId,
                     VoiceChannelScopes.Server,
@@ -842,7 +842,7 @@ namespace ArcaneLink.Hubs
             Guid serverId,
             Guid spaceId)
         {
-            return RenewVoiceAccessLeaseAsync(
+            return this.RenewVoiceAccessLeaseAsync(
                 serverId,
                 spaceId,
                 VoiceChannelScopes.Server);
@@ -850,29 +850,29 @@ namespace ArcaneLink.Hubs
 
         public async Task GetPrivateVoiceChannelState(Guid spaceId)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null ||
-                !await _voiceConnections.CanUsePrivateVoiceChannelAsync(
+                !await this._voiceConnections.CanUsePrivateVoiceChannelAsync(
                     userId.Value,
                     spaceId,
                     CancellationToken.None))
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Private voice state request rejected. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId}",
-                    Context.ConnectionId,
+                    this.Context.ConnectionId,
                     userId,
                     spaceId);
                 return;
             }
 
-            _logger.LogDebug(
+            this._logger.LogDebug(
                 "Private voice state requested. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId}",
-                Context.ConnectionId,
+                this.Context.ConnectionId,
                 userId,
                 spaceId);
-            await Clients.Caller.SendAsync(
+            await this.Clients.Caller.SendAsync(
                 "VoiceChannelStateChanged",
-                await _voiceConnections.GetChannelStatePayloadAsync(
+                await this._voiceConnections.GetChannelStatePayloadAsync(
                     null,
                     spaceId,
                     VoiceChannelScopes.Private,
@@ -882,16 +882,16 @@ namespace ArcaneLink.Hubs
 
         public async Task RefreshCurrentVoiceIdentity()
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 return;
             }
 
-            var refreshedConnections = await _voiceConnections
+            var refreshedConnections = await this._voiceConnections
                 .RefreshUserIdentityAsync(
                     userId.Value,
-                    Context.ConnectionAborted);
+                    this.Context.ConnectionAborted);
             foreach (var channel in refreshedConnections
                          .Select(connection => new
                          {
@@ -901,7 +901,7 @@ namespace ArcaneLink.Hubs
                          })
                          .Distinct())
             {
-                await BroadcastVoiceStateAsync(
+                await this.BroadcastVoiceStateAsync(
                     channel.ServerId,
                     channel.SpaceId,
                     channel.ChannelScope,
@@ -911,7 +911,7 @@ namespace ArcaneLink.Hubs
 
         public Task<object?> RenewPrivateVoiceChannelAccessLease(Guid spaceId)
         {
-            return RenewVoiceAccessLeaseAsync(
+            return this.RenewVoiceAccessLeaseAsync(
                 null,
                 spaceId,
                 VoiceChannelScopes.Private);
@@ -919,17 +919,17 @@ namespace ArcaneLink.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            await UnregisterPresenceAsync();
-            var removed = await _voiceConnections.DisconnectAsync(
-                Context.ConnectionId);
+            await this.UnregisterPresenceAsync();
+            var removed = await this._voiceConnections.DisconnectAsync(
+                this.Context.ConnectionId);
 
             if (removed != null)
             {
-                await SynchronizeRemovedPrivateCallsAsync(
+                await this.SynchronizeRemovedPrivateCallsAsync(
                     [removed],
                     retainedSpaceId: null,
                     endReason: "connection_lost");
-                await BroadcastVoiceStateAsync(
+                await this.BroadcastVoiceStateAsync(
                     removed.ServerId,
                     removed.SpaceId,
                     removed.ChannelScope,
@@ -938,18 +938,18 @@ namespace ArcaneLink.Hubs
 
             if (exception == null)
             {
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     ObservabilityEventIds.SignalRConnectionClosed,
                     "SignalR connection closed. ConnectionId={ConnectionId}",
-                    Context.ConnectionId);
+                    this.Context.ConnectionId);
             }
             else
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     ObservabilityEventIds.SignalRConnectionClosed,
                     exception,
                     "SignalR connection closed with error. ConnectionId={ConnectionId}",
-                    Context.ConnectionId);
+                    this.Context.ConnectionId);
             }
 
             await base.OnDisconnectedAsync(exception);
@@ -957,10 +957,10 @@ namespace ArcaneLink.Hubs
 
         private async Task UnregisterPresenceAsync()
         {
-            var unregistration = _connections.Unregister(Context.ConnectionId);
+            var unregistration = this._connections.Unregister(this.Context.ConnectionId);
             if (unregistration.HasValue)
             {
-                await _presenceCoordinator.ConnectionUnregisteredAsync(
+                await this._presenceCoordinator.ConnectionUnregisteredAsync(
                     unregistration.Value,
                     CancellationToken.None);
             }
@@ -974,7 +974,7 @@ namespace ArcaneLink.Hubs
         {
             if (channelScope == VoiceChannelScopes.Private)
             {
-                await BroadcastPrivateVoiceStateAsync(spaceId, cancellationToken);
+                await this.BroadcastPrivateVoiceStateAsync(spaceId, cancellationToken);
                 return;
             }
 
@@ -983,7 +983,7 @@ namespace ArcaneLink.Hubs
                 return;
             }
 
-            var legacyRecipients = await _audience.GetAuthorizedUserIdsAsync(
+            var legacyRecipients = await this._audience.GetAuthorizedUserIdsAsync(
                 serverId.Value,
                 spaceId,
                 SpaceAction.View,
@@ -991,7 +991,7 @@ namespace ArcaneLink.Hubs
             var recipients = new List<Guid>(legacyRecipients.Count);
             foreach (var userId in legacyRecipients)
             {
-                if (await _voiceConnections.CanViewVoiceChannelAsync(
+                if (await this._voiceConnections.CanViewVoiceChannelAsync(
                         userId,
                         serverId.Value,
                         spaceId,
@@ -1000,10 +1000,10 @@ namespace ArcaneLink.Hubs
                     recipients.Add(userId);
                 }
             }
-            await _realtime.NotifyUsersAsync(
+            await this._realtime.NotifyUsersAsync(
                 recipients,
                 "VoiceChannelStateChanged",
-                await _voiceConnections.GetChannelStatePayloadAsync(
+                await this._voiceConnections.GetChannelStatePayloadAsync(
                     serverId,
                     spaceId,
                     channelScope,
@@ -1016,26 +1016,26 @@ namespace ArcaneLink.Hubs
             Guid spaceId,
             string channelScope)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
                 return null;
             }
 
-            var result = await _voiceConnections.RenewAccessLeaseAsync(
-                Context.ConnectionId,
+            var result = await this._voiceConnections.RenewAccessLeaseAsync(
+                this.Context.ConnectionId,
                 userId.Value,
                 serverId,
                 spaceId,
                 channelScope,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
             if (!result.IsActive)
             {
                 if (result.RemovedConnection != null)
                 {
                     try
                     {
-                        await BroadcastVoiceStateAsync(
+                        await this.BroadcastVoiceStateAsync(
                             result.RemovedConnection.ServerId,
                             result.RemovedConnection.SpaceId,
                             result.RemovedConnection.ChannelScope,
@@ -1043,10 +1043,10 @@ namespace ArcaneLink.Hubs
                     }
                     catch (Exception exception)
                     {
-                        _logger.LogWarning(
+                        this._logger.LogWarning(
                             exception,
                             "Voice roster broadcast failed after access lease denial. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId} ChannelScope={ChannelScope}",
-                            Context.ConnectionId,
+                            this.Context.ConnectionId,
                             userId,
                             serverId,
                             spaceId,
@@ -1057,17 +1057,17 @@ namespace ArcaneLink.Hubs
                     if (result.RemovedConnection.ChannelScope ==
                         VoiceChannelScopes.Private)
                     {
-                        var transition = await _voiceConnections
+                        var transition = await this._voiceConnections
                             .ReconcilePrivateCallPrivacyAsync(
                                 result.RemovedConnection.SpaceId,
                                 CancellationToken.None) ??
-                            await _voiceConnections.SynchronizePrivateCallAsync(
+                            await this._voiceConnections.SynchronizePrivateCallAsync(
                                 result.RemovedConnection.SpaceId,
                                 "privacy_changed",
                                 CancellationToken.None);
                         if (transition != null)
                         {
-                            await BroadcastPrivateCallTransitionAsync(
+                            await this.BroadcastPrivateCallTransitionAsync(
                                 transition,
                                 CancellationToken.None);
                         }
@@ -1079,25 +1079,25 @@ namespace ArcaneLink.Hubs
 
             if (result.StateChanged)
             {
-                await BroadcastVoiceStateAsync(
+                await this.BroadcastVoiceStateAsync(
                     serverId,
                     spaceId,
                     channelScope,
                     CancellationToken.None);
             }
 
-            return await _voiceConnections.GetChannelStatePayloadAsync(
+            return await this._voiceConnections.GetChannelStatePayloadAsync(
                 serverId,
                 spaceId,
                 channelScope,
-                Context.ConnectionAborted);
+                this.Context.ConnectionAborted);
         }
 
         private async Task BroadcastPrivateVoiceStateAsync(
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            var userIds = await _db.PrivateSpaceMembers
+            var userIds = await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(
                     x => x.SpaceId == spaceId &&
@@ -1110,7 +1110,7 @@ namespace ArcaneLink.Hubs
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
-            var payload = await _voiceConnections.GetChannelStatePayloadAsync(
+            var payload = await this._voiceConnections.GetChannelStatePayloadAsync(
                 null,
                 spaceId,
                 VoiceChannelScopes.Private,
@@ -1118,7 +1118,7 @@ namespace ArcaneLink.Hubs
 
             foreach (var userId in userIds)
             {
-                await Clients.Group(RealtimeGroups.User(userId)).SendAsync(
+                await this.Clients.Group(RealtimeGroups.User(userId)).SendAsync(
                     "VoiceChannelStateChanged",
                     payload,
                     cancellationToken);
@@ -1129,7 +1129,7 @@ namespace ArcaneLink.Hubs
             PrivateCallTransitionResult transition,
             CancellationToken cancellationToken = default)
         {
-            var userIds = await _db.PrivateSpaceMembers
+            var userIds = await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.SpaceId == transition.Call.SpaceId &&
@@ -1142,7 +1142,7 @@ namespace ArcaneLink.Hubs
                 .Distinct()
                 .ToListAsync(cancellationToken);
 
-            await _realtime.NotifyUsersAsync(
+            await this._realtime.NotifyUsersAsync(
                 userIds,
                 RealtimeEventNames.PrivateCallStateChanged,
                 transition.Call,
@@ -1152,7 +1152,7 @@ namespace ArcaneLink.Hubs
                 var authorizedIncomingUserIds = transition.IncomingUserIds
                     .Where(userIds.Contains)
                     .ToList();
-                await _realtime.NotifyUsersAsync(
+                await this._realtime.NotifyUsersAsync(
                     authorizedIncomingUserIds,
                     RealtimeEventNames.IncomingPrivateCall,
                     transition.Call,
@@ -1184,7 +1184,7 @@ namespace ArcaneLink.Hubs
             var transitions = new List<PrivateCallTransitionResult>();
             foreach (var affectedSpaceId in affectedSpaceIds)
             {
-                var transition = await _voiceConnections
+                var transition = await this._voiceConnections
                     .SynchronizePrivateCallAsync(
                         affectedSpaceId,
                         endReason,
@@ -1199,13 +1199,13 @@ namespace ArcaneLink.Hubs
             {
                 try
                 {
-                    await BroadcastPrivateCallTransitionAsync(
+                    await this.BroadcastPrivateCallTransitionAsync(
                         transition,
                         CancellationToken.None);
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogWarning(
+                    this._logger.LogWarning(
                         exception,
                         "Private call transition broadcast failed after voice removal. SpaceId={SpaceId} CallId={CallId} EndReason={EndReason}",
                         transition.Call.SpaceId,
@@ -1222,7 +1222,7 @@ namespace ArcaneLink.Hubs
             {
                 try
                 {
-                    await Clients.Client(replaced.ConnectionId).SendAsync(
+                    await this.Clients.Client(replaced.ConnectionId).SendAsync(
                         "VoiceConnectionReplaced",
                         new
                         {
@@ -1235,7 +1235,7 @@ namespace ArcaneLink.Hubs
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogWarning(
+                    this._logger.LogWarning(
                         exception,
                         "Voice replacement notification failed after voice join. ConnectionId={ConnectionId} SpaceId={SpaceId} ParticipantId={ParticipantId}",
                         replaced.ConnectionId,
@@ -1262,7 +1262,7 @@ namespace ArcaneLink.Hubs
             {
                 try
                 {
-                    await BroadcastVoiceStateAsync(
+                    await this.BroadcastVoiceStateAsync(
                         serverId,
                         spaceId,
                         channelScope,
@@ -1270,7 +1270,7 @@ namespace ArcaneLink.Hubs
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogWarning(
+                    this._logger.LogWarning(
                         exception,
                         "Voice roster broadcast failed after committed join. ServerId={ServerId} SpaceId={SpaceId} ChannelScope={ChannelScope}",
                         serverId,
@@ -1283,7 +1283,7 @@ namespace ArcaneLink.Hubs
         private async Task<bool> ReconcilePrivateCallPrivacyAndBroadcastAsync(
             Guid spaceId)
         {
-            var transition = await _voiceConnections
+            var transition = await this._voiceConnections
                 .ReconcilePrivateCallPrivacyAsync(
                     spaceId,
                     CancellationToken.None);
@@ -1292,10 +1292,10 @@ namespace ArcaneLink.Hubs
                 return false;
             }
 
-            await BroadcastPrivateCallTransitionAsync(
+            await this.BroadcastPrivateCallTransitionAsync(
                 transition,
                 CancellationToken.None);
-            await BroadcastPrivateVoiceStateAsync(
+            await this.BroadcastPrivateVoiceStateAsync(
                 spaceId,
                 CancellationToken.None);
             return true;
@@ -1303,7 +1303,7 @@ namespace ArcaneLink.Hubs
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = Context.User?.FindFirstValue("userId");
+            var userIdValue = this.Context.User?.FindFirstValue("userId");
             return Guid.TryParse(userIdValue, out var userId) ? userId : null;
         }
 
@@ -1312,7 +1312,7 @@ namespace ArcaneLink.Hubs
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return _db.ServerMembers
+            return this._db.ServerMembers
                 .AsNoTracking()
                 .AnyAsync(
                     x => x.ServerId == serverId &&

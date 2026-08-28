@@ -197,9 +197,9 @@ public sealed class GovernanceRealtimeAudienceIntegrationTests
         {
             get
             {
-                lock (_sync)
+                lock (this._sync)
                 {
-                    return _calls.ToList();
+                    return this._calls.ToList();
                 }
             }
         }
@@ -210,7 +210,7 @@ public sealed class GovernanceRealtimeAudienceIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return RecordAsync([userId], null, eventName);
+            return this.RecordAsync([userId], null, eventName);
         }
 
         public Task NotifyUsersAsync(
@@ -219,7 +219,7 @@ public sealed class GovernanceRealtimeAudienceIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return RecordAsync(userIds.Distinct().ToList(), null, eventName);
+            return this.RecordAsync(userIds.Distinct().ToList(), null, eventName);
         }
 
         public Task NotifyServerAsync(
@@ -228,14 +228,14 @@ public sealed class GovernanceRealtimeAudienceIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return RecordAsync([], serverId, eventName);
+            return this.RecordAsync([], serverId, eventName);
         }
 
         public void Clear()
         {
-            lock (_sync)
+            lock (this._sync)
             {
-                _calls.Clear();
+                this._calls.Clear();
             }
         }
 
@@ -244,9 +244,9 @@ public sealed class GovernanceRealtimeAudienceIntegrationTests
             Guid? serverId,
             string eventName)
         {
-            lock (_sync)
+            lock (this._sync)
             {
-                _calls.Add(new RealtimeCall(userIds, serverId, eventName));
+                this._calls.Add(new RealtimeCall(userIds, serverId, eventName));
             }
 
             return Task.CompletedTask;

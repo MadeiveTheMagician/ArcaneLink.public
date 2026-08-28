@@ -19,7 +19,7 @@ namespace ArcaneLink.Services.Realtime
             Guid revision,
             out IReadOnlyList<Guid> userIds)
         {
-            if (_cache.TryGetValue(
+            if (this._cache.TryGetValue(
                     new AudienceCacheKey(serverId, spaceId, action, revision),
                     out Guid[]? cached) &&
                 cached != null)
@@ -45,7 +45,7 @@ namespace ArcaneLink.Services.Realtime
                 return;
             }
 
-            _cache.Set(
+            this._cache.Set(
                 new AudienceCacheKey(serverId, spaceId, action, revision),
                 recipients,
                 new MemoryCacheEntryOptions
@@ -57,7 +57,7 @@ namespace ArcaneLink.Services.Realtime
 
         public void Dispose()
         {
-            _cache.Dispose();
+            this._cache.Dispose();
         }
 
         private sealed record AudienceCacheKey(

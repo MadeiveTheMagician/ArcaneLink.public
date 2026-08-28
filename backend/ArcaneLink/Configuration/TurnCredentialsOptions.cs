@@ -13,12 +13,12 @@ public sealed class TurnCredentialsOptions
 
     public bool HasValidConfiguration()
     {
-        return TryValidate(requireEnabled: false, out _);
+        return this.TryValidate(requireEnabled: false, out _);
     }
 
     public bool TryValidate(bool requireEnabled, out string error)
     {
-        if (!Enabled)
+        if (!this.Enabled)
         {
             error = requireEnabled
                 ? $"{SectionName}:Enabled must be true."
@@ -26,21 +26,21 @@ public sealed class TurnCredentialsOptions
             return !requireEnabled;
         }
 
-        if (string.IsNullOrWhiteSpace(SharedSecret) ||
-            ContainsPlaceholderMarker(SharedSecret) ||
-            SharedSecret.Length < 32)
+        if (string.IsNullOrWhiteSpace(this.SharedSecret) ||
+            ContainsPlaceholderMarker(this.SharedSecret) ||
+            this.SharedSecret.Length < 32)
         {
             error = $"{SectionName}:SharedSecret must contain at least 32 non-placeholder characters.";
             return false;
         }
 
-        if (TtlSeconds is < MinimumTtlSeconds or > MaximumTtlSeconds)
+        if (this.TtlSeconds is < MinimumTtlSeconds or > MaximumTtlSeconds)
         {
             error = $"{SectionName}:TtlSeconds must be between {MinimumTtlSeconds} and {MaximumTtlSeconds}.";
             return false;
         }
 
-        if (Urls is not { Length: > 0 } || Urls.Any(url => !IsTurnUrl(url)))
+        if (this.Urls is not { Length: > 0 } || this.Urls.Any(url => !IsTurnUrl(url)))
         {
             error = $"{SectionName}:Urls must contain only non-empty turn: or turns: URLs.";
             return false;

@@ -1,15 +1,15 @@
+using System.Text.Json;
 using ArcaneLink.DataBase.DTOs.Common;
+using ArcaneLink.Exceptions;
 using ArcaneLink.Exceptions.AssetExceptions.Abstractions;
 using ArcaneLink.Exceptions.AuthExceptions;
 using ArcaneLink.Exceptions.AuthExceptions.Abstractions;
-using ArcaneLink.Exceptions;
 using ArcaneLink.Exceptions.LoginExceptions.Abstractions;
 using ArcaneLink.Exceptions.RequestExceptions.Abstractions;
 using ArcaneLink.Exceptions.ServerExceptions.Abstractions;
 using ArcaneLink.Exceptions.UserExceptions.Abstractions;
 using ArcaneLink.Exceptions.UsersExceptions;
 using ArcaneLink.Observability;
-using System.Text.Json;
 
 namespace ArcaneLink.Middleware
 {
@@ -25,15 +25,15 @@ namespace ArcaneLink.Middleware
             RequestDelegate next,
             ILogger<ExceptionHandlingMiddleware> logger)
         {
-            _next = next;
-            _logger = logger;
+            this._next = next;
+            this._logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
             try
             {
-                await _next(context);
+                await this._next(context);
             }
             catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
             {
@@ -41,7 +41,7 @@ namespace ArcaneLink.Middleware
             }
             catch (Exception exception)
             {
-                await HandleExceptionAsync(context, exception);
+                await this.HandleExceptionAsync(context, exception);
             }
         }
 
@@ -61,7 +61,7 @@ namespace ArcaneLink.Middleware
 
             if (statusCode == StatusCodes.Status500InternalServerError)
             {
-                _logger.LogError(
+                this._logger.LogError(
                     ObservabilityEventIds.UnhandledException,
                     exception,
                     "Unhandled exception. TraceIdentifier={TraceIdentifier}",

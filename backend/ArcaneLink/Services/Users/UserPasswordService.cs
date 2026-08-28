@@ -24,12 +24,12 @@ namespace ArcaneLink.Services.Users
 
         public string HashPassword(User user, string password)
         {
-            return _passwordHasher.HashPassword(user, password);
+            return this._passwordHasher.HashPassword(user, password);
         }
 
         public void PerformDummyVerification(string password)
         {
-            _ = _passwordHasher.VerifyHashedPassword(
+            _ = this._passwordHasher.VerifyHashedPassword(
                 DummyUser,
                 DummyPasswordHash,
                 password);
@@ -40,7 +40,7 @@ namespace ArcaneLink.Services.Users
             string passwordHash,
             string password)
         {
-            return _passwordHasher.VerifyHashedPassword(
+            return this._passwordHasher.VerifyHashedPassword(
                 user,
                 passwordHash,
                 password);

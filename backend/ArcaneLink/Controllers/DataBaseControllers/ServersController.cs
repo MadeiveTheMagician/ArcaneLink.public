@@ -21,9 +21,9 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             IServerQueryService serverQueries,
             IServerDiscoveryService serverDiscoveryService)
         {
-            _serverCommands = serverCommands;
-            _serverQueries = serverQueries;
-            _serverDiscoveryService = serverDiscoveryService;
+            this._serverCommands = serverCommands;
+            this._serverQueries = serverQueries;
+            this._serverDiscoveryService = serverDiscoveryService;
         }
 
         [Authorize]
@@ -32,19 +32,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] CreateServerRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _serverCommands.CreateServerAsync(
+            var response = await this._serverCommands.CreateServerAsync(
                 userId.Value,
                 request,
                 cancellationToken);
 
-            return CreatedAtAction(
+            return this.CreatedAtAction(
                 nameof(GetServer),
                 new
                 {
@@ -58,18 +58,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<ServerMemberResponse>>> GetMyServers(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _serverQueries.GetMyServersAsync(
+            var response = await this._serverQueries.GetMyServersAsync(
                 userId.Value,
                 cancellationToken);
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -79,14 +79,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] ServerDiscoveryQuery query,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _serverDiscoveryService.DiscoverServersAsync(
+            return this.Ok(await this._serverDiscoveryService.DiscoverServersAsync(
                 userId.Value,
                 query,
                 cancellationToken));
@@ -98,23 +98,23 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid id,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _serverQueries.GetServerAsync(
+            var response = await this._serverQueries.GetServerAsync(
                 userId.Value,
                 id,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -123,23 +123,23 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             string slug,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _serverQueries.GetServerBySlugAsync(
+            var response = await this._serverQueries.GetServerBySlugAsync(
                 userId.Value,
                 slug,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -149,14 +149,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpdateServerRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _serverCommands.UpdateServerAsync(
+            var response = await this._serverCommands.UpdateServerAsync(
                 userId.Value,
                 id,
                 request,
@@ -164,10 +164,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -176,26 +176,26 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid id,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var isDeleted = await _serverCommands.DeleteServerAsync(
+            var isDeleted = await this._serverCommands.DeleteServerAsync(
                 userId.Value,
                 id,
                 cancellationToken);
 
             return isDeleted
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
 
             return Guid.TryParse(userIdValue, out var userId)
                 ? userId

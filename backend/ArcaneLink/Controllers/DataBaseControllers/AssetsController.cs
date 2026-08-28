@@ -18,7 +18,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         public AssetsController(IAssetService assetService)
         {
-            _assetService = assetService;
+            this._assetService = assetService;
         }
 
         [Authorize]
@@ -29,19 +29,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromForm] UploadAssetRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _assetService.UploadAssetAsync(
+            var response = await this._assetService.UploadAssetAsync(
                 userId.Value,
                 request,
                 cancellationToken);
 
-            return CreatedAtAction(
+            return this.CreatedAtAction(
                 nameof(GetAsset),
                 new
                 {
@@ -57,7 +57,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             // Legacy metadata-only creation trusted a provider key supplied by
             // the client. Keep a tombstone for old clients while all supported
             // creation flows go through server-managed multipart uploads.
-            return StatusCode(StatusCodes.Status410Gone);
+            return this.StatusCode(StatusCodes.Status410Gone);
         }
 
         [HttpGet("{id:guid}")]
@@ -65,17 +65,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid id,
             CancellationToken cancellationToken)
         {
-            var response = await _assetService.GetReadableAssetAsync(
-                GetCurrentUserId(),
+            var response = await this._assetService.GetReadableAssetAsync(
+                this.GetCurrentUserId(),
                 id,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -83,19 +83,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<AssetResponse>>> GetMyAvatarAssets(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _assetService.GetOwnedAssetsAsync(
+            var response = await this._assetService.GetOwnedAssetsAsync(
                 userId.Value,
                 AssetTypeIds.Avatar,
                 cancellationToken);
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -103,19 +103,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<AssetResponse>>> GetMyServerIconAssets(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _assetService.GetOwnedAssetsAsync(
+            var response = await this._assetService.GetOwnedAssetsAsync(
                 userId.Value,
                 AssetTypeIds.ServerIcon,
                 cancellationToken);
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -123,19 +123,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<AssetResponse>>> GetMyBannerAssets(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _assetService.GetOwnedAssetsAsync(
+            var response = await this._assetService.GetOwnedAssetsAsync(
                 userId.Value,
                 AssetTypeIds.Banner,
                 cancellationToken);
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -143,19 +143,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<AssetResponse>>> GetMyProfileBackgroundAssets(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _assetService.GetOwnedAssetsAsync(
+            var response = await this._assetService.GetOwnedAssetsAsync(
                 userId.Value,
                 AssetTypeIds.ProfileBackground,
                 cancellationToken);
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [HttpGet("{id:guid}/content")]
@@ -163,41 +163,41 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid id,
             CancellationToken cancellationToken)
         {
-            var response = await _assetService.GetReadableAssetContentAsync(
-                GetCurrentUserId(),
+            var response = await this._assetService.GetReadableAssetContentAsync(
+                this.GetCurrentUserId(),
                 id,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
             var etag = $"\"{response.Sha256}\"";
 
-            Response.Headers["X-Content-Type-Options"] = "nosniff";
-            Response.Headers["Cache-Control"] = response.IsPubliclyCacheable
+            this.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            this.Response.Headers["Cache-Control"] = response.IsPubliclyCacheable
                 ? "public, max-age=31536000, immutable"
                 : "private, no-store";
-            Response.Headers["ETag"] = etag;
-            Response.Headers["Last-Modified"] = response.CreatedAt
+            this.Response.Headers["ETag"] = etag;
+            this.Response.Headers["Last-Modified"] = response.CreatedAt
                 .ToUniversalTime()
                 .ToString("R", CultureInfo.InvariantCulture);
-            Response.Headers["Content-Disposition"] = BuildContentDisposition(
+            this.Response.Headers["Content-Disposition"] = BuildContentDisposition(
                 response.IsSafeInline,
                 response.FileName);
 
-            var ifNoneMatch = Request.Headers["If-None-Match"];
+            var ifNoneMatch = this.Request.Headers["If-None-Match"];
             if (response.IsPubliclyCacheable &&
                 ifNoneMatch.Any(value =>
                     string.Equals(value, etag, StringComparison.Ordinal) ||
                     string.Equals(value, "*", StringComparison.Ordinal)))
             {
                 await response.Content.DisposeAsync();
-                return StatusCode(StatusCodes.Status304NotModified);
+                return this.StatusCode(StatusCodes.Status304NotModified);
             }
 
-            return File(
+            return this.File(
                 response.Content,
                 response.IsSafeInline ? response.MimeType : "application/octet-stream",
                 enableRangeProcessing: true);
@@ -209,32 +209,32 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid id,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var result = await _assetService.DeleteOwnedAssetAsync(
+            var result = await this._assetService.DeleteOwnedAssetAsync(
                 userId.Value,
                 id,
                 cancellationToken);
 
             return result switch
             {
-                OwnedAssetDeleteResult.Deleted => NoContent(),
-                OwnedAssetDeleteResult.ManagedByDomain => Conflict(new
+                OwnedAssetDeleteResult.Deleted => this.NoContent(),
+                OwnedAssetDeleteResult.ManagedByDomain => this.Conflict(new
                 {
                     code = "asset_managed_by_domain"
                 }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
 
             return Guid.TryParse(userIdValue, out var userId)
                 ? userId

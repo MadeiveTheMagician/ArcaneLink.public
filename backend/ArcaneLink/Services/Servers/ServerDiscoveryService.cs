@@ -24,10 +24,10 @@ namespace ArcaneLink.Services.Servers
             ISpaceAuthorizationService spaceAuthorization,
             IUserPresencePolicyService presencePolicy)
         {
-            _db = db;
-            _lastMessages = lastMessages;
-            _spaceAuthorization = spaceAuthorization;
-            _presencePolicy = presencePolicy;
+            this._db = db;
+            this._lastMessages = lastMessages;
+            this._spaceAuthorization = spaceAuthorization;
+            this._presencePolicy = presencePolicy;
         }
 
         public async Task<IReadOnlyList<ServerDiscoveryResponse>> DiscoverServersAsync(
@@ -38,7 +38,7 @@ namespace ArcaneLink.Services.Servers
             var normalizedQuery = query.Query?.Trim().ToUpperInvariant();
             var visibility = query.Visibility?.Trim().ToLowerInvariant() ?? "all";
             var sort = query.Sort?.Trim().ToLowerInvariant() ?? "active";
-            var currentMemberships = await _db.ServerMembers
+            var currentMemberships = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x => x.UserId == currentUserId &&
                             x.StatusId == ServerMemberStatusIds.Active &&
@@ -49,7 +49,7 @@ namespace ArcaneLink.Services.Servers
             var membershipByServerId = currentMemberships
                 .ToDictionary(x => x.ServerId);
             var currentServerIds = membershipByServerId.Keys.ToHashSet();
-            var bannedServerIds = (await _db.ServerMembers
+            var bannedServerIds = (await this._db.ServerMembers
                     .AsNoTracking()
                     .Where(member =>
                         member.UserId == currentUserId &&
@@ -60,7 +60,7 @@ namespace ArcaneLink.Services.Servers
                     .ToListAsync(cancellationToken))
                 .ToHashSet();
 
-            var serversQuery = _db.Servers
+            var serversQuery = this._db.Servers
                 .AsNoTracking()
                 .Where(x => x.DeletedAt == null && !x.IsSystem);
 
@@ -101,7 +101,7 @@ namespace ArcaneLink.Services.Servers
                 return [];
             }
 
-            var currentJoinRequests = await _db.ServerJoinRequests
+            var currentJoinRequests = await this._db.ServerJoinRequests
                 .AsNoTracking()
                 .Include(joinRequest => joinRequest.User)
                     .ThenInclude(user => user.Profile)
@@ -118,7 +118,7 @@ namespace ArcaneLink.Services.Servers
                     group => group.Key,
                     group => group.First());
 
-            var memberCounts = await _db.ServerMembers
+            var memberCounts = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x => serverIds.Contains(x.ServerId) &&
                             x.StatusId == ServerMemberStatusIds.Active &&
@@ -127,14 +127,14 @@ namespace ArcaneLink.Services.Servers
                 .Select(x => new { ServerId = x.Key, Count = x.Count() })
                 .ToDictionaryAsync(x => x.ServerId, x => x.Count, cancellationToken);
 
-            var activeMembers = await _db.ServerMembers
+            var activeMembers = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x => serverIds.Contains(x.ServerId) &&
                             x.StatusId == ServerMemberStatusIds.Active &&
                             x.BannedAt == null)
                 .Select(x => new { x.ServerId, x.UserId })
                 .ToListAsync(cancellationToken);
-            var memberPresence = await _presencePolicy.ResolveAsync(
+            var memberPresence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 activeMembers.Select(member => member.UserId),
                 cancellationToken);
@@ -147,7 +147,7 @@ namespace ArcaneLink.Services.Servers
                 .GroupBy(member => member.ServerId)
                 .ToDictionary(group => group.Key, group => group.Count());
 
-            var friendUserIds = (await _db.UserFriends
+            var friendUserIds = (await this._db.UserFriends
                     .AsNoTracking()
                     .Where(x => x.UserId == currentUserId)
                     .Select(x => x.FriendUserId)
@@ -158,11 +158,11 @@ namespace ArcaneLink.Services.Servers
                 .GroupBy(member => member.ServerId)
                 .ToDictionary(group => group.Key, group => group.Count());
 
-            var snapshots = await _spaceAuthorization.GetSnapshotsAsync(
+            var snapshots = await this._spaceAuthorization.GetSnapshotsAsync(
                 currentUserId,
                 serverIds,
                 cancellationToken);
-            var spaces = await _db.Spaces
+            var spaces = await this._db.Spaces
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId.HasValue &&
@@ -183,7 +183,7 @@ namespace ArcaneLink.Services.Servers
             foreach (var space in spaces.Where(space =>
                          currentServerIds.Contains(space.ServerId)))
             {
-                var capabilities = await _spaceAuthorization
+                var capabilities = await this._spaceAuthorization
                     .GetGranularCapabilitiesAsync(
                         currentUserId,
                         space.ServerId,
@@ -216,7 +216,7 @@ namespace ArcaneLink.Services.Servers
             var currentMembershipIds = currentMemberships
                 .Select(x => x.Id)
                 .ToHashSet();
-            var currentRoleAssignments = await _db.ServerMemberRoles
+            var currentRoleAssignments = await this._db.ServerMemberRoles
                 .AsNoTracking()
                 .Where(x =>
                     serverIds.Contains(x.ServerId) &&
@@ -242,7 +242,7 @@ namespace ArcaneLink.Services.Servers
                         .Select(x => x.Title)
                         .ToList());
 
-            var lastMessages = await _lastMessages.GetAsync(
+            var lastMessages = await this._lastMessages.GetAsync(
                 currentUserId,
                 serverIds,
                 snapshots,

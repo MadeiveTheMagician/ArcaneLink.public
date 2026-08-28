@@ -275,12 +275,12 @@ namespace ArcaneLink.DataBase.Configurations.SpacesConfigurations
                 .HasDatabaseName("IX_PrivateSpaceMembers_User_Status_ListPosition");
 
             entity.HasIndex(x => new
-                {
-                    x.UserId,
-                    x.StatusId,
-                    x.HiddenFromListAt,
-                    x.ListActivityAt
-                })
+            {
+                x.UserId,
+                x.StatusId,
+                x.HiddenFromListAt,
+                x.ListActivityAt
+            })
                 .HasDatabaseName(
                     "IX_PrivateSpaceMembers_User_Status_Visibility_Activity");
 

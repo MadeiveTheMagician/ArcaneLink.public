@@ -13,27 +13,27 @@ namespace ArcaneLink.Services.Assets
             IOptions<AssetCleanupOptions> options,
             ILogger<AssetCleanupHostedService> logger)
         {
-            _scopeFactory = scopeFactory;
-            _options = options.Value;
-            _logger = logger;
+            this._scopeFactory = scopeFactory;
+            this._options = options.Value;
+            this._logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            if (!_options.Enabled)
+            if (!this._options.Enabled)
             {
-                _logger.LogInformation("Asset cleanup is disabled.");
+                this._logger.LogInformation("Asset cleanup is disabled.");
                 return;
             }
 
-            await RunCleanupSafelyAsync(stoppingToken);
+            await this.RunCleanupSafelyAsync(stoppingToken);
 
             using var timer = new PeriodicTimer(
-                TimeSpan.FromMinutes(Math.Max(1, _options.IntervalMinutes)));
+                TimeSpan.FromMinutes(Math.Max(1, this._options.IntervalMinutes)));
 
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
-                await RunCleanupSafelyAsync(stoppingToken);
+                await this.RunCleanupSafelyAsync(stoppingToken);
             }
         }
 
@@ -41,7 +41,7 @@ namespace ArcaneLink.Services.Assets
         {
             try
             {
-                using var scope = _scopeFactory.CreateScope();
+                using var scope = this._scopeFactory.CreateScope();
                 var runner = scope.ServiceProvider.GetRequiredService<AssetCleanupRunner>();
                 await runner.RunOnceAsync(cancellationToken);
             }
@@ -50,7 +50,7 @@ namespace ArcaneLink.Services.Assets
             }
             catch (Exception exception)
             {
-                _logger.LogError(
+                this._logger.LogError(
                     exception,
                     "Asset cleanup failed.");
             }

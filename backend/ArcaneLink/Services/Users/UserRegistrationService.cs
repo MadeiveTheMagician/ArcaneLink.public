@@ -4,9 +4,9 @@ using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.Exceptions;
 using ArcaneLink.Exceptions.UsersExceptions;
+using ArcaneLink.Services.Auth.Abstraction;
 using ArcaneLink.Services.Users.Abstractions;
 using ArcaneLink.Services.Validators;
-using ArcaneLink.Services.Auth.Abstraction;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -37,11 +37,11 @@ namespace ArcaneLink.Services.Users
             PasswordValidator passwordValidator,
             IAccountLifecycleService accountLifecycleService)
         {
-            _db = db;
-            _validationService = validationService;
-            _passwordService = passwordService;
-            _passwordValidator = passwordValidator;
-            _accountLifecycleService = accountLifecycleService;
+            this._db = db;
+            this._validationService = validationService;
+            this._passwordService = passwordService;
+            this._passwordValidator = passwordValidator;
+            this._accountLifecycleService = accountLifecycleService;
         }
 
         public async Task<UserResponse> RegisterAsync(
@@ -73,7 +73,7 @@ namespace ArcaneLink.Services.Users
                 throw new InvalidUserRegistrationDataException(ExceptionMessages.DisplayNameIsRequired);
             }
 
-            var passwordValidationResult = await _passwordValidator
+            var passwordValidationResult = await this._passwordValidator
                 .ValidateDetailedAsync(request.Password);
 
             if (!passwordValidationResult.IsValid)
@@ -92,7 +92,7 @@ namespace ArcaneLink.Services.Users
             //
             // Она нужна для нормального UX:
             // если логин/email заняты — вернём понятную ошибку до SaveChanges.
-            await _validationService.ValidateRegistrationAsync(
+            await this._validationService.ValidateRegistrationAsync(
                 login,
                 email,
                 cancellationToken);
@@ -116,7 +116,7 @@ namespace ArcaneLink.Services.Users
             };
 
             // В базу сохраняется только хеш, не сырой пароль.
-            user.PasswordHash = _passwordService.HashPassword(
+            user.PasswordHash = this._passwordService.HashPassword(
                 user,
                 request.Password);
 
@@ -168,16 +168,16 @@ namespace ArcaneLink.Services.Users
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _db.Users.Add(user);
-            _db.UserProfiles.Add(profile);
-            _db.UserProfileSettings.Add(profileSettings);
+            this._db.Users.Add(user);
+            this._db.UserProfiles.Add(profile);
+            this._db.UserProfileSettings.Add(profileSettings);
 
             try
             {
                 // Транзакция нужна, чтобы User, Profile и Settings
                 // создавались атомарно вместе с одноразовым токеном и
                 // зашифрованной outbox-записью письма.
-                await using var transaction = await _db.Database
+                await using var transaction = await this._db.Database
                     .BeginTransactionAsync(cancellationToken);
                 // Важный момент:
                 //
@@ -186,9 +186,9 @@ namespace ArcaneLink.Services.Users
                 // между AnyAsync и SaveChangesAsync.
                 //
                 // Поэтому уникальные индексы БД остаются последней защитой.
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
 
-                await _accountLifecycleService.QueueRegistrationVerificationAsync(
+                await this._accountLifecycleService.QueueRegistrationVerificationAsync(
                     user.Id,
                     cancellationToken);
 

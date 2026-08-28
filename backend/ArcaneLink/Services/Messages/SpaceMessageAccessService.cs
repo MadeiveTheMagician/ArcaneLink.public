@@ -29,8 +29,8 @@ namespace ArcaneLink.Services.Messages
             AppDbContext db,
             ISpaceAuthorizationService authorization)
         {
-            _db = db;
-            _authorization = authorization;
+            this._db = db;
+            this._authorization = authorization;
         }
 
         public async Task<Space?> GetAccessibleMessageSpaceAsync(
@@ -40,7 +40,7 @@ namespace ArcaneLink.Services.Messages
             SpaceAction action,
             CancellationToken cancellationToken)
         {
-            var capabilities = await _authorization.GetCapabilitiesAsync(
+            var capabilities = await this._authorization.GetCapabilitiesAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -50,7 +50,7 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            return await _db.Spaces
+            return await this._db.Spaces
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.Id == spaceId &&
@@ -67,7 +67,7 @@ namespace ArcaneLink.Services.Messages
             SpaceAction action,
             CancellationToken cancellationToken)
         {
-            var spaceIds = await _authorization.GetAllowedSpaceIdsAsync(
+            var spaceIds = await this._authorization.GetAllowedSpaceIdsAsync(
                 userId,
                 serverId,
                 action,
@@ -77,7 +77,7 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            return await _db.Spaces
+            return await this._db.Spaces
                 .AsNoTracking()
                 .Where(
                     x => spaceIds.Contains(x.Id) &&
@@ -95,7 +95,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             Guid spaceId,
             CancellationToken cancellationToken) =>
-            GetGranularMessageSpaceAsync(
+            this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -109,7 +109,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             Guid spaceId,
             CancellationToken cancellationToken) =>
-            GetGranularMessageSpaceAsync(
+            this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -123,7 +123,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             Guid spaceId,
             CancellationToken cancellationToken) =>
-            GetGranularMessageSpaceAsync(
+            this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -137,7 +137,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             Guid spaceId,
             CancellationToken cancellationToken) =>
-            GetGranularMessageSpaceAsync(
+            this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -155,7 +155,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             Guid spaceId,
             CancellationToken cancellationToken) =>
-            GetGranularMessageSpaceAsync(
+            this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -173,7 +173,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             Guid spaceId,
             CancellationToken cancellationToken) =>
-            GetGranularMessageSpaceAsync(
+            this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -191,7 +191,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             Guid spaceId,
             CancellationToken cancellationToken) =>
-            GetGranularMessageSpaceAsync(
+            this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -209,7 +209,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             Guid spaceId,
             CancellationToken cancellationToken) =>
-            GetGranularMessageSpaceAsync(
+            this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -227,7 +227,7 @@ namespace ArcaneLink.Services.Messages
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var spaceIds = await GetAccessibleMessageSpaceIdsAsync(
+            var spaceIds = await this.GetAccessibleMessageSpaceIdsAsync(
                 userId,
                 serverId,
                 SpaceAction.View,
@@ -237,7 +237,7 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            var spaces = await _db.Spaces
+            var spaces = await this._db.Spaces
                 .AsNoTracking()
                 .Where(space => spaceIds.Contains(space.Id))
                 .OrderBy(space => space.Position)
@@ -245,7 +245,7 @@ namespace ArcaneLink.Services.Messages
             var readableSpaceIds = new List<Guid>(spaces.Count);
             foreach (var space in spaces)
             {
-                if (await IsGranularAllowedAsync(
+                if (await this.IsGranularAllowedAsync(
                         userId,
                         serverId,
                         space,
@@ -265,7 +265,7 @@ namespace ArcaneLink.Services.Messages
             Guid spaceId,
             IEnumerable<Guid> userIds,
             CancellationToken cancellationToken) =>
-            FilterGranularMessageUserIdsAsync(
+            this.FilterGranularMessageUserIdsAsync(
                 serverId,
                 spaceId,
                 userIds,
@@ -278,7 +278,7 @@ namespace ArcaneLink.Services.Messages
             Guid spaceId,
             IEnumerable<Guid> userIds,
             CancellationToken cancellationToken) =>
-            FilterGranularMessageUserIdsAsync(
+            this.FilterGranularMessageUserIdsAsync(
                 serverId,
                 spaceId,
                 userIds,
@@ -294,7 +294,7 @@ namespace ArcaneLink.Services.Messages
             Func<Space, IReadOnlyList<string>> dependencyCodes,
             CancellationToken cancellationToken)
         {
-            var candidates = await _authorization.FilterAuthorizedUserIdsAsync(
+            var candidates = await this._authorization.FilterAuthorizedUserIdsAsync(
                 serverId,
                 spaceId,
                 userIds,
@@ -305,7 +305,7 @@ namespace ArcaneLink.Services.Messages
                 return [];
             }
 
-            var space = await LoadMessageSpaceAsync(
+            var space = await this.LoadMessageSpaceAsync(
                 serverId,
                 spaceId,
                 cancellationToken);
@@ -317,7 +317,7 @@ namespace ArcaneLink.Services.Messages
             var allowed = new List<Guid>(candidates.Count);
             foreach (var userId in candidates)
             {
-                if (await IsGranularAllowedAsync(
+                if (await this.IsGranularAllowedAsync(
                         userId,
                         serverId,
                         space,
@@ -341,14 +341,14 @@ namespace ArcaneLink.Services.Messages
         {
             if (userId == senderUserId)
             {
-                return await GetWritableMessageSpaceAsync(
+                return await this.GetWritableMessageSpaceAsync(
                     userId,
                     serverId,
                     spaceId,
                     cancellationToken) != null;
             }
 
-            return await GetGranularMessageSpaceAsync(
+            return await this.GetGranularMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -374,7 +374,7 @@ namespace ArcaneLink.Services.Messages
                 return false;
             }
 
-            return await GetWritableMessageSpaceAsync(
+            return await this.GetWritableMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -387,7 +387,7 @@ namespace ArcaneLink.Services.Messages
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            var capabilities = await _authorization.GetCapabilitiesAsync(
+            var capabilities = await this._authorization.GetCapabilitiesAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -423,7 +423,7 @@ namespace ArcaneLink.Services.Messages
             Func<Space, IReadOnlyList<string>> dependencyCodes,
             CancellationToken cancellationToken)
         {
-            var space = await GetAccessibleMessageSpaceAsync(
+            var space = await this.GetAccessibleMessageSpaceAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -434,7 +434,7 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            return await IsGranularAllowedAsync(
+            return await this.IsGranularAllowedAsync(
                 userId,
                 serverId,
                 space,
@@ -453,7 +453,7 @@ namespace ArcaneLink.Services.Messages
             IReadOnlyList<string> dependencyCodes,
             CancellationToken cancellationToken)
         {
-            return _authorization.IsAllowedAsync(
+            return this._authorization.IsAllowedAsync(
                 userId,
                 serverId,
                 space.Id,
@@ -468,7 +468,7 @@ namespace ArcaneLink.Services.Messages
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return _db.Spaces
+            return this._db.Spaces
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     space =>

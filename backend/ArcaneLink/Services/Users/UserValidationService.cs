@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase._Data;
+using ArcaneLink.DataBase._Data;
 using ArcaneLink.Exceptions.UsersExceptions;
 using ArcaneLink.Services.Users.Abstractions;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +27,7 @@ namespace ArcaneLink.Services.Users
         // Внедрение AppDbContext через DI.
         public UserValidationService(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         // Валидация данных регистрации.
@@ -49,7 +49,7 @@ namespace ArcaneLink.Services.Users
             var emailNorm = email.Trim().ToUpperInvariant();
 
             // Проверяем, существует ли пользователь с таким нормализованным логином.
-            var loginExists = await _db.Users
+            var loginExists = await this._db.Users
                 .AnyAsync(u => u.LoginNorm == loginNorm, cancellationToken);
 
             // Если логин уже есть — выбрасываем предметное исключение.
@@ -59,7 +59,7 @@ namespace ArcaneLink.Services.Users
             }
 
             // Проверяем, существует ли пользователь с таким нормализованным email.
-            var emailExists = await _db.Users
+            var emailExists = await this._db.Users
                 .AnyAsync(u => u.EmailNorm == emailNorm, cancellationToken);
 
             // Если email уже есть — выбрасываем предметное исключение.

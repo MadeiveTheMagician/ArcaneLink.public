@@ -1,5 +1,5 @@
-using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.DataBase.Models.SpacesModels;
+using ArcaneLink.DataBase.Models.UsersModels;
 
 namespace ArcaneLink.DataBase.Models.ServersModels
 {

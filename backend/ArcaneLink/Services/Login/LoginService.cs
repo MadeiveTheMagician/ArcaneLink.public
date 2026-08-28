@@ -47,12 +47,12 @@ namespace ArcaneLink.Services.Login
             IRealtimeNotificationService realtime,
             ILogger<LoginService> logger)
         {
-            _db = db;
-            _passwordService = passwordService;
-            _authTokenService = authTokenService;
-            _deviceSessionService = deviceSessionService;
-            _realtime = realtime;
-            _logger = logger;
+            this._db = db;
+            this._passwordService = passwordService;
+            this._authTokenService = authTokenService;
+            this._deviceSessionService = deviceSessionService;
+            this._realtime = realtime;
+            this._logger = logger;
         }
 
         // Метод логина.
@@ -84,7 +84,7 @@ namespace ArcaneLink.Services.Login
             //
             // Include(u => u.Profile) нужен,
             // чтобы сразу получить DisplayName без отдельного запроса.
-            var user = await _db.Users
+            var user = await this._db.Users
                 .Include(u => u.Profile)
                 .Include(u => u.SubscriptionType)
                 .FirstOrDefaultAsync(
@@ -101,7 +101,7 @@ namespace ArcaneLink.Services.Login
             // нельзя понять, существует login/email или нет.
             if (user == null)
             {
-                _passwordService.PerformDummyVerification(request.Password);
+                this._passwordService.PerformDummyVerification(request.Password);
                 throw new InvalidLoginCredentialsException();
             }
 
@@ -110,7 +110,7 @@ namespace ArcaneLink.Services.Login
             // Важно:
             // пароль НЕ хешируется заново вручную для сравнения.
             // PasswordHasher сам достаёт salt/параметры из PasswordHash.
-            var passwordResult = _passwordService.VerifyPassword(
+            var passwordResult = this._passwordService.VerifyPassword(
                 user,
                 user.PasswordHash,
                 request.Password);
@@ -151,7 +151,7 @@ namespace ArcaneLink.Services.Login
             // Например, если в будущем изменятся параметры хеширования.
             if (passwordResult == PasswordVerificationResult.SuccessRehashNeeded)
             {
-                user.PasswordHash = _passwordService.HashPassword(
+                user.PasswordHash = this._passwordService.HashPassword(
                     user,
                     request.Password);
             }
@@ -168,14 +168,14 @@ namespace ArcaneLink.Services.Login
             // SaveChangesAsync лучше делать здесь, в LoginService,
             // чтобы rehash пароля и refresh token
             // сохранились одной операцией.
-            var deviceSession = await _deviceSessionService.CreateSessionAsync(
+            var deviceSession = await this._deviceSessionService.CreateSessionAsync(
                 user,
                 request.DeviceName,
                 cancellationToken);
 
-            _db.UserDeviceSessions.Add(deviceSession);
+            this._db.UserDeviceSessions.Add(deviceSession);
 
-            var tokenPair = await _authTokenService.CreateTokenPairAsync(
+            var tokenPair = await this._authTokenService.CreateTokenPairAsync(
                 user,
                 deviceSession.Id,
                 cancellationToken);
@@ -183,14 +183,14 @@ namespace ArcaneLink.Services.Login
             // Сохраняем:
             // - новый PasswordHash, если был SuccessRehashNeeded;
             // - UserRefreshToken, добавленный AuthTokenService.
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 user.Id,
                 RealtimeEventNames.UserSessionsChanged,
                 new { sessionId = deviceSession.Id },
                 cancellationToken);
             ArcaneLinkDiagnostics.LoginSucceededCounter.Add(1);
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 ObservabilityEventIds.UserLoginSucceeded,
                 "User login succeeded. UserId={UserId} DeviceSessionId={DeviceSessionId}",
                 user.Id,

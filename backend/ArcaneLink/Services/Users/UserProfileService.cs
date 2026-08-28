@@ -3,10 +3,10 @@ using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.Exceptions;
+using ArcaneLink.Exceptions.UsersExceptions;
 using ArcaneLink.Services.Realtime;
 using ArcaneLink.Services.Realtime.Abstractions;
 using ArcaneLink.Services.Users.Abstractions;
-using ArcaneLink.Exceptions.UsersExceptions;
 using Microsoft.EntityFrameworkCore;
 using static ArcaneLink.Services.Users.UserProfileResponseMapper;
 
@@ -26,17 +26,17 @@ namespace ArcaneLink.Services.Users
             IUserProfileTagService profileTagService,
             IUserPresencePolicyService presencePolicy)
         {
-            _db = db;
-            _realtime = realtime;
-            _profileTagService = profileTagService;
-            _presencePolicy = presencePolicy;
+            this._db = db;
+            this._realtime = realtime;
+            this._profileTagService = profileTagService;
+            this._presencePolicy = presencePolicy;
         }
 
         public async Task<UserResponse?> GetCurrentUserAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var user = await _db.Users
+            var user = await this._db.Users
                 .Include(x => x.Profile)
                 .Include(x => x.SubscriptionType)
                 .FirstOrDefaultAsync(
@@ -50,7 +50,7 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
 
-            var presence = await ResolvePresenceAsync(
+            var presence = await this.ResolvePresenceAsync(
                 userId,
                 user.Id,
                 cancellationToken);
@@ -74,7 +74,7 @@ namespace ArcaneLink.Services.Users
             Guid? viewerUserId = null,
             CancellationToken cancellationToken = default)
         {
-            var user = await _db.Users
+            var user = await this._db.Users
                 .Include(x => x.Profile)
                     .ThenInclude(x => x.Tags)
                     .ThenInclude(x => x.Tag)
@@ -93,7 +93,7 @@ namespace ArcaneLink.Services.Users
                 return CreateUnavailableProfile(user.Id);
             }
 
-            var presence = await ResolvePresenceAsync(
+            var presence = await this.ResolvePresenceAsync(
                 viewerUserId,
                 user.Id,
                 cancellationToken);
@@ -105,7 +105,7 @@ namespace ArcaneLink.Services.Users
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var user = await _db.Users
+            var user = await this._db.Users
                 .Include(x => x.Profile)
                     .ThenInclude(x => x.Tags)
                     .ThenInclude(x => x.Tag)
@@ -121,7 +121,7 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
 
-            var presence = await ResolvePresenceAsync(
+            var presence = await this.ResolvePresenceAsync(
                 userId,
                 user.Id,
                 cancellationToken);
@@ -134,7 +134,7 @@ namespace ArcaneLink.Services.Users
             UpdateUserProfileRequest request,
             CancellationToken cancellationToken = default)
         {
-            var user = await _db.Users
+            var user = await this._db.Users
                 .Include(x => x.Profile)
                     .ThenInclude(x => x.Tags)
                     .ThenInclude(x => x.Tag)
@@ -153,7 +153,7 @@ namespace ArcaneLink.Services.Users
             ApplyProfileChanges(user, request);
             if (request.TagIds != null)
             {
-                await _profileTagService.ReplaceUserProfileTagsAsync(
+                await this._profileTagService.ReplaceUserProfileTagsAsync(
                     userId,
                     request.TagIds,
                     cancellationToken);
@@ -162,14 +162,14 @@ namespace ArcaneLink.Services.Users
             user.UpdatedAt = DateTime.UtcNow;
             user.Profile.UpdatedAt = DateTime.UtcNow;
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserProfileChanged,
                 new { userId },
                 cancellationToken);
 
-            var presence = await ResolvePresenceAsync(
+            var presence = await this.ResolvePresenceAsync(
                 userId,
                 user.Id,
                 cancellationToken);
@@ -182,7 +182,7 @@ namespace ArcaneLink.Services.Users
             Guid targetUserId,
             CancellationToken cancellationToken)
         {
-            var snapshots = await _presencePolicy.ResolveAsync(
+            var snapshots = await this._presencePolicy.ResolveAsync(
                 viewerUserId,
                 [targetUserId],
                 cancellationToken);

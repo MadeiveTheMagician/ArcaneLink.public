@@ -15,8 +15,8 @@ namespace ArcaneLink.Services.Servers
             AppDbContext db,
             IServerGovernanceAccessService access)
         {
-            _db = db;
-            _access = access;
+            this._db = db;
+            this._access = access;
         }
 
         public async Task<IReadOnlyList<ServerAuditLogResponse>?> GetAuditLogsAsync(
@@ -24,7 +24,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            if (!await _access.HasGranularPermissionAsync(
+            if (!await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "VIEW_AUDIT_LOG",
@@ -33,7 +33,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            return await _db.ServerAuditLogs
+            return await this._db.ServerAuditLogs
                 .AsNoTracking()
                 .Include(x => x.EventType)
                 .Where(x => x.ServerId == serverId)

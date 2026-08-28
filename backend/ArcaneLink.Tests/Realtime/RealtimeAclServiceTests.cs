@@ -24,13 +24,13 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
 
     public RealtimeAclServiceTests(ArcaneLinkApiFactory factory)
     {
-        _factory = factory;
+        this._factory = factory;
     }
 
     [Fact]
     public async Task ServerMessageNotification_UsesOnlyActiveViewAuthorizedAudience_AndIsBestEffort()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<
             ArcaneLink.DataBase._Data.AppDbContext>();
         var authorization = new MutableSpaceAuthorizationService
@@ -111,7 +111,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task SpaceChangeNotification_DoesNotExposeChangedSpaceId()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var realtime = new RecordingRealtimeNotificationService();
         var authorization = new MutableSpaceAuthorizationService();
         var voiceConnections = new VoiceConnectionService(
@@ -151,7 +151,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task ServerVoice_RechecksConnectForStateAndBothSignalParticipants()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var authorization = new MutableSpaceAuthorizationService();
         var service = new VoiceConnectionService(
             scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>(),
@@ -254,7 +254,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task ServerVoiceMove_RequiresActorManageOnBothSpaces_AndParticipantConnectOnTarget()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var authorization = new MutableSpaceAuthorizationService();
         var service = new VoiceConnectionService(
             scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>(),
@@ -348,7 +348,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task ServerVoiceMediaPermissions_SanitizeJoinUpdateAndLeaseRefresh()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var authorization = new MutableSpaceAuthorizationService();
         var service = new VoiceConnectionService(
             scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>(),
@@ -427,7 +427,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task VoiceStateUpdate_RejectsAStaleParticipantGenerationOnTheSameConnection()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var authorization = new MutableSpaceAuthorizationService();
         var service = new VoiceConnectionService(
             scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>(),
@@ -488,7 +488,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task ServerVoiceModeration_UsesFieldSpecificAndDisconnectPermissions()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var authorization = new MutableSpaceAuthorizationService();
         var service = new VoiceConnectionService(
             scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>(),
@@ -572,7 +572,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task ServerVoiceReconciliation_RemovesRevokedConnect_IsIdempotent_AndLeavesPrivateVoiceUntouched()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var authorization = new MutableSpaceAuthorizationService();
         var service = new VoiceConnectionService(
@@ -696,7 +696,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task ServerVoiceAccessReconciliation_NotifiesOnlyRevokedConnectionGeneration_AndOnlyViewAudienceOnce()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var authorization = new MutableSpaceAuthorizationService
         {
             FilteredUserIds =
@@ -786,7 +786,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task VoiceAccessLease_RenewsExactServerAndPrivateSessions_ThenFailsClosed()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var authorization = new MutableSpaceAuthorizationService();
         var service = new VoiceConnectionService(
@@ -906,7 +906,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateMembershipRemoval_EvictsVoice_NotifiesTeardown_AndRefreshesRosterOnce()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var authorization = new MutableSpaceAuthorizationService();
@@ -1044,7 +1044,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateMembershipLeave_RemainsCommittedAndVoiceClosed_WhenRealtimeFails()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var authorization = new MutableSpaceAuthorizationService();
@@ -1124,7 +1124,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task RoleAccessChanges_NotifyClientsToReloadEffectiveSpaces()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var authorization = new MutableSpaceAuthorizationService();
         var realtime = new RecordingRealtimeNotificationService();
@@ -1214,7 +1214,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_FirstAcceptStopsGroupRinging_AndDuplicateAcceptDoesNotReplaceParticipant()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var now = DateTime.UtcNow;
@@ -1288,7 +1288,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_DeclineEndsGeneration_AndNextStartGetsFreshCallId()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var service = new VoiceConnectionService(
@@ -1337,7 +1337,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_LegacyRejoinRequiresPreviousParticipation_AndNeverCreatesGeneration()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var service = new VoiceConnectionService(
@@ -1387,7 +1387,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_DirectBlockPreventsRingingInitiation()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var privateSpace = await db.PrivateSpaces.FindAsync(seeded.Space.Id);
@@ -1440,7 +1440,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_DirectBlockAfterStartTerminatesGenerationAndLease()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var privateSpace = await db.PrivateSpaces.FindAsync(seeded.Space.Id);
@@ -1517,8 +1517,8 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_ConcurrentStartsCreateOneGenerationAndOneRingingDelivery()
     {
-        using var firstScope = _factory.Services.CreateScope();
-        using var secondScope = _factory.Services.CreateScope();
+        using var firstScope = this._factory.Services.CreateScope();
+        using var secondScope = this._factory.Services.CreateScope();
         var firstDb = firstScope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var secondDb = secondScope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(firstDb);
@@ -1567,7 +1567,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_ActiveCallSurvivesCallerLeave_AndEndsAfterLastParticipant()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var service = new VoiceConnectionService(
@@ -1631,7 +1631,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_SwitchingAllParticipantsToServerVoiceEndsGeneration_AndCanSwitchBack()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var authorization = new MutableSpaceAuthorizationService();
@@ -1748,7 +1748,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_GroupDeclinesEndOnlyAfterLastRingingMember()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var now = DateTime.UtcNow;
@@ -1813,7 +1813,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task PrivateCall_RemovingUnjoinedInviteePrunesRingingAndEndsUnavailableCall()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
         var seeded = await SeedPrivateVoiceSpaceAsync(db);
         var service = new VoiceConnectionService(
@@ -1930,20 +1930,20 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             bool connect = false,
             bool manage = false)
         {
-            _capabilities[(userId, serverId, spaceId)] = new SpaceAccessCapabilities(
+            this._capabilities[(userId, serverId, spaceId)] = new SpaceAccessCapabilities(
                 CanView: view,
                 CanSendMessages: false,
                 CanConnectVoice: connect,
                 CanManage: manage);
-            SetPermission(userId, serverId, spaceId, "VIEW_VOICE_SPACES", view);
-            SetPermission(userId, serverId, spaceId, "CONNECT_VOICE", connect);
-            SetPermission(userId, serverId, spaceId, "SPEAK_IN_VOICE", connect);
-            SetPermission(userId, serverId, spaceId, "USE_VIDEO", connect);
-            SetPermission(userId, serverId, spaceId, "SHARE_SCREEN", connect);
-            SetPermission(userId, serverId, spaceId, "MUTE_VOICE_MEMBERS", manage);
-            SetPermission(userId, serverId, spaceId, "DEAFEN_VOICE_MEMBERS", manage);
-            SetPermission(userId, serverId, spaceId, "MOVE_VOICE_MEMBERS", manage);
-            SetPermission(userId, serverId, spaceId, "DISCONNECT_VOICE_MEMBERS", manage);
+            this.SetPermission(userId, serverId, spaceId, "VIEW_VOICE_SPACES", view);
+            this.SetPermission(userId, serverId, spaceId, "CONNECT_VOICE", connect);
+            this.SetPermission(userId, serverId, spaceId, "SPEAK_IN_VOICE", connect);
+            this.SetPermission(userId, serverId, spaceId, "USE_VIDEO", connect);
+            this.SetPermission(userId, serverId, spaceId, "SHARE_SCREEN", connect);
+            this.SetPermission(userId, serverId, spaceId, "MUTE_VOICE_MEMBERS", manage);
+            this.SetPermission(userId, serverId, spaceId, "DEAFEN_VOICE_MEMBERS", manage);
+            this.SetPermission(userId, serverId, spaceId, "MOVE_VOICE_MEMBERS", manage);
+            this.SetPermission(userId, serverId, spaceId, "DISCONNECT_VOICE_MEMBERS", manage);
         }
 
         public void SetPermission(
@@ -1953,7 +1953,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             string permissionCode,
             bool isAllowed)
         {
-            _permissions[(userId, serverId, spaceId, permissionCode)] = isAllowed;
+            this._permissions[(userId, serverId, spaceId, permissionCode)] = isAllowed;
         }
 
         public Task<SpaceAuthorizationSnapshot?> GetSnapshotAsync(
@@ -1961,7 +1961,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            var capabilities = _capabilities
+            var capabilities = this._capabilities
                 .Where(item => item.Key.UserId == userId && item.Key.ServerId == serverId)
                 .ToDictionary(item => item.Key.SpaceId, item => item.Value);
             return Task.FromResult<SpaceAuthorizationSnapshot?>(
@@ -1975,7 +1975,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(
-                _capabilities.GetValueOrDefault((userId, serverId, spaceId)));
+                this._capabilities.GetValueOrDefault((userId, serverId, spaceId)));
         }
 
         public Task<bool> IsAllowedAsync(
@@ -1985,7 +1985,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             SpaceAuthorizationRequirement requirement,
             CancellationToken cancellationToken = default)
         {
-            var allowed = _permissions.GetValueOrDefault(
+            var allowed = this._permissions.GetValueOrDefault(
                 (userId, serverId, spaceId, requirement.PermissionCode));
             if (!allowed)
             {
@@ -1994,7 +1994,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
 
             return Task.FromResult(
                 (requirement.DependencyCodes ?? []).All(dependency =>
-                    _permissions.GetValueOrDefault(
+                    this._permissions.GetValueOrDefault(
                         (userId, serverId, spaceId, dependency))));
         }
 
@@ -2004,7 +2004,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             SpaceAction action,
             CancellationToken cancellationToken = default)
         {
-            var snapshot = await GetSnapshotAsync(userId, serverId, cancellationToken);
+            var snapshot = await this.GetSnapshotAsync(userId, serverId, cancellationToken);
             return snapshot?.GetAllowedSpaceIds(action);
         }
 
@@ -2015,15 +2015,15 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             SpaceAction action,
             CancellationToken cancellationToken = default)
         {
-            if (ThrowOnFilter)
+            if (this.ThrowOnFilter)
             {
                 throw new InvalidOperationException("Injected audience resolution failure.");
             }
 
-            LastFilterCandidates = userIds.Distinct().ToList();
-            LastFilterAction = action;
-            IReadOnlyList<Guid> filtered = LastFilterCandidates
-                .Where(FilteredUserIds.Contains)
+            this.LastFilterCandidates = userIds.Distinct().ToList();
+            this.LastFilterAction = action;
+            IReadOnlyList<Guid> filtered = this.LastFilterCandidates
+                .Where(this.FilteredUserIds.Contains)
                 .ToList();
             return Task.FromResult(filtered);
         }
@@ -2048,7 +2048,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            ConnectionNotifications.Add(new ConnectionNotification(
+            this.ConnectionNotifications.Add(new ConnectionNotification(
                 connectionId,
                 eventName,
                 payload));
@@ -2061,12 +2061,12 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            if (ThrowOnUser)
+            if (this.ThrowOnUser)
             {
                 throw new InvalidOperationException("Injected user delivery failure.");
             }
 
-            UserNotifications.Add(new UserNotification(userId, eventName, payload));
+            this.UserNotifications.Add(new UserNotification(userId, eventName, payload));
             return Task.CompletedTask;
         }
 
@@ -2076,12 +2076,12 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            if (ThrowOnUsers)
+            if (this.ThrowOnUsers)
             {
                 throw new InvalidOperationException("Injected batch delivery failure.");
             }
 
-            UserBatchNotifications.Add(new UserBatchNotification(
+            this.UserBatchNotifications.Add(new UserBatchNotification(
                 userIds.Distinct().ToList(),
                 eventName,
                 payload));
@@ -2094,7 +2094,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            ServerNotifications.Add(new ServerNotification(serverId, eventName, payload));
+            this.ServerNotifications.Add(new ServerNotification(serverId, eventName, payload));
             return Task.CompletedTask;
         }
     }

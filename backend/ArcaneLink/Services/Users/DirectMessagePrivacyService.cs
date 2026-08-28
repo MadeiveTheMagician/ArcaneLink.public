@@ -1,11 +1,11 @@
+using System.Globalization;
+using System.Text;
 using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.Services.Users.Abstractions;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
-using System.Text;
 
 namespace ArcaneLink.Services.Users
 {
@@ -15,7 +15,7 @@ namespace ArcaneLink.Services.Users
 
         public DirectMessagePrivacyService(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         public Task<bool> CanStartConversationAsync(
@@ -23,7 +23,7 @@ namespace ArcaneLink.Services.Users
             Guid targetUserId,
             CancellationToken cancellationToken = default)
         {
-            return CanStartConversationsAsync(
+            return this.CanStartConversationsAsync(
                 initiatorUserId,
                 [targetUserId],
                 cancellationToken);
@@ -52,7 +52,7 @@ namespace ArcaneLink.Services.Users
                     .Select(senderId => (SenderId: senderId, TargetId: targetId)))
                 .ToArray();
 
-            return await AreInteractionsAllowedAsync(
+            return await this.AreInteractionsAllowedAsync(
                 participants,
                 interactions,
                 cancellationToken);
@@ -82,7 +82,7 @@ namespace ArcaneLink.Services.Users
                     .Select(userId => (SenderId: newUserId, TargetId: userId)))
                 .ToArray();
 
-            return await AreInteractionsAllowedAsync(
+            return await this.AreInteractionsAllowedAsync(
                 participants,
                 interactions,
                 cancellationToken);
@@ -93,7 +93,7 @@ namespace ArcaneLink.Services.Users
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            var context = await _db.PrivateSpaces
+            var context = await this._db.PrivateSpaces
                 .AsNoTracking()
                 .Where(space =>
                     space.SpaceId == spaceId &&
@@ -136,7 +136,7 @@ namespace ArcaneLink.Services.Users
                 return false;
             }
 
-            return await AreInteractionsAllowedAsync(
+            return await this.AreInteractionsAllowedAsync(
                 participantIds,
                 [(SenderId: senderUserId, TargetId: targetUserId)],
                 cancellationToken);
@@ -157,7 +157,7 @@ namespace ArcaneLink.Services.Users
                 .Select(interaction => interaction.TargetId)
                 .Distinct()
                 .ToArray();
-            var activeUserIds = await _db.Users
+            var activeUserIds = await this._db.Users
                 .AsNoTracking()
                 .Where(user =>
                     participants.Contains(user.Id) &&
@@ -170,7 +170,7 @@ namespace ArcaneLink.Services.Users
                 return false;
             }
 
-            var policies = await _db.Users
+            var policies = await this._db.Users
                 .AsNoTracking()
                 .Where(user => targetIds.Contains(user.Id))
                 .Select(user => new
@@ -186,7 +186,7 @@ namespace ArcaneLink.Services.Users
                 return false;
             }
 
-            var blockedRelations = await _db.UserDirectMessageBlocks
+            var blockedRelations = await this._db.UserDirectMessageBlocks
                 .AsNoTracking()
                 .Where(block =>
                     participants.Contains(block.UserId) &&
@@ -205,7 +205,7 @@ namespace ArcaneLink.Services.Users
                 return false;
             }
 
-            var friendRelations = (await _db.UserFriends
+            var friendRelations = (await this._db.UserFriends
                     .AsNoTracking()
                     .Where(friend =>
                         targetIds.Contains(friend.UserId) &&
@@ -221,8 +221,8 @@ namespace ArcaneLink.Services.Users
                 .Select(friend => (friend.UserId, friend.FriendUserId))
                 .ToHashSet();
             var friendsOfFriendsRelations = (await (
-                    from targetFriend in _db.UserFriends.AsNoTracking()
-                    join senderFriend in _db.UserFriends.AsNoTracking()
+                    from targetFriend in this._db.UserFriends.AsNoTracking()
+                    join senderFriend in this._db.UserFriends.AsNoTracking()
                         on targetFriend.FriendUserId equals
                         senderFriend.FriendUserId
                     where
@@ -246,7 +246,7 @@ namespace ArcaneLink.Services.Users
                 .Select(relation =>
                     (relation.TargetId, relation.SenderId))
                 .ToHashSet();
-            var sharedServerMemberships = await _db.ServerMembers
+            var sharedServerMemberships = await this._db.ServerMembers
                     .AsNoTracking()
                     .Where(member =>
                         participants.Contains(member.UserId) &&
@@ -314,7 +314,7 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
 
-            var query = _db.UserDirectMessageBlocks
+            var query = this._db.UserDirectMessageBlocks
                 .AsNoTracking()
                 .Where(block =>
                     block.UserId == userId &&
@@ -373,7 +373,7 @@ namespace ArcaneLink.Services.Users
             Guid blockedUserId,
             CancellationToken cancellationToken = default)
         {
-            var block = await _db.UserDirectMessageBlocks
+            var block = await this._db.UserDirectMessageBlocks
                 .AsNoTracking()
                 .Where(item =>
                     item.UserId == userId &&
@@ -408,7 +408,7 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
             if (userId == blockedUserId ||
-                !await _db.Users.AsNoTracking().AnyAsync(
+                !await this._db.Users.AsNoTracking().AnyAsync(
                     user =>
                         user.Id == blockedUserId &&
                         user.StatusId == UserStatusIds.Active &&
@@ -418,7 +418,7 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
 
-            var block = await _db.UserDirectMessageBlocks
+            var block = await this._db.UserDirectMessageBlocks
                 .Include(item => item.BlockedUser)
                     .ThenInclude(user => user.Profile)
                 .FirstOrDefaultAsync(
@@ -435,15 +435,15 @@ namespace ArcaneLink.Services.Users
                     Comment = normalizedComment,
                     CreatedAt = DateTime.UtcNow
                 };
-                _db.UserDirectMessageBlocks.Add(block);
+                this._db.UserDirectMessageBlocks.Add(block);
                 try
                 {
-                    await _db.SaveChangesAsync(cancellationToken);
+                    await this._db.SaveChangesAsync(cancellationToken);
                 }
                 catch (DbUpdateException)
                 {
-                    _db.ChangeTracker.Clear();
-                    block = await _db.UserDirectMessageBlocks
+                    this._db.ChangeTracker.Clear();
+                    block = await this._db.UserDirectMessageBlocks
                         .Include(item => item.BlockedUser)
                             .ThenInclude(user => user.Profile)
                         .FirstOrDefaultAsync(
@@ -458,10 +458,10 @@ namespace ArcaneLink.Services.Users
                     if (updateComment)
                     {
                         block.Comment = normalizedComment;
-                        await _db.SaveChangesAsync(cancellationToken);
+                        await this._db.SaveChangesAsync(cancellationToken);
                     }
                 }
-                await _db.Entry(block)
+                await this._db.Entry(block)
                     .Reference(item => item.BlockedUser)
                     .Query()
                     .Include(user => user.Profile)
@@ -470,7 +470,7 @@ namespace ArcaneLink.Services.Users
             else if (updateComment && block.Comment != normalizedComment)
             {
                 block.Comment = normalizedComment;
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
             }
 
             return ToResponse(block);
@@ -481,7 +481,7 @@ namespace ArcaneLink.Services.Users
             Guid blockedUserId,
             CancellationToken cancellationToken = default)
         {
-            var deleted = await _db.UserDirectMessageBlocks
+            var deleted = await this._db.UserDirectMessageBlocks
                 .Where(block =>
                     block.UserId == userId &&
                     block.BlockedUserId == blockedUserId)

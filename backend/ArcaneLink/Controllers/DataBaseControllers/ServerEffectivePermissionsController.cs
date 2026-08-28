@@ -17,7 +17,7 @@ public sealed class ServerEffectivePermissionsController : ControllerBase
     public ServerEffectivePermissionsController(
         IServerAuthorizationRuntime authorization)
     {
-        _authorization = authorization;
+        this._authorization = authorization;
     }
 
     [HttpGet]
@@ -25,9 +25,9 @@ public sealed class ServerEffectivePermissionsController : ControllerBase
         Guid serverId,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        if (userId == null) return Unauthorized();
-        var context = await _authorization.GetContextAsync(
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
+        var context = await this._authorization.GetContextAsync(
             userId.Value,
             serverId,
             cancellationToken);
@@ -37,7 +37,7 @@ public sealed class ServerEffectivePermissionsController : ControllerBase
                 out var authority,
                 out var isAdministrator))
         {
-            return NotFound();
+            return this.NotFound();
         }
 
         var permissionCodes = ServerPermissionRegistry.All
@@ -50,7 +50,7 @@ public sealed class ServerEffectivePermissionsController : ControllerBase
                     DependencyCodes: [])))
             .Select(permission => permission.Code)
             .ToList();
-        return Ok(new ServerEffectivePermissionsResponse
+        return this.Ok(new ServerEffectivePermissionsResponse
         {
             ServerId = serverId,
             MemberId = context.Principal.MemberId,
@@ -70,7 +70,7 @@ public sealed class ServerEffectivePermissionsController : ControllerBase
 
     private Guid? GetCurrentUserId()
     {
-        var userIdValue = User.FindFirstValue("userId");
+        var userIdValue = this.User.FindFirstValue("userId");
         return Guid.TryParse(userIdValue, out var userId) ? userId : null;
     }
 }

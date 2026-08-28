@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.Services.Validators.Abstractions
+namespace ArcaneLink.Services.Validators.Abstractions
 {
     public interface IValidator<T>
     {

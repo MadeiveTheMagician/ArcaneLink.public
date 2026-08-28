@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.DataBase.DTOs.Logout
+namespace ArcaneLink.DataBase.DTOs.Logout
 {
     public class LogoutRequest
     {

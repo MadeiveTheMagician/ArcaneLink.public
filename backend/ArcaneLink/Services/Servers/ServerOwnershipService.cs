@@ -27,12 +27,12 @@ namespace ArcaneLink.Services.Servers
             ServerVoiceAccessReconciliationService voiceAccess,
             ILogger<ServerOwnershipService> logger)
         {
-            _db = db;
-            _realtime = realtime;
-            _access = access;
-            _spaceAuthorization = spaceAuthorization;
-            _voiceAccess = voiceAccess;
-            _logger = logger;
+            this._db = db;
+            this._realtime = realtime;
+            this._access = access;
+            this._spaceAuthorization = spaceAuthorization;
+            this._voiceAccess = voiceAccess;
+            this._logger = logger;
         }
 
         public async Task<ServerOwnershipTransferResponse?> TransferOwnershipAsync(
@@ -41,7 +41,7 @@ namespace ArcaneLink.Services.Servers
             TransferServerOwnershipRequest request,
             CancellationToken cancellationToken = default)
         {
-            var server = await _db.Servers.FirstOrDefaultAsync(
+            var server = await this._db.Servers.FirstOrDefaultAsync(
                 x => x.Id == serverId &&
                      x.DeletedAt == null,
                 cancellationToken);
@@ -51,7 +51,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var targetMember = await _db.ServerMembers.FirstOrDefaultAsync(
+            var targetMember = await this._db.ServerMembers.FirstOrDefaultAsync(
                 x => x.Id == request.ToMemberId &&
                      x.ServerId == serverId &&
                      x.StatusId == ServerMemberStatusIds.Active,
@@ -63,13 +63,13 @@ namespace ArcaneLink.Services.Servers
             }
 
             var now = DateTime.UtcNow;
-            var currentOwnerMember = await _db.ServerMembers
+            var currentOwnerMember = await this._db.ServerMembers
                 .FirstOrDefaultAsync(
                     x => x.ServerId == serverId &&
                          x.UserId == currentUserId &&
                          x.StatusId == ServerMemberStatusIds.Active,
                     cancellationToken);
-            var ownerRole = await _access.EnsureOwnerRoleAsync(serverId, cancellationToken);
+            var ownerRole = await this._access.EnsureOwnerRoleAsync(serverId, cancellationToken);
             var transfer = new ServerOwnershipTransfer
             {
                 Id = Guid.NewGuid(),
@@ -87,7 +87,7 @@ namespace ArcaneLink.Services.Servers
 
             if (ownerRole != null && currentOwnerMember != null)
             {
-                var oldAssignment = await _db.ServerMemberRoles
+                var oldAssignment = await this._db.ServerMemberRoles
                     .FirstOrDefaultAsync(
                         x => x.ServerId == serverId &&
                              x.MemberId == currentOwnerMember.Id &&
@@ -108,7 +108,7 @@ namespace ArcaneLink.Services.Servers
                     }
                 }
 
-                var newAssignment = await _db.ServerMemberRoles
+                var newAssignment = await this._db.ServerMemberRoles
                     .FirstOrDefaultAsync(
                         x => x.ServerId == serverId &&
                              x.MemberId == targetMember.Id &&
@@ -117,7 +117,7 @@ namespace ArcaneLink.Services.Servers
 
                 if (newAssignment == null)
                 {
-                    _db.ServerMemberRoles.Add(new ServerMemberRole
+                    this._db.ServerMemberRoles.Add(new ServerMemberRole
                     {
                         Id = Guid.NewGuid(),
                         ServerId = serverId,
@@ -136,38 +136,38 @@ namespace ArcaneLink.Services.Servers
                 }
             }
 
-            _db.ServerOwnershipTransfers.Add(transfer);
-            _access.AddAudit(
+            this._db.ServerOwnershipTransfers.Add(transfer);
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditOwnershipTransferred,
                 currentUserId,
                 targetMember.UserId,
                 payload: $$"""{"fromUserId":"{{currentUserId}}","toUserId":"{{targetMember.UserId}}"}""");
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
-            _spaceAuthorization.InvalidateServer(serverId);
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
+            this._spaceAuthorization.InvalidateServer(serverId);
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
 
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerUpdated,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerSpacesChanged,
                 new { serverId },

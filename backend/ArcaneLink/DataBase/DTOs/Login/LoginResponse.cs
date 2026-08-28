@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.DataBase.DTOs.Login
+namespace ArcaneLink.DataBase.DTOs.Login
 {
     // DTO ответа после успешного входа.
     //
@@ -17,7 +17,7 @@
 
         public DateTime LoggedInAt { get; set; }
         public string AccessToken { get; set; } = null!;
-        public DateTime AccessTokenExpireAt { get; set; }   
+        public DateTime AccessTokenExpireAt { get; set; }
         public string RefreshToken { get; set; } = null!;
         public DateTime RefreshTokenExpireAt { get; set; }
 

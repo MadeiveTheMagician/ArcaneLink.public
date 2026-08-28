@@ -28,35 +28,35 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             IUserProfileAssetService userProfileAssetService,
             IDirectMessagePrivacyService directMessagePrivacy)
         {
-            _userProfileService = userProfileService;
-            _userDiscoveryService = userDiscoveryService;
-            _userProfileSettingsService = userProfileSettingsService;
-            _userProfileTagService = userProfileTagService;
-            _userProfileAssetService = userProfileAssetService;
-            _directMessagePrivacy = directMessagePrivacy;
+            this._userProfileService = userProfileService;
+            this._userDiscoveryService = userDiscoveryService;
+            this._userProfileSettingsService = userProfileSettingsService;
+            this._userProfileTagService = userProfileTagService;
+            this._userProfileAssetService = userProfileAssetService;
+            this._directMessagePrivacy = directMessagePrivacy;
         }
 
         [Authorize]
         [HttpGet("me")]
         public async Task<ActionResult<UserResponse>> GetMe(CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileService.GetCurrentUserAsync(
+            var response = await this._userProfileService.GetCurrentUserAsync(
                 userId.Value,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [HttpGet("{id:guid}")]
@@ -64,17 +64,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid id,
             CancellationToken cancellationToken)
         {
-            var response = await _userProfileService.GetPublicProfileAsync(
+            var response = await this._userProfileService.GetPublicProfileAsync(
                 id,
-                GetCurrentUserId(),
+                this.GetCurrentUserId(),
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -82,18 +82,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<OwnUserProfileResponse>> GetMyProfile(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileService.GetOwnProfileAsync(
+            var response = await this._userProfileService.GetOwnProfileAsync(
                 userId.Value,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [Authorize]
@@ -101,7 +101,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<ProfileTagResponse>>> GetProfileTags(
             CancellationToken cancellationToken)
         {
-            return Ok(await _userProfileTagService.GetProfileTagsAsync(cancellationToken));
+            return this.Ok(await this._userProfileTagService.GetProfileTagsAsync(cancellationToken));
         }
 
         [Authorize]
@@ -109,14 +109,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<ProfileTagResponse>>> GetMyProfileTags(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _userProfileTagService.GetUserProfileTagsAsync(
+            return this.Ok(await this._userProfileTagService.GetUserProfileTagsAsync(
                 userId.Value,
                 cancellationToken));
         }
@@ -127,19 +127,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpdateUserProfileTagsRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileTagService.UpdateUserProfileTagsAsync(
+            var response = await this._userProfileTagService.UpdateUserProfileTagsAsync(
                 userId.Value,
                 request,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [Authorize]
@@ -149,14 +149,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] string query,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _userDiscoveryService.SearchUsersAsync(
+            return this.Ok(await this._userDiscoveryService.SearchUsersAsync(
                 userId.Value,
                 query,
                 cancellationToken));
@@ -169,14 +169,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] UserDiscoveryQuery query,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _userDiscoveryService.DiscoverUsersAsync(
+            return this.Ok(await this._userDiscoveryService.DiscoverUsersAsync(
                 userId.Value,
                 query,
                 cancellationToken));
@@ -188,24 +188,24 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpdateUserProfileRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileService.UpdateProfileAsync(
+            var response = await this._userProfileService.UpdateProfileAsync(
                 userId.Value,
                 request,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -213,23 +213,23 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<UserProfileSettingsResponse>> GetMyProfileSettings(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileSettingsService.GetProfileSettingsAsync(
+            var response = await this._userProfileSettingsService.GetProfileSettingsAsync(
                 userId.Value,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -238,24 +238,24 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpdateUserProfileSettingsRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileSettingsService.UpdateProfileSettingsAsync(
+            var response = await this._userProfileSettingsService.UpdateProfileSettingsAsync(
                 userId.Value,
                 request,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -266,20 +266,20 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 [FromQuery] string? cursor = null,
                 CancellationToken cancellationToken = default)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _directMessagePrivacy.GetBlockedUsersAsync(
+            var response = await this._directMessagePrivacy.GetBlockedUsersAsync(
                 userId.Value,
                 limit,
                 cursor,
                 cancellationToken);
             return response == null
-                ? BadRequest(new { code = "invalid_cursor" })
-                : Ok(response);
+                ? this.BadRequest(new { code = "invalid_cursor" })
+                : this.Ok(response);
         }
 
         [Authorize]
@@ -289,13 +289,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 Guid blockedUserId,
                 CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _directMessagePrivacy.GetBlockStatusAsync(
+            return this.Ok(await this._directMessagePrivacy.GetBlockStatusAsync(
                 userId.Value,
                 blockedUserId,
                 cancellationToken));
@@ -310,20 +310,20 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 UpdateDirectMessageBlockRequest? request,
                 CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _directMessagePrivacy.BlockAsync(
+            var response = await this._directMessagePrivacy.BlockAsync(
                 userId.Value,
                 blockedUserId,
                 request?.Comment,
                 updateComment: request != null,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [Authorize]
@@ -332,18 +332,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid blockedUserId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return await _directMessagePrivacy.UnblockAsync(
+            return await this._directMessagePrivacy.UnblockAsync(
                 userId.Value,
                 blockedUserId,
                 cancellationToken)
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [Authorize]
@@ -354,24 +354,24 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromForm] UploadProfileAssetRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileAssetService.UploadAvatarAsync(
+            var response = await this._userProfileAssetService.UploadAvatarAsync(
                 userId.Value,
                 request,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -381,14 +381,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] SetAvatarRequest? request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileAssetService.SetAvatarAsync(
+            var response = await this._userProfileAssetService.SetAvatarAsync(
                 userId.Value,
                 assetId,
                 request ?? new SetAvatarRequest(),
@@ -396,10 +396,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -410,24 +410,24 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromForm] UploadProfileAssetRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileAssetService.UploadBannerAsync(
+            var response = await this._userProfileAssetService.UploadBannerAsync(
                 userId.Value,
                 request,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -436,24 +436,24 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid assetId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileAssetService.SetBannerAsync(
+            var response = await this._userProfileAssetService.SetBannerAsync(
                 userId.Value,
                 assetId,
                 cancellationToken);
 
             if (response == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -461,23 +461,23 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<OwnUserProfileResponse>> ClearMyBanner(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _userProfileAssetService.ClearBannerAsync(
+            var response = await this._userProfileAssetService.ClearBannerAsync(
                 userId.Value,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
 
             return Guid.TryParse(userIdValue, out var userId)
                 ? userId

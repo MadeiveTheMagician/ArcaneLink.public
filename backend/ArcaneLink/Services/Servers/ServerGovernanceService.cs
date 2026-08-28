@@ -20,12 +20,12 @@ namespace ArcaneLink.Services.Servers
             IServerRoleService roles,
             IServerAuditLogService auditLogs)
         {
-            _invites = invites;
-            _inviteQueries = inviteQueries;
-            _inviteAcceptance = inviteAcceptance;
-            _ownership = ownership;
-            _roles = roles;
-            _auditLogs = auditLogs;
+            this._invites = invites;
+            this._inviteQueries = inviteQueries;
+            this._inviteAcceptance = inviteAcceptance;
+            this._ownership = ownership;
+            this._roles = roles;
+            this._auditLogs = auditLogs;
         }
 
         public Task<IReadOnlyList<ServerInviteResponse>?> GetInvitesAsync(
@@ -33,7 +33,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            return _inviteQueries.GetInvitesAsync(currentUserId, serverId, cancellationToken);
+            return this._inviteQueries.GetInvitesAsync(currentUserId, serverId, cancellationToken);
         }
 
         public Task<ServerInvitePreviewResponse?> GetInvitePreviewAsync(
@@ -41,7 +41,7 @@ namespace ArcaneLink.Services.Servers
             Guid? viewerUserId,
             CancellationToken cancellationToken = default)
         {
-            return _inviteQueries.GetInvitePreviewAsync(
+            return this._inviteQueries.GetInvitePreviewAsync(
                 code,
                 viewerUserId,
                 cancellationToken);
@@ -51,7 +51,7 @@ namespace ArcaneLink.Services.Servers
             Guid currentUserId,
             CancellationToken cancellationToken = default)
         {
-            return _inviteQueries.GetMyDirectInvitesAsync(currentUserId, cancellationToken);
+            return this._inviteQueries.GetMyDirectInvitesAsync(currentUserId, cancellationToken);
         }
 
         public Task<IReadOnlyList<ServerMemberResponse>> GetMyInviteTargetServersAsync(
@@ -59,7 +59,7 @@ namespace ArcaneLink.Services.Servers
             Guid? targetUserId = null,
             CancellationToken cancellationToken = default)
         {
-            return _inviteQueries.GetMyInviteTargetServersAsync(currentUserId, targetUserId, cancellationToken);
+            return this._inviteQueries.GetMyInviteTargetServersAsync(currentUserId, targetUserId, cancellationToken);
         }
 
         public Task<ServerInviteResponse?> CreateInviteAsync(
@@ -68,7 +68,7 @@ namespace ArcaneLink.Services.Servers
             CreateServerInviteRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _invites.CreateInviteAsync(currentUserId, serverId, request, cancellationToken);
+            return this._invites.CreateInviteAsync(currentUserId, serverId, request, cancellationToken);
         }
 
         public Task<bool> RevokeInviteAsync(
@@ -77,7 +77,7 @@ namespace ArcaneLink.Services.Servers
             Guid inviteId,
             CancellationToken cancellationToken = default)
         {
-            return _invites.RevokeInviteAsync(currentUserId, serverId, inviteId, cancellationToken);
+            return this._invites.RevokeInviteAsync(currentUserId, serverId, inviteId, cancellationToken);
         }
 
         public Task<ServerMemberResponse?> AcceptInviteAsync(
@@ -85,7 +85,7 @@ namespace ArcaneLink.Services.Servers
             AcceptServerInviteRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _inviteAcceptance.AcceptInviteAsync(currentUserId, request, cancellationToken);
+            return this._inviteAcceptance.AcceptInviteAsync(currentUserId, request, cancellationToken);
         }
 
         public Task<ServerMemberResponse?> AcceptInviteAsync(
@@ -93,7 +93,7 @@ namespace ArcaneLink.Services.Servers
             Guid inviteId,
             CancellationToken cancellationToken = default)
         {
-            return _inviteAcceptance.AcceptInviteAsync(currentUserId, inviteId, cancellationToken);
+            return this._inviteAcceptance.AcceptInviteAsync(currentUserId, inviteId, cancellationToken);
         }
 
         public Task<bool> DeclineInviteAsync(
@@ -101,7 +101,7 @@ namespace ArcaneLink.Services.Servers
             Guid inviteId,
             CancellationToken cancellationToken = default)
         {
-            return _inviteAcceptance.DeclineInviteAsync(
+            return this._inviteAcceptance.DeclineInviteAsync(
                 currentUserId,
                 inviteId,
                 cancellationToken);
@@ -113,25 +113,25 @@ namespace ArcaneLink.Services.Servers
             TransferServerOwnershipRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _ownership.TransferOwnershipAsync(currentUserId, serverId, request, cancellationToken);
+            return this._ownership.TransferOwnershipAsync(currentUserId, serverId, request, cancellationToken);
         }
 
         public Task<IReadOnlyList<PermissionResponse>> GetPermissionsAsync(
             CancellationToken cancellationToken = default)
         {
-            return _roles.GetPermissionsAsync(cancellationToken);
+            return this._roles.GetPermissionsAsync(cancellationToken);
         }
 
         public Task<ServerPermissionCatalogResponse> GetPermissionCatalogV1Async(
             CancellationToken cancellationToken = default)
         {
-            return _roles.GetPermissionCatalogV1Async(cancellationToken);
+            return this._roles.GetPermissionCatalogV1Async(cancellationToken);
         }
 
         public Task<IReadOnlyList<PermissionResponse>> GetSpacePermissionsAsync(
             CancellationToken cancellationToken = default)
         {
-            return _roles.GetSpacePermissionsAsync(cancellationToken);
+            return this._roles.GetSpacePermissionsAsync(cancellationToken);
         }
 
         public Task<IReadOnlyList<ServerRoleResponse>?> GetRolesAsync(
@@ -140,7 +140,7 @@ namespace ArcaneLink.Services.Servers
             ServerRoleQueryRequest query,
             CancellationToken cancellationToken = default)
         {
-            return _roles.GetRolesAsync(
+            return this._roles.GetRolesAsync(
                 currentUserId,
                 serverId,
                 query,
@@ -153,7 +153,7 @@ namespace ArcaneLink.Services.Servers
             CreateServerRoleRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _roles.CreateRoleAsync(currentUserId, serverId, request, cancellationToken);
+            return this._roles.CreateRoleAsync(currentUserId, serverId, request, cancellationToken);
         }
 
         public Task<UpdateServerRoleResult> UpdateRoleAsync(
@@ -163,7 +163,7 @@ namespace ArcaneLink.Services.Servers
             UpdateServerRoleRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _roles.UpdateRoleAsync(
+            return this._roles.UpdateRoleAsync(
                 currentUserId,
                 serverId,
                 roleId,
@@ -178,7 +178,7 @@ namespace ArcaneLink.Services.Servers
             UpdateServerRolePermissionsRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _roles.UpdateRolePermissionsAsync(currentUserId, serverId, roleId, request, cancellationToken);
+            return this._roles.UpdateRolePermissionsAsync(currentUserId, serverId, roleId, request, cancellationToken);
         }
 
         public Task<DuplicateServerRoleResult> DuplicateRoleAsync(
@@ -188,7 +188,7 @@ namespace ArcaneLink.Services.Servers
             DuplicateServerRoleRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _roles.DuplicateRoleAsync(
+            return this._roles.DuplicateRoleAsync(
                 currentUserId,
                 serverId,
                 roleId,
@@ -202,7 +202,7 @@ namespace ArcaneLink.Services.Servers
             Guid roleId,
             CancellationToken cancellationToken = default)
         {
-            return _roles.GetDeletionImpactAsync(
+            return this._roles.GetDeletionImpactAsync(
                 currentUserId,
                 serverId,
                 roleId,
@@ -216,7 +216,7 @@ namespace ArcaneLink.Services.Servers
             Guid expectedVersion,
             CancellationToken cancellationToken = default)
         {
-            return _roles.DeleteRoleAsync(
+            return this._roles.DeleteRoleAsync(
                 currentUserId,
                 serverId,
                 roleId,
@@ -230,7 +230,7 @@ namespace ArcaneLink.Services.Servers
             ReorderServerRolesRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _roles.ReorderRolesAsync(
+            return this._roles.ReorderRolesAsync(
                 currentUserId,
                 serverId,
                 request,
@@ -244,7 +244,7 @@ namespace ArcaneLink.Services.Servers
             AssignServerRoleRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _roles.AssignRoleAsync(currentUserId, serverId, memberId, request, cancellationToken);
+            return this._roles.AssignRoleAsync(currentUserId, serverId, memberId, request, cancellationToken);
         }
 
         public Task<bool> RevokeMemberRoleAsync(
@@ -253,7 +253,7 @@ namespace ArcaneLink.Services.Servers
             Guid memberRoleId,
             CancellationToken cancellationToken = default)
         {
-            return _roles.RevokeMemberRoleAsync(currentUserId, serverId, memberRoleId, cancellationToken);
+            return this._roles.RevokeMemberRoleAsync(currentUserId, serverId, memberRoleId, cancellationToken);
         }
 
         public Task<IReadOnlyList<ServerAuditLogResponse>?> GetAuditLogsAsync(
@@ -261,7 +261,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            return _auditLogs.GetAuditLogsAsync(currentUserId, serverId, cancellationToken);
+            return this._auditLogs.GetAuditLogsAsync(currentUserId, serverId, cancellationToken);
         }
     }
 }

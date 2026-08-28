@@ -9,7 +9,7 @@ namespace ArcaneLink.Services.PrivateSpaces
 
         public PrivateSpaceActivityService(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         internal async Task TouchAsync(
@@ -17,9 +17,9 @@ namespace ArcaneLink.Services.PrivateSpaces
             DateTime updatedAt,
             CancellationToken cancellationToken)
         {
-            var privateSpace = await _db.PrivateSpaces
+            var privateSpace = await this._db.PrivateSpaces
                 .FirstOrDefaultAsync(x => x.SpaceId == spaceId, cancellationToken);
-            var space = await _db.Spaces
+            var space = await this._db.Spaces
                 .FirstOrDefaultAsync(x => x.Id == spaceId, cancellationToken);
 
             if (privateSpace != null)
@@ -38,9 +38,9 @@ namespace ArcaneLink.Services.PrivateSpaces
             DateTime activityAt,
             CancellationToken cancellationToken)
         {
-            await TouchAsync(spaceId, activityAt, cancellationToken);
+            await this.TouchAsync(spaceId, activityAt, cancellationToken);
 
-            var memberships = await _db.PrivateSpaceMembers
+            var memberships = await this._db.PrivateSpaceMembers
                 .Where(member =>
                     member.SpaceId == spaceId &&
                     member.StatusId ==
@@ -60,7 +60,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 }
             }
 
-            var folderItems = await _db.PrivateSpaceFolderItems
+            var folderItems = await this._db.PrivateSpaceFolderItems
                 .Where(item => item.SpaceId == spaceId)
                 .ToListAsync(cancellationToken);
             foreach (var folderItem in folderItems)

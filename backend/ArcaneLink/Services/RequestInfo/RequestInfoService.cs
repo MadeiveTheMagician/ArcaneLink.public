@@ -1,4 +1,4 @@
-﻿using ArcaneLink.Exceptions.RequestExceptions;
+using ArcaneLink.Exceptions.RequestExceptions;
 using ArcaneLink.Services.RequestInfo.Abstractions;
 
 namespace ArcaneLink.Services.Request
@@ -18,14 +18,14 @@ namespace ArcaneLink.Services.Request
         public RequestInfoService(
             IHttpContextAccessor httpContextAccessor)
         {
-            _httpContextAccessor = httpContextAccessor;
+            this._httpContextAccessor = httpContextAccessor;
         }
 
         // Возвращает IP адрес клиента.
         public string GetClientIpAddress()
         {
             var currentIpAddress =
-                _httpContextAccessor
+                this._httpContextAccessor
                     .HttpContext?
                     .Connection
                     .RemoteIpAddress?
@@ -43,7 +43,7 @@ namespace ArcaneLink.Services.Request
         public string GetUserAgent()
         {
             var userAgent =
-                _httpContextAccessor
+                this._httpContextAccessor
                     .HttpContext?
                     .Request
                     .Headers["User-Agent"]
@@ -62,8 +62,8 @@ namespace ArcaneLink.Services.Request
         // User-Agent + IP.
         public string GetClientDeviceInfo()
         {
-            var userAgent = GetUserAgent();
-            var ipAddress = GetClientIpAddress();
+            var userAgent = this.GetUserAgent();
+            var ipAddress = this.GetClientIpAddress();
 
             return $"{userAgent} | {ipAddress}";
         }

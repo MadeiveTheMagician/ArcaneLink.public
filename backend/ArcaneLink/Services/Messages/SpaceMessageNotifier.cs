@@ -17,10 +17,10 @@ namespace ArcaneLink.Services.Messages
             SpaceMessageAccessService access,
             ILogger<SpaceMessageNotifier> logger)
         {
-            _realtime = realtime;
-            _audience = audience;
-            _access = access;
-            _logger = logger;
+            this._realtime = realtime;
+            this._audience = audience;
+            this._access = access;
+            this._logger = logger;
         }
 
         public async Task NotifyMessagesChangedAsync(
@@ -31,12 +31,12 @@ namespace ArcaneLink.Services.Messages
         {
             try
             {
-                var legacyRecipients = await _audience.GetAuthorizedUserIdsAsync(
+                var legacyRecipients = await this._audience.GetAuthorizedUserIdsAsync(
                     serverId,
                     spaceId,
                     SpaceAction.View,
                     cancellationToken);
-                var recipients = await _access.FilterReadableMessageUserIdsAsync(
+                var recipients = await this._access.FilterReadableMessageUserIdsAsync(
                     serverId,
                     spaceId,
                     legacyRecipients,
@@ -46,7 +46,7 @@ namespace ArcaneLink.Services.Messages
                     return;
                 }
 
-                await _realtime.NotifyUsersAsync(
+                await this._realtime.NotifyUsersAsync(
                     recipients,
                     RealtimeEventNames.SpaceMessagesChanged,
                     new { serverId, spaceId, messageId },
@@ -58,7 +58,7 @@ namespace ArcaneLink.Services.Messages
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Realtime server-space message notification failed after the database operation completed. ServerId={ServerId} SpaceId={SpaceId} EventName={EventName}",
                     serverId,
@@ -75,8 +75,8 @@ namespace ArcaneLink.Services.Messages
         {
             foreach (var userId in userIds.Distinct())
             {
-                await _realtime.NotifyUserBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUserBestEffortAsync(
+                    this._logger,
                     userId,
                     RealtimeEventNames.PrivateSpaceMessagesChanged,
                     new { spaceId, messageId },

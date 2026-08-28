@@ -1,3 +1,4 @@
+using System.Globalization;
 using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Assets;
@@ -13,7 +14,6 @@ using ArcaneLink.Services.Realtime;
 using ArcaneLink.Services.Realtime.Abstractions;
 using ArcaneLink.Services.Users.Abstractions;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
 using static ArcaneLink.Services.Users.UserProfileResponseMapper;
 
 namespace ArcaneLink.Services.Users
@@ -35,12 +35,12 @@ namespace ArcaneLink.Services.Users
             IUserPresencePolicyService presencePolicy,
             ILogger<UserProfileAssetService> logger)
         {
-            _db = db;
-            _assetService = assetService;
-            _avatarImageProcessor = avatarImageProcessor;
-            _realtime = realtime;
-            _presencePolicy = presencePolicy;
-            _logger = logger;
+            this._db = db;
+            this._assetService = assetService;
+            this._avatarImageProcessor = avatarImageProcessor;
+            this._realtime = realtime;
+            this._presencePolicy = presencePolicy;
+            this._logger = logger;
         }
 
         public async Task<OwnUserProfileResponse?> SetAvatarAsync(
@@ -51,7 +51,7 @@ namespace ArcaneLink.Services.Users
         {
             ValidateAvatarCrop(request);
 
-            var sourceAsset = await GetOwnedActiveAssetAsync(
+            var sourceAsset = await this.GetOwnedActiveAssetAsync(
                 userId,
                 assetId,
                 cancellationToken);
@@ -64,7 +64,7 @@ namespace ArcaneLink.Services.Users
             var isReusableSource = sourceAsset.AssetTypeId == AssetTypeIds.Avatar;
             var isCurrentDerivative =
                 sourceAsset.AssetTypeId == AssetTypeIds.CurrentAvatar &&
-                IsOptimizedAvatar(sourceAsset);
+                this.IsOptimizedAvatar(sourceAsset);
 
             if (!isReusableSource && !isCurrentDerivative)
             {
@@ -74,18 +74,18 @@ namespace ArcaneLink.Services.Users
 
             if (isCurrentDerivative && IsNeutralCrop(request))
             {
-                var sourceAssetId = await GetCurrentAvatarSourceAssetIdAsync(
+                var sourceAssetId = await this.GetCurrentAvatarSourceAssetIdAsync(
                     userId,
                     sourceAsset.Id,
                     cancellationToken);
-                return await ReplaceCurrentAvatarAsync(
+                return await this.ReplaceCurrentAvatarAsync(
                     userId,
                     sourceAsset.Id,
                     sourceAssetId,
                     cancellationToken);
             }
 
-            var sourceContent = await _assetService.GetAssetContentAsync(
+            var sourceContent = await this._assetService.GetAssetContentAsync(
                 sourceAsset.Id,
                 cancellationToken);
 
@@ -96,20 +96,20 @@ namespace ArcaneLink.Services.Users
 
             await using var contentStream = sourceContent.Content;
             await using var optimizedContent =
-                await _avatarImageProcessor.ProcessAsync(
+                await this._avatarImageProcessor.ProcessAsync(
                     contentStream,
                     request.CropOffsetX,
                     request.CropOffsetY,
                     request.CropZoom,
                     cancellationToken);
-            var optimizedAssetId = await UploadOptimizedAvatarAssetAsync(
+            var optimizedAssetId = await this.UploadOptimizedAvatarAssetAsync(
                 userId,
                 optimizedContent,
                 sourceAsset.OriginalFileName,
                 cancellationToken);
             var avatarSourceAssetId = isReusableSource
                 ? sourceAsset.Id
-                : await GetCurrentAvatarSourceAssetIdAsync(
+                : await this.GetCurrentAvatarSourceAssetIdAsync(
                     userId,
                     sourceAsset.Id,
                     cancellationToken);
@@ -117,7 +117,7 @@ namespace ArcaneLink.Services.Users
             OwnUserProfileResponse? profile;
             try
             {
-                profile = await ReplaceCurrentAvatarAsync(
+                profile = await this.ReplaceCurrentAvatarAsync(
                     userId,
                     optimizedAssetId,
                     avatarSourceAssetId,
@@ -125,13 +125,13 @@ namespace ArcaneLink.Services.Users
             }
             catch
             {
-                await DeleteCompensatingAssetAsync(userId, optimizedAssetId);
+                await this.DeleteCompensatingAssetAsync(userId, optimizedAssetId);
                 throw;
             }
 
             if (profile == null)
             {
-                await DeleteCompensatingAssetAsync(userId, optimizedAssetId);
+                await this.DeleteCompensatingAssetAsync(userId, optimizedAssetId);
                 return null;
             }
 
@@ -143,7 +143,7 @@ namespace ArcaneLink.Services.Users
             Guid assetId,
             CancellationToken cancellationToken = default)
         {
-            return await SetProfileAssetAsync(
+            return await this.SetProfileAssetAsync(
                 userId,
                 assetId,
                 AssetTypeIds.Banner,
@@ -156,7 +156,7 @@ namespace ArcaneLink.Services.Users
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var user = await GetActiveUserWithProfileAsync(
+            var user = await this.GetActiveUserWithProfileAsync(
                 userId,
                 cancellationToken);
             if (user == null)
@@ -168,14 +168,14 @@ namespace ArcaneLink.Services.Users
             user.UpdatedAt = DateTime.UtcNow;
             user.Profile.UpdatedAt = DateTime.UtcNow;
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserProfileChanged,
                 new { userId, bannerAssetId = (Guid?)null },
                 cancellationToken);
 
-            var snapshots = await _presencePolicy.ResolveAsync(
+            var snapshots = await this._presencePolicy.ResolveAsync(
                 userId,
                 [userId],
                 cancellationToken);
@@ -191,7 +191,7 @@ namespace ArcaneLink.Services.Users
             UploadProfileAssetRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (await GetActiveUserWithProfileAsync(userId, cancellationToken) == null)
+            if (await this.GetActiveUserWithProfileAsync(userId, cancellationToken) == null)
             {
                 return null;
             }
@@ -207,13 +207,13 @@ namespace ArcaneLink.Services.Users
 
             await using var source = request.File.OpenReadStream();
             await using var optimizedContent =
-                await _avatarImageProcessor.ProcessAsync(
+                await this._avatarImageProcessor.ProcessAsync(
                     source,
                     crop.CropOffsetX,
                     crop.CropOffsetY,
                     crop.CropZoom,
                     cancellationToken);
-            var sourceAssetId = await UploadProfileAssetAsync(
+            var sourceAssetId = await this.UploadProfileAssetAsync(
                 userId,
                 request,
                 AssetTypeIds.Avatar,
@@ -227,7 +227,7 @@ namespace ArcaneLink.Services.Users
             Guid assetId;
             try
             {
-                assetId = await UploadOptimizedAvatarAssetAsync(
+                assetId = await this.UploadOptimizedAvatarAssetAsync(
                     userId,
                     optimizedContent,
                     request.File.FileName,
@@ -235,13 +235,13 @@ namespace ArcaneLink.Services.Users
             }
             catch
             {
-                await DeleteCompensatingAssetAsync(userId, sourceAssetId.Value);
+                await this.DeleteCompensatingAssetAsync(userId, sourceAssetId.Value);
                 throw;
             }
 
             try
             {
-                var profile = await ReplaceCurrentAvatarAsync(
+                var profile = await this.ReplaceCurrentAvatarAsync(
                     userId,
                     assetId,
                     sourceAssetId.Value,
@@ -249,16 +249,16 @@ namespace ArcaneLink.Services.Users
 
                 if (profile == null)
                 {
-                    await DeleteCompensatingAssetAsync(userId, assetId);
-                    await DeleteCompensatingAssetAsync(userId, sourceAssetId.Value);
+                    await this.DeleteCompensatingAssetAsync(userId, assetId);
+                    await this.DeleteCompensatingAssetAsync(userId, sourceAssetId.Value);
                 }
 
                 return profile;
             }
             catch
             {
-                await DeleteCompensatingAssetAsync(userId, assetId);
-                await DeleteCompensatingAssetAsync(userId, sourceAssetId.Value);
+                await this.DeleteCompensatingAssetAsync(userId, assetId);
+                await this.DeleteCompensatingAssetAsync(userId, sourceAssetId.Value);
                 throw;
             }
         }
@@ -268,7 +268,7 @@ namespace ArcaneLink.Services.Users
             UploadProfileAssetRequest request,
             CancellationToken cancellationToken = default)
         {
-            var assetId = await UploadProfileAssetAsync(
+            var assetId = await this.UploadProfileAssetAsync(
                 userId,
                 request,
                 AssetTypeIds.Banner,
@@ -276,7 +276,7 @@ namespace ArcaneLink.Services.Users
 
             return assetId == null
                 ? null
-                : await SetBannerAsync(userId, assetId.Value, cancellationToken);
+                : await this.SetBannerAsync(userId, assetId.Value, cancellationToken);
         }
 
         private async Task<Guid?> UploadProfileAssetAsync(
@@ -285,7 +285,7 @@ namespace ArcaneLink.Services.Users
             Guid assetTypeId,
             CancellationToken cancellationToken)
         {
-            var user = await GetActiveUserWithProfileAsync(
+            var user = await this.GetActiveUserWithProfileAsync(
                 userId,
                 cancellationToken);
 
@@ -294,7 +294,7 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
 
-            var asset = await _assetService.UploadAssetAsync(
+            var asset = await this._assetService.UploadAssetAsync(
                 userId,
                 new UploadAssetRequest
                 {
@@ -324,10 +324,10 @@ namespace ArcaneLink.Services.Users
                 Headers = new HeaderDictionary(),
                 ContentType = "image/webp"
             };
-            var asset = await _assetService.UploadOptimizedAvatarAsync(
+            var asset = await this._assetService.UploadOptimizedAvatarAsync(
                 userId,
                 formFile,
-                _avatarImageProcessor.OutputSizePixels,
+                this._avatarImageProcessor.OutputSizePixels,
                 cancellationToken);
 
             return asset.Id;
@@ -339,7 +339,7 @@ namespace ArcaneLink.Services.Users
             Guid sourceAssetId,
             CancellationToken cancellationToken)
         {
-            return SetProfileAssetAsync(
+            return this.SetProfileAssetAsync(
                 userId,
                 assetId,
                 AssetTypeIds.CurrentAvatar,
@@ -361,11 +361,11 @@ namespace ArcaneLink.Services.Users
             Guid sourceAssetId,
             CancellationToken cancellationToken)
         {
-            var previousAssetId = await _db.UserProfiles
+            var previousAssetId = await this._db.UserProfiles
                 .Where(x => x.UserId == userId)
                 .Select(x => x.AvatarAssetId)
                 .FirstOrDefaultAsync(cancellationToken);
-            var profile = await SetOptimizedAvatarAsync(
+            var profile = await this.SetOptimizedAvatarAsync(
                 userId,
                 assetId,
                 sourceAssetId,
@@ -378,7 +378,7 @@ namespace ArcaneLink.Services.Users
                 return profile;
             }
 
-            var previousAsset = await GetOwnedActiveAssetAsync(
+            var previousAsset = await this.GetOwnedActiveAssetAsync(
                 userId,
                 previousAssetId.Value,
                 cancellationToken);
@@ -386,8 +386,8 @@ namespace ArcaneLink.Services.Users
             if (previousAsset?.AssetTypeId == AssetTypeIds.CurrentAvatar)
             {
                 await OptimizedAvatarAssetCleanup.DeleteOwnedIfOrphanedAsync(
-                    _db,
-                    _assetService,
+                    this._db,
+                    this._assetService,
                     userId,
                     previousAsset.Id,
                     cancellationToken);
@@ -401,7 +401,7 @@ namespace ArcaneLink.Services.Users
             Guid fallbackAssetId,
             CancellationToken cancellationToken)
         {
-            return await _db.UserProfiles
+            return await this._db.UserProfiles
                 .Where(x => x.UserId == userId)
                 .Select(x => x.AvatarSourceAssetId)
                 .FirstOrDefaultAsync(cancellationToken)
@@ -416,7 +416,7 @@ namespace ArcaneLink.Services.Users
             Action<UserProfile, Guid> applyAsset,
             CancellationToken cancellationToken)
         {
-            var user = await GetActiveUserWithProfileAsync(
+            var user = await this.GetActiveUserWithProfileAsync(
                 userId,
                 cancellationToken);
 
@@ -425,7 +425,7 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
 
-            var asset = await GetOwnedActiveAssetAsync(
+            var asset = await this.GetOwnedActiveAssetAsync(
                 userId,
                 assetId,
                 cancellationToken);
@@ -445,14 +445,14 @@ namespace ArcaneLink.Services.Users
             user.UpdatedAt = DateTime.UtcNow;
             user.Profile.UpdatedAt = DateTime.UtcNow;
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserProfileChanged,
                 new { userId, assetId },
                 cancellationToken);
 
-            var snapshots = await _presencePolicy.ResolveAsync(
+            var snapshots = await this._presencePolicy.ResolveAsync(
                 userId,
                 [userId],
                 cancellationToken);
@@ -468,7 +468,7 @@ namespace ArcaneLink.Services.Users
             Guid userId,
             CancellationToken cancellationToken)
         {
-            return await _db.Users
+            return await this._db.Users
                 .Include(x => x.Profile)
                 .Include(x => x.SubscriptionType)
                 .FirstOrDefaultAsync(
@@ -485,7 +485,7 @@ namespace ArcaneLink.Services.Users
         {
             // Treat missing, deleted and foreign assets the same way.
             // This avoids leaking whether another user's asset exists.
-            return await _db.Assets
+            return await this._db.Assets
                 .FirstOrDefaultAsync(
                     x => x.Id == assetId &&
                          x.OwnerUserId == userId &&
@@ -552,8 +552,8 @@ namespace ArcaneLink.Services.Users
                        asset.MimeType,
                        "image/webp",
                        StringComparison.OrdinalIgnoreCase) &&
-                   asset.Width == _avatarImageProcessor.OutputSizePixels &&
-                   asset.Height == _avatarImageProcessor.OutputSizePixels;
+                   asset.Width == this._avatarImageProcessor.OutputSizePixels &&
+                   asset.Height == this._avatarImageProcessor.OutputSizePixels;
         }
 
         private static bool IsNeutralCrop(SetAvatarRequest request)
@@ -571,14 +571,14 @@ namespace ArcaneLink.Services.Users
         {
             try
             {
-                await _assetService.DeleteOwnedAssetAsync(
+                await this._assetService.DeleteOwnedAssetAsync(
                     userId,
                     assetId,
                     CancellationToken.None);
             }
             catch (Exception exception)
             {
-                _logger.LogError(
+                this._logger.LogError(
                     exception,
                     "Failed to compensate profile asset {AssetId} for user {UserId}.",
                     assetId,

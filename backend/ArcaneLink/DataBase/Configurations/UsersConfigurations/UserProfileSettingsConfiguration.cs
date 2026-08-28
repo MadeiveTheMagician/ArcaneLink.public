@@ -1,5 +1,5 @@
-using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.DataBase.Constants;
+using ArcaneLink.DataBase.Models.UsersModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

@@ -10,14 +10,14 @@ namespace ArcaneLink.Observability.HealthChecks
 
         public MigrationsHealthCheck(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         public async Task<HealthCheckResult> CheckHealthAsync(
             HealthCheckContext context,
             CancellationToken cancellationToken = default)
         {
-            var pendingMigrations = await _db.Database
+            var pendingMigrations = await this._db.Database
                 .GetPendingMigrationsAsync(cancellationToken);
             var pendingMigrationList = pendingMigrations.ToList();
 

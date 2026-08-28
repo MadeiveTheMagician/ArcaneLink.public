@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.Services.Users.Abstractions
+namespace ArcaneLink.Services.Users.Abstractions
 {
     // Интерфейс сервиса валидации пользователя.
     //

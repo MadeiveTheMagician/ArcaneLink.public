@@ -46,17 +46,17 @@ namespace ArcaneLink.Services.Servers
             IUserPresencePolicyService presencePolicy,
             IUserPresenceCoordinator presenceCoordinator)
         {
-            _db = db;
-            _realtime = realtime;
-            _serverGroups = serverGroups;
-            _access = access;
-            _serverAuthorization = serverAuthorization;
-            _notifications = notifications;
-            _spaceAuthorization = spaceAuthorization;
-            _voiceAccess = voiceAccess;
-            _logger = logger;
-            _presencePolicy = presencePolicy;
-            _presenceCoordinator = presenceCoordinator;
+            this._db = db;
+            this._realtime = realtime;
+            this._serverGroups = serverGroups;
+            this._access = access;
+            this._serverAuthorization = serverAuthorization;
+            this._notifications = notifications;
+            this._spaceAuthorization = spaceAuthorization;
+            this._voiceAccess = voiceAccess;
+            this._logger = logger;
+            this._presencePolicy = presencePolicy;
+            this._presenceCoordinator = presenceCoordinator;
         }
 
         public async Task<ServerMemberPageResponse?> GetServerMembersAsync(
@@ -70,7 +70,7 @@ namespace ArcaneLink.Services.Servers
             int limit,
             CancellationToken cancellationToken = default)
         {
-            var canViewMembers = await _access.IsActiveMemberAsync(
+            var canViewMembers = await this._access.IsActiveMemberAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -80,7 +80,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId &&
@@ -92,7 +92,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var activeMembers = _db.ServerMembers
+            var activeMembers = this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x => x.ServerId == serverId &&
                             x.StatusId == ServerMemberStatusIds.Active &&
@@ -170,7 +170,7 @@ namespace ArcaneLink.Services.Servers
                 members.RemoveAt(members.Count - 1);
             }
 
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 members.Select(member => member.UserId),
                 cancellationToken);
@@ -206,7 +206,7 @@ namespace ArcaneLink.Services.Servers
             Guid targetUserId,
             CancellationToken cancellationToken = default)
         {
-            var canViewMembers = await _access.IsActiveMemberAsync(
+            var canViewMembers = await this._access.IsActiveMemberAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -215,7 +215,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var serverOwnerUserId = await _db.Servers
+            var serverOwnerUserId = await this._db.Servers
                 .AsNoTracking()
                 .Where(server => server.Id == serverId && server.DeletedAt == null)
                 .Select(server => (Guid?)server.OwnerUserId)
@@ -225,7 +225,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var member = await _db.ServerMembers
+            var member = await this._db.ServerMembers
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(candidate => candidate.Status)
@@ -248,7 +248,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 [targetUserId],
                 cancellationToken);
@@ -266,7 +266,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId &&
                          x.DeletedAt == null,
@@ -282,7 +282,7 @@ namespace ArcaneLink.Services.Servers
                 throw new ServerOwnerCannotLeaveException();
             }
 
-            var member = await _db.ServerMembers
+            var member = await this._db.ServerMembers
                 .FirstOrDefaultAsync(
                     x => x.ServerId == serverId &&
                          x.UserId == currentUserId &&
@@ -296,15 +296,15 @@ namespace ArcaneLink.Services.Servers
             }
 
             var mutationSucceeded = false;
-            var presenceSubjects = await _presenceCoordinator
+            var presenceSubjects = await this._presenceCoordinator
                 .ExecuteTopologyMutationAsync(
                     UserPresenceTopologyKey.Server(serverId),
                     [currentUserId],
-                    token => ResolveActiveServerUserIdsAsync(serverId, token),
+                    token => this.ResolveActiveServerUserIdsAsync(serverId, token),
                     async token =>
                     {
-                        await _db.Entry(server).ReloadAsync(token);
-                        await _db.Entry(member).ReloadAsync(token);
+                        await this._db.Entry(server).ReloadAsync(token);
+                        await this._db.Entry(member).ReloadAsync(token);
                         if (server.DeletedAt != null ||
                             server.OwnerUserId == currentUserId ||
                             member.StatusId != ServerMemberStatusIds.Active ||
@@ -314,13 +314,13 @@ namespace ArcaneLink.Services.Servers
                         }
 
                         MarkMemberAsInactive(member, ServerMemberStatusIds.Left);
-                        AddAudit(
+                        this.AddAudit(
                             serverId,
                             ServerGovernanceIds.AuditMemberLeft,
                             currentUserId,
                             currentUserId);
-                        await _db.StageServerAclRevisionBumpAsync(serverId, token);
-                        await _db.SaveChangesAsync(token);
+                        await this._db.StageServerAclRevisionBumpAsync(serverId, token);
+                        await this._db.SaveChangesAsync(token);
                         mutationSucceeded = true;
                     },
                     cancellationToken);
@@ -329,28 +329,28 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            await _presenceCoordinator.AudienceChangedAsync(
+            await this._presenceCoordinator.AudienceChangedAsync(
                 presenceSubjects,
                 CancellationToken.None);
-            await _serverGroups.RemoveUserBestEffortAsync(
+            await this._serverGroups.RemoveUserBestEffortAsync(
                 currentUserId,
                 serverId);
-            _spaceAuthorization.InvalidateServer(serverId);
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            this._spaceAuthorization.InvalidateServer(serverId);
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 currentUserId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 currentUserId,
                 RealtimeEventNames.UserServersChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId, userId = currentUserId },
@@ -365,7 +365,7 @@ namespace ArcaneLink.Services.Servers
             Guid memberId,
             CancellationToken cancellationToken = default)
         {
-            if (!await _access.HasGranularPermissionAsync(
+            if (!await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "KICK_MEMBERS",
@@ -374,7 +374,7 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId &&
                          x.DeletedAt == null,
@@ -385,7 +385,7 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            var member = await _db.ServerMembers
+            var member = await this._db.ServerMembers
                 .Include(x => x.Roles.Where(role => role.RevokedAt == null))
                     .ThenInclude(x => x.Role)
                         .ThenInclude(x => x.Permissions)
@@ -410,7 +410,7 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            if (!await CanModerateMemberAsync(
+            if (!await this.CanModerateMemberAsync(
                     currentUserId,
                     server,
                     member,
@@ -421,21 +421,21 @@ namespace ArcaneLink.Services.Servers
             }
 
             var mutationSucceeded = false;
-            var presenceSubjects = await _presenceCoordinator
+            var presenceSubjects = await this._presenceCoordinator
                 .ExecuteTopologyMutationAsync(
                     UserPresenceTopologyKey.Server(serverId),
                     [currentUserId, member.UserId],
-                    token => ResolveActiveServerUserIdsAsync(serverId, token),
+                    token => this.ResolveActiveServerUserIdsAsync(serverId, token),
                     async token =>
                     {
-                        await _db.Entry(server).ReloadAsync(token);
-                        await _db.Entry(member).ReloadAsync(token);
+                        await this._db.Entry(server).ReloadAsync(token);
+                        await this._db.Entry(member).ReloadAsync(token);
                         if (server.DeletedAt != null ||
                             member.StatusId != ServerMemberStatusIds.Active ||
                             member.BannedAt != null ||
                             member.UserId == server.OwnerUserId ||
                             member.UserId == currentUserId ||
-                            !await CanModerateMemberAsync(
+                            !await this.CanModerateMemberAsync(
                                 currentUserId,
                                 server,
                                 member,
@@ -447,13 +447,13 @@ namespace ArcaneLink.Services.Servers
 
                         RevokeActiveRoles(member, currentUserId);
                         MarkMemberAsInactive(member, ServerMemberStatusIds.Removed);
-                        AddAudit(
+                        this.AddAudit(
                             serverId,
                             ServerGovernanceIds.AuditMemberRemoved,
                             currentUserId,
                             member.UserId);
-                        await _db.StageServerAclRevisionBumpAsync(serverId, token);
-                        await _db.SaveChangesAsync(token);
+                        await this._db.StageServerAclRevisionBumpAsync(serverId, token);
+                        await this._db.SaveChangesAsync(token);
                         mutationSucceeded = true;
                     },
                     cancellationToken);
@@ -462,28 +462,28 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            await _presenceCoordinator.AudienceChangedAsync(
+            await this._presenceCoordinator.AudienceChangedAsync(
                 presenceSubjects,
                 CancellationToken.None);
-            await _serverGroups.RemoveUserBestEffortAsync(
+            await this._serverGroups.RemoveUserBestEffortAsync(
                 member.UserId,
                 serverId);
-            _spaceAuthorization.InvalidateServer(serverId);
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            this._spaceAuthorization.InvalidateServer(serverId);
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 member.UserId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 member.UserId,
                 RealtimeEventNames.UserServersChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId, userId = member.UserId },
@@ -504,7 +504,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            if (!await _access.HasGranularPermissionAsync(
+            if (!await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "BAN_MEMBERS",
@@ -513,7 +513,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId && x.DeletedAt == null,
                     cancellationToken);
@@ -522,7 +522,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var member = await _db.ServerMembers
+            var member = await this._db.ServerMembers
                 .Include(x => x.User)
                     .ThenInclude(x => x.Profile)
                 .Include(x => x.Roles.Where(role => role.RevokedAt == null))
@@ -548,13 +548,13 @@ namespace ArcaneLink.Services.Servers
 
             if (member.StatusId == ServerMemberStatusIds.Banned)
             {
-                return await ToBanResponseAsync(
+                return await this.ToBanResponseAsync(
                     currentUserId,
                     member,
                     cancellationToken);
             }
 
-            if (!await CanModerateMemberAsync(
+            if (!await this.CanModerateMemberAsync(
                     currentUserId,
                     server,
                     member,
@@ -568,20 +568,20 @@ namespace ArcaneLink.Services.Servers
             List<ServerInvite> revokedDirectInvites = [];
             var notificationChanged = false;
             var mutationSucceeded = false;
-            var presenceSubjects = await _presenceCoordinator
+            var presenceSubjects = await this._presenceCoordinator
                 .ExecuteTopologyMutationAsync(
                     UserPresenceTopologyKey.Server(serverId),
                     [currentUserId, member.UserId],
-                    token => ResolveActiveServerUserIdsAsync(serverId, token),
+                    token => this.ResolveActiveServerUserIdsAsync(serverId, token),
                     async token =>
                     {
-                        await _db.Entry(server).ReloadAsync(token);
-                        await _db.Entry(member).ReloadAsync(token);
+                        await this._db.Entry(server).ReloadAsync(token);
+                        await this._db.Entry(member).ReloadAsync(token);
                         if (server.DeletedAt != null ||
                             member.StatusId == ServerMemberStatusIds.Banned ||
                             member.UserId == server.OwnerUserId ||
                             member.UserId == currentUserId ||
-                            !await CanModerateMemberAsync(
+                            !await this.CanModerateMemberAsync(
                                 currentUserId,
                                 server,
                                 member,
@@ -600,7 +600,7 @@ namespace ArcaneLink.Services.Servers
                         member.BanReason = reason;
                         member.UpdatedAt = now;
 
-                        revokedDirectInvites = await _db.ServerInvites
+                        revokedDirectInvites = await this._db.ServerInvites
                             .Where(invite =>
                                 invite.ServerId == serverId &&
                                 invite.TargetUserId == member.UserId &&
@@ -612,64 +612,64 @@ namespace ArcaneLink.Services.Servers
                         {
                             directInvite.RevokedAt = now;
                             directInvite.RevokedByUserId = currentUserId;
-                            notificationChanged |= await _notifications
+                            notificationChanged |= await this._notifications
                                 .StageInviteReadAsync(
                                     member.UserId,
                                     directInvite.Id,
                                     token);
                         }
 
-                        _access.AddAudit(
+                        this._access.AddAudit(
                             serverId,
                             ServerGovernanceIds.AuditMemberBanned,
                             currentUserId,
                             member.UserId,
                             payload: JsonSerializer.Serialize(new { reason }));
-                        await _db.StageServerAclRevisionBumpAsync(serverId, token);
-                        await _db.SaveChangesAsync(token);
+                        await this._db.StageServerAclRevisionBumpAsync(serverId, token);
+                        await this._db.SaveChangesAsync(token);
                         mutationSucceeded = true;
                     },
                     cancellationToken);
             if (!mutationSucceeded)
             {
                 return member.StatusId == ServerMemberStatusIds.Banned
-                    ? await ToBanResponseAsync(
+                    ? await this.ToBanResponseAsync(
                         currentUserId,
                         member,
                         cancellationToken)
                     : null;
             }
 
-            await _presenceCoordinator.AudienceChangedAsync(
+            await this._presenceCoordinator.AudienceChangedAsync(
                 presenceSubjects,
                 CancellationToken.None);
 
-            await FinalizeMembershipRemovalBestEffortAsync(
+            await this.FinalizeMembershipRemovalBestEffortAsync(
                 serverId,
                 member.UserId);
             if (notificationChanged)
             {
-                await _notifications.NotifyChangedAsync(
+                await this._notifications.NotifyChangedAsync(
                     [member.UserId],
                     CancellationToken.None);
             }
             foreach (var invite in revokedDirectInvites)
             {
-                await _realtime.NotifyUserBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUserBestEffortAsync(
+                    this._logger,
                     member.UserId,
                     RealtimeEventNames.ServerInviteReceived,
                     new { serverId, inviteId = invite.Id },
                     CancellationToken.None);
             }
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, memberId },
                 CancellationToken.None);
 
-            return await ToBanResponseAsync(
+            return await this.ToBanResponseAsync(
                 currentUserId,
                 member,
                 cancellationToken);
@@ -680,7 +680,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            if (!await _access.HasGranularPermissionAsync(
+            if (!await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "MANAGE_BANS",
@@ -689,7 +689,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var bans = await _db.ServerMembers
+            var bans = await this._db.ServerMembers
                 .AsNoTracking()
                 .Include(member => member.User)
                     .ThenInclude(user => user.Profile)
@@ -699,7 +699,7 @@ namespace ArcaneLink.Services.Servers
                     member.StatusId == ServerMemberStatusIds.Banned)
                 .OrderByDescending(member => member.BannedAt)
                 .ToListAsync(cancellationToken);
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 bans.Select(member => member.UserId),
                 cancellationToken);
@@ -719,7 +719,7 @@ namespace ArcaneLink.Services.Servers
             Guid memberId,
             CancellationToken cancellationToken = default)
         {
-            if (!await _access.HasGranularPermissionAsync(
+            if (!await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "MANAGE_BANS",
@@ -728,7 +728,7 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            var member = await _db.ServerMembers.FirstOrDefaultAsync(
+            var member = await this._db.ServerMembers.FirstOrDefaultAsync(
                 x => x.Id == memberId &&
                      x.ServerId == serverId &&
                      x.StatusId == ServerMemberStatusIds.Banned &&
@@ -747,19 +747,19 @@ namespace ArcaneLink.Services.Servers
             member.BanReason = null;
             member.UpdatedAt = now;
 
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditMemberUnbanned,
                 currentUserId,
                 member.UserId,
                 payload: JsonSerializer.Serialize(new { reason }));
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
 
-            _spaceAuthorization.InvalidateServer(serverId);
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            this._spaceAuthorization.InvalidateServer(serverId);
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, memberId },
@@ -772,23 +772,23 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             Guid userId)
         {
-            await _serverGroups.RemoveUserBestEffortAsync(userId, serverId);
-            _spaceAuthorization.InvalidateServer(serverId);
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            await this._serverGroups.RemoveUserBestEffortAsync(userId, serverId);
+            this._spaceAuthorization.InvalidateServer(serverId);
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 userId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 userId,
                 RealtimeEventNames.UserServersChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId, userId },
@@ -799,7 +799,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return await _db.ServerMembers
+            return await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.ServerId == serverId &&
@@ -856,12 +856,12 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            var actorContext = await _serverAuthorization.GetContextAsync(
+            var actorContext = await this._serverAuthorization.GetContextAsync(
                 actorUserId,
                 server.Id,
                 cancellationToken);
             if (actorContext == null ||
-                !TryCreateModerationSubject(
+                !this.TryCreateModerationSubject(
                     server,
                     target,
                     actorContext.Principal.EveryoneRole,
@@ -905,7 +905,7 @@ namespace ArcaneLink.Services.Servers
                 if (!kind.HasValue ||
                     !ServerRolePermissionMaskResolver.TryResolve(
                         role,
-                        _legacyPermissionAdapter,
+                        this._legacyPermissionAdapter,
                         out var permissionMask,
                         out _))
                 {
@@ -936,7 +936,7 @@ namespace ArcaneLink.Services.Servers
             Guid actorUserId,
             Guid targetUserId)
         {
-            _db.ServerAuditLogs.Add(new ServerAuditLog
+            this._db.ServerAuditLogs.Add(new ServerAuditLog
             {
                 Id = Guid.NewGuid(),
                 ServerId = serverId,
@@ -1061,7 +1061,7 @@ namespace ArcaneLink.Services.Servers
             ServerMember member,
             CancellationToken cancellationToken)
         {
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 [member.UserId],
                 cancellationToken);

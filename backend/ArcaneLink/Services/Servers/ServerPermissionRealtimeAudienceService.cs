@@ -20,8 +20,8 @@ namespace ArcaneLink.Services.Servers
             AppDbContext db,
             IServerGovernanceAccessService access)
         {
-            _db = db;
-            _access = access;
+            this._db = db;
+            this._access = access;
         }
 
         public async Task<IReadOnlyList<Guid>> ResolveAsync(
@@ -33,7 +33,7 @@ namespace ArcaneLink.Services.Servers
         {
             ArgumentNullException.ThrowIfNull(anyPermissionCodes);
 
-            var activeUserIds = await _db.ServerMembers
+            var activeUserIds = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.ServerId == serverId &&
@@ -66,7 +66,7 @@ namespace ArcaneLink.Services.Servers
 
                 foreach (var permissionCode in anyPermissionCodes)
                 {
-                    if (await _access.HasGranularPermissionAsync(
+                    if (await this._access.HasGranularPermissionAsync(
                             userId,
                             serverId,
                             permissionCode,

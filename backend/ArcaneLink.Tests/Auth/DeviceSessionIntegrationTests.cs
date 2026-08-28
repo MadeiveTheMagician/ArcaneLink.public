@@ -12,41 +12,41 @@ public sealed class DeviceSessionIntegrationTests : IClassFixture<ArcaneLinkApiF
 
     public DeviceSessionIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _client = factory.CreateClient();
+        this._client = factory.CreateClient();
     }
 
     [Fact]
     public async Task Sessions_CanRevokeOneAndAllOthers_WithoutRevokingCurrent()
     {
-        var current = await LoginAsync("current-browser");
-        var second = await LoginAsync("second-browser");
-        var third = await LoginAsync("third-browser");
+        var current = await this.LoginAsync("current-browser");
+        var second = await this.LoginAsync("second-browser");
+        var third = await this.LoginAsync("third-browser");
 
         Assert.NotNull(current.DeviceSessionId);
         Assert.NotNull(second.DeviceSessionId);
         Assert.NotNull(third.DeviceSessionId);
 
-        _client.AuthorizeWith(current.AccessToken);
+        this._client.AuthorizeWith(current.AccessToken);
 
-        var sessions = await _client.GetFromJsonAsync<UserDeviceSessionResponse[]>(
+        var sessions = await this._client.GetFromJsonAsync<UserDeviceSessionResponse[]>(
             "/api/auth/sessions");
 
         Assert.NotNull(sessions);
         Assert.Equal(3, sessions.Length);
         Assert.Single(sessions, x => x.IsCurrent && x.Id == current.DeviceSessionId);
 
-        var revokeCurrentResponse = await _client.PostAsync(
+        var revokeCurrentResponse = await this._client.PostAsync(
             $"/api/auth/sessions/{current.DeviceSessionId}/revoke",
             content: null);
 
         Assert.Equal(HttpStatusCode.BadRequest, revokeCurrentResponse.StatusCode);
 
-        var revokeSecondResponse = await _client.PostAsync(
+        var revokeSecondResponse = await this._client.PostAsync(
             $"/api/auth/sessions/{second.DeviceSessionId}/revoke",
             content: null);
         Assert.Equal(HttpStatusCode.NoContent, revokeSecondResponse.StatusCode);
 
-        sessions = await _client.GetFromJsonAsync<UserDeviceSessionResponse[]>(
+        sessions = await this._client.GetFromJsonAsync<UserDeviceSessionResponse[]>(
             "/api/auth/sessions");
 
         Assert.NotNull(sessions);
@@ -54,52 +54,52 @@ public sealed class DeviceSessionIntegrationTests : IClassFixture<ArcaneLinkApiF
         Assert.Contains(sessions, x => x.Id == current.DeviceSessionId && x.IsCurrent);
         Assert.Contains(sessions, x => x.Id == third.DeviceSessionId);
 
-        _client.AuthorizeWith(second.AccessToken);
-        var revokedAccessResponse = await _client.GetAsync("/api/users/me");
+        this._client.AuthorizeWith(second.AccessToken);
+        var revokedAccessResponse = await this._client.GetAsync("/api/users/me");
         Assert.Equal(HttpStatusCode.Unauthorized, revokedAccessResponse.StatusCode);
-        _client.AuthorizeWith(current.AccessToken);
+        this._client.AuthorizeWith(current.AccessToken);
 
-        var revokedRefreshResponse = await _client.PostAsJsonAsync(
+        var revokedRefreshResponse = await this._client.PostAsJsonAsync(
             "/api/auth/refresh",
             new RefreshTokenRequest { RefreshToken = second.RefreshToken });
         Assert.Equal(HttpStatusCode.Unauthorized, revokedRefreshResponse.StatusCode);
 
-        var revokeOthersResponse = await _client.PostAsync(
+        var revokeOthersResponse = await this._client.PostAsync(
             "/api/auth/sessions/revoke-others",
             content: null);
         Assert.Equal(HttpStatusCode.NoContent, revokeOthersResponse.StatusCode);
 
-        sessions = await _client.GetFromJsonAsync<UserDeviceSessionResponse[]>(
+        sessions = await this._client.GetFromJsonAsync<UserDeviceSessionResponse[]>(
             "/api/auth/sessions");
 
         var remaining = Assert.Single(sessions!);
         Assert.Equal(current.DeviceSessionId, remaining.Id);
         Assert.True(remaining.IsCurrent);
 
-        var currentRefreshResponse = await _client.PostAsJsonAsync(
+        var currentRefreshResponse = await this._client.PostAsJsonAsync(
             "/api/auth/refresh",
             new RefreshTokenRequest { RefreshToken = current.RefreshToken });
         Assert.Equal(HttpStatusCode.OK, currentRefreshResponse.StatusCode);
 
-        var thirdRefreshResponse = await _client.PostAsJsonAsync(
+        var thirdRefreshResponse = await this._client.PostAsJsonAsync(
             "/api/auth/refresh",
             new RefreshTokenRequest { RefreshToken = third.RefreshToken });
         Assert.Equal(HttpStatusCode.Unauthorized, thirdRefreshResponse.StatusCode);
 
-        _client.AuthorizeWith(third.AccessToken);
-        var thirdAccessResponse = await _client.GetAsync("/api/users/me");
+        this._client.AuthorizeWith(third.AccessToken);
+        var thirdAccessResponse = await this._client.GetAsync("/api/users/me");
         Assert.Equal(HttpStatusCode.Unauthorized, thirdAccessResponse.StatusCode);
 
-        var finalLogin = await LoginAsync("final-browser");
-        _client.AuthorizeWith(finalLogin.AccessToken);
-        var revokeAllResponse = await _client.PostAsync(
+        var finalLogin = await this.LoginAsync("final-browser");
+        this._client.AuthorizeWith(finalLogin.AccessToken);
+        var revokeAllResponse = await this._client.PostAsync(
             "/api/auth/sessions/revoke-all",
             content: null);
         Assert.Equal(HttpStatusCode.NoContent, revokeAllResponse.StatusCode);
 
-        var finalAccessResponse = await _client.GetAsync("/api/users/me");
+        var finalAccessResponse = await this._client.GetAsync("/api/users/me");
         Assert.Equal(HttpStatusCode.Unauthorized, finalAccessResponse.StatusCode);
-        var finalRefreshResponse = await _client.PostAsJsonAsync(
+        var finalRefreshResponse = await this._client.PostAsJsonAsync(
             "/api/auth/refresh",
             new RefreshTokenRequest { RefreshToken = finalLogin.RefreshToken });
         Assert.Equal(HttpStatusCode.Unauthorized, finalRefreshResponse.StatusCode);
@@ -107,7 +107,7 @@ public sealed class DeviceSessionIntegrationTests : IClassFixture<ArcaneLinkApiF
 
     private async Task<LoginResponse> LoginAsync(string deviceName)
     {
-        var response = await _client.PostAsJsonAsync(
+        var response = await this._client.PostAsJsonAsync(
             "/api/auth/login",
             new LoginRequest
             {

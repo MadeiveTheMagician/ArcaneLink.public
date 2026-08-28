@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase._Data;
+using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Auth;
 using ArcaneLink.DataBase.DTOs.Logout;
@@ -44,12 +44,12 @@ namespace ArcaneLink.Services.Auth
             ILogger<AuthTokenService> logger,
             IOptions<JwtSettings> jwtOptions)
         {
-            _db = db;
-            _jwtTokenService = jwtTokenService;
-            _requestInfoService = requestInfoService;
-            _realtime = realtime;
-            _logger = logger;
-            _jwtSettings = jwtOptions.Value;
+            this._db = db;
+            this._jwtTokenService = jwtTokenService;
+            this._requestInfoService = requestInfoService;
+            this._realtime = realtime;
+            this._logger = logger;
+            this._jwtSettings = jwtOptions.Value;
         }
 
         // Создаёт новую пару токенов для пользователя.
@@ -65,12 +65,12 @@ namespace ArcaneLink.Services.Auth
             Guid deviceSessionId,
             CancellationToken cancellationToken = default)
         {
-            var accessToken = _jwtTokenService.GenerateAccessToken(
+            var accessToken = this._jwtTokenService.GenerateAccessToken(
                 user,
                 deviceSessionId);
-            var accessTokenExpiresAt = _jwtTokenService.GetAccessTokenExpirationUtc();
+            var accessTokenExpiresAt = this._jwtTokenService.GetAccessTokenExpirationUtc();
 
-            var refreshToken = await CreateRefreshTokenEntityAsync(
+            var refreshToken = await this.CreateRefreshTokenEntityAsync(
                 user.Id,
                 deviceSessionId,
                 cancellationToken);
@@ -104,9 +104,9 @@ namespace ArcaneLink.Services.Auth
             }
 
             var refreshTokenHash =
-                _jwtTokenService.HashRefreshToken(request.RefreshToken);
+                this._jwtTokenService.HashRefreshToken(request.RefreshToken);
 
-            var existingToken = await _db.UserRefreshTokens
+            var existingToken = await this._db.UserRefreshTokens
                 .Include(x => x.User)
                 .Include(x => x.DeviceSession)
                 .FirstOrDefaultAsync(
@@ -125,7 +125,7 @@ namespace ArcaneLink.Services.Auth
             // удалён или переведён в неактивный статус,
             // refresh token больше не должен выдавать новые JWT.
 
-            if (existingToken.User.StatusId != UserStatusIds.Active 
+            if (existingToken.User.StatusId != UserStatusIds.Active
                 || existingToken.User.DeletedAt != null)
             {
                 throw new InvalidRefreshTokenException();
@@ -139,32 +139,32 @@ namespace ArcaneLink.Services.Auth
 
             var now = DateTime.UtcNow;
             var deviceSession = existingToken.DeviceSession;
-            if (IsDeviceSessionExpired(deviceSession, now))
+            if (this.IsDeviceSessionExpired(deviceSession, now))
             {
                 deviceSession.RevokedAt = now;
                 deviceSession.LastUsedAt = now;
                 existingToken.RevokedAt = now;
-                existingToken.RevokedByIp = _requestInfoService.GetClientIpAddress();
-                await _db.SaveChangesAsync(cancellationToken);
+                existingToken.RevokedByIp = this._requestInfoService.GetClientIpAddress();
+                await this._db.SaveChangesAsync(cancellationToken);
                 throw new InvalidRefreshTokenException();
             }
 
             // Старый refresh token больше нельзя использовать.
             existingToken.RevokedAt = now;
-            existingToken.RevokedByIp = _requestInfoService.GetClientIpAddress();
+            existingToken.RevokedByIp = this._requestInfoService.GetClientIpAddress();
 
             deviceSession.LastUsedAt = now;
-            deviceSession.IpAddress = _requestInfoService.GetClientIpAddress();
-            deviceSession.UserAgent = _requestInfoService.GetUserAgent();
+            deviceSession.IpAddress = this._requestInfoService.GetClientIpAddress();
+            deviceSession.UserAgent = this._requestInfoService.GetUserAgent();
 
             // Создаём новый access token.
-            var newAccessToken = _jwtTokenService.GenerateAccessToken(
+            var newAccessToken = this._jwtTokenService.GenerateAccessToken(
                 existingToken.User,
                 deviceSession.Id);
-            var newAccessTokenExpiresAt = _jwtTokenService.GetAccessTokenExpirationUtc();
+            var newAccessTokenExpiresAt = this._jwtTokenService.GetAccessTokenExpirationUtc();
 
             // Создаём новый refresh token и добавляем его entity в DbContext.
-            var newRefreshToken = await CreateRefreshTokenEntityAsync(
+            var newRefreshToken = await this.CreateRefreshTokenEntityAsync(
                 existingToken.UserId,
                 existingToken.DeviceSessionId,
                 cancellationToken);
@@ -173,9 +173,9 @@ namespace ArcaneLink.Services.Auth
             // Это полезно для аудита и расследования подозрительных сессий.
             existingToken.ReplacedByTokenId = newRefreshToken.Entity.Id;
 
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             ArcaneLinkDiagnostics.RefreshTokenRotatedCounter.Add(1);
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 ObservabilityEventIds.RefreshTokenRotated,
                 "Refresh token rotated. UserId={UserId} DeviceSessionId={DeviceSessionId} OldRefreshTokenId={OldRefreshTokenId} NewRefreshTokenId={NewRefreshTokenId}",
                 existingToken.UserId,
@@ -207,9 +207,9 @@ namespace ArcaneLink.Services.Auth
                 return;
             }
 
-            var refreshTokenHash = _jwtTokenService.HashRefreshToken(request.RefreshToken);
+            var refreshTokenHash = this._jwtTokenService.HashRefreshToken(request.RefreshToken);
 
-            var existingToken = await _db.UserRefreshTokens
+            var existingToken = await this._db.UserRefreshTokens
                 .Include(x => x.DeviceSession)
                 .FirstOrDefaultAsync(
                     x => x.TokenHash == refreshTokenHash,
@@ -221,7 +221,7 @@ namespace ArcaneLink.Services.Auth
             }
 
             existingToken.RevokedAt = DateTime.UtcNow;
-            existingToken.RevokedByIp = _requestInfoService.GetClientIpAddress();
+            existingToken.RevokedByIp = this._requestInfoService.GetClientIpAddress();
 
             if (existingToken.DeviceSession != null)
             {
@@ -229,8 +229,8 @@ namespace ArcaneLink.Services.Auth
                 existingToken.DeviceSession.LastUsedAt = existingToken.RevokedAt.Value;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 existingToken.UserId,
                 RealtimeEventNames.UserSessionsChanged,
                 new { sessionId = existingToken.DeviceSessionId },
@@ -238,7 +238,7 @@ namespace ArcaneLink.Services.Auth
 
             if (existingToken.DeviceSessionId != null)
             {
-                await _realtime.NotifyUserAsync(
+                await this._realtime.NotifyUserAsync(
                     existingToken.UserId,
                     RealtimeEventNames.CurrentSessionRevoked,
                     new { sessionId = existingToken.DeviceSessionId },
@@ -252,17 +252,17 @@ namespace ArcaneLink.Services.Auth
             Guid userId,
             CancellationToken cancellationToken)
         {
-            var userTokens = await _db.UserRefreshTokens
+            var userTokens = await this._db.UserRefreshTokens
                 .Where(x => x.UserId == userId && x.RevokedAt == null)
                 .ToListAsync(cancellationToken);
             var now = DateTime.UtcNow;
             foreach (var token in userTokens)
             {
                 token.RevokedAt = now;
-                token.RevokedByIp = _requestInfoService.GetClientIpAddress();
+                token.RevokedByIp = this._requestInfoService.GetClientIpAddress();
             }
 
-            var userDeviceSessions = await _db.UserDeviceSessions
+            var userDeviceSessions = await this._db.UserDeviceSessions
                 .Where(x => x.UserId == userId && x.RevokedAt == null)
                 .ToListAsync(cancellationToken);
 
@@ -272,13 +272,13 @@ namespace ArcaneLink.Services.Auth
                 session.LastUsedAt = now;
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserSessionsChanged,
                 new { all = true },
                 cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.CurrentSessionRevoked,
                 new { all = true },
@@ -300,7 +300,7 @@ namespace ArcaneLink.Services.Auth
             Guid? deviceSessionId,
             CancellationToken cancellationToken)
         {
-            var refreshTokenResult = await GenerateUniqueRefreshTokenAsync(
+            var refreshTokenResult = await this.GenerateUniqueRefreshTokenAsync(
                 cancellationToken);
 
             var entity = new UserRefreshToken
@@ -310,12 +310,12 @@ namespace ArcaneLink.Services.Auth
                 DeviceSessionId = deviceSessionId,
                 TokenHash = refreshTokenResult.Hash,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = _jwtTokenService.GetRefreshTokenExpirationUtc(),
-                CreatedByIp = _requestInfoService.GetClientIpAddress(),
-                UserAgent = _requestInfoService.GetUserAgent()
+                ExpiresAt = this._jwtTokenService.GetRefreshTokenExpirationUtc(),
+                CreatedByIp = this._requestInfoService.GetClientIpAddress(),
+                UserAgent = this._requestInfoService.GetUserAgent()
             };
 
-            _db.UserRefreshTokens.Add(entity);
+            this._db.UserRefreshTokens.Add(entity);
 
             return new CreatedRefreshTokenResult(
                 refreshTokenResult.RawToken,
@@ -329,10 +329,10 @@ namespace ArcaneLink.Services.Auth
         {
             for (var attempt = 1; attempt <= MaxRefreshTokenGenerationAttempts; attempt++)
             {
-                var refreshToken = _jwtTokenService.GenerateRefreshToken();
-                var refreshTokenHash = _jwtTokenService.HashRefreshToken(refreshToken);
+                var refreshToken = this._jwtTokenService.GenerateRefreshToken();
+                var refreshTokenHash = this._jwtTokenService.HashRefreshToken(refreshToken);
 
-                var alreadyExists = await _db.UserRefreshTokens
+                var alreadyExists = await this._db.UserRefreshTokens
                     .AnyAsync(
                         x => x.TokenHash == refreshTokenHash,
                         cancellationToken);
@@ -350,8 +350,8 @@ namespace ArcaneLink.Services.Auth
 
         private bool IsDeviceSessionExpired(UserDeviceSession session, DateTime now)
         {
-            return IsOlderThan(session.LastUsedAt, now, _jwtSettings.DeviceSessionIdleExpirationDays) ||
-                   IsOlderThan(session.CreatedAt, now, _jwtSettings.DeviceSessionAbsoluteExpirationDays);
+            return IsOlderThan(session.LastUsedAt, now, this._jwtSettings.DeviceSessionIdleExpirationDays) ||
+                   IsOlderThan(session.CreatedAt, now, this._jwtSettings.DeviceSessionAbsoluteExpirationDays);
         }
 
         private static bool IsOlderThan(DateTime value, DateTime now, int days)
@@ -375,6 +375,6 @@ namespace ArcaneLink.Services.Auth
             string RawToken,
             string Hash);
 
-        
+
     }
 }

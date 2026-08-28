@@ -4,10 +4,10 @@ namespace ArcaneLink.Services.Validators
     {
         public PasswordValidationResult(IReadOnlyList<PasswordValidationError> errors)
         {
-            Errors = errors;
+            this.Errors = errors;
         }
 
-        public bool IsValid => Errors.Count == 0;
+        public bool IsValid => this.Errors.Count == 0;
 
         public IReadOnlyList<PasswordValidationError> Errors { get; }
     }
@@ -16,8 +16,8 @@ namespace ArcaneLink.Services.Validators
     {
         public PasswordValidationError(string code, string message)
         {
-            Code = code;
-            Message = message;
+            this.Code = code;
+            this.Message = message;
         }
 
         public string Code { get; }

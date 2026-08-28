@@ -18,8 +18,8 @@ namespace ArcaneLink.Services.Messages
             AppDbContext db,
             IOptions<AssetUploadOptions> uploadOptions)
         {
-            _db = db;
-            _uploadOptions = uploadOptions.Value;
+            this._db = db;
+            this._uploadOptions = uploadOptions.Value;
         }
 
         public async Task<SpaceMessageAttachmentValidationResult> BuildAttachmentsAsync(
@@ -39,12 +39,12 @@ namespace ArcaneLink.Services.Messages
                 .ToList();
             var uniqueAssetIds = attachments.Select(x => x.AssetId).ToList();
 
-            if (uniqueAssetIds.Count > _uploadOptions.MaxAttachmentsPerMessage)
+            if (uniqueAssetIds.Count > this._uploadOptions.MaxAttachmentsPerMessage)
             {
                 return SpaceMessageAttachmentValidationResult.Invalid();
             }
 
-            var validAssetIds = await _db.Assets
+            var validAssetIds = await this._db.Assets
                 .AsNoTracking()
                 .Where(x => uniqueAssetIds.Contains(x.Id) &&
                             x.OwnerUserId == currentUserId &&

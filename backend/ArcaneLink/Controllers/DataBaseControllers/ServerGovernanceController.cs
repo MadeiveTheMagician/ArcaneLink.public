@@ -16,36 +16,36 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         public ServerGovernanceController(IServerGovernanceService governanceService)
         {
-            _governanceService = governanceService;
+            this._governanceService = governanceService;
         }
 
         [HttpGet("api/permissions/server")]
         public async Task<ActionResult<IReadOnlyList<PermissionResponse>>> GetPermissions(CancellationToken cancellationToken)
         {
-            return Ok(await _governanceService.GetPermissionsAsync(cancellationToken));
+            return this.Ok(await this._governanceService.GetPermissionsAsync(cancellationToken));
         }
 
         [HttpGet("api/permissions/server/v1")]
         public async Task<ActionResult<ServerPermissionCatalogResponse>> GetPermissionCatalogV1(
             CancellationToken cancellationToken)
         {
-            return Ok(await _governanceService.GetPermissionCatalogV1Async(cancellationToken));
+            return this.Ok(await this._governanceService.GetPermissionCatalogV1Async(cancellationToken));
         }
 
         [HttpGet("api/permissions/space")]
         public async Task<ActionResult<IReadOnlyList<PermissionResponse>>> GetSpacePermissions(
             CancellationToken cancellationToken)
         {
-            return Ok(await _governanceService.GetSpacePermissionsAsync(cancellationToken));
+            return this.Ok(await this._governanceService.GetSpacePermissionsAsync(cancellationToken));
         }
 
         [HttpGet("api/server-invites/me")]
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<ActionResult<IReadOnlyList<ServerInviteResponse>>> GetMyDirectInvites(CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return Ok(await _governanceService.GetMyDirectInvitesAsync(userId.Value, cancellationToken));
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return this.Ok(await this._governanceService.GetMyDirectInvitesAsync(userId.Value, cancellationToken));
         }
 
         [HttpGet("api/server-invites/target-servers")]
@@ -53,9 +53,9 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<ActionResult<IReadOnlyList<ServerMemberResponse>>> GetMyInviteTargetServers(CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return Ok(await _governanceService.GetMyInviteTargetServersAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return this.Ok(await this._governanceService.GetMyInviteTargetServersAsync(
                 userId.Value,
                 cancellationToken: cancellationToken));
         }
@@ -64,94 +64,94 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<ActionResult<IReadOnlyList<ServerMemberResponse>>> GetMyInviteTargetServersForUser(Guid targetUserId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return Ok(await _governanceService.GetMyInviteTargetServersAsync(userId.Value, targetUserId, cancellationToken));
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return this.Ok(await this._governanceService.GetMyInviteTargetServersAsync(userId.Value, targetUserId, cancellationToken));
         }
 
         [HttpGet("api/server-invites/{code}")]
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<ActionResult<ServerInvitePreviewResponse>> GetInvitePreview(string code, CancellationToken cancellationToken)
         {
-            var response = await _governanceService.GetInvitePreviewAsync(
+            var response = await this._governanceService.GetInvitePreviewAsync(
                 code,
-                GetCurrentUserId(),
+                this.GetCurrentUserId(),
                 cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpGet("api/servers/{serverId:guid}/invites")]
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<ActionResult<IReadOnlyList<ServerInviteResponse>>> GetInvites(Guid serverId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var response = await _governanceService.GetInvitesAsync(userId.Value, serverId, cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var response = await this._governanceService.GetInvitesAsync(userId.Value, serverId, cancellationToken);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("api/servers/{serverId:guid}/invites")]
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<ActionResult<ServerInviteResponse>> CreateInvite(Guid serverId, [FromBody] CreateServerInviteRequest request, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var response = await _governanceService.CreateInviteAsync(userId.Value, serverId, request, cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var response = await this._governanceService.CreateInviteAsync(userId.Value, serverId, request, cancellationToken);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("api/servers/{serverId:guid}/invites/{inviteId:guid}/revoke")]
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<IActionResult> RevokeInvite(Guid serverId, Guid inviteId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return await _governanceService.RevokeInviteAsync(userId.Value, serverId, inviteId, cancellationToken)
-                ? NoContent()
-                : NotFound();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return await this._governanceService.RevokeInviteAsync(userId.Value, serverId, inviteId, cancellationToken)
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [HttpPost("api/server-invites/accept")]
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<ActionResult<ServerMemberResponse>> AcceptInvite([FromBody] AcceptServerInviteRequest request, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var response = await _governanceService.AcceptInviteAsync(userId.Value, request, cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var response = await this._governanceService.AcceptInviteAsync(userId.Value, request, cancellationToken);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("api/server-invites/{inviteId:guid}/accept")]
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<ActionResult<ServerMemberResponse>> AcceptInvite(Guid inviteId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var response = await _governanceService.AcceptInviteAsync(userId.Value, inviteId, cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var response = await this._governanceService.AcceptInviteAsync(userId.Value, inviteId, cancellationToken);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("api/server-invites/{inviteId:guid}/decline")]
         [EnableRateLimiting(AbuseRateLimitPolicyNames.Invites)]
         public async Task<IActionResult> DeclineInvite(Guid inviteId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return await _governanceService.DeclineInviteAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return await this._governanceService.DeclineInviteAsync(
                 userId.Value,
                 inviteId,
                 cancellationToken)
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [HttpPost("api/servers/{serverId:guid}/ownership-transfers")]
         public async Task<ActionResult<ServerOwnershipTransferResponse>> TransferOwnership(Guid serverId, [FromBody] TransferServerOwnershipRequest request, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var response = await _governanceService.TransferOwnershipAsync(userId.Value, serverId, request, cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var response = await this._governanceService.TransferOwnershipAsync(userId.Value, serverId, request, cancellationToken);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpGet("api/servers/{serverId:guid}/roles")]
@@ -160,51 +160,51 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] ServerRoleQueryRequest query,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var response = await _governanceService.GetRolesAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var response = await this._governanceService.GetRolesAsync(
                 userId.Value,
                 serverId,
                 query,
                 cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("api/servers/{serverId:guid}/roles")]
         public async Task<ActionResult<ServerRoleResponse>> CreateRole(Guid serverId, [FromBody] CreateServerRoleRequest request, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var result = await _governanceService.CreateRoleAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var result = await this._governanceService.CreateRoleAsync(
                 userId.Value,
                 serverId,
                 request,
                 cancellationToken);
             return result.Status switch
             {
-                CreateServerRoleStatus.Success => Ok(result.Role),
-                CreateServerRoleStatus.InvalidRequest => BadRequest(
+                CreateServerRoleStatus.Success => this.Ok(result.Role),
+                CreateServerRoleStatus.InvalidRequest => this.BadRequest(
                     new { code = "invalid_role_create" }),
-                CreateServerRoleStatus.Conflict => Conflict(
+                CreateServerRoleStatus.Conflict => this.Conflict(
                     new { code = "server_role_conflict" }),
-                CreateServerRoleStatus.TitleConflict => Conflict(
+                CreateServerRoleStatus.TitleConflict => this.Conflict(
                     new { code = "server_role_title_conflict" }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
 
         [HttpPatch("api/servers/{serverId:guid}/roles/{roleId:guid}/permissions")]
         public async Task<ActionResult<ServerRoleResponse>> UpdateRolePermissions(Guid serverId, Guid roleId, [FromBody] UpdateServerRolePermissionsRequest request, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var result = await _governanceService.UpdateRolePermissionsAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var result = await this._governanceService.UpdateRolePermissionsAsync(
                 userId.Value,
                 serverId,
                 roleId,
                 request,
                 cancellationToken);
-            return ToUpdateRoleActionResult(result);
+            return this.ToUpdateRoleActionResult(result);
         }
 
         [HttpPatch("api/servers/{serverId:guid}/roles/{roleId:guid}")]
@@ -214,15 +214,15 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] UpdateServerRoleRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var result = await _governanceService.UpdateRoleAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var result = await this._governanceService.UpdateRoleAsync(
                 userId.Value,
                 serverId,
                 roleId,
                 request,
                 cancellationToken);
-            return ToUpdateRoleActionResult(result);
+            return this.ToUpdateRoleActionResult(result);
         }
 
         [HttpPost("api/servers/{serverId:guid}/roles/{roleId:guid}/duplicate")]
@@ -232,9 +232,9 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] DuplicateServerRoleRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var result = await _governanceService.DuplicateRoleAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var result = await this._governanceService.DuplicateRoleAsync(
                 userId.Value,
                 serverId,
                 roleId,
@@ -242,16 +242,16 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 cancellationToken);
             return result.Status switch
             {
-                DuplicateServerRoleStatus.Success => Ok(result.Role),
-                DuplicateServerRoleStatus.InvalidRequest => BadRequest(
+                DuplicateServerRoleStatus.Success => this.Ok(result.Role),
+                DuplicateServerRoleStatus.InvalidRequest => this.BadRequest(
                     new { code = "invalid_role_duplicate" }),
-                DuplicateServerRoleStatus.Conflict => Conflict(
+                DuplicateServerRoleStatus.Conflict => this.Conflict(
                     new { code = "server_role_conflict" }),
-                DuplicateServerRoleStatus.TitleConflict => Conflict(
+                DuplicateServerRoleStatus.TitleConflict => this.Conflict(
                     new { code = "server_role_title_conflict" }),
-                DuplicateServerRoleStatus.AdministratorConfirmationRequired => Conflict(
+                DuplicateServerRoleStatus.AdministratorConfirmationRequired => this.Conflict(
                     new { code = "server_role_administrator_confirmation_required" }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
 
@@ -261,14 +261,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid roleId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var impact = await _governanceService.GetRoleDeletionImpactAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var impact = await this._governanceService.GetRoleDeletionImpactAsync(
                 userId.Value,
                 serverId,
                 roleId,
                 cancellationToken);
-            return impact == null ? NotFound() : Ok(impact);
+            return impact == null ? this.NotFound() : this.Ok(impact);
         }
 
         [HttpDelete("api/servers/{serverId:guid}/roles/{roleId:guid}")]
@@ -278,9 +278,9 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] Guid expectedVersion,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var result = await _governanceService.DeleteRoleAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var result = await this._governanceService.DeleteRoleAsync(
                 userId.Value,
                 serverId,
                 roleId,
@@ -288,17 +288,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 cancellationToken);
             return result.Status switch
             {
-                DeleteServerRoleStatus.Success => NoContent(),
-                DeleteServerRoleStatus.InvalidRequest => BadRequest(
+                DeleteServerRoleStatus.Success => this.NoContent(),
+                DeleteServerRoleStatus.InvalidRequest => this.BadRequest(
                     new { code = "invalid_role_delete" }),
-                DeleteServerRoleStatus.Conflict => Conflict(
+                DeleteServerRoleStatus.Conflict => this.Conflict(
                     new { code = "server_role_conflict" }),
-                DeleteServerRoleStatus.HasDependencies => Conflict(new
+                DeleteServerRoleStatus.HasDependencies => this.Conflict(new
                 {
                     code = "server_role_has_dependencies",
                     impact = result.Impact
                 }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
 
@@ -308,55 +308,55 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] ReorderServerRolesRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var result = await _governanceService.ReorderRolesAsync(
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var result = await this._governanceService.ReorderRolesAsync(
                 userId.Value,
                 serverId,
                 request,
                 cancellationToken);
             return result.Status switch
             {
-                ReorderServerRolesStatus.Success => NoContent(),
-                ReorderServerRolesStatus.InvalidRequest => BadRequest(
+                ReorderServerRolesStatus.Success => this.NoContent(),
+                ReorderServerRolesStatus.InvalidRequest => this.BadRequest(
                     new { code = "invalid_role_order" }),
-                ReorderServerRolesStatus.Conflict => Conflict(
+                ReorderServerRolesStatus.Conflict => this.Conflict(
                     new { code = "server_role_conflict" }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
 
         [HttpPost("api/servers/{serverId:guid}/members/{memberId:guid}/roles")]
         public async Task<ActionResult<ServerMemberRoleResponse>> AssignRole(Guid serverId, Guid memberId, [FromBody] AssignServerRoleRequest request, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var response = await _governanceService.AssignRoleAsync(userId.Value, serverId, memberId, request, cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var response = await this._governanceService.AssignRoleAsync(userId.Value, serverId, memberId, request, cancellationToken);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpDelete("api/servers/{serverId:guid}/member-roles/{memberRoleId:guid}")]
         public async Task<IActionResult> RevokeRole(Guid serverId, Guid memberRoleId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            return await _governanceService.RevokeMemberRoleAsync(userId.Value, serverId, memberRoleId, cancellationToken)
-                ? NoContent()
-                : NotFound();
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            return await this._governanceService.RevokeMemberRoleAsync(userId.Value, serverId, memberRoleId, cancellationToken)
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [HttpGet("api/servers/{serverId:guid}/audit-logs")]
         public async Task<ActionResult<IReadOnlyList<ServerAuditLogResponse>>> GetAuditLogs(Guid serverId, CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
-            var response = await _governanceService.GetAuditLogsAsync(userId.Value, serverId, cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            var userId = this.GetCurrentUserId();
+            if (userId == null) return this.Unauthorized();
+            var response = await this._governanceService.GetAuditLogsAsync(userId.Value, serverId, cancellationToken);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
             return Guid.TryParse(userIdValue, out var userId) ? userId : null;
         }
 
@@ -365,14 +365,14 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         {
             return result.Status switch
             {
-                UpdateServerRoleStatus.Success => Ok(result.Role),
-                UpdateServerRoleStatus.InvalidRequest => BadRequest(
+                UpdateServerRoleStatus.Success => this.Ok(result.Role),
+                UpdateServerRoleStatus.InvalidRequest => this.BadRequest(
                     new { code = "invalid_role_update" }),
-                UpdateServerRoleStatus.Conflict => Conflict(
+                UpdateServerRoleStatus.Conflict => this.Conflict(
                     new { code = "server_role_conflict" }),
-                UpdateServerRoleStatus.TitleConflict => Conflict(
+                UpdateServerRoleStatus.TitleConflict => this.Conflict(
                     new { code = "server_role_title_conflict" }),
-                _ => NotFound()
+                _ => this.NotFound()
             };
         }
     }

@@ -2,9 +2,9 @@ using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.DataBase.Models.UsersModels;
+using ArcaneLink.Services.Notifications.Abstractions;
 using ArcaneLink.Services.Realtime;
 using ArcaneLink.Services.Realtime.Abstractions;
-using ArcaneLink.Services.Notifications.Abstractions;
 using ArcaneLink.Services.Users.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -28,19 +28,19 @@ namespace ArcaneLink.Services.Users
             IUserPresenceCoordinator presenceCoordinator,
             ILogger<FriendService> logger)
         {
-            _db = db;
-            _realtime = realtime;
-            _notifications = notifications;
-            _presencePolicy = presencePolicy;
-            _presenceCoordinator = presenceCoordinator;
-            _logger = logger;
+            this._db = db;
+            this._realtime = realtime;
+            this._notifications = notifications;
+            this._presencePolicy = presencePolicy;
+            this._presenceCoordinator = presenceCoordinator;
+            this._logger = logger;
         }
 
         public async Task<IReadOnlyList<UserFriendResponse>> GetFriendsAsync(
             Guid currentUserId,
             CancellationToken cancellationToken = default)
         {
-            var friends = await _db.UserFriends
+            var friends = await this._db.UserFriends
                 .AsNoTracking()
                 .Include(x => x.FriendUser).ThenInclude(x => x.Profile)
                     .ThenInclude(x => x.Tags)
@@ -52,7 +52,7 @@ namespace ArcaneLink.Services.Users
                 .OrderBy(x => x.FriendUser.Profile.DisplayNameNorm)
                 .ToListAsync(cancellationToken);
 
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 friends.Select(friend => friend.FriendUserId),
                 cancellationToken);
@@ -66,7 +66,7 @@ namespace ArcaneLink.Services.Users
             Guid currentUserId,
             CancellationToken cancellationToken = default)
         {
-            var requests = await _db.FriendRequests
+            var requests = await this._db.FriendRequests
                 .AsNoTracking()
                 .Include(x => x.Status)
                 .Include(x => x.FromUser).ThenInclude(x => x.Profile)
@@ -83,7 +83,7 @@ namespace ArcaneLink.Services.Users
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
 
-            var presence = await ResolveRequestPresenceAsync(
+            var presence = await this.ResolveRequestPresenceAsync(
                 currentUserId,
                 requests,
                 cancellationToken);
@@ -97,7 +97,7 @@ namespace ArcaneLink.Services.Users
             Guid currentUserId,
             CancellationToken cancellationToken = default)
         {
-            var requests = await _db.FriendRequests
+            var requests = await this._db.FriendRequests
                 .AsNoTracking()
                 .Include(x => x.Status)
                 .Include(x => x.FromUser).ThenInclude(x => x.Profile)
@@ -114,7 +114,7 @@ namespace ArcaneLink.Services.Users
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
 
-            var presence = await ResolveRequestPresenceAsync(
+            var presence = await this.ResolveRequestPresenceAsync(
                 currentUserId,
                 requests,
                 cancellationToken);
@@ -142,25 +142,25 @@ namespace ArcaneLink.Services.Users
             // instance serialized. PostgreSQL additionally locks both user rows
             // in database GUID order, so A -> B and B -> A are serialized across
             // every application instance before either pending-state check.
-            await _presenceCoordinator.ExecuteMutationAsync(
+            await this._presenceCoordinator.ExecuteMutationAsync(
                 [currentUserId, request.ToUserId],
                 async token =>
                 {
                     await using var transaction =
-                        await _db.Database.BeginTransactionAsync(token);
-                    await LockFriendMutationUsersAsync(
+                        await this._db.Database.BeginTransactionAsync(token);
+                    await this.LockFriendMutationUsersAsync(
                         currentUserId,
                         request.ToUserId,
                         token);
 
-                    if (!await IsActiveUserAsync(currentUserId, token) ||
-                        !await IsActiveUserAsync(request.ToUserId, token) ||
-                        await AreFriendsAsync(currentUserId, request.ToUserId, token))
+                    if (!await this.IsActiveUserAsync(currentUserId, token) ||
+                        !await this.IsActiveUserAsync(request.ToUserId, token) ||
+                        await this.AreFriendsAsync(currentUserId, request.ToUserId, token))
                     {
                         return;
                     }
 
-                    var reverseRequest = await _db.FriendRequests
+                    var reverseRequest = await this._db.FriendRequests
                         .FirstOrDefaultAsync(
                             x => x.FromUserId == request.ToUserId &&
                                  x.ToUserId == currentUserId &&
@@ -169,7 +169,7 @@ namespace ArcaneLink.Services.Users
 
                     if (reverseRequest != null)
                     {
-                        response = await AcceptRequestCoreAsync(
+                        response = await this.AcceptRequestCoreAsync(
                             currentUserId,
                             reverseRequest,
                             token);
@@ -178,7 +178,7 @@ namespace ArcaneLink.Services.Users
                         return;
                     }
 
-                    var existing = await _db.FriendRequests
+                    var existing = await this._db.FriendRequests
                         .Include(x => x.Status)
                         .Include(x => x.FromUser).ThenInclude(x => x.Profile)
                             .ThenInclude(x => x.Tags)
@@ -195,7 +195,7 @@ namespace ArcaneLink.Services.Users
                     if (existing != null)
                     {
                         await transaction.CommitAsync(token);
-                        response = await ToRequestResponseAsync(
+                        response = await this.ToRequestResponseAsync(
                             currentUserId,
                             existing,
                             token);
@@ -213,13 +213,13 @@ namespace ArcaneLink.Services.Users
                         UpdatedAt = now
                     };
 
-                    _db.FriendRequests.Add(friendRequest);
-                    await _notifications.StageFriendRequestAsync(
+                    this._db.FriendRequests.Add(friendRequest);
+                    await this._notifications.StageFriendRequestAsync(
                         friendRequest.ToUserId,
                         friendRequest.FromUserId,
                         token);
-                    await _db.SaveChangesAsync(token);
-                    response = await LoadRequestResponseAsync(
+                    await this._db.SaveChangesAsync(token);
+                    response = await this.LoadRequestResponseAsync(
                         currentUserId,
                         friendRequest.Id,
                         token);
@@ -230,13 +230,13 @@ namespace ArcaneLink.Services.Users
 
             if (acceptedReverseRequest != null)
             {
-                await TryNotifyPostCommitAsync(
+                await this.TryNotifyPostCommitAsync(
                     acceptedReverseRequest.Id,
                     "presence audience refresh",
-                    token => _presenceCoordinator.AudienceChangedAsync(
+                    token => this._presenceCoordinator.AudienceChangedAsync(
                         [acceptedReverseRequest.FromUserId, acceptedReverseRequest.ToUserId],
                         token));
-                await NotifyFriendRequestClosedAsync(acceptedReverseRequest);
+                await this.NotifyFriendRequestClosedAsync(acceptedReverseRequest);
                 return response;
             }
 
@@ -245,24 +245,24 @@ namespace ArcaneLink.Services.Users
                 return response;
             }
 
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 createdRequest.Id,
                 "notification-list refresh",
-                token => _notifications.NotifyChangedAsync(
+                token => this._notifications.NotifyChangedAsync(
                     [createdRequest.ToUserId],
                     token));
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 createdRequest.Id,
                 "receiver friend-request event",
-                token => _realtime.NotifyUserAsync(
+                token => this._realtime.NotifyUserAsync(
                     createdRequest.ToUserId,
                     RealtimeEventNames.FriendRequestReceived,
                     new { requestId = createdRequest.Id, fromUserId = currentUserId },
                     token));
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 createdRequest.Id,
                 "sender friend-request event",
-                token => _realtime.NotifyUserAsync(
+                token => this._realtime.NotifyUserAsync(
                     currentUserId,
                     RealtimeEventNames.FriendRequestUpdated,
                     new { requestId = createdRequest.Id, toUserId = createdRequest.ToUserId },
@@ -276,7 +276,7 @@ namespace ArcaneLink.Services.Users
             Guid requestId,
             CancellationToken cancellationToken = default)
         {
-            var participants = await _db.FriendRequests
+            var participants = await this._db.FriendRequests
                 .AsNoTracking()
                 .Where(
                     x => x.Id == requestId &&
@@ -292,18 +292,18 @@ namespace ArcaneLink.Services.Users
 
             FriendRequestResponse? response = null;
             FriendRequest? acceptedRequest = null;
-            await _presenceCoordinator.ExecuteMutationAsync(
+            await this._presenceCoordinator.ExecuteMutationAsync(
                 [participants.FromUserId, participants.ToUserId],
                 async token =>
                 {
                     await using var transaction =
-                        await _db.Database.BeginTransactionAsync(token);
-                    await LockFriendMutationUsersAsync(
+                        await this._db.Database.BeginTransactionAsync(token);
+                    await this.LockFriendMutationUsersAsync(
                         participants.FromUserId,
                         participants.ToUserId,
                         token);
 
-                    var request = await _db.FriendRequests
+                    var request = await this._db.FriendRequests
                         .FirstOrDefaultAsync(
                             x => x.Id == requestId &&
                                  x.ToUserId == currentUserId &&
@@ -314,7 +314,7 @@ namespace ArcaneLink.Services.Users
                         return;
                     }
 
-                    response = await AcceptRequestCoreAsync(
+                    response = await this.AcceptRequestCoreAsync(
                         currentUserId,
                         request,
                         token);
@@ -333,13 +333,13 @@ namespace ArcaneLink.Services.Users
                 return response;
             }
 
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 acceptedRequest.Id,
                 "presence audience refresh",
-                token => _presenceCoordinator.AudienceChangedAsync(
+                token => this._presenceCoordinator.AudienceChangedAsync(
                     [acceptedRequest.FromUserId, acceptedRequest.ToUserId],
                     token));
-            await NotifyFriendRequestClosedAsync(acceptedRequest);
+            await this.NotifyFriendRequestClosedAsync(acceptedRequest);
             return response;
         }
 
@@ -348,7 +348,7 @@ namespace ArcaneLink.Services.Users
             Guid requestId,
             CancellationToken cancellationToken = default)
         {
-            return await SetTerminalRequestStatusAsync(
+            return await this.SetTerminalRequestStatusAsync(
                 currentUserId,
                 requestId,
                 FriendRequestStatusIds.Declined,
@@ -361,7 +361,7 @@ namespace ArcaneLink.Services.Users
             Guid requestId,
             CancellationToken cancellationToken = default)
         {
-            return await SetTerminalRequestStatusAsync(
+            return await this.SetTerminalRequestStatusAsync(
                 currentUserId,
                 requestId,
                 FriendRequestStatusIds.Canceled,
@@ -375,18 +375,18 @@ namespace ArcaneLink.Services.Users
             CancellationToken cancellationToken = default)
         {
             var removed = false;
-            await _presenceCoordinator.ExecuteMutationAsync(
+            await this._presenceCoordinator.ExecuteMutationAsync(
                 [currentUserId, friendUserId],
                 async token =>
                 {
                     await using var transaction =
-                        await _db.Database.BeginTransactionAsync(token);
-                    await LockFriendMutationUsersAsync(
+                        await this._db.Database.BeginTransactionAsync(token);
+                    await this.LockFriendMutationUsersAsync(
                         currentUserId,
                         friendUserId,
                         token);
 
-                    var rows = await _db.UserFriends
+                    var rows = await this._db.UserFriends
                         .Where(
                             x => (x.UserId == currentUserId && x.FriendUserId == friendUserId) ||
                                  (x.UserId == friendUserId && x.FriendUserId == currentUserId))
@@ -396,8 +396,8 @@ namespace ArcaneLink.Services.Users
                         return;
                     }
 
-                    _db.UserFriends.RemoveRange(rows);
-                    await _db.SaveChangesAsync(token);
+                    this._db.UserFriends.RemoveRange(rows);
+                    await this._db.SaveChangesAsync(token);
                     await transaction.CommitAsync(token);
                     removed = true;
                 },
@@ -408,24 +408,24 @@ namespace ArcaneLink.Services.Users
                 return false;
             }
 
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 friendUserId,
                 "presence audience refresh after friend removal",
-                token => _presenceCoordinator.AudienceChangedAsync(
+                token => this._presenceCoordinator.AudienceChangedAsync(
                     [currentUserId, friendUserId],
                     token));
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 friendUserId,
                 "current-user friend-list event after friend removal",
-                token => _realtime.NotifyUserAsync(
+                token => this._realtime.NotifyUserAsync(
                     currentUserId,
                     RealtimeEventNames.FriendListChanged,
                     new { friendUserId },
                     token));
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 friendUserId,
                 "removed-user friend-list event after friend removal",
-                token => _realtime.NotifyUserAsync(
+                token => this._realtime.NotifyUserAsync(
                     friendUserId,
                     RealtimeEventNames.FriendListChanged,
                     new { friendUserId = currentUserId },
@@ -438,12 +438,12 @@ namespace ArcaneLink.Services.Users
             Guid secondUserId,
             CancellationToken cancellationToken)
         {
-            if (!_db.Database.IsNpgsql())
+            if (!this._db.Database.IsNpgsql())
             {
                 return;
             }
 
-            _ = await _db.Users
+            _ = await this._db.Users
                 .FromSqlInterpolated($$"""
                     SELECT *
                     FROM users
@@ -457,45 +457,45 @@ namespace ArcaneLink.Services.Users
 
         private async Task NotifyFriendRequestClosedAsync(FriendRequest request)
         {
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 request.Id,
                 "notification-list refresh",
-                token => _notifications.NotifyChangedAsync(
+                token => this._notifications.NotifyChangedAsync(
                     [request.ToUserId],
                     token));
 
             if (request.StatusId == FriendRequestStatusIds.Accepted)
             {
-                await TryNotifyPostCommitAsync(
+                await this.TryNotifyPostCommitAsync(
                     request.Id,
                     "sender friend-list event",
-                    token => _realtime.NotifyUserAsync(
+                    token => this._realtime.NotifyUserAsync(
                         request.FromUserId,
                         RealtimeEventNames.FriendListChanged,
                         new { requestId = request.Id, friendUserId = request.ToUserId },
                         token));
-                await TryNotifyPostCommitAsync(
+                await this.TryNotifyPostCommitAsync(
                     request.Id,
                     "receiver friend-list event",
-                    token => _realtime.NotifyUserAsync(
+                    token => this._realtime.NotifyUserAsync(
                         request.ToUserId,
                         RealtimeEventNames.FriendListChanged,
                         new { requestId = request.Id, friendUserId = request.FromUserId },
                         token));
             }
 
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 request.Id,
                 "sender friend-request event",
-                token => _realtime.NotifyUserAsync(
+                token => this._realtime.NotifyUserAsync(
                     request.FromUserId,
                     RealtimeEventNames.FriendRequestUpdated,
                     new { requestId = request.Id, statusId = request.StatusId },
                     token));
-            await TryNotifyPostCommitAsync(
+            await this.TryNotifyPostCommitAsync(
                 request.Id,
                 "receiver friend-request event",
-                token => _realtime.NotifyUserAsync(
+                token => this._realtime.NotifyUserAsync(
                     request.ToUserId,
                     RealtimeEventNames.FriendRequestUpdated,
                     new { requestId = request.Id, statusId = request.StatusId },
@@ -513,7 +513,7 @@ namespace ArcaneLink.Services.Users
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Friend mutation {SubjectId} committed, but post-commit operation {Operation} failed.",
                     subjectId,
@@ -527,8 +527,8 @@ namespace ArcaneLink.Services.Users
             CancellationToken cancellationToken)
         {
             if (request.ToUserId != currentUserId ||
-                !await IsActiveUserAsync(request.FromUserId, cancellationToken) ||
-                !await IsActiveUserAsync(request.ToUserId, cancellationToken))
+                !await this.IsActiveUserAsync(request.FromUserId, cancellationToken) ||
+                !await this.IsActiveUserAsync(request.ToUserId, cancellationToken))
             {
                 return null;
             }
@@ -538,19 +538,19 @@ namespace ArcaneLink.Services.Users
             request.UpdatedAt = now;
             request.RespondedAt = now;
 
-            await EnsureFriendRowsAsync(
+            await this.EnsureFriendRowsAsync(
                 request.FromUserId,
                 request.ToUserId,
                 request.Id,
                 now,
                 cancellationToken);
 
-            await _notifications.StageFriendRequestReadAsync(
+            await this._notifications.StageFriendRequestReadAsync(
                 request.ToUserId,
                 request.FromUserId,
                 cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
-            return await LoadRequestResponseAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            return await this.LoadRequestResponseAsync(
                 currentUserId,
                 request.Id,
                 cancellationToken);
@@ -563,12 +563,12 @@ namespace ArcaneLink.Services.Users
             DateTime now,
             CancellationToken cancellationToken)
         {
-            if (!await _db.UserFriends.AnyAsync(
+            if (!await this._db.UserFriends.AnyAsync(
                     x => x.UserId == firstUserId &&
                          x.FriendUserId == secondUserId,
                     cancellationToken))
             {
-                _db.UserFriends.Add(new UserFriend
+                this._db.UserFriends.Add(new UserFriend
                 {
                     UserId = firstUserId,
                     FriendUserId = secondUserId,
@@ -577,12 +577,12 @@ namespace ArcaneLink.Services.Users
                 });
             }
 
-            if (!await _db.UserFriends.AnyAsync(
+            if (!await this._db.UserFriends.AnyAsync(
                     x => x.UserId == secondUserId &&
                          x.FriendUserId == firstUserId,
                     cancellationToken))
             {
-                _db.UserFriends.Add(new UserFriend
+                this._db.UserFriends.Add(new UserFriend
                 {
                     UserId = secondUserId,
                     FriendUserId = firstUserId,
@@ -599,7 +599,7 @@ namespace ArcaneLink.Services.Users
             bool requireReceiver,
             CancellationToken cancellationToken)
         {
-            var participants = await _db.FriendRequests
+            var participants = await this._db.FriendRequests
                 .AsNoTracking()
                 .Where(
                     x => x.Id == requestId &&
@@ -617,18 +617,18 @@ namespace ArcaneLink.Services.Users
 
             FriendRequestResponse? response = null;
             FriendRequest? closedRequest = null;
-            await _presenceCoordinator.ExecuteMutationAsync(
+            await this._presenceCoordinator.ExecuteMutationAsync(
                 [participants.FromUserId, participants.ToUserId],
                 async token =>
                 {
                     await using var transaction =
-                        await _db.Database.BeginTransactionAsync(token);
-                    await LockFriendMutationUsersAsync(
+                        await this._db.Database.BeginTransactionAsync(token);
+                    await this.LockFriendMutationUsersAsync(
                         participants.FromUserId,
                         participants.ToUserId,
                         token);
 
-                    var request = await _db.FriendRequests
+                    var request = await this._db.FriendRequests
                         .FirstOrDefaultAsync(
                             x => x.Id == requestId &&
                                  x.StatusId == FriendRequestStatusIds.Pending &&
@@ -646,12 +646,12 @@ namespace ArcaneLink.Services.Users
                     request.UpdatedAt = now;
                     request.RespondedAt = now;
 
-                    await _notifications.StageFriendRequestReadAsync(
+                    await this._notifications.StageFriendRequestReadAsync(
                         request.ToUserId,
                         request.FromUserId,
                         token);
-                    await _db.SaveChangesAsync(token);
-                    response = await LoadRequestResponseAsync(
+                    await this._db.SaveChangesAsync(token);
+                    response = await this.LoadRequestResponseAsync(
                         currentUserId,
                         request.Id,
                         token);
@@ -665,7 +665,7 @@ namespace ArcaneLink.Services.Users
                 return response;
             }
 
-            await NotifyFriendRequestClosedAsync(closedRequest);
+            await this.NotifyFriendRequestClosedAsync(closedRequest);
             return response;
         }
 
@@ -674,7 +674,7 @@ namespace ArcaneLink.Services.Users
             Guid requestId,
             CancellationToken cancellationToken)
         {
-            var request = await _db.FriendRequests
+            var request = await this._db.FriendRequests
                 .AsNoTracking()
                 .Include(x => x.Status)
                 .Include(x => x.FromUser).ThenInclude(x => x.Profile)
@@ -687,7 +687,7 @@ namespace ArcaneLink.Services.Users
 
             return request == null
                 ? null
-                : await ToRequestResponseAsync(
+                : await this.ToRequestResponseAsync(
                     currentUserId,
                     request,
                     cancellationToken);
@@ -697,7 +697,7 @@ namespace ArcaneLink.Services.Users
             Guid userId,
             CancellationToken cancellationToken)
         {
-            return await _db.Users.AnyAsync(
+            return await this._db.Users.AnyAsync(
                 x => x.Id == userId &&
                      x.DeletedAt == null &&
                      x.StatusId == UserStatusIds.Active,
@@ -709,7 +709,7 @@ namespace ArcaneLink.Services.Users
             Guid friendUserId,
             CancellationToken cancellationToken)
         {
-            return await _db.UserFriends.AnyAsync(
+            return await this._db.UserFriends.AnyAsync(
                 x => x.UserId == currentUserId &&
                      x.FriendUserId == friendUserId,
                 cancellationToken);
@@ -720,7 +720,7 @@ namespace ArcaneLink.Services.Users
             FriendRequest request,
             CancellationToken cancellationToken)
         {
-            var presence = await ResolveRequestPresenceAsync(
+            var presence = await this.ResolveRequestPresenceAsync(
                 currentUserId,
                 [request],
                 cancellationToken);
@@ -733,7 +733,7 @@ namespace ArcaneLink.Services.Users
             IEnumerable<FriendRequest> requests,
             CancellationToken cancellationToken)
         {
-            return await _presencePolicy.ResolveAsync(
+            return await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 requests.SelectMany(request => new[]
                 {

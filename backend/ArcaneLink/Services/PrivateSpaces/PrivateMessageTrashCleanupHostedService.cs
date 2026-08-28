@@ -11,18 +11,18 @@ namespace ArcaneLink.Services.PrivateSpaces
             IServiceScopeFactory scopeFactory,
             ILogger<PrivateMessageTrashCleanupHostedService> logger)
         {
-            _scopeFactory = scopeFactory;
-            _logger = logger;
+            this._scopeFactory = scopeFactory;
+            this._logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await RunCleanupSafelyAsync(stoppingToken);
+            await this.RunCleanupSafelyAsync(stoppingToken);
 
             using var timer = new PeriodicTimer(Interval);
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
-                await RunCleanupSafelyAsync(stoppingToken);
+                await this.RunCleanupSafelyAsync(stoppingToken);
             }
         }
 
@@ -30,7 +30,7 @@ namespace ArcaneLink.Services.PrivateSpaces
         {
             try
             {
-                using var scope = _scopeFactory.CreateScope();
+                using var scope = this._scopeFactory.CreateScope();
                 var runner = scope.ServiceProvider
                     .GetRequiredService<PrivateMessageTrashCleanupRunner>();
                 await runner.RunOnceAsync(cancellationToken);
@@ -40,7 +40,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             }
             catch (Exception exception)
             {
-                _logger.LogError(
+                this._logger.LogError(
                     exception,
                     "Expired private-message trash cleanup failed.");
             }

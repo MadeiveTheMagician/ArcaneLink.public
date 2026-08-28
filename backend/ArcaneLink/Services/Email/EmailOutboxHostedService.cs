@@ -16,17 +16,17 @@ public sealed class EmailOutboxHostedService : BackgroundService
         IOptions<EmailDeliveryOptions> deliveryOptions,
         ILogger<EmailOutboxHostedService> logger)
     {
-        _scopeFactory = scopeFactory;
-        _options = options.Value;
-        _deliveryOptions = deliveryOptions.Value;
-        _logger = logger;
+        this._scopeFactory = scopeFactory;
+        this._options = options.Value;
+        this._deliveryOptions = deliveryOptions.Value;
+        this._logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!_deliveryOptions.Enabled)
+        if (!this._deliveryOptions.Enabled)
         {
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 "Email delivery is disabled. Account emails will remain safely queued until SMTP is configured and the service is restarted.");
             return;
         }
@@ -36,7 +36,7 @@ public sealed class EmailOutboxHostedService : BackgroundService
             var processed = false;
             try
             {
-                await using var scope = _scopeFactory.CreateAsyncScope();
+                await using var scope = this._scopeFactory.CreateAsyncScope();
                 var processor = scope.ServiceProvider.GetRequiredService<EmailOutboxProcessor>();
                 processed = await processor.ProcessOneAsync(stoppingToken);
             }
@@ -46,7 +46,7 @@ public sealed class EmailOutboxHostedService : BackgroundService
             }
             catch (Exception exception)
             {
-                _logger.LogError(
+                this._logger.LogError(
                     exception,
                     "Email outbox polling failed; the worker will retry after the poll interval.");
             }
@@ -54,7 +54,7 @@ public sealed class EmailOutboxHostedService : BackgroundService
             if (!processed)
             {
                 await Task.Delay(
-                    TimeSpan.FromSeconds(_options.PollIntervalSeconds),
+                    TimeSpan.FromSeconds(this._options.PollIntervalSeconds),
                     stoppingToken);
             }
         }

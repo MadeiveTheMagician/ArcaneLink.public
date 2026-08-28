@@ -25,9 +25,9 @@ namespace ArcaneLink.Services.Realtime
             ISpaceAuthorizationService authorization,
             ServerSpaceRealtimeAudienceCache cache)
         {
-            _db = db;
-            _authorization = authorization;
-            _cache = cache;
+            this._db = db;
+            this._authorization = authorization;
+            this._cache = cache;
         }
 
         public async Task<IReadOnlyList<Guid>> GetAuthorizedUserIdsAsync(
@@ -36,7 +36,7 @@ namespace ArcaneLink.Services.Realtime
             SpaceAction action,
             CancellationToken cancellationToken = default)
         {
-            var serverState = await _db.Servers
+            var serverState = await this._db.Servers
                 .AsNoTracking()
                 .Where(server =>
                     server.Id == serverId &&
@@ -48,7 +48,7 @@ namespace ArcaneLink.Services.Realtime
                 return [];
             }
 
-            var activeMemberUserIds = _db.ServerMembers
+            var activeMemberUserIds = this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.ServerId == serverId &&
@@ -57,7 +57,7 @@ namespace ArcaneLink.Services.Realtime
                     member.User.DeletedAt == null &&
                     member.User.StatusId == UserStatusIds.Active)
                 .Select(member => member.UserId);
-            var activeOwnerUserIds = _db.Servers
+            var activeOwnerUserIds = this._db.Servers
                 .AsNoTracking()
                 .Where(server =>
                     server.Id == serverId &&
@@ -68,7 +68,7 @@ namespace ArcaneLink.Services.Realtime
             var candidates = await activeMemberUserIds
                 .Union(activeOwnerUserIds)
                 .ToListAsync(cancellationToken);
-            if (_cache.TryGet(
+            if (this._cache.TryGet(
                     serverId,
                     spaceId,
                     action,
@@ -81,13 +81,13 @@ namespace ArcaneLink.Services.Realtime
                     .ToList();
             }
 
-            var authorized = await _authorization.FilterAuthorizedUserIdsAsync(
+            var authorized = await this._authorization.FilterAuthorizedUserIdsAsync(
                 serverId,
                 spaceId,
                 candidates,
                 action,
                 cancellationToken);
-            _cache.Set(
+            this._cache.Set(
                 serverId,
                 spaceId,
                 action,

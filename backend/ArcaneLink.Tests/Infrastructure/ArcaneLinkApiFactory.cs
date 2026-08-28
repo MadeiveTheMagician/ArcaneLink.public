@@ -6,10 +6,10 @@ using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.Services.Assets;
 using ArcaneLink.Services.Assets.Storage;
 using ArcaneLink.Services.Assets.Storage.Abstractions;
-using ArcaneLink.Services.PrivateSpaces;
 using ArcaneLink.Services.Email;
-using ArcaneLink.Services.RequestInfo.Abstractions;
+using ArcaneLink.Services.PrivateSpaces;
 using ArcaneLink.Services.Realtime.Abstractions;
+using ArcaneLink.Services.RequestInfo.Abstractions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -41,11 +41,11 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
 
     internal ArcaneLinkApiFactory(Action<IServiceCollection> configureAdditionalServices)
     {
-        _configureAdditionalServices = configureAdditionalServices;
+        this._configureAdditionalServices = configureAdditionalServices;
     }
 
     public string AssetStorageRootPath =>
-        Path.Combine(_testContentRoot, "storage");
+        Path.Combine(this._testContentRoot, "storage");
 
     public static readonly Guid OwnerUserId =
         Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
@@ -80,7 +80,7 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
                 ["JwtSettings:DeviceSessionIdleExpirationDays"] = "180",
                 ["JwtSettings:DeviceSessionAbsoluteExpirationDays"] = "365",
                 ["DataProtection:KeysPath"] = Path.Combine(
-                    _testContentRoot,
+                    this._testContentRoot,
                     "data-protection-keys")
             });
         });
@@ -99,16 +99,16 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
             RemoveHostedService<PrivateMessageTrashCleanupHostedService>(services);
             RemoveHostedService<EmailOutboxHostedService>(services);
 
-            _connection.Open();
+            this._connection.Open();
 
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlite(_connection));
+                options.UseSqlite(this._connection));
             services.AddScoped<IRequestInfoService, TestRequestInfoService>();
             services.AddScoped<IRealtimeNotificationService, NoOpRealtimeNotificationService>();
             services.AddScoped<IAssetStorageService>(_ =>
                 new LocalAssetStorageService(
-                    new TestAssetStorageEnvironment(_testContentRoot)));
-            _configureAdditionalServices?.Invoke(services);
+                    new TestAssetStorageEnvironment(this._testContentRoot)));
+            this._configureAdditionalServices?.Invoke(services);
         });
     }
 
@@ -170,7 +170,7 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
     {
         var host = base.CreateHost(builder);
 
-        if (!_isSeeded)
+        if (!this._isSeeded)
         {
             using var scope = host.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -178,7 +178,7 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
             db.Database.EnsureDeleted();
             db.Database.EnsureCreated();
             Seed(db);
-            _isSeeded = true;
+            this._isSeeded = true;
         }
 
         return host;
@@ -187,23 +187,23 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        _connection.Dispose();
+        this._connection.Dispose();
 
         if (disposing)
         {
-            DeleteTestContentRoot();
+            this.DeleteTestContentRoot();
         }
     }
 
     private void DeleteTestContentRoot()
     {
-        if (!Directory.Exists(_testContentRoot))
+        if (!Directory.Exists(this._testContentRoot))
         {
             return;
         }
 
         var tempRoot = Path.GetFullPath(Path.GetTempPath());
-        var targetRoot = Path.GetFullPath(_testContentRoot);
+        var targetRoot = Path.GetFullPath(this._testContentRoot);
         var relativeTarget = Path.GetRelativePath(tempRoot, targetRoot);
 
         if (Path.IsPathRooted(relativeTarget) ||
@@ -409,7 +409,7 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
     {
         public TestAssetStorageEnvironment(string contentRootPath)
         {
-            ContentRootPath = contentRootPath;
+            this.ContentRootPath = contentRootPath;
         }
 
         public string ApplicationName { get; set; } = "ArcaneLink.Tests";

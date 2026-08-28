@@ -8,7 +8,7 @@ namespace ArcaneLink.Services.Assets.Storage
 
         public LocalAssetStorageService(IWebHostEnvironment environment)
         {
-            _environment = environment;
+            this._environment = environment;
         }
 
         public async Task<AssetStorageSaveResult> SaveAsync(
@@ -29,7 +29,7 @@ namespace ArcaneLink.Services.Assets.Storage
                 .Replace('\\', '/');
 
             var absolutePath = Path.Combine(
-                _environment.ContentRootPath,
+                this._environment.ContentRootPath,
                 "storage",
                 storageKey.Replace('/', Path.DirectorySeparatorChar));
 
@@ -57,7 +57,7 @@ namespace ArcaneLink.Services.Assets.Storage
             string storageKey,
             CancellationToken cancellationToken = default)
         {
-            var absolutePath = GetSafeAbsolutePath(storageKey);
+            var absolutePath = this.GetSafeAbsolutePath(storageKey);
 
             if (!File.Exists(absolutePath))
             {
@@ -81,7 +81,7 @@ namespace ArcaneLink.Services.Assets.Storage
             string storageKey,
             CancellationToken cancellationToken = default)
         {
-            var absolutePath = GetSafeAbsolutePath(storageKey);
+            var absolutePath = this.GetSafeAbsolutePath(storageKey);
 
             if (File.Exists(absolutePath))
             {
@@ -94,7 +94,7 @@ namespace ArcaneLink.Services.Assets.Storage
         private string GetSafeAbsolutePath(string storageKey)
         {
             var storageRoot = Path.GetFullPath(
-                Path.Combine(_environment.ContentRootPath, "storage"));
+                Path.Combine(this._environment.ContentRootPath, "storage"));
             var normalizedStorageKey = storageKey
                 .Replace('\\', Path.DirectorySeparatorChar)
                 .Replace('/', Path.DirectorySeparatorChar);

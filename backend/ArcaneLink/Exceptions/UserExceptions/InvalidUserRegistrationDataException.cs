@@ -27,7 +27,7 @@ namespace ArcaneLink.Exceptions.UsersExceptions
             IReadOnlyList<PasswordValidationError> errors)
             : base(message)
         {
-            Errors = errors;
+            this.Errors = errors;
         }
 
         public IReadOnlyList<PasswordValidationError> Errors { get; } =

@@ -32,14 +32,14 @@ namespace ArcaneLink.Services.Spaces
             SpaceValidationService validation,
             SpaceRealtimeNotifier notifier)
         {
-            _db = db;
-            _access = access;
-            _authorization = authorization;
-            _serverAuthorization = serverAuthorization;
-            _legacySpaceAdapter = legacySpaceAdapter;
-            _legacyServerAdapter = legacyServerAdapter;
-            _validation = validation;
-            _notifier = notifier;
+            this._db = db;
+            this._access = access;
+            this._authorization = authorization;
+            this._serverAuthorization = serverAuthorization;
+            this._legacySpaceAdapter = legacySpaceAdapter;
+            this._legacyServerAdapter = legacyServerAdapter;
+            this._validation = validation;
+            this._notifier = notifier;
         }
 
         public async Task<SpacePermissionOverrideResponse?> UpsertPermissionOverrideAsync(
@@ -51,22 +51,22 @@ namespace ArcaneLink.Services.Spaces
         {
             if (!SpaceValidationService.IsValidOverrideTarget(request) ||
                 request.Allow == request.Deny ||
-                !await _validation.SpaceExistsAsync(serverId, spaceId, cancellationToken) ||
-                !await _validation.IsValidOverrideRoleAsync(serverId, request.RoleId, cancellationToken) ||
-                !await _validation.IsValidOverrideMemberAsync(serverId, request.MemberId, cancellationToken) ||
-                !await _validation.PermissionExistsAsync(request.PermissionId, cancellationToken))
+                !await this._validation.SpaceExistsAsync(serverId, spaceId, cancellationToken) ||
+                !await this._validation.IsValidOverrideRoleAsync(serverId, request.RoleId, cancellationToken) ||
+                !await this._validation.IsValidOverrideMemberAsync(serverId, request.MemberId, cancellationToken) ||
+                !await this._validation.PermissionExistsAsync(request.PermissionId, cancellationToken))
             {
                 return null;
             }
 
-            var entity = await _db.SpacePermissionOverrides
+            var entity = await this._db.SpacePermissionOverrides
                 .FirstOrDefaultAsync(
                     x => x.SpaceId == spaceId &&
                          x.RoleId == request.RoleId &&
                          x.MemberId == request.MemberId &&
                          x.PermissionId == request.PermissionId,
                     cancellationToken);
-            if (!await _authorization.IsAllowedAsync(
+            if (!await this._authorization.IsAllowedAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -82,7 +82,7 @@ namespace ArcaneLink.Services.Spaces
                 return null;
             }
 
-            var actorContext = await _serverAuthorization.GetContextAsync(
+            var actorContext = await this._serverAuthorization.GetContextAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -91,7 +91,7 @@ namespace ArcaneLink.Services.Spaces
                     actorContext.Principal,
                     out var actorAuthority,
                     out _) ||
-                !await CanAffectTargetAsync(
+                !await this.CanAffectTargetAsync(
                     actorContext.Principal,
                     actorAuthority,
                     serverId,
@@ -99,7 +99,7 @@ namespace ArcaneLink.Services.Spaces
                     request.MemberId,
                     cancellationToken) ||
                 (request.Allow &&
-                 !await CanGrantLegacyPermissionAsync(
+                 !await this.CanGrantLegacyPermissionAsync(
                      currentUserId,
                      serverId,
                      spaceId,
@@ -112,7 +112,7 @@ namespace ArcaneLink.Services.Spaces
             var now = DateTime.UtcNow;
             var actorProtectionRoleId =
                 await SpaceProtectionRoleResolver.ResolveAsync(
-                    _db,
+                    this._db,
                     currentUserId,
                     serverId,
                     cancellationToken);
@@ -141,7 +141,7 @@ namespace ArcaneLink.Services.Spaces
                     ProtectionRoleId = actorProtectionRoleId,
                     CreatedAt = now
                 };
-                _db.SpacePermissionOverrides.Add(entity);
+                this._db.SpacePermissionOverrides.Add(entity);
             }
             else
             {
@@ -152,17 +152,17 @@ namespace ArcaneLink.Services.Spaces
                 entity.Version = Guid.NewGuid();
             }
 
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditSpaceOverrideUpserted,
                 currentUserId,
                 relatedSpaceId: spaceId);
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
-            _authorization.InvalidateServer(serverId);
-            await _notifier.NotifySpacesChangedAsync(serverId, spaceId, cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
+            this._authorization.InvalidateServer(serverId);
+            await this._notifier.NotifySpacesChangedAsync(serverId, spaceId, cancellationToken);
 
-            return await LoadOverrideResponseAsync(entity.Id, cancellationToken);
+            return await this.LoadOverrideResponseAsync(entity.Id, cancellationToken);
         }
 
         public async Task<bool> DeletePermissionOverrideAsync(
@@ -172,7 +172,7 @@ namespace ArcaneLink.Services.Spaces
             Guid overrideId,
             CancellationToken cancellationToken = default)
         {
-            var permissionOverride = await _db.SpacePermissionOverrides
+            var permissionOverride = await this._db.SpacePermissionOverrides
                 .Include(x => x.Space)
                 .FirstOrDefaultAsync(
                     x => x.Id == overrideId &&
@@ -186,7 +186,7 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            if (!await _authorization.IsAllowedAsync(
+            if (!await this._authorization.IsAllowedAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -200,7 +200,7 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            var actorContext = await _serverAuthorization.GetContextAsync(
+            var actorContext = await this._serverAuthorization.GetContextAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -209,7 +209,7 @@ namespace ArcaneLink.Services.Spaces
                     actorContext.Principal,
                     out var actorAuthority,
                     out _) ||
-                !await CanAffectTargetAsync(
+                !await this.CanAffectTargetAsync(
                     actorContext.Principal,
                     actorAuthority,
                     serverId,
@@ -220,16 +220,16 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            _db.SpacePermissionOverrides.Remove(permissionOverride);
-            _access.AddAudit(
+            this._db.SpacePermissionOverrides.Remove(permissionOverride);
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditSpaceOverrideDeleted,
                 currentUserId,
                 relatedSpaceId: spaceId);
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
-            _authorization.InvalidateServer(serverId);
-            await _notifier.NotifySpacesChangedAsync(serverId, spaceId, cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
+            this._authorization.InvalidateServer(serverId);
+            await this._notifier.NotifySpacesChangedAsync(serverId, spaceId, cancellationToken);
 
             return true;
         }
@@ -241,7 +241,7 @@ namespace ArcaneLink.Services.Spaces
             Guid legacyPermissionId,
             CancellationToken cancellationToken)
         {
-            if (!_legacySpaceAdapter.TryCreateMask(
+            if (!this._legacySpaceAdapter.TryCreateMask(
                     legacyPermissionId,
                     out var requestedMask) ||
                 requestedMask.Contains(
@@ -253,7 +253,7 @@ namespace ArcaneLink.Services.Spaces
             foreach (var permissionCode in
                      ServerPermissionRegistry.GetCodes(requestedMask))
             {
-                if (!await _authorization.IsAllowedAsync(
+                if (!await this._authorization.IsAllowedAsync(
                         currentUserId,
                         serverId,
                         spaceId,
@@ -277,7 +277,7 @@ namespace ArcaneLink.Services.Spaces
         {
             if (roleId.HasValue)
             {
-                var role = await _db.ServerRoles
+                var role = await this._db.ServerRoles
                     .AsNoTracking()
                     .Include(candidate => candidate.Permissions)
                     .SingleOrDefaultAsync(
@@ -287,7 +287,7 @@ namespace ArcaneLink.Services.Spaces
                             candidate.DeletedAt == null,
                         cancellationToken);
                 return role != null &&
-                       TryResolveRoleAuthority(role, out var roleAuthority) &&
+                       this.TryResolveRoleAuthority(role, out var roleAuthority) &&
                        ServerRoleAuthorityComparer.CanAffectSubject(
                            actorAuthority,
                            roleAuthority);
@@ -298,7 +298,7 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            var targetUserId = await _db.ServerMembers
+            var targetUserId = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.Id == memberId.Value &&
@@ -312,7 +312,7 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            var targetContext = await _serverAuthorization.GetContextAsync(
+            var targetContext = await this._serverAuthorization.GetContextAsync(
                 targetUserId.Value,
                 serverId,
                 cancellationToken);
@@ -334,7 +334,7 @@ namespace ArcaneLink.Services.Spaces
             if (!TryMapRoleKind(role.Kind, out var kind) ||
                 !ServerRolePermissionMaskResolver.TryResolve(
                     role,
-                    _legacyServerAdapter,
+                    this._legacyServerAdapter,
                     out var permissionMask,
                     out _))
             {
@@ -376,7 +376,7 @@ namespace ArcaneLink.Services.Spaces
             Guid overrideId,
             CancellationToken cancellationToken)
         {
-            var permissionOverride = await _db.SpacePermissionOverrides
+            var permissionOverride = await this._db.SpacePermissionOverrides
                 .AsNoTracking()
                 .Include(x => x.Permission)
                 .FirstOrDefaultAsync(x => x.Id == overrideId, cancellationToken);

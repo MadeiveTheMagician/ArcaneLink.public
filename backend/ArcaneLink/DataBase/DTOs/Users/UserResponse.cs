@@ -2,7 +2,7 @@ namespace ArcaneLink.DataBase.DTOs.Users
 {
     public class UserResponse
     {
-        public Guid Id {  get; set; }
+        public Guid Id { get; set; }
         public string Login { get; set; } = null!;
         public string DisplayName { get; set; } = null!;
         public string Email { get; set; } = null!;
@@ -11,6 +11,6 @@ namespace ArcaneLink.DataBase.DTOs.Users
         public string PresenceStatus { get; set; } = "offline";
         public DateTime? LastSeenAt { get; set; }
         public DateTime? EmailConfirmedAt { get; set; }
-        public bool RequiresEmailConfirmation => EmailConfirmedAt == null;
+        public bool RequiresEmailConfirmation => this.EmailConfirmedAt == null;
     }
 }

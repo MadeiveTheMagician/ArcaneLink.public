@@ -15,8 +15,8 @@ namespace ArcaneLink.Services.Users
             AppDbContext db,
             RealtimeConnectionRegistry connections)
         {
-            _db = db;
-            _connections = connections;
+            this._db = db;
+            this._connections = connections;
         }
 
         public async Task<IReadOnlyDictionary<Guid, UserPresenceSnapshot>> ResolveAsync(
@@ -34,7 +34,7 @@ namespace ArcaneLink.Services.Users
                 return new Dictionary<Guid, UserPresenceSnapshot>();
             }
 
-            var targets = await _db.Users
+            var targets = await this._db.Users
                 .AsNoTracking()
                 .Where(user =>
                     targetIds.Contains(user.Id) &&
@@ -53,7 +53,7 @@ namespace ArcaneLink.Services.Users
                 .ToListAsync(cancellationToken);
 
             var friendIds = viewerUserId.HasValue
-                ? await _db.UserFriends
+                ? await this._db.UserFriends
                     .AsNoTracking()
                     .Where(friend =>
                         friend.UserId == viewerUserId.Value &&
@@ -66,8 +66,8 @@ namespace ArcaneLink.Services.Users
 
             var friendsOfFriendsIds = viewerUserId.HasValue
                 ? await (
-                    from targetFriend in _db.UserFriends.AsNoTracking()
-                    join viewerFriend in _db.UserFriends.AsNoTracking()
+                    from targetFriend in this._db.UserFriends.AsNoTracking()
+                    join viewerFriend in this._db.UserFriends.AsNoTracking()
                         on targetFriend.FriendUserId equals
                         viewerFriend.FriendUserId
                     where
@@ -87,7 +87,7 @@ namespace ArcaneLink.Services.Users
                 : [];
 
             var sharedServerTargetIds = viewerUserId.HasValue
-                ? await _db.ServerMembers
+                ? await this._db.ServerMembers
                     .AsNoTracking()
                     .Where(member =>
                         targetIds.Contains(member.UserId) &&
@@ -96,7 +96,7 @@ namespace ArcaneLink.Services.Users
                         member.Server.DeletedAt == null &&
                         member.User.StatusId == UserStatusIds.Active &&
                         member.User.DeletedAt == null &&
-                        _db.ServerMembers.Any(viewerMember =>
+                        this._db.ServerMembers.Any(viewerMember =>
                             viewerMember.ServerId == member.ServerId &&
                             viewerMember.UserId == viewerUserId.Value &&
                             viewerMember.StatusId ==
@@ -134,7 +134,7 @@ namespace ArcaneLink.Services.Users
                 var mode = PresenceModeCodes.Normalize(target.PresenceMode)
                     ?? PresenceModeCodes.Invisible;
                 var isOnline = mode == PresenceModeCodes.Automatic &&
-                    _connections.HasConnections(target.UserId);
+                    this._connections.HasConnections(target.UserId);
 
                 result[target.UserId] = new UserPresenceSnapshot(
                     isOnline

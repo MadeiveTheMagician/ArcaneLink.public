@@ -17,7 +17,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public ServerJoinRequestsController(
             IServerJoinRequestService joinRequests)
         {
-            _joinRequests = joinRequests;
+            this._joinRequests = joinRequests;
         }
 
         [HttpPost("api/servers/{serverId:guid}/join")]
@@ -26,17 +26,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _joinRequests.JoinAsync(
+            var response = await this._joinRequests.JoinAsync(
                 userId.Value,
                 serverId,
                 cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpGet("api/servers/{serverId:guid}/join-requests")]
@@ -49,29 +49,29 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 [FromQuery] int limit = 100,
                 CancellationToken cancellationToken = default)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
             if (afterCreatedAt.HasValue != afterId.HasValue ||
                 limit is < 1 or > 100)
             {
-                return BadRequest(new
+                return this.BadRequest(new
                 {
                     code = "invalid_server_join_request_query"
                 });
             }
 
-            var response = await _joinRequests.GetPendingAsync(
+            var response = await this._joinRequests.GetPendingAsync(
                 userId.Value,
                 serverId,
                 afterCreatedAt,
                 afterId,
                 limit,
                 cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost(
@@ -82,18 +82,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid requestId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _joinRequests.ApproveAsync(
+            var response = await this._joinRequests.ApproveAsync(
                 userId.Value,
                 serverId,
                 requestId,
                 cancellationToken);
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost(
@@ -104,19 +104,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid requestId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return await _joinRequests.DeclineAsync(
+            return await this._joinRequests.DeclineAsync(
                 userId.Value,
                 serverId,
                 requestId,
                 cancellationToken)
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [HttpDelete("api/servers/{serverId:guid}/join-requests/me")]
@@ -125,23 +125,23 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return await _joinRequests.CancelAsync(
+            return await this._joinRequests.CancelAsync(
                 userId.Value,
                 serverId,
                 cancellationToken)
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
             return Guid.TryParse(userIdValue, out var userId)
                 ? userId
                 : null;

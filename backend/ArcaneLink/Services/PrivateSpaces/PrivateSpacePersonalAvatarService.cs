@@ -31,12 +31,12 @@ namespace ArcaneLink.Services.PrivateSpaces
             IOptions<AssetUploadOptions> uploadOptions,
             TimeProvider timeProvider)
         {
-            _db = db;
-            _assets = assets;
-            _processor = processor;
-            _notifier = notifier;
-            _uploadOptions = uploadOptions.Value;
-            _timeProvider = timeProvider;
+            this._db = db;
+            this._assets = assets;
+            this._processor = processor;
+            this._notifier = notifier;
+            this._uploadOptions = uploadOptions.Value;
+            this._timeProvider = timeProvider;
         }
 
         public async Task<bool> UploadAsync(
@@ -45,7 +45,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             UploadPrivateSpacePersonalAvatarRequest request,
             CancellationToken cancellationToken = default)
         {
-            var membership = await _db.PrivateSpaceMembers
+            var membership = await this._db.PrivateSpaceMembers
                 .Include(member => member.PrivateSpace)
                     .ThenInclude(privateSpace => privateSpace.Space)
                 .FirstOrDefaultAsync(
@@ -62,10 +62,10 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return false;
             }
 
-            ValidateFile(request.File);
+            this.ValidateFile(request.File);
             var crop = ParseCrop(request);
             await using var source = request.File.OpenReadStream();
-            await using var optimizedContent = await _processor.ProcessAsync(
+            await using var optimizedContent = await this._processor.ProcessAsync(
                 source,
                 crop.OffsetX,
                 crop.OffsetY,
@@ -76,7 +76,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             var assignmentSaved = false;
             try
             {
-                uploadedAssetId = await UploadOptimizedAssetAsync(
+                uploadedAssetId = await this.UploadOptimizedAssetAsync(
                     currentUserId,
                     request.File.FileName,
                     optimizedContent,
@@ -87,20 +87,20 @@ namespace ArcaneLink.Services.PrivateSpaces
                 membership.PeerAvatarCropOffsetY = 0;
                 membership.PeerAvatarCropZoom = 1;
                 membership.UpdatedAt =
-                    _timeProvider.GetUtcNow().UtcDateTime;
-                await _db.SaveChangesAsync(cancellationToken);
+                    this._timeProvider.GetUtcNow().UtcDateTime;
+                await this._db.SaveChangesAsync(cancellationToken);
                 assignmentSaved = true;
 
                 if (previousAssetId.HasValue &&
                     previousAssetId != uploadedAssetId)
                 {
-                    await DeleteOwnedOptimizedIfOrphanedAsync(
+                    await this.DeleteOwnedOptimizedIfOrphanedAsync(
                         currentUserId,
                         previousAssetId.Value,
                         CancellationToken.None);
                 }
 
-                await _notifier.NotifySpacesChangedForUserAsync(
+                await this._notifier.NotifySpacesChangedForUserAsync(
                     currentUserId,
                     spaceId,
                     CancellationToken.None);
@@ -110,7 +110,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             {
                 if (!assignmentSaved && uploadedAssetId.HasValue)
                 {
-                    await _assets.DeleteOwnedAssetAsync(
+                    await this._assets.DeleteOwnedAssetAsync(
                         currentUserId,
                         uploadedAssetId.Value,
                         CancellationToken.None);
@@ -126,8 +126,8 @@ namespace ArcaneLink.Services.PrivateSpaces
             CancellationToken cancellationToken = default)
         {
             await OptimizedAvatarAssetCleanup.DeleteOwnedIfOrphanedAsync(
-                _db,
-                _assets,
+                this._db,
+                this._assets,
                 ownerUserId,
                 assetId,
                 cancellationToken);
@@ -152,7 +152,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 Headers = new HeaderDictionary(),
                 ContentType = "image/webp"
             };
-            var asset = await _assets.UploadAssetAsync(
+            var asset = await this._assets.UploadAssetAsync(
                 ownerUserId,
                 new UploadAssetRequest
                 {
@@ -160,12 +160,12 @@ namespace ArcaneLink.Services.PrivateSpaces
                     File = formFile
                 },
                 cancellationToken);
-            var storedAsset = await _db.Assets.FirstAsync(
+            var storedAsset = await this._db.Assets.FirstAsync(
                 item => item.Id == asset.Id,
                 cancellationToken);
-            storedAsset.Width = _processor.OutputSizePixels;
-            storedAsset.Height = _processor.OutputSizePixels;
-            await _db.SaveChangesAsync(cancellationToken);
+            storedAsset.Width = this._processor.OutputSizePixels;
+            storedAsset.Height = this._processor.OutputSizePixels;
+            await this._db.SaveChangesAsync(cancellationToken);
             return asset.Id;
         }
 
@@ -176,7 +176,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 throw new InvalidAssetDataException(
                     ExceptionMessages.AssetFileIsRequired);
             }
-            if (file.Length > _uploadOptions.MaxImageUploadSizeBytes)
+            if (file.Length > this._uploadOptions.MaxImageUploadSizeBytes)
             {
                 throw new InvalidAssetDataException(
                     ExceptionMessages.AssetFileIsTooLarge);

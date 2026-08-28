@@ -22,11 +22,11 @@ namespace ArcaneLink.Services.PrivateSpaces
             ILogger<PrivateSpaceRealtimeNotifier> logger,
             TimeProvider? timeProvider = null)
         {
-            _db = db;
-            _realtime = realtime;
-            _messageNotifier = messageNotifier;
-            _logger = logger;
-            _timeProvider = timeProvider ?? TimeProvider.System;
+            this._db = db;
+            this._realtime = realtime;
+            this._messageNotifier = messageNotifier;
+            this._logger = logger;
+            this._timeProvider = timeProvider ?? TimeProvider.System;
         }
 
         internal async Task NotifySpacesChangedAsync(
@@ -36,15 +36,15 @@ namespace ArcaneLink.Services.PrivateSpaces
         {
             try
             {
-                var userIds = (await GetActiveMemberUserIdsAsync(spaceId, cancellationToken))
+                var userIds = (await this.GetActiveMemberUserIdsAsync(spaceId, cancellationToken))
                     .ToHashSet();
                 if (additionalUserId.HasValue)
                 {
                     userIds.Add(additionalUserId.Value);
                 }
 
-                await _realtime.NotifyUsersBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUsersBestEffortAsync(
+                    this._logger,
                     userIds,
                     RealtimeEventNames.PrivateSpacesChanged,
                     new { spaceId },
@@ -52,13 +52,13 @@ namespace ArcaneLink.Services.PrivateSpaces
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug(
+                this._logger.LogDebug(
                     "Private-space notification resolution was canceled after the database operation completed. SpaceId={SpaceId}",
                     spaceId);
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Private-space notification failed after the database operation completed. SpaceId={SpaceId}",
                     spaceId);
@@ -70,8 +70,8 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid? messageId,
             CancellationToken cancellationToken)
         {
-            var userIds = await GetActiveMemberUserIdsAsync(spaceId, cancellationToken);
-            await _messageNotifier.NotifyPrivateMessagesChangedAsync(
+            var userIds = await this.GetActiveMemberUserIdsAsync(spaceId, cancellationToken);
+            await this._messageNotifier.NotifyPrivateMessagesChangedAsync(
                 userIds,
                 spaceId,
                 messageId,
@@ -84,8 +84,8 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid senderUserId,
             CancellationToken cancellationToken)
         {
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
-            var userIds = await _db.PrivateSpaceMembers
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
+            var userIds = await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.SpaceId == spaceId &&
@@ -96,8 +96,8 @@ namespace ArcaneLink.Services.PrivateSpaces
                      member.MutedUntil <= now))
                 .Select(member => member.UserId)
                 .ToArrayAsync(cancellationToken);
-            await _realtime.NotifyUsersBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyUsersBestEffortAsync(
+                this._logger,
                 userIds,
                 RealtimeEventNames.PrivateMessageReceived,
                 new { spaceId, messageId, senderUserId },
@@ -110,7 +110,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid? messageId,
             CancellationToken cancellationToken)
         {
-            return _messageNotifier.NotifyPrivateMessagesChangedAsync(
+            return this._messageNotifier.NotifyPrivateMessagesChangedAsync(
                 [userId],
                 spaceId,
                 messageId,
@@ -122,8 +122,8 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            return this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 userId,
                 RealtimeEventNames.PrivateSpacesChanged,
                 new { spaceId },
@@ -134,7 +134,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return await _db.PrivateSpaceMembers
+            return await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.SpaceId == spaceId &&

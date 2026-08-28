@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.Services.RequestInfo.Abstractions
+namespace ArcaneLink.Services.RequestInfo.Abstractions
 {
     public interface IRequestInfoService
     {

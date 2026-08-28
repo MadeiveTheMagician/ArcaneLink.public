@@ -1,5 +1,5 @@
-using ArcaneLink.DataBase.DTOs.Servers;
 using ArcaneLink.DataBase.Constants;
+using ArcaneLink.DataBase.DTOs.Servers;
 using ArcaneLink.DataBase.Models.ServersModels;
 using ArcaneLink.Services.Servers.Authorization;
 
@@ -15,48 +15,48 @@ namespace ArcaneLink.Services.Servers
             DateTime now,
             int memberCount = 0,
             int onlineCount = 0) => new()
-        {
-            Id = invite.Id,
-            ServerId = invite.ServerId,
-            ServerTitle = invite.Server?.Title,
-            ServerDescription = invite.Server?.Description,
-            ServerIconAssetId = invite.Server?.IconAssetId,
-            ServerIconCropOffsetX = invite.Server?.IconCropOffsetX ?? 0,
-            ServerIconCropOffsetY = invite.Server?.IconCropOffsetY ?? 0,
-            ServerIconCropZoom = invite.Server?.IconCropZoom ?? 1,
-            MemberCount = memberCount,
-            OnlineCount = onlineCount,
-            KindCode = invite.Kind.Code,
-            Code = invite.Code,
-            TargetUserId = invite.TargetUserId,
-            MaxUses = invite.MaxUses,
-            UsedCount = invite.UsedCount,
-            ExpiresAt = invite.ExpiresAt,
-            CreatedAt = invite.CreatedAt,
-            RevokedAt = invite.RevokedAt,
-            IsActive = ServerInviteRules.IsActive(invite, now)
-        };
+            {
+                Id = invite.Id,
+                ServerId = invite.ServerId,
+                ServerTitle = invite.Server?.Title,
+                ServerDescription = invite.Server?.Description,
+                ServerIconAssetId = invite.Server?.IconAssetId,
+                ServerIconCropOffsetX = invite.Server?.IconCropOffsetX ?? 0,
+                ServerIconCropOffsetY = invite.Server?.IconCropOffsetY ?? 0,
+                ServerIconCropZoom = invite.Server?.IconCropZoom ?? 1,
+                MemberCount = memberCount,
+                OnlineCount = onlineCount,
+                KindCode = invite.Kind.Code,
+                Code = invite.Code,
+                TargetUserId = invite.TargetUserId,
+                MaxUses = invite.MaxUses,
+                UsedCount = invite.UsedCount,
+                ExpiresAt = invite.ExpiresAt,
+                CreatedAt = invite.CreatedAt,
+                RevokedAt = invite.RevokedAt,
+                IsActive = ServerInviteRules.IsActive(invite, now)
+            };
 
         public static ServerRoleResponse ToRoleResponse(
             ServerRole role,
             int directAssignmentCount = 0) => new()
-        {
-            Id = role.Id,
-            ServerId = role.ServerId,
-            Code = role.Code,
-            Title = role.Title,
-            Description = role.Description,
-            Kind = role.Kind,
-            Color = role.Color,
-            Mentionable = role.Mentionable,
-            CreatedByUserId = role.CreatedByUserId,
-            Level = role.Level,
-            IsSystem = role.IsSystem,
-            Version = role.Version,
-            DirectAssignmentCount = directAssignmentCount,
-            PermissionSchemaVersion = ServerPermissionRegistry.SchemaVersion,
-            PermissionCodes = GetPermissionCodes(role),
-            Permissions = role.Permissions
+            {
+                Id = role.Id,
+                ServerId = role.ServerId,
+                Code = role.Code,
+                Title = role.Title,
+                Description = role.Description,
+                Kind = role.Kind,
+                Color = role.Color,
+                Mentionable = role.Mentionable,
+                CreatedByUserId = role.CreatedByUserId,
+                Level = role.Level,
+                IsSystem = role.IsSystem,
+                Version = role.Version,
+                DirectAssignmentCount = directAssignmentCount,
+                PermissionSchemaVersion = ServerPermissionRegistry.SchemaVersion,
+                PermissionCodes = GetPermissionCodes(role),
+                Permissions = role.Permissions
                 .Where(x =>
                     x.IsGranted &&
                     ServerGovernanceIds.ServerPermissionIds.Contains(
@@ -69,9 +69,9 @@ namespace ArcaneLink.Services.Servers
                     Description = x.Permission.Description
                 })
                 .ToList(),
-            CreatedAt = role.CreatedAt,
-            UpdatedAt = role.UpdatedAt
-        };
+                CreatedAt = role.CreatedAt,
+                UpdatedAt = role.UpdatedAt
+            };
 
         private static IReadOnlyList<string> GetPermissionCodes(ServerRole role)
         {

@@ -15,7 +15,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         public ServerBansController(IServerMemberService serverMemberService)
         {
-            _serverMemberService = serverMemberService;
+            this._serverMemberService = serverMemberService;
         }
 
         [HttpGet]
@@ -23,18 +23,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _serverMemberService.GetServerBansAsync(
+            var response = await this._serverMemberService.GetServerBansAsync(
                 userId.Value,
                 serverId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpDelete("{memberId:guid}")]
@@ -43,24 +43,24 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid memberId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var isUnbanned = await _serverMemberService.UnbanServerMemberAsync(
+            var isUnbanned = await this._serverMemberService.UnbanServerMemberAsync(
                 userId.Value,
                 serverId,
                 memberId,
                 cancellationToken);
 
-            return isUnbanned ? NoContent() : NotFound();
+            return isUnbanned ? this.NoContent() : this.NotFound();
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
             return Guid.TryParse(userIdValue, out var userId) ? userId : null;
         }
     }

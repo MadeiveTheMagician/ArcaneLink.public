@@ -1,16 +1,16 @@
-﻿using ArcaneLink.DataBase.DTOs.Logout;
+using ArcaneLink.DataBase.DTOs.Logout;
 using ArcaneLink.Services.Auth.Abstraction;
 using ArcaneLink.Services.Logout.Abstraction;
 
 namespace ArcaneLink.Services.Logout
 {
-    public class LogoutService: ILogoutService
+    public class LogoutService : ILogoutService
     {
         private readonly IAuthTokenService _authTokenService;
 
         public LogoutService(IAuthTokenService authTokenService)
         {
-            _authTokenService = authTokenService;
+            this._authTokenService = authTokenService;
         }
 
         //  -------------------------------- LOGOUT ALL  ---------------------------
@@ -23,7 +23,7 @@ namespace ArcaneLink.Services.Logout
 
         public async Task LogoutAllAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            await _authTokenService.RevokeAllTokensAsync(userId, cancellationToken);
+            await this._authTokenService.RevokeAllTokensAsync(userId, cancellationToken);
         }
 
         // -------------------------------- LOGOUT  ---------------------------
@@ -33,7 +33,7 @@ namespace ArcaneLink.Services.Logout
         // или при подозрении на компрометацию конкретного устройства, что может свидетельствовать о несанкционированном доступе.
         public async Task LogoutAsync(LogoutRequest request, CancellationToken cancellationToken)
         {
-            await _authTokenService.RevokeTokenAsync(request, cancellationToken);
+            await this._authTokenService.RevokeTokenAsync(request, cancellationToken);
         }
     }
 }

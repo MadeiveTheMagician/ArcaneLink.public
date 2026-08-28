@@ -270,7 +270,7 @@ public sealed class ProductionConfigurationValidatorTests
     {
         public TestWebHostEnvironment(string environmentName)
         {
-            EnvironmentName = environmentName;
+            this.EnvironmentName = environmentName;
         }
 
         public string ApplicationName { get; set; } = "ArcaneLink.Tests";

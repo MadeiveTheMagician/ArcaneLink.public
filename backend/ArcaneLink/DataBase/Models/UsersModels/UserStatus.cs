@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.DataBase.Models.UsersModels
+namespace ArcaneLink.DataBase.Models.UsersModels
 {
     public class UserStatus
     {

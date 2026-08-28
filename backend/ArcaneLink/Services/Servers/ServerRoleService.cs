@@ -1,3 +1,5 @@
+using System.Data;
+using System.Text.Json;
 using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Servers;
@@ -9,8 +11,6 @@ using ArcaneLink.Services.Servers.Authorization;
 using ArcaneLink.Services.Spaces.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using System.Data;
-using System.Text.Json;
 
 namespace ArcaneLink.Services.Servers
 {
@@ -32,19 +32,19 @@ namespace ArcaneLink.Services.Servers
             ServerVoiceAccessReconciliationService voiceAccess,
             ILogger<ServerRoleService> logger)
         {
-            _db = db;
-            _realtime = realtime;
-            _access = access;
-            _spaceAuthorization = spaceAuthorization;
-            _voiceAccess = voiceAccess;
-            _logger = logger;
+            this._db = db;
+            this._realtime = realtime;
+            this._access = access;
+            this._spaceAuthorization = spaceAuthorization;
+            this._voiceAccess = voiceAccess;
+            this._logger = logger;
         }
 
         public async Task<IReadOnlyList<PermissionResponse>> GetPermissionsAsync(
             CancellationToken cancellationToken = default)
         {
             var permissionIds = ServerGovernanceIds.ServerPermissionIds.ToArray();
-            return await _db.PermissionCatalog
+            return await this._db.PermissionCatalog
                 .AsNoTracking()
                 .Where(x => permissionIds.Contains(x.Id))
                 .OrderBy(x => x.Code)
@@ -83,7 +83,7 @@ namespace ArcaneLink.Services.Servers
             CancellationToken cancellationToken = default)
         {
             var permissionIds = SpacePermissionIds.All.ToArray();
-            return await _db.PermissionCatalog
+            return await this._db.PermissionCatalog
                 .AsNoTracking()
                 .Where(x => permissionIds.Contains(x.Id))
                 .OrderBy(x => x.Code)
@@ -103,17 +103,17 @@ namespace ArcaneLink.Services.Servers
             ServerRoleQueryRequest query,
             CancellationToken cancellationToken = default)
         {
-            if (!await _access.IsActiveMemberAsync(currentUserId, serverId, cancellationToken))
+            if (!await this._access.IsActiveMemberAsync(currentUserId, serverId, cancellationToken))
             {
                 return null;
             }
 
-            await _access.EnsureOwnerRoleAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._access.EnsureOwnerRoleAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
 
             var normalizedSearch = NormalizeOptional(query.Q)?.ToLowerInvariant();
             var normalizedPermissionCode = NormalizeOptional(query.PermissionCode);
-            var roles = await _db.ServerRoles
+            var roles = await this._db.ServerRoles
                 .AsNoTracking()
                 .Where(role =>
                     role.ServerId == serverId &&
@@ -152,7 +152,7 @@ namespace ArcaneLink.Services.Servers
 
             if (normalizedPermissionCode != null)
             {
-                var filterMask = await ResolveRolePermissionFilterMaskAsync(
+                var filterMask = await this.ResolveRolePermissionFilterMaskAsync(
                     normalizedPermissionCode,
                     cancellationToken);
                 if (!filterMask.HasValue)
@@ -172,7 +172,7 @@ namespace ArcaneLink.Services.Servers
             var directAssignmentCounts = new Dictionary<Guid, int>();
             if (roleIds.Count > 0)
             {
-                directAssignmentCounts = await _db.ServerMemberRoles
+                directAssignmentCounts = await this._db.ServerMemberRoles
                     .AsNoTracking()
                     .Where(assignment =>
                         roleIds.Contains(assignment.RoleId) &&
@@ -217,7 +217,7 @@ namespace ArcaneLink.Services.Servers
 
             try
             {
-                return await CreateRoleTransactionAsync(
+                return await this.CreateRoleTransactionAsync(
                     currentUserId,
                     serverId,
                     request.Level,
@@ -231,12 +231,12 @@ namespace ArcaneLink.Services.Servers
             }
             catch (Exception exception) when (IsPostgresSerializationFailure(exception))
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return CreateServerRoleResult.Conflict();
             }
             catch (Exception exception) when (IsServerRoleTitleConflict(exception))
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return CreateServerRoleResult.TitleConflict();
             }
         }
@@ -253,10 +253,10 @@ namespace ArcaneLink.Services.Servers
             IReadOnlyList<string> permissionCodes,
             CancellationToken cancellationToken)
         {
-            await using var transaction = await _db.Database.BeginTransactionAsync(
+            await using var transaction = await this._db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 cancellationToken);
-            var scope = await LoadRoleManagementScopeAsync(
+            var scope = await this.LoadRoleManagementScopeAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -266,7 +266,7 @@ namespace ArcaneLink.Services.Servers
                 return CreateServerRoleResult.NotFound();
             }
 
-            var permissionWriteSet = await ResolvePermissionWriteSetAsync(
+            var permissionWriteSet = await this.ResolvePermissionWriteSetAsync(
                 permissionSchemaVersion,
                 permissionCodes,
                 cancellationToken);
@@ -293,7 +293,7 @@ namespace ArcaneLink.Services.Servers
                 return CreateServerRoleResult.InvalidRequest();
             }
 
-            if (await _db.ServerRoles.AnyAsync(
+            if (await this._db.ServerRoles.AnyAsync(
                     candidate =>
                         candidate.ServerId == serverId &&
                         candidate.Title == title,
@@ -322,7 +322,7 @@ namespace ArcaneLink.Services.Servers
                 UpdatedAt = now
             };
 
-            _db.ServerRoles.Add(role);
+            this._db.ServerRoles.Add(role);
             foreach (var permission in permissionWriteSet.LegacyPermissions)
             {
                 role.Permissions.Add(new ServerRolePermission
@@ -334,20 +334,20 @@ namespace ArcaneLink.Services.Servers
                     IsGranted = true
                 });
             }
-            _access.AddAudit(serverId, ServerGovernanceIds.AuditRoleCreated, currentUserId, relatedRoleId: role.Id);
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            this._access.AddAudit(serverId, ServerGovernanceIds.AuditRoleCreated, currentUserId, relatedRoleId: role.Id);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            _spaceAuthorization.InvalidateServer(serverId);
+            this._spaceAuthorization.InvalidateServer(serverId);
 
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, roleId = role.Id },
                 CancellationToken.None);
 
-            var response = await LoadRoleResponseAsync(role.Id, cancellationToken);
+            var response = await this.LoadRoleResponseAsync(role.Id, cancellationToken);
             return response == null
                 ? CreateServerRoleResult.NotFound()
                 : CreateServerRoleResult.Success(response);
@@ -371,7 +371,7 @@ namespace ArcaneLink.Services.Servers
                 return Task.FromResult(UpdateServerRoleResult.InvalidRequest());
             }
 
-            return ExecuteRoleUpdateAsync(
+            return this.ExecuteRoleUpdateAsync(
                 currentUserId,
                 serverId,
                 roleId,
@@ -404,7 +404,7 @@ namespace ArcaneLink.Services.Servers
                 return Task.FromResult(UpdateServerRoleResult.InvalidRequest());
             }
 
-            return ExecuteRoleUpdateAsync(
+            return this.ExecuteRoleUpdateAsync(
                 currentUserId,
                 serverId,
                 roleId,
@@ -429,7 +429,7 @@ namespace ArcaneLink.Services.Servers
         {
             try
             {
-                return await ExecuteRoleUpdateTransactionAsync(
+                return await this.ExecuteRoleUpdateTransactionAsync(
                     currentUserId,
                     serverId,
                     roleId,
@@ -438,17 +438,17 @@ namespace ArcaneLink.Services.Servers
             }
             catch (DbUpdateConcurrencyException)
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return UpdateServerRoleResult.Conflict();
             }
             catch (Exception exception) when (IsPostgresSerializationFailure(exception))
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return UpdateServerRoleResult.Conflict();
             }
             catch (Exception exception) when (IsServerRoleTitleConflict(exception))
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return UpdateServerRoleResult.TitleConflict();
             }
         }
@@ -460,10 +460,10 @@ namespace ArcaneLink.Services.Servers
             RoleUpdateCommand command,
             CancellationToken cancellationToken)
         {
-            await using var transaction = await _db.Database.BeginTransactionAsync(
+            await using var transaction = await this._db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 cancellationToken);
-            var scope = await LoadRoleManagementScopeAsync(
+            var scope = await this.LoadRoleManagementScopeAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -473,7 +473,7 @@ namespace ArcaneLink.Services.Servers
                 return UpdateServerRoleResult.NotFound();
             }
 
-            var role = await _db.ServerRoles
+            var role = await this._db.ServerRoles
                 .Include(x => x.Permissions)
                     .ThenInclude(x => x.Permission)
                 .FirstOrDefaultAsync(
@@ -503,7 +503,7 @@ namespace ArcaneLink.Services.Servers
             }
             else if (!scope.CanManageRoles ||
                      role.IsSystem ||
-                     !CanManageRole(scope, role))
+                     !this.CanManageRole(scope, role))
             {
                 return UpdateServerRoleResult.NotFound();
             }
@@ -514,7 +514,7 @@ namespace ArcaneLink.Services.Servers
                 return UpdateServerRoleResult.Conflict();
             }
 
-            var permissionWriteSet = await ResolvePermissionWriteSetAsync(
+            var permissionWriteSet = await this.ResolvePermissionWriteSetAsync(
                 command.PermissionSchemaVersion,
                 command.PermissionCodes,
                 cancellationToken);
@@ -530,7 +530,7 @@ namespace ArcaneLink.Services.Servers
 
             if (command.UpdateMetadata &&
                 !string.Equals(role.Title, command.Title, StringComparison.Ordinal) &&
-                await _db.ServerRoles.AnyAsync(
+                await this._db.ServerRoles.AnyAsync(
                     candidate =>
                         candidate.ServerId == serverId &&
                         candidate.Id != roleId &&
@@ -540,7 +540,7 @@ namespace ArcaneLink.Services.Servers
                 return UpdateServerRoleResult.TitleConflict();
             }
 
-            if (!TryGetRolePermissionMask(role, out var currentPermissionMask))
+            if (!this.TryGetRolePermissionMask(role, out var currentPermissionMask))
             {
                 return UpdateServerRoleResult.InvalidRequest();
             }
@@ -556,7 +556,7 @@ namespace ArcaneLink.Services.Servers
 
             if (!metadataChanged && !permissionsChanged)
             {
-                var unchanged = await LoadRoleResponseAsync(role.Id, cancellationToken);
+                var unchanged = await this.LoadRoleResponseAsync(role.Id, cancellationToken);
                 return unchanged == null
                     ? UpdateServerRoleResult.NotFound()
                     : UpdateServerRoleResult.Success(unchanged);
@@ -577,7 +577,7 @@ namespace ArcaneLink.Services.Servers
 
             if (permissionsChanged)
             {
-                ApplyRolePermissions(
+                this.ApplyRolePermissions(
                     role,
                     permissionWriteSet.LegacyPermissions,
                     DateTime.UtcNow);
@@ -592,7 +592,7 @@ namespace ArcaneLink.Services.Servers
             if (clearsSelectedDisplayColor)
             {
                 var nextRolesVersion = Guid.NewGuid();
-                resetDisplayColorCount = await _db.ServerMembers
+                resetDisplayColorCount = await this._db.ServerMembers
                     .Where(member =>
                         member.ServerId == serverId &&
                         member.DisplayColorRoleId == role.Id)
@@ -613,7 +613,7 @@ namespace ArcaneLink.Services.Servers
                         cancellationToken);
             }
             var after = CreateRoleAuditState(role, permissionWriteSet.Codes);
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditRoleUpdated,
                 currentUserId,
@@ -621,27 +621,27 @@ namespace ArcaneLink.Services.Servers
                 payload: JsonSerializer.Serialize(new { before, after }));
             if (permissionsChanged)
             {
-                await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+                await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             if (permissionsChanged)
             {
-                _spaceAuthorization.InvalidateServer(serverId);
-                await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
+                this._spaceAuthorization.InvalidateServer(serverId);
+                await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
             }
 
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, roleId = role.Id },
                 CancellationToken.None);
             if (resetDisplayColorCount > 0)
             {
-                await _realtime.NotifyServerBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyServerBestEffortAsync(
+                    this._logger,
                     serverId,
                     RealtimeEventNames.ServerMembersChanged,
                     new { serverId, roleId = role.Id, displayColorReset = true },
@@ -649,10 +649,10 @@ namespace ArcaneLink.Services.Servers
             }
             if (permissionsChanged)
             {
-                await NotifyEffectiveSpaceAccessChangedAsync(serverId);
+                await this.NotifyEffectiveSpaceAccessChangedAsync(serverId);
             }
 
-            var response = await LoadRoleResponseAsync(role.Id, cancellationToken);
+            var response = await this.LoadRoleResponseAsync(role.Id, cancellationToken);
             return response == null
                 ? UpdateServerRoleResult.NotFound()
                 : UpdateServerRoleResult.Success(response);
@@ -672,7 +672,7 @@ namespace ArcaneLink.Services.Servers
 
             try
             {
-                return await DuplicateRoleTransactionAsync(
+                return await this.DuplicateRoleTransactionAsync(
                     currentUserId,
                     serverId,
                     roleId,
@@ -681,17 +681,17 @@ namespace ArcaneLink.Services.Servers
             }
             catch (DbUpdateConcurrencyException)
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return DuplicateServerRoleResult.Conflict();
             }
             catch (Exception exception) when (IsPostgresSerializationFailure(exception))
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return DuplicateServerRoleResult.Conflict();
             }
             catch (Exception exception) when (IsServerRoleTitleConflict(exception))
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return DuplicateServerRoleResult.TitleConflict();
             }
         }
@@ -703,10 +703,10 @@ namespace ArcaneLink.Services.Servers
             DuplicateServerRoleRequest request,
             CancellationToken cancellationToken)
         {
-            await using var transaction = await _db.Database.BeginTransactionAsync(
+            await using var transaction = await this._db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 cancellationToken);
-            var scope = await LoadRoleManagementScopeAsync(
+            var scope = await this.LoadRoleManagementScopeAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -715,7 +715,7 @@ namespace ArcaneLink.Services.Servers
                 return DuplicateServerRoleResult.NotFound();
             }
 
-            var source = await _db.ServerRoles
+            var source = await this._db.ServerRoles
                 .AsNoTracking()
                 .Include(role => role.Permissions)
                     .ThenInclude(permission => permission.Permission)
@@ -727,7 +727,7 @@ namespace ArcaneLink.Services.Servers
                     cancellationToken);
             if (source == null ||
                 source.IsSystem ||
-                !CanManageRole(scope, source))
+                !this.CanManageRole(scope, source))
             {
                 return DuplicateServerRoleResult.NotFound();
             }
@@ -737,13 +737,13 @@ namespace ArcaneLink.Services.Servers
                 return DuplicateServerRoleResult.Conflict();
             }
 
-            var sourceIsAdministrator = RoleGrantsManageServer(source);
+            var sourceIsAdministrator = this.RoleGrantsManageServer(source);
             if (sourceIsAdministrator && !request.ConfirmAdministrator)
             {
                 return DuplicateServerRoleResult.AdministratorConfirmationRequired();
             }
 
-            if (!TryGetRolePermissionMask(source, out var sourcePermissionMask) ||
+            if (!this.TryGetRolePermissionMask(source, out var sourcePermissionMask) ||
                 !CanGrantPermissions(scope, sourcePermissionMask))
             {
                 return DuplicateServerRoleResult.NotFound();
@@ -751,7 +751,7 @@ namespace ArcaneLink.Services.Servers
 
             var permissionCodes = ServerPermissionRegistry.GetCodes(
                 sourcePermissionMask);
-            var legacyPermissions = await LoadLegacyPermissionsForMaskAsync(
+            var legacyPermissions = await this.LoadLegacyPermissionsForMaskAsync(
                 sourcePermissionMask,
                 cancellationToken);
             if (legacyPermissions == null)
@@ -759,11 +759,11 @@ namespace ArcaneLink.Services.Servers
                 return DuplicateServerRoleResult.InvalidRequest();
             }
 
-            var title = await GenerateDuplicateRoleTitleAsync(
+            var title = await this.GenerateDuplicateRoleTitleAsync(
                 serverId,
                 source.Title,
                 cancellationToken);
-            var maximumLevel = await _db.ServerRoles
+            var maximumLevel = await this._db.ServerRoles
                 .AsNoTracking()
                 .Where(role =>
                     role.ServerId == serverId &&
@@ -796,7 +796,7 @@ namespace ArcaneLink.Services.Servers
                 UpdatedAt = now
             };
 
-            _db.ServerRoles.Add(duplicate);
+            this._db.ServerRoles.Add(duplicate);
             foreach (var permission in legacyPermissions)
             {
                 duplicate.Permissions.Add(new ServerRolePermission
@@ -808,7 +808,7 @@ namespace ArcaneLink.Services.Servers
                     IsGranted = true
                 });
             }
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditRoleCreated,
                 currentUserId,
@@ -820,13 +820,13 @@ namespace ArcaneLink.Services.Servers
                     sourceVersion = source.Version,
                     permissionCodes
                 }));
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            _spaceAuthorization.InvalidateServer(serverId);
+            this._spaceAuthorization.InvalidateServer(serverId);
 
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new
@@ -837,7 +837,7 @@ namespace ArcaneLink.Services.Servers
                 },
                 CancellationToken.None);
 
-            var response = await LoadRoleResponseAsync(
+            var response = await this.LoadRoleResponseAsync(
                 duplicate.Id,
                 cancellationToken);
             return response == null
@@ -851,7 +851,7 @@ namespace ArcaneLink.Services.Servers
             Guid roleId,
             CancellationToken cancellationToken = default)
         {
-            var scope = await LoadRoleManagementScopeAsync(
+            var scope = await this.LoadRoleManagementScopeAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -860,7 +860,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var role = await _db.ServerRoles
+            var role = await this._db.ServerRoles
                 .AsNoTracking()
                 .Include(candidate => candidate.Permissions)
                     .ThenInclude(permission => permission.Permission)
@@ -870,12 +870,12 @@ namespace ArcaneLink.Services.Servers
                         candidate.ServerId == serverId &&
                         candidate.DeletedAt == null,
                     cancellationToken);
-            if (role == null || !CanManageRole(scope, role))
+            if (role == null || !this.CanManageRole(scope, role))
             {
                 return null;
             }
 
-            return await LoadDeletionImpactAsync(role, cancellationToken);
+            return await this.LoadDeletionImpactAsync(role, cancellationToken);
         }
 
         public async Task<DeleteServerRoleResult> DeleteRoleAsync(
@@ -892,7 +892,7 @@ namespace ArcaneLink.Services.Servers
 
             try
             {
-                return await DeleteRoleTransactionAsync(
+                return await this.DeleteRoleTransactionAsync(
                     currentUserId,
                     serverId,
                     roleId,
@@ -901,12 +901,12 @@ namespace ArcaneLink.Services.Servers
             }
             catch (DbUpdateConcurrencyException)
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return DeleteServerRoleResult.Conflict();
             }
             catch (Exception exception) when (IsPostgresSerializationFailure(exception))
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return DeleteServerRoleResult.Conflict();
             }
         }
@@ -918,10 +918,10 @@ namespace ArcaneLink.Services.Servers
             Guid expectedVersion,
             CancellationToken cancellationToken)
         {
-            await using var transaction = await _db.Database.BeginTransactionAsync(
+            await using var transaction = await this._db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 cancellationToken);
-            var scope = await LoadRoleManagementScopeAsync(
+            var scope = await this.LoadRoleManagementScopeAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -930,7 +930,7 @@ namespace ArcaneLink.Services.Servers
                 return DeleteServerRoleResult.NotFound();
             }
 
-            var role = await _db.ServerRoles
+            var role = await this._db.ServerRoles
                 .Include(candidate => candidate.Permissions)
                     .ThenInclude(permission => permission.Permission)
                 .FirstOrDefaultAsync(
@@ -941,7 +941,7 @@ namespace ArcaneLink.Services.Servers
                     cancellationToken);
             if (role == null ||
                 role.IsSystem ||
-                !CanManageRole(scope, role))
+                !this.CanManageRole(scope, role))
             {
                 return DeleteServerRoleResult.NotFound();
             }
@@ -951,7 +951,7 @@ namespace ArcaneLink.Services.Servers
                 return DeleteServerRoleResult.Conflict();
             }
 
-            var impact = await LoadDeletionImpactAsync(role, cancellationToken);
+            var impact = await this.LoadDeletionImpactAsync(role, cancellationToken);
             if (impact.HasBlockingDependencies)
             {
                 return DeleteServerRoleResult.HasDependencies(impact);
@@ -961,7 +961,7 @@ namespace ArcaneLink.Services.Servers
             role.DeletedAt = now;
             role.UpdatedAt = now;
             role.Version = Guid.NewGuid();
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditRoleUpdated,
                 currentUserId,
@@ -972,13 +972,13 @@ namespace ArcaneLink.Services.Servers
                     beforeVersion = expectedVersion,
                     impact
                 }));
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            _spaceAuthorization.InvalidateServer(serverId);
+            this._spaceAuthorization.InvalidateServer(serverId);
 
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, roleId = role.Id, deleted = true },
@@ -990,44 +990,44 @@ namespace ArcaneLink.Services.Servers
             ServerRole role,
             CancellationToken cancellationToken)
         {
-            var directAssignmentCount = await _db.ServerMemberRoles
+            var directAssignmentCount = await this._db.ServerMemberRoles
                 .AsNoTracking()
                 .CountAsync(assignment =>
                     assignment.ServerId == role.ServerId &&
                     assignment.RoleId == role.Id &&
                     assignment.RevokedAt == null,
                     cancellationToken);
-            var roleAclCount = await _db.SpacePermissionOverrides
+            var roleAclCount = await this._db.SpacePermissionOverrides
                 .AsNoTracking()
                 .CountAsync(permissionOverride =>
                     permissionOverride.ServerId == role.ServerId &&
                     permissionOverride.RoleId == role.Id,
                     cancellationToken);
-            var protectedAclCount = await _db.SpacePermissionOverrides
+            var protectedAclCount = await this._db.SpacePermissionOverrides
                 .AsNoTracking()
                 .CountAsync(permissionOverride =>
                     permissionOverride.ServerId == role.ServerId &&
                     permissionOverride.ProtectionRoleId == role.Id,
                     cancellationToken);
-            var requiredSpaceCount = await _db.Spaces
+            var requiredSpaceCount = await this._db.Spaces
                 .AsNoTracking()
                 .CountAsync(space =>
                     space.ServerId == role.ServerId &&
                     space.RequiredServerRoleId == role.Id,
                     cancellationToken);
-            var protectedSpaceCount = await _db.Spaces
+            var protectedSpaceCount = await this._db.Spaces
                 .AsNoTracking()
                 .CountAsync(space =>
                     space.ServerId == role.ServerId &&
                     space.ProtectionRoleId == role.Id,
                     cancellationToken);
-            var createdWithRoleSpaceCount = await _db.Spaces
+            var createdWithRoleSpaceCount = await this._db.Spaces
                 .AsNoTracking()
                 .CountAsync(space =>
                     space.ServerId == role.ServerId &&
                     space.CreatedWithRoleId == role.Id,
                     cancellationToken);
-            var displayColorMemberCount = await _db.ServerMembers
+            var displayColorMemberCount = await this._db.ServerMembers
                 .AsNoTracking()
                 .CountAsync(member =>
                     member.ServerId == role.ServerId &&
@@ -1078,7 +1078,7 @@ namespace ArcaneLink.Services.Servers
 
             try
             {
-                return await ReorderRolesTransactionAsync(
+                return await this.ReorderRolesTransactionAsync(
                     currentUserId,
                     serverId,
                     request,
@@ -1086,12 +1086,12 @@ namespace ArcaneLink.Services.Servers
             }
             catch (DbUpdateConcurrencyException)
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return ReorderServerRolesResult.Conflict();
             }
             catch (Exception exception) when (IsPostgresSerializationFailure(exception))
             {
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
                 return ReorderServerRolesResult.Conflict();
             }
         }
@@ -1102,10 +1102,10 @@ namespace ArcaneLink.Services.Servers
             ReorderServerRolesRequest request,
             CancellationToken cancellationToken)
         {
-            await using var transaction = await _db.Database.BeginTransactionAsync(
+            await using var transaction = await this._db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 cancellationToken);
-            var scope = await LoadRoleManagementScopeAsync(
+            var scope = await this.LoadRoleManagementScopeAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -1114,7 +1114,7 @@ namespace ArcaneLink.Services.Servers
                 return ReorderServerRolesResult.NotFound();
             }
 
-            var server = await _db.Servers.FirstOrDefaultAsync(
+            var server = await this._db.Servers.FirstOrDefaultAsync(
                 candidate =>
                     candidate.Id == serverId &&
                     candidate.DeletedAt == null,
@@ -1129,7 +1129,7 @@ namespace ArcaneLink.Services.Servers
                 return ReorderServerRolesResult.Conflict();
             }
 
-            var roles = await _db.ServerRoles
+            var roles = await this._db.ServerRoles
                 .Where(role =>
                     role.ServerId == serverId &&
                     !role.IsSystem &&
@@ -1179,7 +1179,7 @@ namespace ArcaneLink.Services.Servers
                     .Distinct()
                     .ToList();
                 if (repositionedRoleIds.Any(roleId =>
-                        !CanManageRole(scope, rolesById[roleId])))
+                        !this.CanManageRole(scope, rolesById[roleId])))
                 {
                     return ReorderServerRolesResult.NotFound();
                 }
@@ -1207,7 +1207,7 @@ namespace ArcaneLink.Services.Servers
                 return ReorderServerRolesResult.Success();
             }
 
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditRoleUpdated,
                 currentUserId,
@@ -1218,13 +1218,13 @@ namespace ArcaneLink.Services.Servers
                     afterRoleIds = requestedOrder,
                     changedRoleIds
                 }));
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            _spaceAuthorization.InvalidateServer(serverId);
+            this._spaceAuthorization.InvalidateServer(serverId);
 
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, reordered = true },
@@ -1239,10 +1239,10 @@ namespace ArcaneLink.Services.Servers
             AssignServerRoleRequest request,
             CancellationToken cancellationToken = default)
         {
-            await using var transaction = await _db.Database.BeginTransactionAsync(
+            await using var transaction = await this._db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 cancellationToken);
-            var scope = await LoadRoleManagementScopeAsync(
+            var scope = await this.LoadRoleManagementScopeAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -1251,13 +1251,13 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var canAffectMember = await CanAffectMemberAsync(
+            var canAffectMember = await this.CanAffectMemberAsync(
                 scope,
                 currentUserId,
                 serverId,
                 memberId,
                 cancellationToken);
-            var role = await _db.ServerRoles
+            var role = await this._db.ServerRoles
                 .Include(x => x.Permissions)
                     .ThenInclude(x => x.Permission)
                 .FirstOrDefaultAsync(
@@ -1269,12 +1269,12 @@ namespace ArcaneLink.Services.Servers
             if (!canAffectMember ||
                 role == null ||
                 role.IsSystem ||
-                !CanManageRole(scope, role))
+                !this.CanManageRole(scope, role))
             {
                 return null;
             }
 
-            var existing = await _db.ServerMemberRoles.FirstOrDefaultAsync(
+            var existing = await this._db.ServerMemberRoles.FirstOrDefaultAsync(
                 x => x.ServerId == serverId &&
                      x.MemberId == memberId &&
                      x.RoleId == request.RoleId,
@@ -1299,7 +1299,7 @@ namespace ArcaneLink.Services.Servers
 
             if (existing == null)
             {
-                _db.ServerMemberRoles.Add(assignment);
+                this._db.ServerMemberRoles.Add(assignment);
             }
             else
             {
@@ -1309,30 +1309,30 @@ namespace ArcaneLink.Services.Servers
                 assignment.RevokedByUserId = null;
             }
 
-            _access.AddAudit(serverId, ServerGovernanceIds.AuditRoleAssigned, currentUserId, relatedRoleId: role.Id);
-            await _db.StageMemberRolesVersionBumpAsync(
+            this._access.AddAudit(serverId, ServerGovernanceIds.AuditRoleAssigned, currentUserId, relatedRoleId: role.Id);
+            await this._db.StageMemberRolesVersionBumpAsync(
                 serverId,
                 memberId,
                 cancellationToken);
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            _spaceAuthorization.InvalidateServer(serverId);
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            this._spaceAuthorization.InvalidateServer(serverId);
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
 
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId, memberId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, roleId = role.Id },
                 CancellationToken.None);
-            await NotifyEffectiveSpaceAccessChangedAsync(serverId);
+            await this.NotifyEffectiveSpaceAccessChangedAsync(serverId);
 
             return ServerGovernanceMapper.ToMemberRoleResponse(assignment, role.Title);
         }
@@ -1343,10 +1343,10 @@ namespace ArcaneLink.Services.Servers
             Guid memberRoleId,
             CancellationToken cancellationToken = default)
         {
-            await using var transaction = await _db.Database.BeginTransactionAsync(
+            await using var transaction = await this._db.Database.BeginTransactionAsync(
                 IsolationLevel.Serializable,
                 cancellationToken);
-            var scope = await LoadRoleManagementScopeAsync(
+            var scope = await this.LoadRoleManagementScopeAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -1355,7 +1355,7 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            var assignment = await _db.ServerMemberRoles
+            var assignment = await this._db.ServerMemberRoles
                 .Include(x => x.Role)
                     .ThenInclude(x => x.Permissions)
                         .ThenInclude(x => x.Permission)
@@ -1367,8 +1367,8 @@ namespace ArcaneLink.Services.Servers
 
             if (assignment == null ||
                 assignment.Role.IsSystem ||
-                !CanManageRole(scope, assignment.Role) ||
-                !await CanAffectMemberAsync(
+                !this.CanManageRole(scope, assignment.Role) ||
+                !await this.CanAffectMemberAsync(
                     scope,
                     currentUserId,
                     serverId,
@@ -1381,12 +1381,12 @@ namespace ArcaneLink.Services.Servers
             var revokedAt = DateTime.UtcNow;
             assignment.RevokedAt = revokedAt;
             assignment.RevokedByUserId = currentUserId;
-            _access.AddAudit(serverId, ServerGovernanceIds.AuditRoleRevoked, currentUserId, relatedRoleId: assignment.RoleId);
-            await _db.StageMemberRolesVersionBumpAsync(
+            this._access.AddAudit(serverId, ServerGovernanceIds.AuditRoleRevoked, currentUserId, relatedRoleId: assignment.RoleId);
+            await this._db.StageMemberRolesVersionBumpAsync(
                 serverId,
                 assignment.MemberId,
                 cancellationToken);
-            var targetMember = _db.ServerMembers.Local.Single(member =>
+            var targetMember = this._db.ServerMembers.Local.Single(member =>
                 member.Id == assignment.MemberId &&
                 member.ServerId == serverId);
             if (targetMember.DisplayColorRoleId == assignment.RoleId)
@@ -1395,25 +1395,25 @@ namespace ArcaneLink.Services.Servers
                 targetMember.DisplayColorRoleId = null;
                 targetMember.UpdatedAt = revokedAt;
             }
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            _spaceAuthorization.InvalidateServer(serverId);
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            this._spaceAuthorization.InvalidateServer(serverId);
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
 
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId, assignment.MemberId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId, roleId = assignment.RoleId },
                 CancellationToken.None);
-            await NotifyEffectiveSpaceAccessChangedAsync(serverId);
+            await this.NotifyEffectiveSpaceAccessChangedAsync(serverId);
 
             return true;
         }
@@ -1426,7 +1426,7 @@ namespace ArcaneLink.Services.Servers
         {
             var codes = permissionCodes.Select(NormalizeCode).Distinct().ToList();
             var serverPermissionIds = ServerGovernanceIds.ServerPermissionIds.ToArray();
-            var permissions = await _db.PermissionCatalog
+            var permissions = await this._db.PermissionCatalog
                 .Where(x =>
                     serverPermissionIds.Contains(x.Id) &&
                     codes.Contains(x.Code))
@@ -1454,7 +1454,7 @@ namespace ArcaneLink.Services.Servers
             }
 
             var serverPermissionIds = ServerGovernanceIds.ServerPermissionIds.ToArray();
-            return await _db.PermissionCatalog
+            return await this._db.PermissionCatalog
                 .Where(permission =>
                     serverPermissionIds.Contains(permission.Id) &&
                     permissionCodes.Contains(permission.Code))
@@ -1478,7 +1478,7 @@ namespace ArcaneLink.Services.Servers
                     return null;
                 }
 
-                var legacyPermissions = await LoadLegacyPermissionsForMaskAsync(
+                var legacyPermissions = await this.LoadLegacyPermissionsForMaskAsync(
                     mask,
                     cancellationToken);
                 return legacyPermissions == null
@@ -1494,7 +1494,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var knownLegacyRequestPermissions = await LoadKnownPermissionsAsync(
+            var knownLegacyRequestPermissions = await this.LoadKnownPermissionsAsync(
                 permissionCodes,
                 cancellationToken);
             if (knownLegacyRequestPermissions.Count != permissionCodes.Count)
@@ -1507,7 +1507,7 @@ namespace ArcaneLink.Services.Servers
             var legacyPermissionsForWrite = knownLegacyRequestPermissions
                 .Where(permission => serverPermissionIds.Contains(permission.Id))
                 .ToList();
-            if (!_legacyPermissionAdapter.TryCreateMask(
+            if (!this._legacyPermissionAdapter.TryCreateMask(
                     legacyPermissionsForWrite.Select(permission => permission.Id),
                     out var legacyMask))
             {
@@ -1524,14 +1524,14 @@ namespace ArcaneLink.Services.Servers
             PermissionMask256 mask,
             CancellationToken cancellationToken)
         {
-            var permissionIds = _legacyPermissionAdapter
+            var permissionIds = this._legacyPermissionAdapter
                 .GetFullyRepresentedLegacyPermissionIds(mask);
             if (permissionIds.Count == 0)
             {
                 return [];
             }
 
-            var permissions = await _db.PermissionCatalog
+            var permissions = await this._db.PermissionCatalog
                 .Where(permission => permissionIds.Contains(permission.Id))
                 .ToListAsync(cancellationToken);
             return permissions.Count == permissionIds.Count
@@ -1545,7 +1545,7 @@ namespace ArcaneLink.Services.Servers
         {
             return ServerRolePermissionMaskResolver.TryResolve(
                 role,
-                _legacyPermissionAdapter,
+                this._legacyPermissionAdapter,
                 out mask,
                 out _);
         }
@@ -1575,7 +1575,7 @@ namespace ArcaneLink.Services.Servers
             // Retain the old query spelling as a compatibility alias, but
             // always evaluate the result against the role's persisted v1 mask.
             var legacyCode = NormalizeCode(permissionCode);
-            var legacyPermissionId = await _db.PermissionCatalog
+            var legacyPermissionId = await this._db.PermissionCatalog
                 .AsNoTracking()
                 .Where(permission =>
                     ServerGovernanceIds.ServerPermissionIds.Contains(permission.Id) &&
@@ -1583,7 +1583,7 @@ namespace ArcaneLink.Services.Servers
                 .Select(permission => (Guid?)permission.Id)
                 .SingleOrDefaultAsync(cancellationToken);
             if (!legacyPermissionId.HasValue ||
-                !_legacyPermissionAdapter.TryCreateMask(
+                !this._legacyPermissionAdapter.TryCreateMask(
                     [legacyPermissionId.Value],
                     out var compatibilityMask))
             {
@@ -1602,7 +1602,7 @@ namespace ArcaneLink.Services.Servers
                 return [];
             }
 
-            return await _db.PermissionCatalog
+            return await this._db.PermissionCatalog
                 .Where(permission => permissionCodes.Contains(permission.Code))
                 .ToListAsync(cancellationToken);
         }
@@ -1612,7 +1612,7 @@ namespace ArcaneLink.Services.Servers
             string sourceTitle,
             CancellationToken cancellationToken)
         {
-            var occupiedTitles = (await _db.ServerRoles
+            var occupiedTitles = (await this._db.ServerRoles
                     .AsNoTracking()
                     .Where(role => role.ServerId == serverId)
                     .Select(role => role.Title)
@@ -1662,7 +1662,7 @@ namespace ArcaneLink.Services.Servers
                 }
                 else if (existing.IsGranted)
                 {
-                    _db.ServerRolePermissions.Remove(existing);
+                    this._db.ServerRolePermissions.Remove(existing);
                 }
             }
 
@@ -1716,7 +1716,7 @@ namespace ArcaneLink.Services.Servers
             Guid roleId,
             CancellationToken cancellationToken)
         {
-            var role = await _db.ServerRoles
+            var role = await this._db.ServerRoles
                 .AsNoTracking()
                 .Include(x => x.Permissions)
                 .ThenInclude(x => x.Permission)
@@ -1727,7 +1727,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var directAssignmentCount = await _db.ServerMemberRoles
+            var directAssignmentCount = await this._db.ServerMemberRoles
                 .AsNoTracking()
                 .CountAsync(assignment =>
                     assignment.RoleId == roleId &&
@@ -1746,8 +1746,8 @@ namespace ArcaneLink.Services.Servers
 
         private Task NotifyEffectiveSpaceAccessChangedAsync(Guid serverId)
         {
-            return _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            return this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerSpacesChanged,
                 new { serverId },
@@ -1759,7 +1759,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var member = await _db.ServerMembers
+            var member = await this._db.ServerMembers
                 .AsNoTracking()
                 .Include(x => x.Server)
                 .Include(x => x.User)
@@ -1794,7 +1794,7 @@ namespace ArcaneLink.Services.Servers
             var isOwner = member.Server.OwnerUserId == userId;
             var permissionMask = isOwner
                 ? ServerPermissionRegistry.KnownPermissionsMask
-                : await LoadDefaultRolePermissionMaskAsync(
+                : await this.LoadDefaultRolePermissionMaskAsync(
                     serverId,
                     cancellationToken);
             if (!permissionMask.HasValue)
@@ -1807,7 +1807,7 @@ namespace ArcaneLink.Services.Servers
             {
                 foreach (var role in activeRoles)
                 {
-                    if (!TryGetRolePermissionMask(role, out var roleMask))
+                    if (!this.TryGetRolePermissionMask(role, out var roleMask))
                     {
                         return null;
                     }
@@ -1851,7 +1851,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var defaultRoles = await _db.ServerRoles
+            var defaultRoles = await this._db.ServerRoles
                 .AsNoTracking()
                 .Include(role => role.Permissions)
                 .Where(role =>
@@ -1870,7 +1870,7 @@ namespace ArcaneLink.Services.Servers
                 return ServerPermissionRegistry.DefaultEveryonePermissionsMask;
             }
 
-            return TryGetRolePermissionMask(defaultRoles[0], out var permissionMask)
+            return this.TryGetRolePermissionMask(defaultRoles[0], out var permissionMask)
                 ? permissionMask.Without(
                     ServerPermissionRegistry.Administrator.Bit)
                 : null;
@@ -1894,12 +1894,12 @@ namespace ArcaneLink.Services.Servers
             RoleManagementScope scope,
             ServerRole role)
         {
-            if (!scope.IsOwner && RoleGrantsManageServer(role))
+            if (!scope.IsOwner && this.RoleGrantsManageServer(role))
             {
                 return false;
             }
 
-            if (!TryGetRolePermissionMask(role, out var rolePermissionMask))
+            if (!this.TryGetRolePermissionMask(role, out var rolePermissionMask))
             {
                 return false;
             }
@@ -1916,7 +1916,7 @@ namespace ArcaneLink.Services.Servers
             Guid targetMemberId,
             CancellationToken cancellationToken)
         {
-            var target = await _db.ServerMembers
+            var target = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.Id == targetMemberId &&
@@ -1968,7 +1968,7 @@ namespace ArcaneLink.Services.Servers
 
         private bool RoleGrantsManageServer(ServerRole role)
         {
-            return TryGetRolePermissionMask(role, out var permissionMask) &&
+            return this.TryGetRolePermissionMask(role, out var permissionMask) &&
                    permissionMask.Contains(ServerPermissionRegistry.Administrator.Bit);
         }
 

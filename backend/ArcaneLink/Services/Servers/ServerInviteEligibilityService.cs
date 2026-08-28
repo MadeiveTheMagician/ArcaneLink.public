@@ -12,7 +12,7 @@ namespace ArcaneLink.Services.Servers
 
         public ServerInviteEligibilityService(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         public async Task<bool> CanCreateDirectInviteToTargetAsync(
@@ -22,14 +22,14 @@ namespace ArcaneLink.Services.Servers
             CancellationToken cancellationToken = default)
         {
             if (targetUserId == currentUserId ||
-                await IsActiveServerMemberAsync(targetUserId, serverId, cancellationToken) ||
-                await IsBannedServerMemberAsync(targetUserId, serverId, cancellationToken))
+                await this.IsActiveServerMemberAsync(targetUserId, serverId, cancellationToken) ||
+                await this.IsBannedServerMemberAsync(targetUserId, serverId, cancellationToken))
             {
                 return false;
             }
 
             var now = DateTime.UtcNow;
-            var candidates = await LoadDirectInviteCandidates(
+            var candidates = await this.LoadDirectInviteCandidates(
                     currentUserId,
                     serverId,
                     targetUserId)
@@ -42,7 +42,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            return await _db.ServerMembers.AnyAsync(
+            return await this._db.ServerMembers.AnyAsync(
                 x => x.ServerId == serverId &&
                      x.UserId == userId &&
                      x.StatusId == ServerMemberStatusIds.Active &&
@@ -55,7 +55,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            return await _db.ServerMembers.AnyAsync(
+            return await this._db.ServerMembers.AnyAsync(
                 x => x.ServerId == serverId &&
                      x.UserId == userId &&
                      x.StatusId == ServerMemberStatusIds.Banned &&
@@ -75,7 +75,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var invite = (await LoadDirectInviteCandidates(
+            var invite = (await this.LoadDirectInviteCandidates(
                     currentUserId,
                     serverId,
                     targetUserId.Value)
@@ -93,7 +93,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             Guid targetUserId)
         {
-            return _db.ServerInvites
+            return this._db.ServerInvites
                 .AsNoTracking()
                 .Include(x => x.Kind)
                 .Include(x => x.Server)

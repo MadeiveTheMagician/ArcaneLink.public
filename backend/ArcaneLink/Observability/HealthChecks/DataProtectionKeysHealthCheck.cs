@@ -11,18 +11,18 @@ namespace ArcaneLink.Observability.HealthChecks
             IConfiguration configuration,
             IWebHostEnvironment environment)
         {
-            _configuration = configuration;
-            _environment = environment;
+            this._configuration = configuration;
+            this._environment = environment;
         }
 
         public async Task<HealthCheckResult> CheckHealthAsync(
             HealthCheckContext context,
             CancellationToken cancellationToken = default)
         {
-            var configuredPath = _configuration["DataProtection:KeysPath"];
+            var configuredPath = this._configuration["DataProtection:KeysPath"];
             if (string.IsNullOrWhiteSpace(configuredPath))
             {
-                return _environment.IsProduction()
+                return this._environment.IsProduction()
                     ? HealthCheckResult.Unhealthy(
                         "A persistent Data Protection key path is required in production.")
                     : HealthCheckResult.Healthy(

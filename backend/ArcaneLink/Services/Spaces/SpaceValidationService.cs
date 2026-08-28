@@ -11,7 +11,7 @@ namespace ArcaneLink.Services.Spaces
 
         public SpaceValidationService(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         public async Task<bool> IsValidHierarchyAsync(
@@ -26,7 +26,7 @@ namespace ArcaneLink.Services.Spaces
                 return true;
             }
 
-            var spaces = await _db.Spaces
+            var spaces = await this._db.Spaces
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == serverId &&
@@ -54,7 +54,7 @@ namespace ArcaneLink.Services.Spaces
             CancellationToken cancellationToken)
         {
             return roleId == null ||
-                   await _db.ServerRoles.AnyAsync(
+                   await this._db.ServerRoles.AnyAsync(
                        x => x.Id == roleId &&
                             x.ServerId == serverId &&
                             x.DeletedAt == null,
@@ -67,7 +67,7 @@ namespace ArcaneLink.Services.Spaces
             CancellationToken cancellationToken)
         {
             return roleId == null ||
-                   await _db.ServerRoles.AnyAsync(
+                   await this._db.ServerRoles.AnyAsync(
                        x => x.Id == roleId &&
                             x.ServerId == serverId &&
                             x.DeletedAt == null,
@@ -80,7 +80,7 @@ namespace ArcaneLink.Services.Spaces
             CancellationToken cancellationToken)
         {
             return memberId == null ||
-                   await _db.ServerMembers.AnyAsync(
+                   await this._db.ServerMembers.AnyAsync(
                        x => x.Id == memberId &&
                             x.ServerId == serverId &&
                             x.StatusId == ServerMemberStatusIds.Active,
@@ -92,7 +92,7 @@ namespace ArcaneLink.Services.Spaces
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return await _db.Spaces.AnyAsync(
+            return await this._db.Spaces.AnyAsync(
                 x => x.Id == spaceId &&
                      x.ServerId == serverId &&
                      x.ParentVoiceSpaceId == null &&
@@ -109,7 +109,7 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            return await _db.PermissionCatalog.AnyAsync(
+            return await this._db.PermissionCatalog.AnyAsync(
                 x => x.Id == permissionId,
                 cancellationToken);
         }

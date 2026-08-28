@@ -16,10 +16,10 @@ namespace ArcaneLink.Services.Realtime
             ServerSpaceRealtimeAudienceService audience,
             ILogger<ServerVoiceAccessReconciliationService> logger)
         {
-            _voiceConnections = voiceConnections;
-            _realtime = realtime;
-            _audience = audience;
-            _logger = logger;
+            this._voiceConnections = voiceConnections;
+            this._realtime = realtime;
+            this._audience = audience;
+            this._logger = logger;
         }
 
         public async Task ReconcileServerBestEffortAsync(Guid serverId)
@@ -27,13 +27,13 @@ namespace ArcaneLink.Services.Realtime
             VoiceAccessReconciliationResult result;
             try
             {
-                result = await _voiceConnections.ReconcileServerAccessAsync(
+                result = await this._voiceConnections.ReconcileServerAccessAsync(
                     serverId,
                     CancellationToken.None);
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Server voice access reconciliation failed after the database operation completed. ServerId={ServerId}",
                     serverId);
@@ -42,8 +42,8 @@ namespace ArcaneLink.Services.Realtime
 
             foreach (var connection in result.RemovedConnections)
             {
-                await _realtime.NotifyConnectionBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyConnectionBestEffortAsync(
+                    this._logger,
                     connection.ConnectionId,
                     RealtimeEventNames.VoiceAccessRevoked,
                     new
@@ -60,7 +60,7 @@ namespace ArcaneLink.Services.Realtime
             {
                 try
                 {
-                    var legacyRecipients = await _audience.GetAuthorizedUserIdsAsync(
+                    var legacyRecipients = await this._audience.GetAuthorizedUserIdsAsync(
                         serverId,
                         spaceId,
                         SpaceAction.View,
@@ -68,7 +68,7 @@ namespace ArcaneLink.Services.Realtime
                     var recipients = new List<Guid>(legacyRecipients.Count);
                     foreach (var userId in legacyRecipients)
                     {
-                        if (await _voiceConnections.CanViewVoiceChannelAsync(
+                        if (await this._voiceConnections.CanViewVoiceChannelAsync(
                                 userId,
                                 serverId,
                                 spaceId,
@@ -77,13 +77,13 @@ namespace ArcaneLink.Services.Realtime
                             recipients.Add(userId);
                         }
                     }
-                    var payload = await _voiceConnections.GetChannelStatePayloadAsync(
+                    var payload = await this._voiceConnections.GetChannelStatePayloadAsync(
                         serverId,
                         spaceId,
                         VoiceChannelScopes.Server,
                         CancellationToken.None);
-                    await _realtime.NotifyUsersBestEffortAsync(
-                        _logger,
+                    await this._realtime.NotifyUsersBestEffortAsync(
+                        this._logger,
                         recipients,
                         "VoiceChannelStateChanged",
                         payload,
@@ -91,7 +91,7 @@ namespace ArcaneLink.Services.Realtime
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogWarning(
+                    this._logger.LogWarning(
                         exception,
                         "Voice channel state broadcast failed after access reconciliation. ServerId={ServerId} SpaceId={SpaceId}",
                         serverId,

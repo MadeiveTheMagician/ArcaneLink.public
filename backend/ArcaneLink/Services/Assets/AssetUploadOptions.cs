@@ -73,27 +73,27 @@ namespace ArcaneLink.Services.Assets
         public long GetAttachmentUploadLimitBytes(string? plan = null)
         {
             var effectivePlan = string.IsNullOrWhiteSpace(plan)
-                ? DefaultAttachmentPlan
+                ? this.DefaultAttachmentPlan
                 : plan;
 
-            return AttachmentSizeLimitsBytes.TryGetValue(
+            return this.AttachmentSizeLimitsBytes.TryGetValue(
                 effectivePlan,
                 out var configuredLimit)
                 ? configuredLimit
-                : AttachmentSizeLimitsBytes["free"];
+                : this.AttachmentSizeLimitsBytes["free"];
         }
 
         public int GetProfileBackgroundAssetLimit(string? plan = null)
         {
             var effectivePlan = string.IsNullOrWhiteSpace(plan)
-                ? DefaultProfileBackgroundPlan
+                ? this.DefaultProfileBackgroundPlan
                 : plan;
 
-            return ProfileBackgroundAssetLimits.TryGetValue(
+            return this.ProfileBackgroundAssetLimits.TryGetValue(
                 effectivePlan,
                 out var configuredLimit)
                 ? configuredLimit
-                : ProfileBackgroundAssetLimits["free"];
+                : this.ProfileBackgroundAssetLimits["free"];
         }
     }
 }

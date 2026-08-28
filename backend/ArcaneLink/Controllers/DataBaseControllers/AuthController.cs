@@ -24,7 +24,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         private readonly ILogoutService _logoutService;
         private readonly IUserDeviceSessionService _deviceSessionService;
         private readonly IAccountLifecycleService _accountLifecycleService;
-        
+
         public AuthController(
             IUserRegistrationService registrationService,
             ILoginService loginService,
@@ -33,12 +33,12 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             IUserDeviceSessionService deviceSessionService,
             IAccountLifecycleService accountLifecycleService)
         {
-            _registrationService = registrationService;
-            _loginService = loginService;
-            _authTokenService = authTokenService;
-            _logoutService = logoutService;
-            _deviceSessionService = deviceSessionService;
-            _accountLifecycleService = accountLifecycleService;
+            this._registrationService = registrationService;
+            this._loginService = loginService;
+            this._authTokenService = authTokenService;
+            this._logoutService = logoutService;
+            this._deviceSessionService = deviceSessionService;
+            this._accountLifecycleService = accountLifecycleService;
         }
 
         [HttpPost("register")]
@@ -47,11 +47,11 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] CreateUserRequest request,
             CancellationToken cancellationToken)
         {
-            var response = await _registrationService.RegisterAsync(
+            var response = await this._registrationService.RegisterAsync(
                 request,
                 cancellationToken);
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [HttpPost("login")]
@@ -60,18 +60,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] LoginRequest request,
             CancellationToken cancellationToken)
         {
-            var response = await _loginService.LoginAsync(
+            var response = await this._loginService.LoginAsync(
                 request,
                 cancellationToken);
 
-            SetRefreshTokenCookie(
+            this.SetRefreshTokenCookie(
                 response.RefreshToken,
                 response.RefreshTokenExpireAt);
-            SetAssetAccessTokenCookie(
+            this.SetAssetAccessTokenCookie(
                 response.AccessToken,
                 response.AccessTokenExpireAt);
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [HttpPost("email/resend")]
@@ -80,10 +80,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] ResendVerificationEmailRequest request,
             CancellationToken cancellationToken)
         {
-            await _accountLifecycleService.QueueVerificationResendAsync(
+            await this._accountLifecycleService.QueueVerificationResendAsync(
                 request.Email,
                 cancellationToken);
-            return Accepted(CreateAcceptedResponse());
+            return this.Accepted(CreateAcceptedResponse());
         }
 
         [HttpPost("email/confirm")]
@@ -92,7 +92,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] EmailTokenRequest request,
             CancellationToken cancellationToken)
         {
-            return Ok(await _accountLifecycleService.ConfirmEmailAsync(
+            return this.Ok(await this._accountLifecycleService.ConfirmEmailAsync(
                 request.Token,
                 cancellationToken));
         }
@@ -103,10 +103,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] ForgotPasswordRequest request,
             CancellationToken cancellationToken)
         {
-            await _accountLifecycleService.QueuePasswordResetAsync(
+            await this._accountLifecycleService.QueuePasswordResetAsync(
                 request.LoginOrEmail,
                 cancellationToken);
-            return Accepted(CreateAcceptedResponse());
+            return this.Accepted(CreateAcceptedResponse());
         }
 
         [HttpPost("password/reset")]
@@ -115,13 +115,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] ResetPasswordRequest request,
             CancellationToken cancellationToken)
         {
-            await _accountLifecycleService.ResetPasswordAsync(
+            await this._accountLifecycleService.ResetPasswordAsync(
                 request.Token,
                 request.NewPassword,
                 cancellationToken);
-            ClearRefreshTokenCookie();
-            ClearAssetAccessTokenCookie();
-            return NoContent();
+            this.ClearRefreshTokenCookie();
+            this.ClearAssetAccessTokenCookie();
+            return this.NoContent();
         }
 
         [Authorize]
@@ -131,19 +131,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] ChangeLoginRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _accountLifecycleService.ChangeLoginAsync(
+            var response = await this._accountLifecycleService.ChangeLoginAsync(
                 userId.Value,
                 request,
                 cancellationToken);
-            ClearRefreshTokenCookie();
-            ClearAssetAccessTokenCookie();
-            return Ok(response);
+            this.ClearRefreshTokenCookie();
+            this.ClearAssetAccessTokenCookie();
+            return this.Ok(response);
         }
 
         [Authorize]
@@ -153,17 +153,17 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] ChangeEmailRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            await _accountLifecycleService.QueueEmailChangeAsync(
+            await this._accountLifecycleService.QueueEmailChangeAsync(
                 userId.Value,
                 request,
                 cancellationToken);
-            return Accepted(CreateAcceptedResponse());
+            return this.Accepted(CreateAcceptedResponse());
         }
 
         [Authorize]
@@ -173,19 +173,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] ChangePasswordRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            await _accountLifecycleService.ChangePasswordAsync(
+            await this._accountLifecycleService.ChangePasswordAsync(
                 userId.Value,
                 request,
                 cancellationToken);
-            ClearRefreshTokenCookie();
-            ClearAssetAccessTokenCookie();
-            return NoContent();
+            this.ClearRefreshTokenCookie();
+            this.ClearAssetAccessTokenCookie();
+            return this.NoContent();
         }
 
         [HttpPost("refresh")]
@@ -194,19 +194,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] RefreshTokenRequest? request,
             CancellationToken cancellationToken)
         {
-            var refreshToken = ResolveRefreshToken(request);
-            var response = await _authTokenService.RefreshTokenAsync(
+            var refreshToken = this.ResolveRefreshToken(request);
+            var response = await this._authTokenService.RefreshTokenAsync(
                 new RefreshTokenRequest { RefreshToken = refreshToken },
                 cancellationToken);
 
-            SetRefreshTokenCookie(
+            this.SetRefreshTokenCookie(
                 response.RefreshToken,
                 response.RefreshTokenExpiresAt);
-            SetAssetAccessTokenCookie(
+            this.SetAssetAccessTokenCookie(
                 response.AccessToken,
                 response.AccessTokenExpiresAt);
 
-            return Ok(response);
+            return this.Ok(response);
         }
 
         [HttpPost("logout")]
@@ -214,32 +214,32 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] LogoutRequest? request,
             CancellationToken cancellationToken)
         {
-            await _logoutService.LogoutAsync(
-                new LogoutRequest { RefreshToken = ResolveRefreshToken(request) },
+            await this._logoutService.LogoutAsync(
+                new LogoutRequest { RefreshToken = this.ResolveRefreshToken(request) },
                 cancellationToken);
-            ClearRefreshTokenCookie();
-            ClearAssetAccessTokenCookie();
-            return NoContent();
+            this.ClearRefreshTokenCookie();
+            this.ClearAssetAccessTokenCookie();
+            return this.NoContent();
         }
 
         [Authorize]
         [HttpPost("logoutAll")]
         public async Task<IActionResult> LogoutAll(CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            await _logoutService.LogoutAllAsync(
+            await this._logoutService.LogoutAllAsync(
                 userId.Value,
                 cancellationToken);
 
-            ClearRefreshTokenCookie();
-            ClearAssetAccessTokenCookie();
-            return NoContent();
+            this.ClearRefreshTokenCookie();
+            this.ClearAssetAccessTokenCookie();
+            return this.NoContent();
         }
 
         [Authorize]
@@ -247,19 +247,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<UserDeviceSessionResponse>>> GetSessions(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var sessions = await _deviceSessionService.GetActiveSessionsAsync(
+            var sessions = await this._deviceSessionService.GetActiveSessionsAsync(
                 userId.Value,
-                GetCurrentDeviceSessionId(),
+                this.GetCurrentDeviceSessionId(),
                 cancellationToken);
 
-            return Ok(sessions);
+            return this.Ok(sessions);
         }
 
         [Authorize]
@@ -268,23 +268,23 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid id,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            var currentDeviceSessionId = GetCurrentDeviceSessionId();
+            var userId = this.GetCurrentUserId();
+            var currentDeviceSessionId = this.GetCurrentDeviceSessionId();
 
             if (userId == null || currentDeviceSessionId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
             if (id == currentDeviceSessionId.Value)
             {
-                return BadRequest(new
+                return this.BadRequest(new
                 {
                     message = "The current device session cannot be revoked from the session list."
                 });
             }
 
-            var isRevoked = await _deviceSessionService.RevokeSessionAsync(
+            var isRevoked = await this._deviceSessionService.RevokeSessionAsync(
                 userId.Value,
                 id,
                 currentDeviceSessionId.Value,
@@ -292,10 +292,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
             if (!isRevoked)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            return NoContent();
+            return this.NoContent();
         }
 
         [Authorize]
@@ -303,20 +303,20 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<IActionResult> RevokeOtherSessions(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
-            var currentDeviceSessionId = GetCurrentDeviceSessionId();
+            var userId = this.GetCurrentUserId();
+            var currentDeviceSessionId = this.GetCurrentDeviceSessionId();
 
             if (userId == null || currentDeviceSessionId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            await _deviceSessionService.RevokeOtherSessionsAsync(
+            await this._deviceSessionService.RevokeOtherSessionsAsync(
                 userId.Value,
                 currentDeviceSessionId.Value,
                 cancellationToken);
 
-            return NoContent();
+            return this.NoContent();
         }
 
         [Authorize]
@@ -324,23 +324,23 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<IActionResult> RevokeAllSessions(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            await _deviceSessionService.RevokeAllSessionsAsync(
+            await this._deviceSessionService.RevokeAllSessionsAsync(
                 userId.Value,
                 cancellationToken);
-            ClearRefreshTokenCookie();
-            ClearAssetAccessTokenCookie();
-            return NoContent();
+            this.ClearRefreshTokenCookie();
+            this.ClearAssetAccessTokenCookie();
+            return this.NoContent();
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
 
             return Guid.TryParse(userIdValue, out var userId)
                 ? userId
@@ -352,7 +352,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         private Guid? GetCurrentDeviceSessionId()
         {
-            var deviceSessionIdValue = User.FindFirstValue("deviceSessionId");
+            var deviceSessionIdValue = this.User.FindFirstValue("deviceSessionId");
 
             return Guid.TryParse(deviceSessionIdValue, out var deviceSessionId)
                 ? deviceSessionId
@@ -363,46 +363,46 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         {
             return !string.IsNullOrWhiteSpace(request?.RefreshToken)
                 ? request.RefreshToken
-                : Request.Cookies[AuthCookieNames.RefreshToken];
+                : this.Request.Cookies[AuthCookieNames.RefreshToken];
         }
 
         private string? ResolveRefreshToken(LogoutRequest? request)
         {
             return !string.IsNullOrWhiteSpace(request?.RefreshToken)
                 ? request.RefreshToken
-                : Request.Cookies[AuthCookieNames.RefreshToken];
+                : this.Request.Cookies[AuthCookieNames.RefreshToken];
         }
 
         private void SetRefreshTokenCookie(string refreshToken, DateTime expiresAt)
         {
-            Response.Cookies.Append(
+            this.Response.Cookies.Append(
                 AuthCookieNames.RefreshToken,
                 refreshToken,
-                CreateRefreshTokenCookieOptions(expiresAt));
+                this.CreateRefreshTokenCookieOptions(expiresAt));
         }
 
         private void ClearRefreshTokenCookie()
         {
-            Response.Cookies.Delete(
+            this.Response.Cookies.Delete(
                 AuthCookieNames.RefreshToken,
-                CreateRefreshTokenCookieOptions(DateTimeOffset.UtcNow.AddDays(-1)));
+                this.CreateRefreshTokenCookieOptions(DateTimeOffset.UtcNow.AddDays(-1)));
         }
 
         private void SetAssetAccessTokenCookie(
             string accessToken,
             DateTime expiresAt)
         {
-            Response.Cookies.Append(
+            this.Response.Cookies.Append(
                 AuthCookieNames.AssetAccessToken,
                 accessToken,
-                CreateAssetAccessTokenCookieOptions(expiresAt));
+                this.CreateAssetAccessTokenCookieOptions(expiresAt));
         }
 
         private void ClearAssetAccessTokenCookie()
         {
-            Response.Cookies.Delete(
+            this.Response.Cookies.Delete(
                 AuthCookieNames.AssetAccessToken,
-                CreateAssetAccessTokenCookieOptions(DateTimeOffset.UtcNow.AddDays(-1)));
+                this.CreateAssetAccessTokenCookieOptions(DateTimeOffset.UtcNow.AddDays(-1)));
         }
 
         private CookieOptions CreateRefreshTokenCookieOptions(DateTimeOffset expiresAt)
@@ -410,7 +410,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             return new CookieOptions
             {
                 HttpOnly = true,
-                Secure = Request.IsHttps,
+                Secure = this.Request.IsHttps,
                 SameSite = SameSiteMode.Lax,
                 Path = "/api/auth",
                 Expires = expiresAt
@@ -423,7 +423,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             return new CookieOptions
             {
                 HttpOnly = true,
-                Secure = Request.IsHttps,
+                Secure = this.Request.IsHttps,
                 SameSite = SameSiteMode.Strict,
                 Path = "/api/assets",
                 Expires = expiresAt

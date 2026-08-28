@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.DTOs.Auth;
+using ArcaneLink.DataBase.DTOs.Auth;
 using ArcaneLink.DataBase.DTOs.Logout;
 using ArcaneLink.DataBase.Models.UsersModels;
 

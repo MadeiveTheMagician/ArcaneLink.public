@@ -12,11 +12,11 @@ namespace ArcaneLink.Services.Users
 
         public AvatarImageProcessor(IOptions<AssetUploadOptions> options)
         {
-            _options = options.Value;
+            this._options = options.Value;
         }
 
         public int OutputSizePixels => Math.Clamp(
-            _options.AvatarSizePixels,
+            this._options.AvatarSizePixels,
             128,
             2048);
 
@@ -36,13 +36,13 @@ namespace ArcaneLink.Services.Users
                 using var data = SKData.CreateCopy(encodedBuffer.ToArray());
                 using var codec = SKCodec.Create(data)
                     ?? throw InvalidAvatarImage();
-                using var decoded = DecodeBounded(codec);
+                using var decoded = this.DecodeBounded(codec);
                 using var oriented = ApplyEncodedOrientation(
                     decoded,
                     codec.EncodedOrigin);
                 using var outputBitmap = new SKBitmap(new SKImageInfo(
-                    OutputSizePixels,
-                    OutputSizePixels,
+                    this.OutputSizePixels,
+                    this.OutputSizePixels,
                     SKColorType.Rgba8888,
                     SKAlphaType.Premul));
                 using var canvas = new SKCanvas(outputBitmap);
@@ -56,18 +56,18 @@ namespace ArcaneLink.Services.Users
                 canvas.Clear(SKColors.Transparent);
 
                 var containScale = Math.Min(
-                    OutputSizePixels / (double)oriented.Width,
-                    OutputSizePixels / (double)oriented.Height);
+                    this.OutputSizePixels / (double)oriented.Width,
+                    this.OutputSizePixels / (double)oriented.Height);
                 var renderedWidth = (float)(
                     oriented.Width * containScale * cropZoom);
                 var renderedHeight = (float)(
                     oriented.Height * containScale * cropZoom);
                 var renderedX = (float)(
-                    (OutputSizePixels - renderedWidth) / 2d +
-                    cropOffsetX * OutputSizePixels);
+                    (this.OutputSizePixels - renderedWidth) / 2d +
+                    cropOffsetX * this.OutputSizePixels);
                 var renderedY = (float)(
-                    (OutputSizePixels - renderedHeight) / 2d +
-                    cropOffsetY * OutputSizePixels);
+                    (this.OutputSizePixels - renderedHeight) / 2d +
+                    cropOffsetY * this.OutputSizePixels);
 
                 canvas.DrawBitmap(
                     oriented,
@@ -83,7 +83,7 @@ namespace ArcaneLink.Services.Users
                 using var outputImage = SKImage.FromBitmap(outputBitmap);
                 using var webp = outputImage.Encode(
                     SKEncodedImageFormat.Webp,
-                    Math.Clamp(_options.AvatarWebpQuality, 1, 100))
+                    Math.Clamp(this._options.AvatarWebpQuality, 1, 100))
                     ?? throw InvalidAvatarImage();
                 var output = new MemoryStream();
                 webp.SaveTo(output);
@@ -118,8 +118,8 @@ namespace ArcaneLink.Services.Users
             }
 
             var maxDecodeSize = Math.Clamp(
-                _options.AvatarMaxDecodeSizePixels,
-                OutputSizePixels,
+                this._options.AvatarMaxDecodeSizePixels,
+                this.OutputSizePixels,
                 8192);
             var desiredScale = Math.Min(
                 1f,

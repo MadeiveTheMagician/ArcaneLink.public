@@ -26,17 +26,17 @@ namespace ArcaneLink.Services.Users
             IUserPresenceCoordinator presenceCoordinator,
             ILogger<UserProfileSettingsService> logger)
         {
-            _db = db;
-            _realtime = realtime;
-            _presenceCoordinator = presenceCoordinator;
-            _logger = logger;
+            this._db = db;
+            this._realtime = realtime;
+            this._presenceCoordinator = presenceCoordinator;
+            this._logger = logger;
         }
 
         public async Task<UserProfileSettingsResponse?> GetProfileSettingsAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var user = await GetActiveUserWithProfileSettingsAsync(
+            var user = await this.GetActiveUserWithProfileSettingsAsync(
                 userId,
                 cancellationToken);
 
@@ -50,7 +50,7 @@ namespace ArcaneLink.Services.Users
             UpdateUserProfileSettingsRequest request,
             CancellationToken cancellationToken = default)
         {
-            var user = await GetActiveUserWithProfileSettingsAsync(
+            var user = await this.GetActiveUserWithProfileSettingsAsync(
                 userId,
                 cancellationToken);
 
@@ -180,7 +180,7 @@ namespace ArcaneLink.Services.Users
 
             if (request.SelectedThemeCode != null)
             {
-                var theme = await GetThemeByCodeAsync(
+                var theme = await this.GetThemeByCodeAsync(
                     request.SelectedThemeCode,
                     cancellationToken);
 
@@ -244,7 +244,7 @@ namespace ArcaneLink.Services.Users
             }
             else if (request.ProfileBackgroundAssetId != null)
             {
-                var backgroundAsset = await _db.Assets
+                var backgroundAsset = await this._db.Assets
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
                         x => x.Id == request.ProfileBackgroundAssetId.Value &&
@@ -277,24 +277,24 @@ namespace ArcaneLink.Services.Users
 
             if (presenceChanged)
             {
-                await _presenceCoordinator.ExecuteMutationAsync(
+                await this._presenceCoordinator.ExecuteMutationAsync(
                     [userId],
-                    token => _db.SaveChangesAsync(token),
+                    token => this._db.SaveChangesAsync(token),
                     cancellationToken);
             }
             else
             {
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
             }
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
                 userId,
                 RealtimeEventNames.UserProfileSettingsChanged,
                 new { userId },
                 CancellationToken.None);
             if (presenceChanged)
             {
-                await _presenceCoordinator.SettingsChangedAsync(
+                await this._presenceCoordinator.SettingsChangedAsync(
                     userId,
                     previousPresence,
                     currentPresence,
@@ -308,7 +308,7 @@ namespace ArcaneLink.Services.Users
             Guid userId,
             CancellationToken cancellationToken)
         {
-            var user = await _db.Users
+            var user = await this._db.Users
                 .Include(x => x.ProfileSettings)
                     .ThenInclude(x => x.SelectedTheme)
                 .FirstOrDefaultAsync(
@@ -360,8 +360,8 @@ namespace ArcaneLink.Services.Users
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                _db.UserProfileSettings.Add(user.ProfileSettings);
-                await _db.SaveChangesAsync(cancellationToken);
+                this._db.UserProfileSettings.Add(user.ProfileSettings);
+                await this._db.SaveChangesAsync(cancellationToken);
             }
 
             return user;
@@ -378,7 +378,7 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
 
-            return await _db.SystemThemes.FirstOrDefaultAsync(
+            return await this._db.SystemThemes.FirstOrDefaultAsync(
                 x => x.Code == normalizedThemeCode,
                 cancellationToken);
         }

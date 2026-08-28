@@ -21,19 +21,19 @@ namespace ArcaneLink.Services.Servers.Authorization
             ulong word2,
             ulong word3)
         {
-            _word0 = word0;
-            _word1 = word1;
-            _word2 = word2;
-            _word3 = word3;
+            this._word0 = word0;
+            this._word1 = word1;
+            this._word2 = word2;
+            this._word3 = word3;
         }
 
         public static PermissionMask256 Empty => default;
 
         public bool IsEmpty =>
-            _word0 == 0 &&
-            _word1 == 0 &&
-            _word2 == 0 &&
-            _word3 == 0;
+            this._word0 == 0 &&
+            this._word1 == 0 &&
+            this._word2 == 0 &&
+            this._word3 == 0;
 
         public bool Contains(int bit)
         {
@@ -42,10 +42,10 @@ namespace ArcaneLink.Services.Servers.Authorization
 
             return (bit >> 6) switch
             {
-                0 => (_word0 & flag) != 0,
-                1 => (_word1 & flag) != 0,
-                2 => (_word2 & flag) != 0,
-                _ => (_word3 & flag) != 0
+                0 => (this._word0 & flag) != 0,
+                1 => (this._word1 & flag) != 0,
+                2 => (this._word2 & flag) != 0,
+                _ => (this._word3 & flag) != 0
             };
         }
 
@@ -56,10 +56,10 @@ namespace ArcaneLink.Services.Servers.Authorization
 
             return (bit >> 6) switch
             {
-                0 => new(_word0 | flag, _word1, _word2, _word3),
-                1 => new(_word0, _word1 | flag, _word2, _word3),
-                2 => new(_word0, _word1, _word2 | flag, _word3),
-                _ => new(_word0, _word1, _word2, _word3 | flag)
+                0 => new(this._word0 | flag, this._word1, this._word2, this._word3),
+                1 => new(this._word0, this._word1 | flag, this._word2, this._word3),
+                2 => new(this._word0, this._word1, this._word2 | flag, this._word3),
+                _ => new(this._word0, this._word1, this._word2, this._word3 | flag)
             };
         }
 
@@ -70,29 +70,29 @@ namespace ArcaneLink.Services.Servers.Authorization
 
             return (bit >> 6) switch
             {
-                0 => new(_word0 & flag, _word1, _word2, _word3),
-                1 => new(_word0, _word1 & flag, _word2, _word3),
-                2 => new(_word0, _word1, _word2 & flag, _word3),
-                _ => new(_word0, _word1, _word2, _word3 & flag)
+                0 => new(this._word0 & flag, this._word1, this._word2, this._word3),
+                1 => new(this._word0, this._word1 & flag, this._word2, this._word3),
+                2 => new(this._word0, this._word1, this._word2 & flag, this._word3),
+                _ => new(this._word0, this._word1, this._word2, this._word3 & flag)
             };
         }
 
         public PermissionMask256 Except(PermissionMask256 denied)
         {
             return new(
-                _word0 & ~denied._word0,
-                _word1 & ~denied._word1,
-                _word2 & ~denied._word2,
-                _word3 & ~denied._word3);
+                this._word0 & ~denied._word0,
+                this._word1 & ~denied._word1,
+                this._word2 & ~denied._word2,
+                this._word3 & ~denied._word3);
         }
 
         public byte[] ToByteArray()
         {
             var bytes = new byte[ByteLength];
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(0, 8), _word0);
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(8, 8), _word1);
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(16, 8), _word2);
-            BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(24, 8), _word3);
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(0, 8), this._word0);
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(8, 8), this._word1);
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(16, 8), this._word2);
+            BinaryPrimitives.WriteUInt64LittleEndian(bytes.AsSpan(24, 8), this._word3);
             return bytes;
         }
 
@@ -149,20 +149,20 @@ namespace ArcaneLink.Services.Servers.Authorization
 
         public bool Equals(PermissionMask256 other)
         {
-            return _word0 == other._word0 &&
-                   _word1 == other._word1 &&
-                   _word2 == other._word2 &&
-                   _word3 == other._word3;
+            return this._word0 == other._word0 &&
+                   this._word1 == other._word1 &&
+                   this._word2 == other._word2 &&
+                   this._word3 == other._word3;
         }
 
         public override bool Equals(object? obj)
         {
-            return obj is PermissionMask256 other && Equals(other);
+            return obj is PermissionMask256 other && this.Equals(other);
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(_word0, _word1, _word2, _word3);
+            return HashCode.Combine(this._word0, this._word1, this._word2, this._word3);
         }
 
         public static bool operator ==(

@@ -22,11 +22,11 @@ namespace ArcaneLink.Services.Spaces
             LegacySpacePermissionMaskAdapter? legacySpaceAdapter = null,
             LegacyServerPermissionMaskAdapter? legacyServerAdapter = null)
         {
-            _db = db;
-            _serverAuthorization = serverAuthorization;
-            _legacySpaceAdapter = legacySpaceAdapter ??
+            this._db = db;
+            this._serverAuthorization = serverAuthorization;
+            this._legacySpaceAdapter = legacySpaceAdapter ??
                 new LegacySpacePermissionMaskAdapter();
-            _legacyServerAdapter = legacyServerAdapter ??
+            this._legacyServerAdapter = legacyServerAdapter ??
                 new LegacyServerPermissionMaskAdapter();
         }
 
@@ -35,13 +35,13 @@ namespace ArcaneLink.Services.Spaces
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            var graph = await GetGraphAsync(serverId, cancellationToken);
+            var graph = await this.GetGraphAsync(serverId, cancellationToken);
             if (graph == null)
             {
                 return null;
             }
 
-            var principal = await LoadPrincipalAsync(
+            var principal = await this.LoadPrincipalAsync(
                 graph,
                 userId,
                 cancellationToken);
@@ -56,7 +56,7 @@ namespace ArcaneLink.Services.Spaces
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            var authorizationSpaceId = await ResolveAuthorizationSpaceIdAsync(
+            var authorizationSpaceId = await this.ResolveAuthorizationSpaceIdAsync(
                 serverId,
                 spaceId,
                 cancellationToken);
@@ -65,7 +65,7 @@ namespace ArcaneLink.Services.Spaces
                 return null;
             }
 
-            var snapshot = await GetSnapshotAsync(userId, serverId, cancellationToken);
+            var snapshot = await this.GetSnapshotAsync(userId, serverId, cancellationToken);
             return snapshot?.GetCapabilities(authorizationSpaceId.Value);
         }
 
@@ -78,15 +78,15 @@ namespace ArcaneLink.Services.Spaces
         {
             ArgumentNullException.ThrowIfNull(requirement);
 
-            if (_serverAuthorization == null ||
-                !_legacySpaceAdapter.TryGetLegacyGate(
+            if (this._serverAuthorization == null ||
+                !this._legacySpaceAdapter.TryGetLegacyGate(
                     requirement.PermissionCode,
                     out var legacyGate))
             {
                 return false;
             }
 
-            var authorizationSpaceId = await ResolveAuthorizationSpaceIdAsync(
+            var authorizationSpaceId = await this.ResolveAuthorizationSpaceIdAsync(
                 serverId,
                 spaceId,
                 cancellationToken);
@@ -98,7 +98,7 @@ namespace ArcaneLink.Services.Spaces
             // Keep the established private-space and hierarchy semantics as a
             // mandatory compatibility gate while granular ACL masks are still
             // represented by the four legacy space permissions.
-            var snapshot = await GetSnapshotAsync(
+            var snapshot = await this.GetSnapshotAsync(
                 userId,
                 serverId,
                 cancellationToken);
@@ -107,9 +107,9 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            var graph = await GetGraphAsync(serverId, cancellationToken);
+            var graph = await this.GetGraphAsync(serverId, cancellationToken);
             if (graph == null ||
-                !TryCreatePermissionResource(
+                !this.TryCreatePermissionResource(
                     graph,
                     authorizationSpaceId.Value,
                     out var permissionResource,
@@ -118,7 +118,7 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            var context = await _serverAuthorization.GetContextAsync(
+            var context = await this._serverAuthorization.GetContextAsync(
                 userId,
                 serverId,
                 cancellationToken);
@@ -162,12 +162,12 @@ namespace ArcaneLink.Services.Spaces
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            if (_serverAuthorization == null)
+            if (this._serverAuthorization == null)
             {
                 return null;
             }
 
-            var authorizationSpaceId = await ResolveAuthorizationSpaceIdAsync(
+            var authorizationSpaceId = await this.ResolveAuthorizationSpaceIdAsync(
                 serverId,
                 spaceId,
                 cancellationToken);
@@ -176,14 +176,14 @@ namespace ArcaneLink.Services.Spaces
                 return null;
             }
 
-            var snapshot = await GetSnapshotAsync(
+            var snapshot = await this.GetSnapshotAsync(
                 userId,
                 serverId,
                 cancellationToken);
-            var graph = await GetGraphAsync(serverId, cancellationToken);
+            var graph = await this.GetGraphAsync(serverId, cancellationToken);
             if (snapshot == null ||
                 graph == null ||
-                !TryCreatePermissionResource(
+                !this.TryCreatePermissionResource(
                     graph,
                     authorizationSpaceId.Value,
                     out var permissionResource,
@@ -192,7 +192,7 @@ namespace ArcaneLink.Services.Spaces
                 return null;
             }
 
-            var context = await _serverAuthorization.GetContextAsync(
+            var context = await this._serverAuthorization.GetContextAsync(
                 userId,
                 serverId,
                 cancellationToken);
@@ -217,7 +217,7 @@ namespace ArcaneLink.Services.Spaces
                     RequiresResourceHierarchy(permissionCode);
                 return (!requiresResourceHierarchy ||
                         hasValidProtectionTarget) &&
-                       _legacySpaceAdapter.TryGetLegacyGate(
+                       this._legacySpaceAdapter.TryGetLegacyGate(
                            permissionCode,
                            out var legacyGate) &&
                        snapshot.Can(authorizationSpaceId.Value, legacyGate) &&
@@ -315,14 +315,14 @@ namespace ArcaneLink.Services.Spaces
             SpaceAction action,
             CancellationToken cancellationToken = default)
         {
-            var snapshot = await GetSnapshotAsync(userId, serverId, cancellationToken);
+            var snapshot = await this.GetSnapshotAsync(userId, serverId, cancellationToken);
             if (snapshot == null)
             {
                 return null;
             }
 
             var allowedSpaceIds = snapshot.GetAllowedSpaceIds(action).ToList();
-            var companionSpaceIds = await _db.Spaces
+            var companionSpaceIds = await this._db.Spaces
                 .AsNoTracking()
                 .Where(space =>
                     space.ServerId == serverId &&
@@ -350,11 +350,11 @@ namespace ArcaneLink.Services.Spaces
                 return [];
             }
 
-            var authorizationSpaceId = await ResolveAuthorizationSpaceIdAsync(
+            var authorizationSpaceId = await this.ResolveAuthorizationSpaceIdAsync(
                 serverId,
                 spaceId,
                 cancellationToken);
-            var graph = await GetGraphAsync(serverId, cancellationToken);
+            var graph = await this.GetGraphAsync(serverId, cancellationToken);
             if (graph == null ||
                 !authorizationSpaceId.HasValue ||
                 graph.Spaces.All(x => x.Id != authorizationSpaceId.Value))
@@ -365,7 +365,7 @@ namespace ArcaneLink.Services.Spaces
                 .GroupBy(node => node.Id)
                 .ToDictionary(group => group.Key, group => group.First());
 
-            var candidateMembers = await _db.ServerMembers
+            var candidateMembers = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == serverId &&
@@ -377,7 +377,7 @@ namespace ArcaneLink.Services.Spaces
                 .Select(x => new { x.Id, x.UserId })
                 .ToListAsync(cancellationToken);
             var memberIds = candidateMembers.Select(x => x.Id).ToList();
-            var assignments = await _db.ServerMemberRoles
+            var assignments = await this._db.ServerMemberRoles
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == serverId &&
@@ -447,7 +447,7 @@ namespace ArcaneLink.Services.Spaces
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return await _db.Spaces
+            return await this._db.Spaces
                 .AsNoTracking()
                 .Where(space =>
                     space.Id == spaceId &&
@@ -459,11 +459,11 @@ namespace ArcaneLink.Services.Spaces
 
         public void InvalidateServer(Guid serverId)
         {
-            foreach (var key in _graphs.Keys
+            foreach (var key in this._graphs.Keys
                 .Where(key => key.ServerId == serverId)
                 .ToList())
             {
-                _graphs.Remove(key);
+                this._graphs.Remove(key);
             }
         }
 
@@ -471,7 +471,7 @@ namespace ArcaneLink.Services.Spaces
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .AsNoTracking()
                 .Where(x => x.Id == serverId && x.DeletedAt == null)
                 .Select(x => new
@@ -486,13 +486,13 @@ namespace ArcaneLink.Services.Spaces
                 return null;
             }
             var key = (server.Id, server.SpaceAclRevision);
-            if (_graphs.TryGetValue(key, out var cached))
+            if (this._graphs.TryGetValue(key, out var cached))
             {
                 return cached;
             }
-            RemoveStaleLocalEntries(server.Id, server.SpaceAclRevision);
+            this.RemoveStaleLocalEntries(server.Id, server.SpaceAclRevision);
 
-            var spaceEntities = await _db.Spaces
+            var spaceEntities = await this._db.Spaces
                 .AsNoTracking()
                 .Include(x => x.PermissionOverrides)
                 .Where(x =>
@@ -514,7 +514,7 @@ namespace ArcaneLink.Services.Spaces
                 ServerRoleAuthority>();
             if (protectionRoleIds.Count > 0)
             {
-                var protectionRoles = await _db.ServerRoles
+                var protectionRoles = await this._db.ServerRoles
                     .AsNoTracking()
                     .Include(role => role.Permissions)
                     .Where(role =>
@@ -524,7 +524,7 @@ namespace ArcaneLink.Services.Spaces
                     .ToListAsync(cancellationToken);
                 foreach (var role in protectionRoles)
                 {
-                    if (TryAdaptRole(role, out var authorizationRole) &&
+                    if (this.TryAdaptRole(role, out var authorizationRole) &&
                         ServerAuthorizationEvaluator.TryResolveRoleAuthority(
                             authorizationRole,
                             out var authority))
@@ -576,19 +576,19 @@ namespace ArcaneLink.Services.Spaces
                 spaces,
                 granularSpaces,
                 protectionRoleAuthorities);
-            _graphs[key] = graph;
+            this._graphs[key] = graph;
             return graph;
         }
 
         private void RemoveStaleLocalEntries(Guid serverId, Guid currentRevision)
         {
-            foreach (var key in _graphs.Keys
+            foreach (var key in this._graphs.Keys
                 .Where(key =>
                     key.ServerId == serverId &&
                     key.Revision != currentRevision)
                 .ToList())
             {
-                _graphs.Remove(key);
+                this._graphs.Remove(key);
             }
         }
 
@@ -597,7 +597,7 @@ namespace ArcaneLink.Services.Spaces
             Guid userId,
             CancellationToken cancellationToken)
         {
-            var memberId = await _db.ServerMembers
+            var memberId = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == graph.ServerId &&
@@ -624,7 +624,7 @@ namespace ArcaneLink.Services.Spaces
                     RoleIds: new HashSet<Guid>());
             }
 
-            var assignments = await _db.ServerMemberRoles
+            var assignments = await this._db.ServerMemberRoles
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == graph.ServerId &&
@@ -686,7 +686,7 @@ namespace ArcaneLink.Services.Spaces
             var categoryPath = new List<ServerPermissionScope>(ancestors.Count);
             foreach (var ancestor in ancestors)
             {
-                if (!TryCreateScope(graph, ancestor, out var scope))
+                if (!this.TryCreateScope(graph, ancestor, out var scope))
                 {
                     return false;
                 }
@@ -694,7 +694,7 @@ namespace ArcaneLink.Services.Spaces
                 categoryPath.Add(scope);
             }
 
-            if (!TryCreateScope(graph, space, out var spaceScope))
+            if (!this.TryCreateScope(graph, space, out var spaceScope))
             {
                 return false;
             }
@@ -718,7 +718,7 @@ namespace ArcaneLink.Services.Spaces
                 if (legacyOverride.Allow == legacyOverride.Deny ||
                     legacyOverride.RoleId.HasValue ==
                     legacyOverride.MemberId.HasValue ||
-                    !_legacySpaceAdapter.TryCreateMask(
+                    !this._legacySpaceAdapter.TryCreateMask(
                         legacyOverride.PermissionId,
                         out var permissionMask))
                 {
@@ -828,7 +828,7 @@ namespace ArcaneLink.Services.Spaces
             if (!TryMapRoleKind(role.Kind, out var kind) ||
                 !ServerRolePermissionMaskResolver.TryResolve(
                     role,
-                    _legacyServerAdapter,
+                    this._legacyServerAdapter,
                     out var permissionMask,
                     out _))
             {

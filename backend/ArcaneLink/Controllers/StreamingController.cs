@@ -13,15 +13,15 @@ namespace ArcaneLink.Controllers
 
         public StreamingController(IOptions<StreamingOptions> options)
         {
-            _options = options.Value;
+            this._options = options.Value;
         }
 
         [HttpGet("config")]
         public ActionResult<StreamingConfigResponse> GetConfig()
         {
-            return Ok(new StreamingConfigResponse
+            return this.Ok(new StreamingConfigResponse
             {
-                MaxBitrateByResolution = _options.MaxBitrateByResolution
+                MaxBitrateByResolution = this._options.MaxBitrateByResolution
             });
         }
     }

@@ -17,27 +17,27 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         public UserVoiceLayoutPresetsController(AppDbContext dbContext)
         {
-            _dbContext = dbContext;
+            this._dbContext = dbContext;
         }
 
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<VoiceLayoutPresetResponse>>> GetPresets(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var presets = await _dbContext.UserVoiceLayoutPresets
+            var presets = await this._dbContext.UserVoiceLayoutPresets
                 .AsNoTracking()
                 .Include(x => x.Slots)
                 .Where(x => x.UserId == userId.Value)
                 .OrderBy(x => x.Name)
                 .ToListAsync(cancellationToken);
 
-            return Ok(presets.Select(MapPreset).ToList());
+            return this.Ok(presets.Select(MapPreset).ToList());
         }
 
         [HttpPost]
@@ -45,16 +45,16 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] VoiceLayoutPresetRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
             var validationError = ValidatePreset(request);
             if (validationError != null)
             {
-                return BadRequest(validationError);
+                return this.BadRequest(validationError);
             }
 
             var now = DateTime.UtcNow;
@@ -82,10 +82,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 slot.PresetId = preset.Id;
             }
 
-            _dbContext.UserVoiceLayoutPresets.Add(preset);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            this._dbContext.UserVoiceLayoutPresets.Add(preset);
+            await this._dbContext.SaveChangesAsync(cancellationToken);
 
-            return CreatedAtAction(
+            return this.CreatedAtAction(
                 nameof(GetPresets),
                 new { id = preset.Id },
                 MapPreset(preset));
@@ -97,26 +97,26 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] VoiceLayoutPresetRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
             var validationError = ValidatePreset(request);
             if (validationError != null)
             {
-                return BadRequest(validationError);
+                return this.BadRequest(validationError);
             }
 
-            var preset = await _dbContext.UserVoiceLayoutPresets
+            var preset = await this._dbContext.UserVoiceLayoutPresets
                 .FirstOrDefaultAsync(
                     x => x.Id == presetId && x.UserId == userId.Value,
                     cancellationToken);
 
             if (preset == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
             preset.Name = request.Name.Trim();
@@ -133,19 +133,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 .Select(slot => MapSlot(slot, preset.Id))
                 .ToList();
 
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await this._dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            await _dbContext.UserVoiceLayoutPresetSlots
+            await this._dbContext.UserVoiceLayoutPresetSlots
                 .Where(slot => slot.PresetId == preset.Id)
                 .ExecuteDeleteAsync(cancellationToken);
 
-            _dbContext.UserVoiceLayoutPresetSlots.AddRange(slots);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            this._dbContext.UserVoiceLayoutPresetSlots.AddRange(slots);
+            await this._dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
             preset.Slots = slots;
 
-            return Ok(MapPreset(preset));
+            return this.Ok(MapPreset(preset));
         }
 
         [HttpDelete("{presetId:guid}")]
@@ -153,26 +153,26 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid presetId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var preset = await _dbContext.UserVoiceLayoutPresets
+            var preset = await this._dbContext.UserVoiceLayoutPresets
                 .FirstOrDefaultAsync(
                     x => x.Id == presetId && x.UserId == userId.Value,
                     cancellationToken);
 
             if (preset == null)
             {
-                return NotFound();
+                return this.NotFound();
             }
 
-            _dbContext.UserVoiceLayoutPresets.Remove(preset);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            this._dbContext.UserVoiceLayoutPresets.Remove(preset);
+            await this._dbContext.SaveChangesAsync(cancellationToken);
 
-            return NoContent();
+            return this.NoContent();
         }
 
         private static string? ValidatePreset(VoiceLayoutPresetRequest request)
@@ -276,7 +276,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
 
             return Guid.TryParse(userIdValue, out var userId)
                 ? userId

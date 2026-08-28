@@ -15,20 +15,20 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         public FriendsController(IFriendService friendService)
         {
-            _friendService = friendService;
+            this._friendService = friendService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<UserFriendResponse>>> GetFriends(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _friendService.GetFriendsAsync(
+            return this.Ok(await this._friendService.GetFriendsAsync(
                 userId.Value,
                 cancellationToken));
         }
@@ -37,13 +37,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<FriendRequestResponse>>> GetIncomingRequests(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _friendService.GetIncomingRequestsAsync(
+            return this.Ok(await this._friendService.GetIncomingRequestsAsync(
                 userId.Value,
                 cancellationToken));
         }
@@ -52,13 +52,13 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         public async Task<ActionResult<IReadOnlyList<FriendRequestResponse>>> GetOutgoingRequests(
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            return Ok(await _friendService.GetOutgoingRequestsAsync(
+            return this.Ok(await this._friendService.GetOutgoingRequestsAsync(
                 userId.Value,
                 cancellationToken));
         }
@@ -68,18 +68,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] CreateFriendRequestRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _friendService.SendRequestAsync(
+            var response = await this._friendService.SendRequestAsync(
                 userId.Value,
                 request,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("requests/{requestId:guid}/accept")]
@@ -87,18 +87,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid requestId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _friendService.AcceptRequestAsync(
+            var response = await this._friendService.AcceptRequestAsync(
                 userId.Value,
                 requestId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("requests/{requestId:guid}/decline")]
@@ -106,18 +106,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid requestId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _friendService.DeclineRequestAsync(
+            var response = await this._friendService.DeclineRequestAsync(
                 userId.Value,
                 requestId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpPost("requests/{requestId:guid}/cancel")]
@@ -125,18 +125,18 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid requestId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _friendService.CancelRequestAsync(
+            var response = await this._friendService.CancelRequestAsync(
                 userId.Value,
                 requestId,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         [HttpDelete("{friendUserId:guid}")]
@@ -144,23 +144,23 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid friendUserId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var isRemoved = await _friendService.RemoveFriendAsync(
+            var isRemoved = await this._friendService.RemoveFriendAsync(
                 userId.Value,
                 friendUserId,
                 cancellationToken);
 
-            return isRemoved ? NoContent() : NotFound();
+            return isRemoved ? this.NoContent() : this.NotFound();
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
             return Guid.TryParse(userIdValue, out var userId) ? userId : null;
         }
     }

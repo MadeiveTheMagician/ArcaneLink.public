@@ -1,6 +1,6 @@
-using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Messages;
@@ -29,10 +29,10 @@ namespace ArcaneLink.Services.Messages
             SpaceMessageAccessService access,
             TimeProvider timeProvider)
         {
-            _db = db;
-            _notifications = notifications;
-            _access = access;
-            _timeProvider = timeProvider;
+            this._db = db;
+            this._notifications = notifications;
+            this._access = access;
+            this._timeProvider = timeProvider;
         }
 
         public async Task<SpaceMentionAutocompleteResponse?> GetServerAutocompleteAsync(
@@ -42,7 +42,7 @@ namespace ArcaneLink.Services.Messages
             string? query,
             CancellationToken cancellationToken = default)
         {
-            if (await _access.GetViewableMessageSpaceAsync(
+            if (await this._access.GetViewableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
@@ -52,7 +52,7 @@ namespace ArcaneLink.Services.Messages
             }
 
             var normalizedQuery = NormalizeAutocompleteQuery(query);
-            var activeMemberQuery = _db.ServerMembers
+            var activeMemberQuery = this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.ServerId == serverId &&
@@ -135,7 +135,7 @@ namespace ArcaneLink.Services.Messages
                 }
 
                 memberOffset += memberBatch.Count;
-                var allowedUserIds = (await _access.FilterViewableMessageUserIdsAsync(
+                var allowedUserIds = (await this._access.FilterViewableMessageUserIdsAsync(
                         serverId,
                         spaceId,
                         memberBatch.Select(member => member.UserId),
@@ -170,7 +170,7 @@ namespace ArcaneLink.Services.Messages
                 }
             }
 
-            var roleQuery = _db.ServerRoles
+            var roleQuery = this._db.ServerRoles
                 .AsNoTracking()
                 .Where(role =>
                     role.ServerId == serverId &&
@@ -224,7 +224,7 @@ namespace ArcaneLink.Services.Messages
                 var roleIds = roleBatch
                     .Select(role => role.Id)
                     .ToArray();
-                var roleMembers = await _db.ServerMemberRoles
+                var roleMembers = await this._db.ServerMemberRoles
                     .AsNoTracking()
                     .Where(assignment =>
                         assignment.ServerId == serverId &&
@@ -242,7 +242,7 @@ namespace ArcaneLink.Services.Messages
                     })
                     .Distinct()
                     .ToListAsync(cancellationToken);
-                var authorizedUserIds = (await _access
+                var authorizedUserIds = (await this._access
                         .FilterViewableMessageUserIdsAsync(
                             serverId,
                             spaceId,
@@ -307,7 +307,7 @@ namespace ArcaneLink.Services.Messages
             bool replaceExisting,
             CancellationToken cancellationToken = default)
         {
-            var context = await _db.Spaces
+            var context = await this._db.Spaces
                 .Where(x => x.Id == spaceId && x.ServerId == serverId)
                 .Select(x => new
                 {
@@ -321,8 +321,8 @@ namespace ArcaneLink.Services.Messages
             }
 
             var resolution = requests == null
-                ? await ResolveLegacyServerAsync(serverId, message.Id, body, cancellationToken)
-                : await ResolveExplicitServerAsync(serverId, message.Id, body, requests, cancellationToken);
+                ? await this.ResolveLegacyServerAsync(serverId, message.Id, body, cancellationToken)
+                : await this.ResolveExplicitServerAsync(serverId, message.Id, body, requests, cancellationToken);
             if (resolution == null)
             {
                 return null;
@@ -330,7 +330,7 @@ namespace ArcaneLink.Services.Messages
 
             if (resolution.Mentions.Any(mention =>
                     mention.Kind == MentionKinds.Everyone) &&
-                await _access.GetEveryoneMentionableMessageSpaceAsync(
+                await this._access.GetEveryoneMentionableMessageSpaceAsync(
                     actorUserId,
                     serverId,
                     spaceId,
@@ -339,15 +339,15 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            var recipients = await ResolveServerRecipientsAsync(
+            var recipients = await this.ResolveServerRecipientsAsync(
                 actorUserId,
                 serverId,
                 context.NotificationSpaceId,
                 resolution.Mentions,
                 cancellationToken);
 
-            ReplaceMentions(message, resolution.Mentions, replaceExisting);
-            var notified = await _notifications.StageResolvedMentionsAsync(
+            this.ReplaceMentions(message, resolution.Mentions, replaceExisting);
+            var notified = await this._notifications.StageResolvedMentionsAsync(
                 actorUserId,
                 serverId,
                 context.NotificationSpaceId,
@@ -368,7 +368,7 @@ namespace ArcaneLink.Services.Messages
             bool replaceExisting,
             CancellationToken cancellationToken = default)
         {
-            var context = await _db.PrivateSpaces
+            var context = await this._db.PrivateSpaces
                 .Where(x => x.SpaceId == spaceId && x.DeletedAt == null)
                 .Select(x => new { x.Space.Title })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -378,20 +378,20 @@ namespace ArcaneLink.Services.Messages
             }
 
             var resolution = requests == null
-                ? await ResolveLegacyPrivateAsync(spaceId, message.Id, body, cancellationToken)
-                : await ResolveExplicitPrivateAsync(spaceId, message.Id, body, requests, cancellationToken);
+                ? await this.ResolveLegacyPrivateAsync(spaceId, message.Id, body, cancellationToken)
+                : await this.ResolveExplicitPrivateAsync(spaceId, message.Id, body, requests, cancellationToken);
             if (resolution == null)
             {
                 return null;
             }
 
-            var recipients = await ResolvePrivateRecipientsAsync(
+            var recipients = await this.ResolvePrivateRecipientsAsync(
                 actorUserId,
                 spaceId,
                 resolution.Mentions,
                 cancellationToken);
-            ReplaceMentions(message, resolution.Mentions, replaceExisting);
-            var notified = await _notifications.StageResolvedMentionsAsync(
+            this.ReplaceMentions(message, resolution.Mentions, replaceExisting);
+            var notified = await this._notifications.StageResolvedMentionsAsync(
                 actorUserId,
                 serverId: null,
                 spaceId,
@@ -430,7 +430,7 @@ namespace ArcaneLink.Services.Messages
                 .Select(x => x.TargetId!.Value)
                 .Distinct()
                 .ToList();
-            var users = await _db.ServerMembers
+            var users = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == serverId &&
@@ -441,7 +441,7 @@ namespace ArcaneLink.Services.Messages
                     x.User.DeletedAt == null)
                 .Select(x => new { x.UserId, x.User.Login })
                 .ToDictionaryAsync(x => x.UserId, cancellationToken);
-            var roles = await _db.ServerRoles
+            var roles = await this._db.ServerRoles
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == serverId &&
@@ -518,7 +518,7 @@ namespace ArcaneLink.Services.Messages
                 .Select(x => x.TargetId!.Value)
                 .Distinct()
                 .ToList();
-            var users = await _db.PrivateSpaceMembers
+            var users = await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.SpaceId == spaceId &&
@@ -575,7 +575,7 @@ namespace ArcaneLink.Services.Messages
             var matches = LegacyMentionRegex().Matches(body).Cast<Match>().ToList();
             if (matches.Count == 0) return new MentionResolution([]);
             var loginNorms = GetLegacyLoginNormCandidates(matches);
-            var users = await _db.ServerMembers
+            var users = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == serverId &&
@@ -599,7 +599,7 @@ namespace ArcaneLink.Services.Messages
             var matches = LegacyMentionRegex().Matches(body).Cast<Match>().ToList();
             if (matches.Count == 0) return new MentionResolution([]);
             var loginNorms = GetLegacyLoginNormCandidates(matches);
-            var users = await _db.PrivateSpaceMembers
+            var users = await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.SpaceId == spaceId &&
@@ -695,7 +695,7 @@ namespace ArcaneLink.Services.Messages
                 .ToList();
             if (roleIds.Count > 0)
             {
-                candidates.UnionWith(await _db.ServerMemberRoles
+                candidates.UnionWith(await this._db.ServerMemberRoles
                     .AsNoTracking()
                     .Where(x =>
                         x.ServerId == serverId &&
@@ -712,7 +712,7 @@ namespace ArcaneLink.Services.Messages
             }
             if (mentions.Any(x => x.Kind == MentionKinds.Everyone))
             {
-                candidates.UnionWith(await _db.ServerMembers
+                candidates.UnionWith(await this._db.ServerMembers
                     .AsNoTracking()
                     .Where(x =>
                         x.ServerId == serverId &&
@@ -724,7 +724,7 @@ namespace ArcaneLink.Services.Messages
                     .ToListAsync(cancellationToken));
             }
             candidates.Remove(actorUserId);
-            return await _access.FilterReadableMessageUserIdsAsync(
+            return await this._access.FilterReadableMessageUserIdsAsync(
                 serverId,
                 spaceId,
                 candidates,
@@ -743,8 +743,8 @@ namespace ArcaneLink.Services.Messages
                 .Select(x => x.TargetUserId!.Value)
                 .ToHashSet();
             var everyone = mentions.Any(x => x.Kind == MentionKinds.Everyone);
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
-            var candidates = await _db.PrivateSpaceMembers
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
+            var candidates = await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.SpaceId == spaceId &&
@@ -768,7 +768,7 @@ namespace ArcaneLink.Services.Messages
         {
             if (replaceExisting)
             {
-                _db.SpaceMessageMentions.RemoveRange(message.Mentions);
+                this._db.SpaceMessageMentions.RemoveRange(message.Mentions);
                 message.Mentions.Clear();
             }
             foreach (var mention in mentions)
@@ -843,17 +843,17 @@ namespace ArcaneLink.Services.Messages
             int start,
             int length,
             DateTime createdAt) => new()
-        {
-            Id = Guid.NewGuid(),
-            MessageId = messageId,
-            Kind = kind,
-            TargetUserId = targetUserId,
-            TargetRoleId = targetRoleId,
-            DisplayText = displayText,
-            Start = start,
-            Length = length,
-            CreatedAt = createdAt
-        };
+            {
+                Id = Guid.NewGuid(),
+                MessageId = messageId,
+                Kind = kind,
+                TargetUserId = targetUserId,
+                TargetRoleId = targetRoleId,
+                DisplayText = displayText,
+                Start = start,
+                Length = length,
+                CreatedAt = createdAt
+            };
 
         [GeneratedRegex(
             @"(?<![\p{L}\p{N}\p{M}_.@-])@(?<login>[\p{L}\p{N}\p{M}_.-]{1,50})",

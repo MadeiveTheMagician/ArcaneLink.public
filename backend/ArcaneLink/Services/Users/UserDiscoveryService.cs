@@ -16,8 +16,8 @@ namespace ArcaneLink.Services.Users
             AppDbContext db,
             IUserPresencePolicyService presencePolicy)
         {
-            _db = db;
-            _presencePolicy = presencePolicy;
+            this._db = db;
+            this._presencePolicy = presencePolicy;
         }
 
         public async Task<IReadOnlyList<FriendUserResponse>> SearchUsersAsync(
@@ -31,7 +31,7 @@ namespace ArcaneLink.Services.Users
                 return [];
             }
 
-            var users = await _db.Users
+            var users = await this._db.Users
                 .AsNoTracking()
                 .Include(x => x.Profile)
                     .ThenInclude(x => x.Tags)
@@ -46,7 +46,7 @@ namespace ArcaneLink.Services.Users
                 .Take(20)
                 .ToListAsync(cancellationToken);
 
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 users.Select(user => user.Id),
                 cancellationToken);
@@ -72,14 +72,14 @@ namespace ArcaneLink.Services.Users
                 .Where(x => x != Guid.Empty)
                 .Distinct()
                 .ToHashSet();
-            var currentFriendIds = await _db.UserFriends
+            var currentFriendIds = await this._db.UserFriends
                 .AsNoTracking()
                 .Where(x => x.UserId == currentUserId)
                 .Select(x => x.FriendUserId)
                 .ToListAsync(cancellationToken);
             var friendIdSet = currentFriendIds.ToHashSet();
 
-            var currentServerIds = await _db.ServerMembers
+            var currentServerIds = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x => x.UserId == currentUserId &&
                             x.StatusId == ServerMemberStatusIds.Active &&
@@ -88,14 +88,14 @@ namespace ArcaneLink.Services.Users
                 .ToListAsync(cancellationToken);
             var serverIdSet = currentServerIds.ToHashSet();
 
-            var currentTagIds = await _db.UserProfileTags
+            var currentTagIds = await this._db.UserProfileTags
                 .AsNoTracking()
                 .Where(x => x.UserId == currentUserId)
                 .Select(x => x.TagId)
                 .ToListAsync(cancellationToken);
             var currentTagIdSet = currentTagIds.ToHashSet();
 
-            var candidatesQuery = _db.Users
+            var candidatesQuery = this._db.Users
                 .AsNoTracking()
                 .Include(x => x.Profile)
                     .ThenInclude(x => x.Tags)
@@ -131,7 +131,7 @@ namespace ArcaneLink.Services.Users
                 .OrderBy(x => x.Profile.DisplayNameNorm)
                 .Take(200)
                 .ToListAsync(cancellationToken);
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 candidates.Select(user => user.Id),
                 cancellationToken);
@@ -154,7 +154,7 @@ namespace ArcaneLink.Services.Users
                 return [];
             }
 
-            var mutualFriendCounts = await _db.UserFriends
+            var mutualFriendCounts = await this._db.UserFriends
                 .AsNoTracking()
                 .Where(x => candidateIds.Contains(x.UserId) &&
                             friendIdSet.Contains(x.FriendUserId))
@@ -162,7 +162,7 @@ namespace ArcaneLink.Services.Users
                 .Select(x => new { UserId = x.Key, Count = x.Count() })
                 .ToDictionaryAsync(x => x.UserId, x => x.Count, cancellationToken);
 
-            var mutualServerCounts = await _db.ServerMembers
+            var mutualServerCounts = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x => candidateIds.Contains(x.UserId) &&
                             serverIdSet.Contains(x.ServerId) &&
@@ -172,7 +172,7 @@ namespace ArcaneLink.Services.Users
                 .Select(x => new { UserId = x.Key, Count = x.Count() })
                 .ToDictionaryAsync(x => x.UserId, x => x.Count, cancellationToken);
 
-            var sharedTagCounts = await _db.UserProfileTags
+            var sharedTagCounts = await this._db.UserProfileTags
                 .AsNoTracking()
                 .Where(x => candidateIds.Contains(x.UserId) &&
                             currentTagIdSet.Contains(x.TagId))
@@ -180,7 +180,7 @@ namespace ArcaneLink.Services.Users
                 .Select(x => new { UserId = x.Key, Count = x.Count() })
                 .ToDictionaryAsync(x => x.UserId, x => x.Count, cancellationToken);
 
-            var incomingRequestUserIds = await _db.FriendRequests
+            var incomingRequestUserIds = await this._db.FriendRequests
                 .AsNoTracking()
                 .Where(x => x.ToUserId == currentUserId &&
                             x.StatusId == FriendRequestStatusIds.Pending &&
@@ -189,7 +189,7 @@ namespace ArcaneLink.Services.Users
                 .ToListAsync(cancellationToken);
             var incomingRequestSet = incomingRequestUserIds.ToHashSet();
 
-            var outgoingRequestUserIds = await _db.FriendRequests
+            var outgoingRequestUserIds = await this._db.FriendRequests
                 .AsNoTracking()
                 .Where(x => x.FromUserId == currentUserId &&
                             x.StatusId == FriendRequestStatusIds.Pending &&

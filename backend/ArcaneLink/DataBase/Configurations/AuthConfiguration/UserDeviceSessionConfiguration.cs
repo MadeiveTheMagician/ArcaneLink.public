@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.Models.AuthModels;
+using ArcaneLink.DataBase.Models.AuthModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

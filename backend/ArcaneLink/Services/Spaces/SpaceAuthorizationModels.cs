@@ -58,20 +58,20 @@ namespace ArcaneLink.Services.Spaces
         public SpaceAuthorizationSnapshot(
             IReadOnlyDictionary<Guid, SpaceAccessCapabilities> capabilities)
         {
-            _capabilities = capabilities;
+            this._capabilities = capabilities;
         }
 
         public IReadOnlyDictionary<Guid, SpaceAccessCapabilities> Capabilities =>
-            _capabilities;
+            this._capabilities;
 
         public SpaceAccessCapabilities? GetCapabilities(Guid spaceId)
         {
-            return _capabilities.GetValueOrDefault(spaceId);
+            return this._capabilities.GetValueOrDefault(spaceId);
         }
 
         public bool Can(Guid spaceId, SpaceAction action)
         {
-            var capabilities = GetCapabilities(spaceId);
+            var capabilities = this.GetCapabilities(spaceId);
             return capabilities != null && action switch
             {
                 SpaceAction.View => capabilities.CanView,
@@ -84,8 +84,8 @@ namespace ArcaneLink.Services.Spaces
 
         public IReadOnlyList<Guid> GetAllowedSpaceIds(SpaceAction action)
         {
-            return _capabilities
-                .Where(item => Can(item.Key, action))
+            return this._capabilities
+                .Where(item => this.Can(item.Key, action))
                 .Select(item => item.Key)
                 .ToList();
         }

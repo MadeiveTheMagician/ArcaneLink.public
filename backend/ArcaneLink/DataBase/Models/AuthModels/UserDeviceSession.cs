@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.Models.UsersModels;
+using ArcaneLink.DataBase.Models.UsersModels;
 
 namespace ArcaneLink.DataBase.Models.AuthModels
 {
@@ -26,7 +26,7 @@ namespace ArcaneLink.DataBase.Models.AuthModels
 
         public ICollection<UserRefreshToken> RefreshTokens { get; set; } = [];
 
-        public bool IsRevoked => RevokedAt != null;
-        public bool IsActive => RevokedAt == null;
+        public bool IsRevoked => this.RevokedAt != null;
+        public bool IsActive => this.RevokedAt == null;
     }
 }

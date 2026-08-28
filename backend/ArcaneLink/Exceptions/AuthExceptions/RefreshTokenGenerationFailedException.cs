@@ -1,4 +1,4 @@
-﻿using ArcaneLink.Exceptions.AuthExceptions.Abstractions;
+using ArcaneLink.Exceptions.AuthExceptions.Abstractions;
 
 namespace ArcaneLink.Exceptions.AuthExceptions
 {

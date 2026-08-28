@@ -25,12 +25,12 @@ namespace ArcaneLink.Services.Spaces
             SpaceValidationService validation,
             SpaceRealtimeNotifier notifier)
         {
-            _db = db;
-            _access = access;
-            _authorization = authorization;
-            _queries = queries;
-            _validation = validation;
-            _notifier = notifier;
+            this._db = db;
+            this._access = access;
+            this._authorization = authorization;
+            this._queries = queries;
+            this._validation = validation;
+            this._notifier = notifier;
         }
 
         public async Task<SpaceResponse?> CreateSpaceAsync(
@@ -39,7 +39,7 @@ namespace ArcaneLink.Services.Spaces
             CreateSpaceRequest request,
             CancellationToken cancellationToken = default)
         {
-            var type = await _db.SpaceTypes.FirstOrDefaultAsync(
+            var type = await this._db.SpaceTypes.FirstOrDefaultAsync(
                 x => x.Code == SpaceTextNormalizer.NormalizeCode(request.TypeCode),
                 cancellationToken);
             if (type == null)
@@ -47,7 +47,7 @@ namespace ArcaneLink.Services.Spaces
                 return null;
             }
 
-            var isPrivatePlacement = await IsPrivatePlacementAsync(
+            var isPrivatePlacement = await this.IsPrivatePlacementAsync(
                 serverId,
                 request.ParentSpaceId,
                 request.RequiredServerRoleId,
@@ -61,13 +61,13 @@ namespace ArcaneLink.Services.Spaces
             }
 
             var canCreate = request.ParentSpaceId.HasValue
-                ? await _authorization.IsAllowedAsync(
+                ? await this._authorization.IsAllowedAsync(
                     currentUserId,
                     serverId,
                     request.ParentSpaceId.Value,
                     new SpaceAuthorizationRequirement(permissionCode),
                     cancellationToken)
-                : await _access.HasGranularPermissionAsync(
+                : await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     permissionCode,
@@ -77,15 +77,15 @@ namespace ArcaneLink.Services.Spaces
                 return null;
             }
 
-            if (!await _validation.IsValidHierarchyAsync(serverId, type.Id, request.ParentSpaceId, cancellationToken) ||
-                !await _validation.IsValidRequiredRoleAsync(serverId, request.RequiredServerRoleId, cancellationToken))
+            if (!await this._validation.IsValidHierarchyAsync(serverId, type.Id, request.ParentSpaceId, cancellationToken) ||
+                !await this._validation.IsValidRequiredRoleAsync(serverId, request.RequiredServerRoleId, cancellationToken))
             {
                 return null;
             }
 
             var now = DateTime.UtcNow;
             var protectionRoleId = await SpaceProtectionRoleResolver.ResolveAsync(
-                _db,
+                this._db,
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -107,10 +107,10 @@ namespace ArcaneLink.Services.Spaces
                 UpdatedAt = now
             };
 
-            _db.Spaces.Add(space);
+            this._db.Spaces.Add(space);
             if (space.TypeId == SpaceIds.TypeVoiceRoom)
             {
-                _db.Spaces.Add(new Space
+                this._db.Spaces.Add(new Space
                 {
                     Id = Guid.NewGuid(),
                     ServerId = serverId,
@@ -127,17 +127,17 @@ namespace ArcaneLink.Services.Spaces
                     UpdatedAt = now
                 });
             }
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditSpaceCreated,
                 currentUserId,
                 relatedSpaceId: space.Id);
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
-            _authorization.InvalidateServer(serverId);
-            await _notifier.NotifySpacesChangedAsync(serverId, space.Id, cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
+            this._authorization.InvalidateServer(serverId);
+            await this._notifier.NotifySpacesChangedAsync(serverId, space.Id, cancellationToken);
 
-            return await _queries.GetSpaceAsync(
+            return await this._queries.GetSpaceAsync(
                 currentUserId,
                 serverId,
                 space.Id,
@@ -151,7 +151,7 @@ namespace ArcaneLink.Services.Spaces
             UpdateSpaceRequest request,
             CancellationToken cancellationToken = default)
         {
-            var space = await _db.Spaces
+            var space = await this._db.Spaces
                 .Include(x => x.VoiceChatSpace)
                 .FirstOrDefaultAsync(
                 x => x.Id == spaceId &&
@@ -182,7 +182,7 @@ namespace ArcaneLink.Services.Spaces
             }
 
             if ((changesSettings &&
-                 !await _authorization.IsAllowedAsync(
+                 !await this._authorization.IsAllowedAsync(
                      currentUserId,
                      serverId,
                      spaceId,
@@ -190,7 +190,7 @@ namespace ArcaneLink.Services.Spaces
                          "MANAGE_SPACE_SETTINGS"),
                      cancellationToken)) ||
                 (changesAccess &&
-                 !await _authorization.IsAllowedAsync(
+                 !await this._authorization.IsAllowedAsync(
                      currentUserId,
                      serverId,
                      spaceId,
@@ -198,7 +198,7 @@ namespace ArcaneLink.Services.Spaces
                          "MANAGE_SPACE_ACCESS"),
                      cancellationToken)) ||
                 (changesOrder &&
-                 !await _authorization.IsAllowedAsync(
+                 !await this._authorization.IsAllowedAsync(
                      currentUserId,
                      serverId,
                      spaceId,
@@ -210,7 +210,7 @@ namespace ArcaneLink.Services.Spaces
             }
 
             if (changesOrder && request.ParentSpaceId.HasValue &&
-                !await _authorization.IsAllowedAsync(
+                !await this._authorization.IsAllowedAsync(
                     currentUserId,
                     serverId,
                     request.ParentSpaceId.Value,
@@ -222,7 +222,7 @@ namespace ArcaneLink.Services.Spaces
             }
 
             if (changesOrder && request.ClearParentSpace &&
-                !await _access.HasGranularPermissionAsync(
+                !await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "REORDER_SPACES_AND_CATEGORIES",
@@ -232,20 +232,20 @@ namespace ArcaneLink.Services.Spaces
             }
 
             if ((request.ParentSpaceId.HasValue && request.ParentSpaceId.Value == spaceId) ||
-                !await _validation.IsValidHierarchyAsync(
+                !await this._validation.IsValidHierarchyAsync(
                     serverId,
                     space.TypeId,
                     request.ParentSpaceId,
                     cancellationToken,
                     spaceId) ||
-                !await _validation.IsValidRequiredRoleAsync(serverId, request.RequiredServerRoleId, cancellationToken))
+                !await this._validation.IsValidRequiredRoleAsync(serverId, request.RequiredServerRoleId, cancellationToken))
             {
                 return null;
             }
 
             space.ProtectionRoleId ??=
                 await SpaceProtectionRoleResolver.ResolveAsync(
-                    _db,
+                    this._db,
                     currentUserId,
                     serverId,
                     cancellationToken);
@@ -287,17 +287,17 @@ namespace ArcaneLink.Services.Spaces
                 voiceChatSpace.UpdatedAt = updatedAt;
                 voiceChatSpace.Version = Guid.NewGuid();
             }
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditSpaceUpdated,
                 currentUserId,
                 relatedSpaceId: space.Id);
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
-            _authorization.InvalidateServer(serverId);
-            await _notifier.NotifySpacesChangedAsync(serverId, space.Id, cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
+            this._authorization.InvalidateServer(serverId);
+            await this._notifier.NotifySpacesChangedAsync(serverId, space.Id, cancellationToken);
 
-            return await _queries.GetSpaceAsync(
+            return await this._queries.GetSpaceAsync(
                 currentUserId,
                 serverId,
                 space.Id,
@@ -311,7 +311,7 @@ namespace ArcaneLink.Services.Spaces
             DeleteSpaceRequest request,
             CancellationToken cancellationToken = default)
         {
-            var spaces = await _db.Spaces
+            var spaces = await this._db.Spaces
                 .Where(x => x.ServerId == serverId && x.DeletedAt == null)
                 .ToListAsync(cancellationToken);
             var root = spaces.FirstOrDefault(x =>
@@ -335,7 +335,7 @@ namespace ArcaneLink.Services.Spaces
                 var permissionCode = GetDeletePermissionCode(
                     deletedSpace.TypeId);
                 if (permissionCode == null ||
-                    !await _authorization.IsAllowedAsync(
+                    !await this._authorization.IsAllowedAsync(
                         currentUserId,
                         serverId,
                         deletedSpace.Id,
@@ -355,7 +355,7 @@ namespace ArcaneLink.Services.Spaces
                     .ToList();
                 foreach (var child in promotedChildren)
                 {
-                    if (!await _authorization.IsAllowedAsync(
+                    if (!await this._authorization.IsAllowedAsync(
                             currentUserId,
                             serverId,
                             child.Id,
@@ -368,14 +368,14 @@ namespace ArcaneLink.Services.Spaces
                 }
 
                 var canUseDestination = root.ParentSpaceId.HasValue
-                    ? await _authorization.IsAllowedAsync(
+                    ? await this._authorization.IsAllowedAsync(
                         currentUserId,
                         serverId,
                         root.ParentSpaceId.Value,
                         new SpaceAuthorizationRequirement(
                             "REORDER_SPACES_AND_CATEGORIES"),
                         cancellationToken)
-                    : await _access.HasGranularPermissionAsync(
+                    : await this._access.HasGranularPermissionAsync(
                         currentUserId,
                         serverId,
                         "REORDER_SPACES_AND_CATEGORIES",
@@ -410,7 +410,7 @@ namespace ArcaneLink.Services.Spaces
             }
 
             var deletedSpaceIds = deletedSpaces.Select(x => x.Id).ToHashSet();
-            var serversWithDeletedDefault = await _db.Servers
+            var serversWithDeletedDefault = await this._db.Servers
                 .Where(x => x.Id == serverId &&
                             x.DefaultTextSpaceId != null &&
                             deletedSpaceIds.Contains(x.DefaultTextSpaceId.Value))
@@ -422,15 +422,15 @@ namespace ArcaneLink.Services.Spaces
                 server.UpdatedAt = deletedAt;
             }
 
-            _access.AddAudit(
+            this._access.AddAudit(
                 serverId,
                 ServerGovernanceIds.AuditSpaceDeleted,
                 currentUserId,
                 relatedSpaceId: root.Id);
-            await _db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
-            _authorization.InvalidateServer(serverId);
-            await _notifier.NotifySpacesChangedAsync(serverId, root.Id, cancellationToken);
+            await this._db.StageServerAclRevisionBumpAsync(serverId, cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
+            this._authorization.InvalidateServer(serverId);
+            await this._notifier.NotifySpacesChangedAsync(serverId, root.Id, cancellationToken);
 
             return true;
         }
@@ -451,7 +451,7 @@ namespace ArcaneLink.Services.Spaces
                 return false;
             }
 
-            var nodes = await _db.Spaces
+            var nodes = await this._db.Spaces
                 .AsNoTracking()
                 .Where(space =>
                     space.ServerId == serverId &&

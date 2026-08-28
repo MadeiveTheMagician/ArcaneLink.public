@@ -16,24 +16,24 @@ public sealed class TurnCredentialService : ITurnCredentialService
         IOptions<TurnCredentialsOptions> options,
         TimeProvider timeProvider)
     {
-        _options = options.Value;
-        _timeProvider = timeProvider;
+        this._options = options.Value;
+        this._timeProvider = timeProvider;
     }
 
-    public bool IsAvailable => _options.Enabled;
+    public bool IsAvailable => this._options.Enabled;
 
     public VoiceIceServerResponse IssueForUser(Guid userId)
     {
-        if (!IsAvailable)
+        if (!this.IsAvailable)
         {
             throw new InvalidOperationException("TURN credentials are not enabled.");
         }
 
-        var expiresAt = _timeProvider
+        var expiresAt = this._timeProvider
             .GetUtcNow()
-            .AddSeconds(_options.TtlSeconds);
+            .AddSeconds(this._options.TtlSeconds);
         var username = $"{expiresAt.ToUnixTimeSeconds()}:{userId:N}";
-        var credential = CreateCredential(_options.SharedSecret, username);
+        var credential = CreateCredential(this._options.SharedSecret, username);
 
         return new VoiceIceServerResponse
         {
@@ -41,7 +41,7 @@ public sealed class TurnCredentialService : ITurnCredentialService
             [
                 new VoiceIceServer
                 {
-                    Urls = _options.Urls
+                    Urls = this._options.Urls
                         .Select(static url => url.Trim())
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToArray(),

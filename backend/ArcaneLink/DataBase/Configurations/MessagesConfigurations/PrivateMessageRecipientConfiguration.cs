@@ -26,10 +26,10 @@ namespace ArcaneLink.DataBase.Configurations.MessagesConfigurations
                 .IsRequired();
 
             entity.HasIndex(recipient => new
-                {
-                    recipient.UserId,
-                    recipient.MessageId
-                })
+            {
+                recipient.UserId,
+                recipient.MessageId
+            })
                 .HasDatabaseName(
                     "IX_PrivateMessageRecipients_User_Message");
 

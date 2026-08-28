@@ -1,8 +1,8 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Collections.Concurrent;
 using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Assets;
@@ -797,7 +797,8 @@ public sealed class ServerMemberProfileIntegrationTests
         : IRealtimeNotificationService
     {
         public ConcurrentQueue<(Guid ServerId, string EventName)>
-            ServerNotifications { get; } = new();
+            ServerNotifications
+        { get; } = new();
 
         public Task NotifyUserAsync(
             Guid userId,
@@ -819,7 +820,7 @@ public sealed class ServerMemberProfileIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            ServerNotifications.Enqueue((serverId, eventName));
+            this.ServerNotifications.Enqueue((serverId, eventName));
             return Task.CompletedTask;
         }
     }

@@ -14,8 +14,8 @@ namespace ArcaneLink.Middleware
             RequestDelegate next,
             ILogger<CorrelationMiddleware> logger)
         {
-            _next = next;
-            _logger = logger;
+            this._next = next;
+            this._logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -27,7 +27,7 @@ namespace ArcaneLink.Middleware
             Activity.Current?.SetTag("correlation.id", correlationId);
             Activity.Current?.SetTag("http.request_id", context.TraceIdentifier);
 
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            using var scope = this._logger.BeginScope(new Dictionary<string, object>
             {
                 ["CorrelationId"] = correlationId,
                 ["TraceId"] = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier
@@ -36,7 +36,7 @@ namespace ArcaneLink.Middleware
             var startedAt = Stopwatch.GetTimestamp();
             try
             {
-                await _next(context);
+                await this._next(context);
             }
             finally
             {
@@ -46,7 +46,7 @@ namespace ArcaneLink.Middleware
                     new KeyValuePair<string, object?>("method", context.Request.Method),
                     new KeyValuePair<string, object?>("status_code", context.Response.StatusCode));
 
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     ObservabilityEventIds.HttpRequestCompleted,
                     "HTTP request completed. Method={Method} Path={Path} StatusCode={StatusCode} ElapsedMs={ElapsedMs:0.0} CorrelationId={CorrelationId}",
                     context.Request.Method,

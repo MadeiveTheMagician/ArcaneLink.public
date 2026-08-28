@@ -14,9 +14,9 @@ namespace ArcaneLink.Services.Spaces
             ServerVoiceAccessReconciliationService voiceAccess,
             ILogger<SpaceRealtimeNotifier> logger)
         {
-            _realtime = realtime;
-            _voiceAccess = voiceAccess;
-            _logger = logger;
+            this._realtime = realtime;
+            this._voiceAccess = voiceAccess;
+            this._logger = logger;
         }
 
         public async Task NotifySpacesChangedAsync(
@@ -24,15 +24,15 @@ namespace ArcaneLink.Services.Spaces
             Guid? _,
             CancellationToken cancellationToken)
         {
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerSpacesChanged,
                 new { serverId },
                 CancellationToken.None);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId },

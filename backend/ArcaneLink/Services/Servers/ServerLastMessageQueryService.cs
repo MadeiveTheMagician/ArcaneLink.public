@@ -15,8 +15,8 @@ namespace ArcaneLink.Services.Servers
             AppDbContext db,
             SpaceMessageAccessService messageAccess)
         {
-            _db = db;
-            _messageAccess = messageAccess;
+            this._db = db;
+            this._messageAccess = messageAccess;
         }
 
         public async Task<Dictionary<Guid, ServerLastMessageResponse>> GetAsync(
@@ -46,7 +46,7 @@ namespace ArcaneLink.Services.Servers
             var readableMessageSpaceIds = new HashSet<Guid>();
             foreach (var serverId in serverIdSet)
             {
-                var readable = await _messageAccess.GetReadableMessageSpaceIdsAsync(
+                var readable = await this._messageAccess.GetReadableMessageSpaceIdsAsync(
                     currentUserId,
                     serverId,
                     cancellationToken);
@@ -60,7 +60,7 @@ namespace ArcaneLink.Services.Servers
                 return [];
             }
 
-            var messages = await _db.SpaceMessages
+            var messages = await this._db.SpaceMessages
                 .AsNoTracking()
                 .Where(message =>
                     readableMessageSpaceIds.Contains(message.SpaceId) &&

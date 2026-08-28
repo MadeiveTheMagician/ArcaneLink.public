@@ -19,14 +19,14 @@ namespace ArcaneLink.Services.Users
             AppDbContext db,
             IRealtimeNotificationService realtime)
         {
-            _db = db;
-            _realtime = realtime;
+            this._db = db;
+            this._realtime = realtime;
         }
 
         public async Task<IReadOnlyList<ProfileTagResponse>> GetProfileTagsAsync(
             CancellationToken cancellationToken = default)
         {
-            var tags = await _db.ProfileTags
+            var tags = await this._db.ProfileTags
                 .AsNoTracking()
                 .OrderBy(x => x.DisplayOrder)
                 .ThenBy(x => x.Title)
@@ -39,7 +39,7 @@ namespace ArcaneLink.Services.Users
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var tags = await _db.UserProfileTags
+            var tags = await this._db.UserProfileTags
                 .AsNoTracking()
                 .Include(x => x.Tag)
                 .Where(x => x.UserId == userId)
@@ -55,7 +55,7 @@ namespace ArcaneLink.Services.Users
             UpdateUserProfileTagsRequest request,
             CancellationToken cancellationToken = default)
         {
-            var user = await _db.Users
+            var user = await this._db.Users
                 .Include(x => x.Profile)
                 .FirstOrDefaultAsync(
                     x => x.Id == userId &&
@@ -68,18 +68,18 @@ namespace ArcaneLink.Services.Users
                 return null;
             }
 
-            await ReplaceUserProfileTagsAsync(userId, request.TagIds, cancellationToken);
+            await this.ReplaceUserProfileTagsAsync(userId, request.TagIds, cancellationToken);
 
             user.UpdatedAt = DateTime.UtcNow;
             user.Profile.UpdatedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync(cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._realtime.NotifyUserAsync(
                 userId,
                 RealtimeEventNames.UserProfileChanged,
                 new { userId },
                 cancellationToken);
 
-            return await GetUserProfileTagsAsync(userId, cancellationToken);
+            return await this.GetUserProfileTagsAsync(userId, cancellationToken);
         }
 
         public async Task ReplaceUserProfileTagsAsync(
@@ -95,16 +95,16 @@ namespace ArcaneLink.Services.Users
 
             var validTagIds = distinctTagIds.Count == 0
                 ? []
-                : await _db.ProfileTags
+                : await this._db.ProfileTags
                     .Where(x => distinctTagIds.Contains(x.Id))
                     .Select(x => x.Id)
                     .ToListAsync(cancellationToken);
             var validTagIdSet = validTagIds.ToHashSet();
-            var existingTags = await _db.UserProfileTags
+            var existingTags = await this._db.UserProfileTags
                 .Where(x => x.UserId == userId)
                 .ToListAsync(cancellationToken);
 
-            _db.UserProfileTags.RemoveRange(
+            this._db.UserProfileTags.RemoveRange(
                 existingTags.Where(x => !validTagIdSet.Contains(x.TagId)));
 
             var existingTagIds = existingTags
@@ -115,7 +115,7 @@ namespace ArcaneLink.Services.Users
 
             foreach (var tagId in validTagIds.Where(x => !existingTagIds.Contains(x)))
             {
-                _db.UserProfileTags.Add(new UserProfileTag
+                this._db.UserProfileTags.Add(new UserProfileTag
                 {
                     UserId = userId,
                     TagId = tagId,

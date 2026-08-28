@@ -23,9 +23,9 @@ namespace ArcaneLink.Services.PrivateSpaces
             TimeProvider timeProvider,
             ILogger<PrivateMessageTrashCleanupRunner> logger)
         {
-            _db = db;
-            _timeProvider = timeProvider;
-            _logger = logger;
+            this._db = db;
+            this._timeProvider = timeProvider;
+            this._logger = logger;
         }
 
         public async Task<PrivateMessageTrashCleanupResult> RunOnceAsync(
@@ -33,7 +33,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid? spaceId = null,
             Guid? deletedByUserId = null)
         {
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
             var cutoff = now.Subtract(RestoreWindow);
             var deletedCount = 0;
             var assetsScheduledCount = 0;
@@ -41,7 +41,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var messages = await _db.SpaceMessages
+                var messages = await this._db.SpaceMessages
                     .Include(message => message.Assets)
                     .Where(message =>
                         message.Space.ServerId == null &&
@@ -51,7 +51,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                         (!spaceId.HasValue || message.SpaceId == spaceId.Value) &&
                         (!deletedByUserId.HasValue ||
                          message.DeletedByUserId == deletedByUserId.Value) &&
-                        !_db.ModerationCases.Any(moderationCase =>
+                        !this._db.ModerationCases.Any(moderationCase =>
                             moderationCase.MessageId == message.Id))
                     .OrderBy(message => message.DeletedAt)
                     .ThenBy(message => message.Id)
@@ -64,7 +64,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 }
 
                 var messageIds = messages.Select(message => message.Id).ToList();
-                await _db.SpaceMessages
+                await this._db.SpaceMessages
                     .Where(message =>
                         message.ReplyToMessageId.HasValue &&
                         messageIds.Contains(message.ReplyToMessageId.Value))
@@ -81,15 +81,15 @@ namespace ArcaneLink.Services.PrivateSpaces
                     .ToList();
                 var orphanedAttachments = candidateAssetIds.Count == 0
                     ? []
-                    : await _db.Assets
+                    : await this._db.Assets
                         .Where(asset =>
                             candidateAssetIds.Contains(asset.Id) &&
                             asset.AssetTypeId == AssetTypeIds.MessageAttachment &&
                             asset.DeletedAt == null &&
-                            !_db.SpaceMessageAssets.Any(link =>
+                            !this._db.SpaceMessageAssets.Any(link =>
                                 link.AssetId == asset.Id &&
                                 !messageIds.Contains(link.MessageId)) &&
-                            !_db.ModerationEvidenceAssets.Any(evidence =>
+                            !this._db.ModerationEvidenceAssets.Any(evidence =>
                                 evidence.AssetId == asset.Id))
                         .ToListAsync(cancellationToken);
 
@@ -98,8 +98,8 @@ namespace ArcaneLink.Services.PrivateSpaces
                     asset.DeletedAt = now;
                 }
 
-                _db.SpaceMessages.RemoveRange(messages);
-                await _db.SaveChangesAsync(cancellationToken);
+                this._db.SpaceMessages.RemoveRange(messages);
+                await this._db.SaveChangesAsync(cancellationToken);
                 deletedCount += messages.Count;
                 assetsScheduledCount += orphanedAttachments.Count;
 
@@ -108,10 +108,10 @@ namespace ArcaneLink.Services.PrivateSpaces
                     break;
                 }
 
-                _db.ChangeTracker.Clear();
+                this._db.ChangeTracker.Clear();
             }
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 "Expired private-message trash cleanup completed. CutoffUtc={CutoffUtc} SpaceId={SpaceId} DeletedByUserId={DeletedByUserId} MessagesDeleted={MessagesDeleted} AssetsScheduledForCleanup={AssetsScheduledForCleanup}",
                 cutoff,
                 spaceId,

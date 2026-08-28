@@ -16,7 +16,7 @@ public sealed class ServerMemberDisplayColorController : ControllerBase
     public ServerMemberDisplayColorController(
         IServerMemberDisplayColorService displayColor)
     {
-        _displayColor = displayColor;
+        this._displayColor = displayColor;
     }
 
     [HttpGet]
@@ -24,13 +24,13 @@ public sealed class ServerMemberDisplayColorController : ControllerBase
         Guid serverId,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        if (userId == null) return Unauthorized();
-        var response = await _displayColor.GetAsync(
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
+        var response = await this._displayColor.GetAsync(
             userId.Value,
             serverId,
             cancellationToken);
-        return response == null ? NotFound() : Ok(response);
+        return response == null ? this.NotFound() : this.Ok(response);
     }
 
     [HttpPatch]
@@ -39,27 +39,27 @@ public sealed class ServerMemberDisplayColorController : ControllerBase
         [FromBody] UpdateServerMemberDisplayColorRequest request,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        if (userId == null) return Unauthorized();
-        var result = await _displayColor.UpdateAsync(
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
+        var result = await this._displayColor.UpdateAsync(
             userId.Value,
             serverId,
             request,
             cancellationToken);
         return result.Status switch
         {
-            UpdateServerMemberDisplayColorStatus.Success => Ok(result.DisplayColor),
-            UpdateServerMemberDisplayColorStatus.InvalidRequest => BadRequest(
+            UpdateServerMemberDisplayColorStatus.Success => this.Ok(result.DisplayColor),
+            UpdateServerMemberDisplayColorStatus.InvalidRequest => this.BadRequest(
                 new { code = "invalid_server_member_display_color" }),
-            UpdateServerMemberDisplayColorStatus.Conflict => Conflict(
+            UpdateServerMemberDisplayColorStatus.Conflict => this.Conflict(
                 new { code = "server_member_display_color_conflict" }),
-            _ => NotFound()
+            _ => this.NotFound()
         };
     }
 
     private Guid? GetCurrentUserId()
     {
-        var userIdValue = User.FindFirstValue("userId");
+        var userIdValue = this.User.FindFirstValue("userId");
         return Guid.TryParse(userIdValue, out var userId) ? userId : null;
     }
 }

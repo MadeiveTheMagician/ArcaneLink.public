@@ -1,7 +1,7 @@
+using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Messages;
 using ArcaneLink.DataBase.DTOs.Spaces;
 using ArcaneLink.DataBase.DTOs.Users;
-using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.Models.SpacesModels;
 using ArcaneLink.Services.Users;
 

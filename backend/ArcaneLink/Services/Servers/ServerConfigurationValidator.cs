@@ -12,7 +12,7 @@ namespace ArcaneLink.Services.Servers
 
         public ServerConfigurationValidator(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         public void NormalizeIconCrop(
@@ -48,7 +48,7 @@ namespace ArcaneLink.Services.Servers
                 return;
             }
 
-            var isValidIcon = await _db.Assets
+            var isValidIcon = await this._db.Assets
                 .AnyAsync(
                     x => x.Id == iconAssetId.Value &&
                          x.OwnerUserId == currentUserId &&
@@ -68,7 +68,7 @@ namespace ArcaneLink.Services.Servers
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            var isValidTextSpace = await _db.Spaces
+            var isValidTextSpace = await this._db.Spaces
                 .AnyAsync(
                     x => x.Id == spaceId &&
                          x.ServerId == serverId &&

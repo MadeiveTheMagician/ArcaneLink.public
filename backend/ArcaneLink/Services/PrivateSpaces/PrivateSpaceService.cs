@@ -4,14 +4,14 @@ using ArcaneLink.DataBase.DTOs.Messages;
 using ArcaneLink.DataBase.DTOs.Spaces;
 using ArcaneLink.DataBase.Models.MessagesModels;
 using ArcaneLink.DataBase.Models.SpacesModels;
+using ArcaneLink.Exceptions.UsersExceptions;
 using ArcaneLink.Services.Messages;
-using ArcaneLink.Services.PrivateSpaces.Abstractions;
 using ArcaneLink.Services.Notifications.Abstractions;
+using ArcaneLink.Services.PrivateSpaces.Abstractions;
 using ArcaneLink.Services.Realtime;
 using ArcaneLink.Services.Realtime.Abstractions;
 using ArcaneLink.Services.Users;
 using ArcaneLink.Services.Users.Abstractions;
-using ArcaneLink.Exceptions.UsersExceptions;
 using Microsoft.EntityFrameworkCore;
 using static ArcaneLink.Services.PrivateSpaces.PrivateSpaceResponseMapper;
 using static ArcaneLink.Services.PrivateSpaces.PrivateSpaceTextNormalizer;
@@ -47,30 +47,30 @@ namespace ArcaneLink.Services.PrivateSpaces
             IUserNotificationService notifications,
             TimeProvider timeProvider)
         {
-            _db = db;
-            _access = access;
-            _activity = activity;
-            _personalAvatars = personalAvatars;
-            _notifier = notifier;
-            _unreadCounts = unreadCounts;
-            _presencePolicy = presencePolicy;
-            _presenceCoordinator = presenceCoordinator;
-            _directMessagePrivacy = directMessagePrivacy;
-            _notifications = notifications;
-            _timeProvider = timeProvider;
+            this._db = db;
+            this._access = access;
+            this._activity = activity;
+            this._personalAvatars = personalAvatars;
+            this._notifier = notifier;
+            this._unreadCounts = unreadCounts;
+            this._presencePolicy = presencePolicy;
+            this._presenceCoordinator = presenceCoordinator;
+            this._directMessagePrivacy = directMessagePrivacy;
+            this._notifications = notifications;
+            this._timeProvider = timeProvider;
         }
 
         public async Task<IReadOnlyList<PrivateSpaceResponse>> GetMyPrivateSpacesAsync(
             Guid currentUserId,
             CancellationToken cancellationToken = default)
         {
-            var isOrderLocked = await _db.UserProfileSettings
+            var isOrderLocked = await this._db.UserProfileSettings
                 .AsNoTracking()
                 .Where(settings => settings.UserId == currentUserId)
                 .Select(settings =>
                     (bool?)settings.IsAllPrivateSpaceOrderLocked)
                 .SingleOrDefaultAsync(cancellationToken) ?? false;
-            var spacesQuery = LoadPrivateSpacesQuery()
+            var spacesQuery = this.LoadPrivateSpacesQuery()
                 .Where(
                     x => x.DeletedAt == null &&
                          x.Members.Any(member =>
@@ -134,19 +134,19 @@ namespace ArcaneLink.Services.PrivateSpaces
                 .ThenBy(x => x.SpaceId)
                 .ToListAsync(cancellationToken);
 
-            var lastMessages = await GetLastMessagesByPrivateSpaceAsync(
+            var lastMessages = await this.GetLastMessagesByPrivateSpaceAsync(
                 spaces.Select(x => x.SpaceId).ToList(),
                 currentUserId,
                 cancellationToken);
-            var unreadCounts = await _unreadCounts.GetPrivateSpaceUnreadCountsAsync(
+            var unreadCounts = await this._unreadCounts.GetPrivateSpaceUnreadCountsAsync(
                 currentUserId,
                 spaces.Select(x => x.SpaceId),
                 cancellationToken);
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 spaces.SelectMany(space => space.Members).Select(member => member.UserId),
                 cancellationToken);
-            var blockedUserIds = await GetBlockedUserIdsAsync(
+            var blockedUserIds = await this.GetBlockedUserIdsAsync(
                 currentUserId,
                 cancellationToken);
 
@@ -166,12 +166,12 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            if (!await IsActiveMemberAsync(currentUserId, spaceId, cancellationToken))
+            if (!await this.IsActiveMemberAsync(currentUserId, spaceId, cancellationToken))
             {
                 return null;
             }
 
-            var privateSpace = await LoadPrivateSpacesQuery()
+            var privateSpace = await this.LoadPrivateSpacesQuery()
                 .FirstOrDefaultAsync(
                     x => x.SpaceId == spaceId &&
                          x.DeletedAt == null,
@@ -182,19 +182,19 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return null;
             }
 
-            var lastMessages = await GetLastMessagesByPrivateSpaceAsync(
+            var lastMessages = await this.GetLastMessagesByPrivateSpaceAsync(
                 [privateSpace.SpaceId],
                 currentUserId,
                 cancellationToken);
-            var unreadCounts = await _unreadCounts.GetPrivateSpaceUnreadCountsAsync(
+            var unreadCounts = await this._unreadCounts.GetPrivateSpaceUnreadCountsAsync(
                 currentUserId,
                 [privateSpace.SpaceId],
                 cancellationToken);
-            var presence = await _presencePolicy.ResolveAsync(
+            var presence = await this._presencePolicy.ResolveAsync(
                 currentUserId,
                 privateSpace.Members.Select(member => member.UserId),
                 cancellationToken);
-            var blockedUserIds = await GetBlockedUserIdsAsync(
+            var blockedUserIds = await this.GetBlockedUserIdsAsync(
                 currentUserId,
                 cancellationToken);
 
@@ -227,7 +227,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return null;
             }
 
-            var membership = await _db.PrivateSpaceMembers
+            var membership = await this._db.PrivateSpaceMembers
                 .Include(member => member.PrivateSpace)
                 .FirstOrDefaultAsync(
                     member =>
@@ -255,7 +255,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             var previousCustomAvatarAssetId =
                 membership.PeerAvatarAssetId;
             if (request.CustomAvatarAssetId.HasValue &&
-                !await IsUsableOwnedImageAsync(
+                !await this.IsUsableOwnedImageAsync(
                     currentUserId,
                     request.CustomAvatarAssetId.Value,
                     cancellationToken))
@@ -306,7 +306,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 membership.PeerAvatarCropZoom = crop.Zoom;
             }
 
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
             if (request.MuteMode != null &&
                 !ApplyMuteMode(membership, request.MuteMode, now))
             {
@@ -314,8 +314,8 @@ namespace ArcaneLink.Services.PrivateSpaces
             }
 
             membership.UpdatedAt = now;
-            await _db.SaveChangesAsync(cancellationToken);
-            await _notifier.NotifySpacesChangedForUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._notifier.NotifySpacesChangedForUserAsync(
                 currentUserId,
                 spaceId,
                 CancellationToken.None);
@@ -323,13 +323,13 @@ namespace ArcaneLink.Services.PrivateSpaces
                 previousCustomAvatarAssetId !=
                 membership.PeerAvatarAssetId)
             {
-                await _personalAvatars
+                await this._personalAvatars
                     .DeleteOwnedOptimizedIfOrphanedAsync(
                         currentUserId,
                         previousCustomAvatarAssetId.Value,
                         CancellationToken.None);
             }
-            return await GetPrivateSpaceAsync(
+            return await this.GetPrivateSpaceAsync(
                 currentUserId,
                 spaceId,
                 cancellationToken);
@@ -341,7 +341,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             UpdateGroupPrivateSpaceRequest request,
             CancellationToken cancellationToken = default)
         {
-            var privateSpace = await _db.PrivateSpaces
+            var privateSpace = await this._db.PrivateSpaces
                 .Include(space => space.Space)
                 .Include(space => space.Members)
                 .FirstOrDefaultAsync(
@@ -361,7 +361,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             }
 
             if (request.AvatarAssetId.HasValue &&
-                !await IsUsableOwnedImageAsync(
+                !await this.IsUsableOwnedImageAsync(
                     currentUserId,
                     request.AvatarAssetId.Value,
                     cancellationToken))
@@ -383,7 +383,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             if (request.Title != null || request.ClearTitle)
             {
                 var title = request.ClearTitle
-                    ? await BuildDefaultGroupTitleAsync(
+                    ? await this.BuildDefaultGroupTitleAsync(
                         privateSpace.Members
                             .Where(member =>
                                 member.StatusId ==
@@ -425,14 +425,14 @@ namespace ArcaneLink.Services.PrivateSpaces
                 privateSpace.AvatarCropZoom = crop.Zoom;
             }
 
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
             privateSpace.UpdatedAt = now;
             privateSpace.Space.UpdatedAt = now;
-            await _db.SaveChangesAsync(cancellationToken);
-            await NotifyPrivateSpacesChangedAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this.NotifyPrivateSpacesChangedAsync(
                 spaceId,
                 CancellationToken.None);
-            return await GetPrivateSpaceAsync(
+            return await this.GetPrivateSpaceAsync(
                 currentUserId,
                 spaceId,
                 cancellationToken);
@@ -455,7 +455,7 @@ namespace ArcaneLink.Services.PrivateSpaces
 
             if (invitedUserIds.Count == 1)
             {
-                return await GetOrCreateDirectSpaceAsync(
+                return await this.GetOrCreateDirectSpaceAsync(
                     currentUserId,
                     invitedUserIds[0],
                     cancellationToken);
@@ -465,11 +465,11 @@ namespace ArcaneLink.Services.PrivateSpaces
                 .Prepend(currentUserId)
                 .ToList();
             if (
-                !await AreActiveUsersAsync(memberUserIds, cancellationToken))
+                !await this.AreActiveUsersAsync(memberUserIds, cancellationToken))
             {
                 return null;
             }
-            if (!await _directMessagePrivacy.CanStartConversationsAsync(
+            if (!await this._directMessagePrivacy.CanStartConversationsAsync(
                     currentUserId,
                     memberUserIds,
                     cancellationToken))
@@ -479,11 +479,11 @@ namespace ArcaneLink.Services.PrivateSpaces
 
             var now = DateTime.UtcNow;
             var listPositions = await PrivateSpaceListOrder.GetNextTopPositionsAsync(
-                _db,
+                this._db,
                 memberUserIds,
                 cancellationToken);
             var title = NormalizeOptional(request.Title) ??
-                        await BuildDefaultGroupTitleAsync(
+                        await this.BuildDefaultGroupTitleAsync(
                             memberUserIds,
                             cancellationToken);
             var space = new Space
@@ -531,34 +531,34 @@ namespace ArcaneLink.Services.PrivateSpaces
                 });
             }
 
-            _db.PrivateSpaces.Add(privateSpace);
+            this._db.PrivateSpaces.Add(privateSpace);
             var notificationUserIds = memberUserIds
                 .Where(userId => userId != currentUserId)
                 .ToArray();
             foreach (var invitedUserId in notificationUserIds)
             {
-                await _notifications.StagePrivateSpaceInviteAsync(
+                await this._notifications.StagePrivateSpaceInviteAsync(
                     invitedUserId,
                     currentUserId,
                     space.Id,
                     title,
                     cancellationToken);
             }
-            await _presenceCoordinator.ExecuteMutationAsync(
+            await this._presenceCoordinator.ExecuteMutationAsync(
                 memberUserIds,
-                token => _db.SaveChangesAsync(token),
+                token => this._db.SaveChangesAsync(token),
                 cancellationToken);
-            await _presenceCoordinator.AudienceChangedAsync(
+            await this._presenceCoordinator.AudienceChangedAsync(
                 memberUserIds,
                 CancellationToken.None);
-            await NotifyPrivateSpacesChangedAsync(
+            await this.NotifyPrivateSpacesChangedAsync(
                 space.Id,
                 CancellationToken.None);
-            await _notifications.NotifyChangedAsync(
+            await this._notifications.NotifyChangedAsync(
                 notificationUserIds,
                 CancellationToken.None);
 
-            return await GetPrivateSpaceAsync(currentUserId, space.Id, cancellationToken);
+            return await this.GetPrivateSpaceAsync(currentUserId, space.Id, cancellationToken);
         }
 
         public async Task<PrivateSpaceResponse?> GetOrCreateDirectSpaceAsync(
@@ -567,14 +567,14 @@ namespace ArcaneLink.Services.PrivateSpaces
             CancellationToken cancellationToken = default)
         {
             if (targetUserId == currentUserId ||
-                !await IsActiveUserAsync(targetUserId, cancellationToken) ||
-                !await IsActiveUserAsync(currentUserId, cancellationToken))
+                !await this.IsActiveUserAsync(targetUserId, cancellationToken) ||
+                !await this.IsActiveUserAsync(currentUserId, cancellationToken))
             {
                 return null;
             }
 
             var pair = CanonicalizeDirectPair(currentUserId, targetUserId);
-            var existingSpace = await _db.PrivateSpaces
+            var existingSpace = await this._db.PrivateSpaces
                 .AsNoTracking()
                 .Include(x => x.Members)
                 .Where(
@@ -589,7 +589,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 var requiresReactivation = existingSpace.Members.Any(member =>
                     member.StatusId != PrivateSpaceIds.MemberStatusActive);
                 if (requiresReactivation &&
-                    !await _directMessagePrivacy.CanStartConversationAsync(
+                    !await this._directMessagePrivacy.CanStartConversationAsync(
                         currentUserId,
                         targetUserId,
                         cancellationToken))
@@ -597,23 +597,23 @@ namespace ArcaneLink.Services.PrivateSpaces
                     throw new DirectMessagePrivacyDeniedException();
                 }
 
-                await ReactivateDirectSpaceMembersAsync(
+                await this.ReactivateDirectSpaceMembersAsync(
                     existingSpace.SpaceId,
                     currentUserId,
                     [currentUserId, targetUserId],
                     cancellationToken);
-                await RestoreDirectVisibilityAsync(
+                await this.RestoreDirectVisibilityAsync(
                     existingSpace.SpaceId,
                     currentUserId,
                     cancellationToken);
 
-                return await GetPrivateSpaceAsync(
+                return await this.GetPrivateSpaceAsync(
                     currentUserId,
                     existingSpace.SpaceId,
                     cancellationToken);
             }
 
-            if (!await _directMessagePrivacy.CanStartConversationAsync(
+            if (!await this._directMessagePrivacy.CanStartConversationAsync(
                     currentUserId,
                     targetUserId,
                     cancellationToken))
@@ -621,7 +621,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                 throw new DirectMessagePrivacyDeniedException();
             }
 
-            return await CreateDirectSpaceAsync(
+            return await this.CreateDirectSpaceAsync(
                 currentUserId,
                 targetUserId,
                 pair,
@@ -637,10 +637,10 @@ namespace ArcaneLink.Services.PrivateSpaces
             var memberUserIds = new[] { currentUserId, targetUserId };
             var now = DateTime.UtcNow;
             var listPositions = await PrivateSpaceListOrder.GetNextTopPositionsAsync(
-                _db,
+                this._db,
                 memberUserIds,
                 cancellationToken);
-            var internalTitle = await BuildDirectInternalTitleAsync(
+            var internalTitle = await this.BuildDirectInternalTitleAsync(
                 targetUserId,
                 cancellationToken);
             var space = new Space
@@ -691,8 +691,8 @@ namespace ArcaneLink.Services.PrivateSpaces
                 });
             }
 
-            _db.PrivateSpaces.Add(privateSpace);
-            await _notifications.StagePrivateSpaceInviteAsync(
+            this._db.PrivateSpaces.Add(privateSpace);
+            await this._notifications.StagePrivateSpaceInviteAsync(
                 targetUserId,
                 currentUserId,
                 space.Id,
@@ -700,15 +700,15 @@ namespace ArcaneLink.Services.PrivateSpaces
                 cancellationToken);
             try
             {
-                await _presenceCoordinator.ExecuteMutationAsync(
+                await this._presenceCoordinator.ExecuteMutationAsync(
                     memberUserIds,
-                    token => _db.SaveChangesAsync(token),
+                    token => this._db.SaveChangesAsync(token),
                     cancellationToken);
             }
             catch (DbUpdateException)
             {
-                _db.ChangeTracker.Clear();
-                var winnerSpaceId = await _db.PrivateSpaces
+                this._db.ChangeTracker.Clear();
+                var winnerSpaceId = await this._db.PrivateSpaces
                     .AsNoTracking()
                     .Where(candidate =>
                         candidate.Kind == PrivateSpaceKindCodes.Direct &&
@@ -722,23 +722,23 @@ namespace ArcaneLink.Services.PrivateSpaces
                     throw;
                 }
 
-                return await GetPrivateSpaceAsync(
+                return await this.GetPrivateSpaceAsync(
                     currentUserId,
                     winnerSpaceId.Value,
                     cancellationToken);
             }
 
-            await _presenceCoordinator.AudienceChangedAsync(
+            await this._presenceCoordinator.AudienceChangedAsync(
                 memberUserIds,
                 CancellationToken.None);
-            await NotifyPrivateSpacesChangedAsync(
+            await this.NotifyPrivateSpacesChangedAsync(
                 space.Id,
                 CancellationToken.None);
-            await _notifications.NotifyChangedAsync(
+            await this._notifications.NotifyChangedAsync(
                 [targetUserId],
                 CancellationToken.None);
 
-            return await GetPrivateSpaceAsync(
+            return await this.GetPrivateSpaceAsync(
                 currentUserId,
                 space.Id,
                 cancellationToken);
@@ -752,13 +752,13 @@ namespace ArcaneLink.Services.PrivateSpaces
         {
             var wasChanged = false;
             var invitedUserIds = new HashSet<Guid>();
-            var presenceSubjects = await _presenceCoordinator.ExecuteTopologyMutationAsync(
+            var presenceSubjects = await this._presenceCoordinator.ExecuteTopologyMutationAsync(
                 UserPresenceTopologyKey.PrivateSpace(spaceId),
                 userIds,
-                token => ResolveActivePrivateSpaceUserIdsAsync(spaceId, token),
+                token => this.ResolveActivePrivateSpaceUserIdsAsync(spaceId, token),
                 async token =>
                 {
-                    var privateSpace = await _db.PrivateSpaces
+                    var privateSpace = await this._db.PrivateSpaces
                         .Include(x => x.Members)
                         .Include(x => x.Space)
                         .FirstOrDefaultAsync(
@@ -781,7 +781,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                             member.StatusId != PrivateSpaceIds.MemberStatusActive)
                         .ToList();
                     var listPositions = await PrivateSpaceListOrder.GetNextTopPositionsAsync(
-                        _db,
+                        this._db,
                         membersToReactivate.Select(member => member.UserId),
                         token);
                     foreach (var member in membersToReactivate)
@@ -804,17 +804,17 @@ namespace ArcaneLink.Services.PrivateSpaces
                         return;
                     }
 
-                    await TouchPrivateSpaceAsync(spaceId, now, token);
+                    await this.TouchPrivateSpaceAsync(spaceId, now, token);
                     foreach (var invitedUserId in invitedUserIds)
                     {
-                        await _notifications.StagePrivateSpaceInviteAsync(
+                        await this._notifications.StagePrivateSpaceInviteAsync(
                             invitedUserId,
                             actorUserId,
                             spaceId,
                             privateSpace.Space.Title,
                             token);
                     }
-                    await _db.SaveChangesAsync(token);
+                    await this._db.SaveChangesAsync(token);
                 },
                 cancellationToken);
 
@@ -823,13 +823,13 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return;
             }
 
-            await _presenceCoordinator.AudienceChangedAsync(
+            await this._presenceCoordinator.AudienceChangedAsync(
                 presenceSubjects,
                 CancellationToken.None);
-            await NotifyPrivateSpacesChangedAsync(
+            await this.NotifyPrivateSpacesChangedAsync(
                 spaceId,
                 CancellationToken.None);
-            await _notifications.NotifyChangedAsync(
+            await this._notifications.NotifyChangedAsync(
                 invitedUserIds,
                 CancellationToken.None);
         }
@@ -838,7 +838,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return await _db.PrivateSpaceMembers
+            return await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.SpaceId == spaceId &&
@@ -854,7 +854,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid currentUserId,
             CancellationToken cancellationToken)
         {
-            return (await _db.UserDirectMessageBlocks
+            return (await this._db.UserDirectMessageBlocks
                     .AsNoTracking()
                     .Where(block => block.UserId == currentUserId)
                     .Select(block => block.BlockedUserId)
@@ -867,7 +867,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid userId,
             CancellationToken cancellationToken)
         {
-            var membership = await _db.PrivateSpaceMembers
+            var membership = await this._db.PrivateSpaceMembers
                 .FirstOrDefaultAsync(
                     member =>
                         member.SpaceId == spaceId &&
@@ -881,12 +881,12 @@ namespace ArcaneLink.Services.PrivateSpaces
                 return;
             }
 
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
             membership.HiddenFromListAt = null;
             membership.ListActivityAt = now;
             membership.UpdatedAt = now;
-            await _db.SaveChangesAsync(cancellationToken);
-            await _notifier.NotifySpacesChangedForUserAsync(
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this._notifier.NotifySpacesChangedForUserAsync(
                 userId,
                 spaceId,
                 CancellationToken.None);
@@ -894,12 +894,12 @@ namespace ArcaneLink.Services.PrivateSpaces
 
         private IQueryable<PrivateSpace> LoadPrivateSpacesQuery()
         {
-            return PrivateSpaceQueries.LoadSpaces(_db);
+            return PrivateSpaceQueries.LoadSpaces(this._db);
         }
 
         private IQueryable<SpaceMessage> LoadMessagesQuery()
         {
-            return PrivateSpaceQueries.LoadMessages(_db);
+            return PrivateSpaceQueries.LoadMessages(this._db);
         }
 
         private async Task<bool> IsActiveMemberAsync(
@@ -907,28 +907,28 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return await _access.IsActiveMemberAsync(userId, spaceId, cancellationToken);
+            return await this._access.IsActiveMemberAsync(userId, spaceId, cancellationToken);
         }
 
         private async Task<bool> AreActiveUsersAsync(
             IReadOnlyCollection<Guid> userIds,
             CancellationToken cancellationToken)
         {
-            return await _access.AreActiveUsersAsync(userIds, cancellationToken);
+            return await this._access.AreActiveUsersAsync(userIds, cancellationToken);
         }
 
         private async Task<bool> IsActiveUserAsync(
             Guid userId,
             CancellationToken cancellationToken)
         {
-            return await _access.IsActiveUserAsync(userId, cancellationToken);
+            return await this._access.IsActiveUserAsync(userId, cancellationToken);
         }
 
         private async Task<string> BuildDefaultGroupTitleAsync(
             IEnumerable<Guid> memberUserIds,
             CancellationToken cancellationToken)
         {
-            var names = await _db.UserProfiles
+            var names = await this._db.UserProfiles
                 .AsNoTracking()
                 .Where(x => memberUserIds.Contains(x.UserId))
                 .OrderBy(x => x.DisplayNameNorm)
@@ -943,7 +943,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid targetUserId,
             CancellationToken cancellationToken)
         {
-            return await _db.UserProfiles
+            return await this._db.UserProfiles
                 .AsNoTracking()
                 .Where(profile => profile.UserId == targetUserId)
                 .Select(profile => profile.DisplayName)
@@ -967,7 +967,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid assetId,
             CancellationToken cancellationToken)
         {
-            return await _db.Assets
+            return await this._db.Assets
                 .AsNoTracking()
                 .AnyAsync(
                     asset =>
@@ -1051,14 +1051,14 @@ namespace ArcaneLink.Services.PrivateSpaces
             DateTime updatedAt,
             CancellationToken cancellationToken)
         {
-            await _activity.TouchAsync(spaceId, updatedAt, cancellationToken);
+            await this._activity.TouchAsync(spaceId, updatedAt, cancellationToken);
         }
 
         private async Task NotifyPrivateSpacesChangedAsync(
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            await _notifier.NotifySpacesChangedAsync(spaceId, cancellationToken);
+            await this._notifier.NotifySpacesChangedAsync(spaceId, cancellationToken);
         }
 
         private async Task<Dictionary<Guid, SpaceMessageResponse>> GetLastMessagesByPrivateSpaceAsync(
@@ -1073,13 +1073,13 @@ namespace ArcaneLink.Services.PrivateSpaces
                     return [];
                 }
 
-                var lastMessageIds = await _db.SpaceMessages
+                var lastMessageIds = await this._db.SpaceMessages
                     .AsNoTracking()
                     .Where(x =>
                         spaceIds.Contains(x.SpaceId) &&
                         x.DeletedAt == null &&
                         !x.UserDeletions.Any(deletion => deletion.UserId == currentUserId))
-                    .ApplyHistoryCutoff(_db, currentUserId)
+                    .ApplyHistoryCutoff(this._db, currentUserId)
                     .GroupBy(x => x.SpaceId)
                     .Select(group => group
                         .OrderByDescending(x => x.CreatedAt)
@@ -1093,7 +1093,7 @@ namespace ArcaneLink.Services.PrivateSpaces
                     return [];
                 }
 
-                var messages = await LoadMessagesQuery()
+                var messages = await this.LoadMessagesQuery()
                     .Where(x => lastMessageIds.Contains(x.Id))
                     .ToListAsync(cancellationToken);
 

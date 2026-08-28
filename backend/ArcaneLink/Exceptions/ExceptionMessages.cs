@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.Exceptions
+namespace ArcaneLink.Exceptions
 {
     // Централизованное хранилище текстов ошибок.
     //

@@ -28,25 +28,25 @@ namespace ArcaneLink.Services.Assets
             TimeProvider timeProvider,
             ILogger<AssetCleanupRunner> logger)
         {
-            _db = db;
-            _storage = storage;
-            _options = options.Value;
-            _timeProvider = timeProvider;
-            _logger = logger;
+            this._db = db;
+            this._storage = storage;
+            this._options = options.Value;
+            this._timeProvider = timeProvider;
+            this._logger = logger;
         }
 
         public async Task<AssetCleanupRunResult> RunOnceAsync(
             CancellationToken cancellationToken = default)
         {
-            var now = _timeProvider.GetUtcNow().UtcDateTime;
-            var cutoff = now.AddDays(-Math.Max(0, _options.RetentionDays));
-            var batchSize = Math.Clamp(_options.BatchSize, 1, 1000);
+            var now = this._timeProvider.GetUtcNow().UtcDateTime;
+            var cutoff = now.AddDays(-Math.Max(0, this._options.RetentionDays));
+            var batchSize = Math.Clamp(this._options.BatchSize, 1, 1000);
 
-            var assets = await _db.Assets
+            var assets = await this._db.Assets
                 .Where(x => x.DeletedAt != null &&
                             x.DeletedAt <= cutoff &&
                             x.PhysicalDeletedAt == null &&
-                            !_db.ModerationEvidenceAssets.Any(evidence =>
+                            !this._db.ModerationEvidenceAssets.Any(evidence =>
                                 evidence.AssetId == x.Id))
                 .OrderBy(x => x.DeletedAt)
                 .ThenBy(x => x.Id)
@@ -56,13 +56,13 @@ namespace ArcaneLink.Services.Assets
             var deletedCount = 0;
             var failedCount = 0;
 
-            if (!_options.DryRun)
+            if (!this._options.DryRun)
             {
                 foreach (var asset in assets)
                 {
                     try
                     {
-                        await _storage.DeleteAsync(asset.StorageKey, cancellationToken);
+                        await this._storage.DeleteAsync(asset.StorageKey, cancellationToken);
                         asset.PhysicalDeletedAt = now;
                         deletedCount++;
                     }
@@ -74,7 +74,7 @@ namespace ArcaneLink.Services.Assets
                     {
                         failedCount++;
                         ArcaneLinkDiagnostics.AssetPhysicalDeleteFailedCounter.Add(1);
-                        _logger.LogError(
+                        this._logger.LogError(
                             ObservabilityEventIds.AssetPhysicalDeleteFailed,
                             exception,
                             "Asset cleanup failed to delete bytes. AssetId={AssetId} StorageKey={StorageKey}",
@@ -85,13 +85,13 @@ namespace ArcaneLink.Services.Assets
 
                 if (deletedCount > 0)
                 {
-                    await _db.SaveChangesAsync(cancellationToken);
+                    await this._db.SaveChangesAsync(cancellationToken);
                 }
             }
 
             var dryRunTag = new KeyValuePair<string, object?>(
                 "dry_run",
-                _options.DryRun);
+                this._options.DryRun);
             ArcaneLinkDiagnostics.AssetCleanupCandidatesCounter.Add(
                 assets.Count,
                 dryRunTag);
@@ -102,10 +102,10 @@ namespace ArcaneLink.Services.Assets
                 failedCount,
                 dryRunTag);
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 ObservabilityEventIds.AssetCleanupCompleted,
                 "Asset cleanup pass completed. DryRun={DryRun} CutoffUtc={CutoffUtc} BatchSize={BatchSize} Candidates={Candidates} Deleted={Deleted} Failed={Failed}",
-                _options.DryRun,
+                this._options.DryRun,
                 cutoff,
                 batchSize,
                 assets.Count,
@@ -116,7 +116,7 @@ namespace ArcaneLink.Services.Assets
                 assets.Count,
                 deletedCount,
                 failedCount,
-                _options.DryRun,
+                this._options.DryRun,
                 cutoff);
         }
     }

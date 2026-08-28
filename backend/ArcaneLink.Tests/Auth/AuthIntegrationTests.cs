@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
-using ArcaneLink.DataBase.DTOs.Auth;
+using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
+using ArcaneLink.DataBase.DTOs.Auth;
 using ArcaneLink.DataBase.DTOs.Login;
 using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.Tests.Infrastructure;
-using ArcaneLink.DataBase._Data;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ArcaneLink.Tests.Auth;
@@ -18,14 +18,14 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
 
     public AuthIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _factory = factory;
-        _client = factory.CreateClient();
+        this._factory = factory;
+        this._client = factory.CreateClient();
     }
 
     [Fact]
     public async Task RegisterLoginAndMe_ReturnsAuthenticatedUser()
     {
-        var registerResponse = await _client.PostAsJsonAsync(
+        var registerResponse = await this._client.PostAsJsonAsync(
             "/api/auth/register",
             new CreateUserRequest
             {
@@ -36,7 +36,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
             });
         await ApiClientExtensions.EnsureSuccessWithBodyAsync(registerResponse);
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = this._factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var registeredUser = db.Users.Single(x => x.LoginNorm == "NEWUSER");
@@ -45,7 +45,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
             await db.SaveChangesAsync();
         }
 
-        var loginResponse = await _client.PostAsJsonAsync(
+        var loginResponse = await this._client.PostAsJsonAsync(
             "/api/auth/login",
             new LoginRequest
             {
@@ -59,13 +59,13 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
         var accessToken = loginJson?["accessToken"]?.GetValue<string>();
         Assert.False(string.IsNullOrWhiteSpace(accessToken));
 
-        _client.AuthorizeWith(accessToken!);
-        var me = await _client.GetFromJsonAsync<JsonObject>("/api/users/me");
+        this._client.AuthorizeWith(accessToken!);
+        var me = await this._client.GetFromJsonAsync<JsonObject>("/api/users/me");
 
         Assert.Equal("newuser", me?["login"]?.GetValue<string>());
         Assert.Equal("New User", me?["displayName"]?.GetValue<string>());
 
-        var profileSettings = await _client
+        var profileSettings = await this._client
             .GetFromJsonAsync<UserProfileSettingsResponse>(
                 "/api/users/me/profile/settings");
         Assert.NotNull(profileSettings);
@@ -79,7 +79,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
     [Fact]
     public async Task ProtectedEndpoint_WithoutToken_ReturnsUnauthorized()
     {
-        var response = await _client.GetAsync("/api/users/me");
+        var response = await this._client.GetAsync("/api/users/me");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -87,7 +87,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
     [Fact]
     public async Task Login_VerifiesPasswordBeforeRevealingBannedStatus()
     {
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = this._factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var user = db.Users.Single(x => x.Id == ArcaneLinkApiFactory.OutsiderUserId);
@@ -95,7 +95,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
             await db.SaveChangesAsync();
         }
 
-        var wrongPassword = await _client.PostAsJsonAsync(
+        var wrongPassword = await this._client.PostAsJsonAsync(
             "/api/auth/login",
             new LoginRequest
             {
@@ -104,7 +104,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
             });
         Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
 
-        var correctPassword = await _client.PostAsJsonAsync(
+        var correctPassword = await this._client.PostAsJsonAsync(
             "/api/auth/login",
             new LoginRequest
             {
@@ -113,7 +113,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
             });
         Assert.Equal(HttpStatusCode.Forbidden, correctPassword.StatusCode);
 
-        using var restoreScope = _factory.Services.CreateScope();
+        using var restoreScope = this._factory.Services.CreateScope();
         var restoreDb = restoreScope.ServiceProvider.GetRequiredService<AppDbContext>();
         var restoreUser = restoreDb.Users.Single(x => x.Id == ArcaneLinkApiFactory.OutsiderUserId);
         restoreUser.StatusId = UserStatusIds.Active;
@@ -123,7 +123,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
     [Fact]
     public async Task RefreshToken_RotatesTokenAndRejectsReplay()
     {
-        var loginResponse = await _client.PostAsJsonAsync(
+        var loginResponse = await this._client.PostAsJsonAsync(
             "/api/auth/login",
             new LoginRequest
             {
@@ -137,7 +137,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
         var originalRefreshToken = loginJson?["refreshToken"]?.GetValue<string>();
         Assert.False(string.IsNullOrWhiteSpace(originalRefreshToken));
 
-        var refreshResponse = await _client.PostAsJsonAsync(
+        var refreshResponse = await this._client.PostAsJsonAsync(
             "/api/auth/refresh",
             new RefreshTokenRequest { RefreshToken = originalRefreshToken! });
         await ApiClientExtensions.EnsureSuccessWithBodyAsync(refreshResponse);
@@ -148,7 +148,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
         Assert.False(string.IsNullOrWhiteSpace(rotatedRefreshToken));
         Assert.NotEqual(originalRefreshToken, rotatedRefreshToken);
 
-        var replayResponse = await _client.PostAsJsonAsync(
+        var replayResponse = await this._client.PostAsJsonAsync(
             "/api/auth/refresh",
             new RefreshTokenRequest { RefreshToken = originalRefreshToken! });
 
@@ -158,7 +158,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
     [Fact]
     public async Task RefreshToken_CanUseHttpOnlyCookieWithoutBodyToken()
     {
-        var loginResponse = await _client.PostAsJsonAsync(
+        var loginResponse = await this._client.PostAsJsonAsync(
             "/api/auth/login",
             new LoginRequest
             {
@@ -184,7 +184,7 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
         };
         refreshRequest.Headers.Add("Cookie", ExtractRefreshCookieHeader(refreshCookie));
 
-        var refreshResponse = await _client.SendAsync(refreshRequest);
+        var refreshResponse = await this._client.SendAsync(refreshRequest);
         await ApiClientExtensions.EnsureSuccessWithBodyAsync(refreshResponse);
 
         var refreshJson = await refreshResponse.Content.ReadFromJsonAsync<JsonObject>();

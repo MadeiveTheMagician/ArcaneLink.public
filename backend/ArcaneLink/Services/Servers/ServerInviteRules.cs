@@ -1,5 +1,5 @@
-using ArcaneLink.DataBase.Models.ServersModels;
 using ArcaneLink.DataBase.Constants;
+using ArcaneLink.DataBase.Models.ServersModels;
 
 namespace ArcaneLink.Services.Servers
 {

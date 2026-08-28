@@ -39,10 +39,10 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         IOptions<RealtimePresenceOptions> options,
         ILogger<UserPresenceCoordinator> logger)
     {
-        _connections = connections;
-        _scopeFactory = scopeFactory;
-        _timeProvider = timeProvider;
-        _logger = logger;
+        this._connections = connections;
+        this._scopeFactory = scopeFactory;
+        this._timeProvider = timeProvider;
+        this._logger = logger;
         if (options.Value.DisconnectGraceSeconds is < 0 or > 300)
         {
             throw new ArgumentOutOfRangeException(
@@ -50,7 +50,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
                 "Disconnect grace must be between 0 and 300 seconds.");
         }
 
-        _disconnectGrace = TimeSpan.FromSeconds(
+        this._disconnectGrace = TimeSpan.FromSeconds(
             options.Value.DisconnectGraceSeconds);
     }
 
@@ -66,16 +66,16 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         if (registration.PreviousUserId is { } previousUserId &&
             registration.PreviousUserLostLastConnection)
         {
-            await ScheduleDisconnectAsync(
+            await this.ScheduleDisconnectAsync(
                 previousUserId,
                 cancellationToken);
         }
 
         if (registration.IsFirstConnection)
         {
-            await ExecuteSerializedBestEffortAsync(
+            await this.ExecuteSerializedBestEffortAsync(
                 registration.UserId,
-                HandleFirstConnectionAsync,
+                this.HandleFirstConnectionAsync,
                 cancellationToken);
         }
     }
@@ -85,7 +85,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         CancellationToken cancellationToken = default)
     {
         return unregistration.WasLastConnection
-            ? ScheduleDisconnectAsync(
+            ? this.ScheduleDisconnectAsync(
                 unregistration.UserId,
                 cancellationToken)
             : Task.CompletedTask;
@@ -102,9 +102,9 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             previous.ShowLastSeen,
             previous.Mode);
 
-        return ExecuteSerializedBestEffortAsync(
+        return this.ExecuteSerializedBestEffortAsync(
             userId,
-            (state, token) => HandleSettingsChangedAsync(
+            (state, token) => this.HandleSettingsChangedAsync(
                 userId,
                 state,
                 normalizedPrevious,
@@ -120,14 +120,14 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
                      .Where(id => id != Guid.Empty)
                      .Distinct())
         {
-            if (!_states.TryGetValue(userId, out var state))
+            if (!this._states.TryGetValue(userId, out var state))
             {
                 continue;
             }
 
-            await ExecuteSerializedBestEffortAsync(
+            await this.ExecuteSerializedBestEffortAsync(
                 state,
-                HandleAudienceChangedAsync,
+                this.HandleAudienceChangedAsync,
                 cancellationToken);
         }
     }
@@ -139,7 +139,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
     {
         ArgumentNullException.ThrowIfNull(mutation);
 
-        await using var lease = await EnterMutationGatesAsync(
+        await using var lease = await this.EnterMutationGatesAsync(
             userIds,
             cancellationToken);
         await mutation(cancellationToken);
@@ -166,7 +166,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             .Distinct()
             .ToArray();
 
-        var topologyGate = _topologyGates.GetOrAdd(
+        var topologyGate = this._topologyGates.GetOrAdd(
             topologyKey,
             static _ => new SemaphoreSlim(1, 1));
         await topologyGate.WaitAsync(cancellationToken);
@@ -183,7 +183,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
                 .Order()
                 .ToArray();
 
-            await using (await EnterMutationGatesAsync(
+            await using (await this.EnterMutationGatesAsync(
                              protectedUserIds,
                              cancellationToken))
             {
@@ -197,7 +197,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
                     .ToArray();
                 if (unexpectedUserIds.Length > 0)
                 {
-                    _logger.LogCritical(
+                    this._logger.LogCritical(
                         "Presence topology mutation introduced users outside its protected mutation gates. Scope={Scope} ResourceId={ResourceId} UnexpectedUserCount={UnexpectedUserCount}",
                         topologyKey.Scope,
                         topologyKey.ResourceId,
@@ -223,11 +223,11 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         Guid userId,
         CancellationToken cancellationToken)
     {
-        return ExecuteSerializedBestEffortAsync(
+        return this.ExecuteSerializedBestEffortAsync(
             userId,
             (state, unusedToken) =>
             {
-                if (_connections.HasConnections(userId) ||
+                if (this._connections.HasConnections(userId) ||
                     !state.IsAnnouncedOnline ||
                     state.PendingDisconnect != null)
                 {
@@ -236,7 +236,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
 
                 var pendingDisconnect = new CancellationTokenSource();
                 state.PendingDisconnect = pendingDisconnect;
-                _ = CompleteDisconnectAfterGraceAsync(
+                _ = this.CompleteDisconnectAfterGraceAsync(
                     userId,
                     state,
                     pendingDisconnect);
@@ -250,12 +250,12 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         CancellationToken cancellationToken)
     {
         CancelPendingDisconnect(state);
-        if (!_connections.HasConnections(state.UserId))
+        if (!this._connections.HasConnections(state.UserId))
         {
             return;
         }
 
-        await using var scope = _scopeFactory.CreateAsyncScope();
+        await using var scope = this._scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var user = await GetActiveUserAsync(
             db,
@@ -287,7 +287,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
 
         var previousConfiguration = state.LastConfiguration ?? configuration;
         var previousRecipients = state.LastRecipients ?? [];
-        await ReconcileResolvedPresenceAsync(
+        await this.ReconcileResolvedPresenceAsync(
             state,
             scope.ServiceProvider,
             db,
@@ -308,7 +308,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         UserPresenceConfiguration previousHint,
         CancellationToken cancellationToken)
     {
-        await using var scope = _scopeFactory.CreateAsyncScope();
+        await using var scope = this._scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var user = await GetActiveUserAsync(db, userId, cancellationToken);
         if (user == null)
@@ -336,7 +336,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             .GetRecipients(current.Visibility)
             .ToHashSet();
 
-        await ReconcileResolvedPresenceAsync(
+        await this.ReconcileResolvedPresenceAsync(
             state,
             scope.ServiceProvider,
             db,
@@ -354,7 +354,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         UserPresenceState state,
         CancellationToken cancellationToken)
     {
-        await using var scope = _scopeFactory.CreateAsyncScope();
+        await using var scope = this._scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var user = await GetActiveUserAsync(
             db,
@@ -382,7 +382,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             return;
         }
 
-        await ReconcileResolvedPresenceAsync(
+        await this.ReconcileResolvedPresenceAsync(
             state,
             scope.ServiceProvider,
             db,
@@ -404,10 +404,10 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         try
         {
             await Task.Delay(
-                _disconnectGrace,
-                _timeProvider,
+                this._disconnectGrace,
+                this._timeProvider,
                 pendingDisconnect.Token);
-            await using var mutationLease = await EnterMutationGatesAsync(
+            await using var mutationLease = await this.EnterMutationGatesAsync(
                 [userId],
                 CancellationToken.None);
             await state.Gate.WaitAsync(CancellationToken.None);
@@ -422,13 +422,13 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
                 }
 
                 state.PendingDisconnect = null;
-                if (_connections.HasConnections(userId) ||
+                if (this._connections.HasConnections(userId) ||
                     !state.IsAnnouncedOnline)
                 {
                     return;
                 }
 
-                await HandleOfflineReconciliationAsync(
+                await this.HandleOfflineReconciliationAsync(
                     state,
                     CancellationToken.None);
             }
@@ -442,11 +442,11 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 exception,
                 "Presence disconnect grace completion failed. UserId={UserId}",
                 userId);
-            await ScheduleReconciliationRetryAsync(state);
+            await this.ScheduleReconciliationRetryAsync(state);
         }
         finally
         {
@@ -473,7 +473,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         UserPresenceState state,
         CancellationToken cancellationToken)
     {
-        await using var scope = _scopeFactory.CreateAsyncScope();
+        await using var scope = this._scopeFactory.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var user = await GetActiveUserAsync(
             db,
@@ -494,7 +494,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         var currentRecipients = audience
             .GetRecipients(configuration.Visibility)
             .ToHashSet();
-        await ReconcileResolvedPresenceAsync(
+        await this.ReconcileResolvedPresenceAsync(
             state,
             scope.ServiceProvider,
             db,
@@ -521,7 +521,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         bool forceOffline,
         CancellationToken cancellationToken)
     {
-        var hasConnections = _connections.HasConnections(user.Id);
+        var hasConnections = this._connections.HasConnections(user.Id);
         var wasOnline = state.IsAnnouncedOnline;
         var becameInvisible =
             previousConfiguration.Mode == PresenceModeCodes.Automatic &&
@@ -562,14 +562,14 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             return;
         }
 
-        var changedAt = GetNextChangedAt(state, user.LastSeenAt);
+        var changedAt = this.GetNextChangedAt(state, user.LastSeenAt);
         if (shouldRecordLastSeen)
         {
             user.LastSeenAt = changedAt;
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        var cleanupPublished = await PublishAsync(
+        var cleanupPublished = await this.PublishAsync(
             services,
             removedRecipients,
             new UserPresenceChanged(
@@ -584,7 +584,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
                                                 forceOnlineAnnouncement
             ? currentRecipients
             : addedRecipients;
-        var currentPublished = await PublishAsync(
+        var currentPublished = await this.PublishAsync(
             services,
             recipientsToPublish,
             new UserPresenceChanged(
@@ -617,7 +617,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         }
         else
         {
-            ScheduleReconciliationRetryUnderGate(state);
+            this.ScheduleReconciliationRetryUnderGate(state);
         }
     }
 
@@ -653,7 +653,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             }
             catch (Exception exception) when (attempt < MaxPublishAttempts)
             {
-                _logger.LogDebug(
+                this._logger.LogDebug(
                     exception,
                     "Presence notification failed and will be retried. UserId={UserId} Attempt={Attempt}",
                     payload.UserId,
@@ -661,7 +661,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Presence notification failed after bounded retries. UserId={UserId} Attempts={Attempts}",
                     payload.UserId,
@@ -677,11 +677,11 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         Func<UserPresenceState, CancellationToken, Task> action,
         CancellationToken cancellationToken)
     {
-        var state = _states.GetOrAdd(
+        var state = this._states.GetOrAdd(
             userId,
             static id => new UserPresenceState(id));
 
-        await ExecuteSerializedBestEffortAsync(
+        await this.ExecuteSerializedBestEffortAsync(
             state,
             action,
             cancellationToken);
@@ -695,7 +695,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
 
         try
         {
-            await using var mutationLease = await EnterMutationGatesAsync(
+            await using var mutationLease = await this.EnterMutationGatesAsync(
                 [state.UserId],
                 cancellationToken);
             await state.Gate.WaitAsync(cancellationToken);
@@ -710,18 +710,18 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _logger.LogDebug(
+            this._logger.LogDebug(
                 "Presence transition canceled. UserId={UserId}",
                 state.UserId);
-            await ScheduleReconciliationRetryAsync(state);
+            await this.ScheduleReconciliationRetryAsync(state);
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 exception,
                 "Presence transition failed. UserId={UserId}",
                 state.UserId);
-            await ScheduleReconciliationRetryAsync(state);
+            await this.ScheduleReconciliationRetryAsync(state);
         }
     }
 
@@ -731,7 +731,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         await state.Gate.WaitAsync(CancellationToken.None);
         try
         {
-            ScheduleReconciliationRetryUnderGate(state);
+            this.ScheduleReconciliationRetryUnderGate(state);
         }
         finally
         {
@@ -750,7 +750,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         if (state.ReconciliationRetryAttempt >=
             ReconciliationRetryDelays.Length)
         {
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 "Presence reconciliation exhausted bounded background retries. UserId={UserId} Attempts={Attempts}",
                 state.UserId,
                 ReconciliationRetryDelays.Length);
@@ -760,7 +760,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         var attempt = ++state.ReconciliationRetryAttempt;
         var pendingReconciliation = new CancellationTokenSource();
         state.PendingReconciliation = pendingReconciliation;
-        _ = CompleteReconciliationRetryAsync(
+        _ = this.CompleteReconciliationRetryAsync(
             state,
             pendingReconciliation,
             attempt);
@@ -775,7 +775,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         {
             await Task.Delay(
                 ReconciliationRetryDelays[attempt - 1],
-                _timeProvider,
+                this._timeProvider,
                 pendingReconciliation.Token);
 
             await state.Gate.WaitAsync(CancellationToken.None);
@@ -796,9 +796,9 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
                 state.Gate.Release();
             }
 
-            await ExecuteSerializedBestEffortAsync(
+            await this.ExecuteSerializedBestEffortAsync(
                 state,
-                HandleReconciliationRetryAsync,
+                this.HandleReconciliationRetryAsync,
                 CancellationToken.None);
         }
         catch (OperationCanceledException) when (
@@ -807,12 +807,12 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 exception,
                 "Presence background reconciliation failed. UserId={UserId} Attempt={Attempt}",
                 state.UserId,
                 attempt);
-            await ScheduleReconciliationRetryAsync(state);
+            await this.ScheduleReconciliationRetryAsync(state);
         }
         finally
         {
@@ -824,19 +824,19 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
         UserPresenceState state,
         CancellationToken cancellationToken)
     {
-        if (_connections.HasConnections(state.UserId))
+        if (this._connections.HasConnections(state.UserId))
         {
-            return HandleFirstConnectionAsync(state, cancellationToken);
+            return this.HandleFirstConnectionAsync(state, cancellationToken);
         }
 
         if (state.IsAnnouncedOnline && state.PendingDisconnect == null)
         {
-            return HandleOfflineReconciliationAsync(
+            return this.HandleOfflineReconciliationAsync(
                 state,
                 cancellationToken);
         }
 
-        return HandleAudienceChangedAsync(state, cancellationToken);
+        return this.HandleAudienceChangedAsync(state, cancellationToken);
     }
 
     private static void ResetReconciliationRetryUnderGate(
@@ -856,7 +856,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             .Where(userId => userId != Guid.Empty)
             .Distinct()
             .Order()
-            .Select(userId => _mutationGates.GetOrAdd(
+            .Select(userId => this._mutationGates.GetOrAdd(
                 userId,
                 static _ => new SemaphoreSlim(1, 1)))
             .ToArray();
@@ -947,7 +947,7 @@ public sealed class UserPresenceCoordinator : IUserPresenceCoordinator
             state.LastChangedAt = persistedValue;
         }
 
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var now = this._timeProvider.GetUtcNow().UtcDateTime;
         if (now <= state.LastChangedAt)
         {
             now = state.LastChangedAt.AddTicks(1);

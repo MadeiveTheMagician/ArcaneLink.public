@@ -28,12 +28,12 @@ namespace ArcaneLink.Services.Messages
             PrivateSpaceRealtimeNotifier privateNotifier,
             TimeProvider timeProvider)
         {
-            _db = db;
-            _serverAccess = serverAccess;
-            _privateAccess = privateAccess;
-            _serverNotifier = serverNotifier;
-            _privateNotifier = privateNotifier;
-            _timeProvider = timeProvider;
+            this._db = db;
+            this._serverAccess = serverAccess;
+            this._privateAccess = privateAccess;
+            this._serverNotifier = serverNotifier;
+            this._privateNotifier = privateNotifier;
+            this._timeProvider = timeProvider;
         }
 
         public async Task<MessageReactionMutationResult> SetServerReactionAsync(
@@ -51,12 +51,12 @@ namespace ArcaneLink.Services.Messages
                 return MessageReactionMutationResult.InvalidEmoji();
             }
 
-            if (await _serverAccess.GetReactableMessageSpaceAsync(
+            if (await this._serverAccess.GetReactableMessageSpaceAsync(
                     currentUserId,
                     serverId,
                     spaceId,
                     cancellationToken) == null ||
-                !await _db.SpaceMessages.AsNoTracking().AnyAsync(
+                !await this._db.SpaceMessages.AsNoTracking().AnyAsync(
                     message =>
                         message.Id == messageId &&
                         message.SpaceId == spaceId &&
@@ -67,7 +67,7 @@ namespace ArcaneLink.Services.Messages
                 return MessageReactionMutationResult.NotFound();
             }
 
-            var changed = await SetReactionStateAsync(
+            var changed = await this.SetReactionStateAsync(
                 currentUserId,
                 messageId,
                 normalizedEmoji,
@@ -76,7 +76,7 @@ namespace ArcaneLink.Services.Messages
 
             if (changed)
             {
-                await _serverNotifier.NotifyMessagesChangedAsync(
+                await this._serverNotifier.NotifyMessagesChangedAsync(
                     serverId,
                     spaceId,
                     messageId,
@@ -84,7 +84,7 @@ namespace ArcaneLink.Services.Messages
             }
 
             var message = await SpaceMessageQueryService.LoadMutationResponseAsync(
-                _db,
+                this._db,
                 currentUserId,
                 serverId,
                 spaceId,
@@ -110,11 +110,11 @@ namespace ArcaneLink.Services.Messages
                 return MessageReactionMutationResult.InvalidEmoji();
             }
 
-            if (!await _privateAccess.IsActiveMemberAsync(
+            if (!await this._privateAccess.IsActiveMemberAsync(
                     currentUserId,
                     spaceId,
                     cancellationToken) ||
-                !await _db.SpaceMessages.AsNoTracking().AnyAsync(
+                !await this._db.SpaceMessages.AsNoTracking().AnyAsync(
                     message =>
                         message.Id == messageId &&
                         message.SpaceId == spaceId &&
@@ -127,7 +127,7 @@ namespace ArcaneLink.Services.Messages
                 return MessageReactionMutationResult.NotFound();
             }
 
-            var changed = await SetReactionStateAsync(
+            var changed = await this.SetReactionStateAsync(
                 currentUserId,
                 messageId,
                 normalizedEmoji,
@@ -136,13 +136,13 @@ namespace ArcaneLink.Services.Messages
 
             if (changed)
             {
-                await _privateNotifier.NotifyMessagesChangedAsync(
+                await this._privateNotifier.NotifyMessagesChangedAsync(
                     spaceId,
                     messageId,
                     cancellationToken);
             }
 
-            var message = await LoadPrivateMessageAsync(
+            var message = await this.LoadPrivateMessageAsync(
                 currentUserId,
                 spaceId,
                 messageId,
@@ -160,7 +160,7 @@ namespace ArcaneLink.Services.Messages
             bool isPresent,
             CancellationToken cancellationToken)
         {
-            var existing = await _db.SpaceMessageReactions.FirstOrDefaultAsync(
+            var existing = await this._db.SpaceMessageReactions.FirstOrDefaultAsync(
                 reaction =>
                     reaction.MessageId == messageId &&
                     reaction.UserId == currentUserId &&
@@ -179,19 +179,19 @@ namespace ArcaneLink.Services.Messages
                     MessageId = messageId,
                     UserId = currentUserId,
                     EmojiCode = emojiCode,
-                    CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
+                    CreatedAt = this._timeProvider.GetUtcNow().UtcDateTime
                 };
-                _db.SpaceMessageReactions.Add(reaction);
+                this._db.SpaceMessageReactions.Add(reaction);
 
                 try
                 {
-                    await _db.SaveChangesAsync(cancellationToken);
+                    await this._db.SaveChangesAsync(cancellationToken);
                     return true;
                 }
                 catch (DbUpdateException)
                 {
-                    _db.Entry(reaction).State = EntityState.Detached;
-                    if (!await ReactionExistsAsync(
+                    this._db.Entry(reaction).State = EntityState.Detached;
+                    if (!await this.ReactionExistsAsync(
                             currentUserId,
                             messageId,
                             emojiCode,
@@ -209,15 +209,15 @@ namespace ArcaneLink.Services.Messages
                 return false;
             }
 
-            _db.SpaceMessageReactions.Remove(existing);
+            this._db.SpaceMessageReactions.Remove(existing);
             try
             {
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
                 return true;
             }
             catch (DbUpdateConcurrencyException)
             {
-                _db.Entry(existing).State = EntityState.Detached;
+                this._db.Entry(existing).State = EntityState.Detached;
                 return false;
             }
         }
@@ -228,7 +228,7 @@ namespace ArcaneLink.Services.Messages
             string emojiCode,
             CancellationToken cancellationToken)
         {
-            return _db.SpaceMessageReactions.AsNoTracking().AnyAsync(
+            return this._db.SpaceMessageReactions.AsNoTracking().AnyAsync(
                 reaction =>
                     reaction.MessageId == messageId &&
                     reaction.UserId == currentUserId &&
@@ -242,7 +242,7 @@ namespace ArcaneLink.Services.Messages
             Guid messageId,
             CancellationToken cancellationToken)
         {
-            if (!await _privateAccess.IsActiveMemberAsync(
+            if (!await this._privateAccess.IsActiveMemberAsync(
                     currentUserId,
                     spaceId,
                     cancellationToken))
@@ -250,7 +250,7 @@ namespace ArcaneLink.Services.Messages
                 return null;
             }
 
-            var message = await PrivateSpaceQueries.LoadMessages(_db)
+            var message = await PrivateSpaceQueries.LoadMessages(this._db)
                 .FirstOrDefaultAsync(
                     candidate =>
                         candidate.Id == messageId &&

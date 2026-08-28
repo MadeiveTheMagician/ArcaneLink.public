@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.Exceptions.AuthExceptions.Abstractions
+namespace ArcaneLink.Exceptions.AuthExceptions.Abstractions
 {
     public abstract class AuthSystemException : Exception
     {

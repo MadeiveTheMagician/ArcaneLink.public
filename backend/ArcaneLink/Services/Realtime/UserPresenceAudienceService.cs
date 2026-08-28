@@ -11,14 +11,14 @@ public sealed class UserPresenceAudienceService : IUserPresenceAudienceService
 
     public UserPresenceAudienceService(AppDbContext db)
     {
-        _db = db;
+        this._db = db;
     }
 
     public async Task<UserPresenceAudienceSnapshot> ResolveAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        var isActiveUser = await _db.Users
+        var isActiveUser = await this._db.Users
             .AsNoTracking()
             .AnyAsync(
                 user =>
@@ -31,7 +31,7 @@ public sealed class UserPresenceAudienceService : IUserPresenceAudienceService
             return UserPresenceAudienceSnapshot.Empty;
         }
 
-        var friendIds = await _db.UserFriends
+        var friendIds = await this._db.UserFriends
             .AsNoTracking()
             .Where(friend =>
                 friend.UserId == userId &&
@@ -42,8 +42,8 @@ public sealed class UserPresenceAudienceService : IUserPresenceAudienceService
             .ToHashSetAsync(cancellationToken);
 
         var friendsOfFriendsIds = await (
-                from subjectFriend in _db.UserFriends.AsNoTracking()
-                join recipientFriend in _db.UserFriends.AsNoTracking()
+                from subjectFriend in this._db.UserFriends.AsNoTracking()
+                join recipientFriend in this._db.UserFriends.AsNoTracking()
                     on subjectFriend.FriendUserId equals
                     recipientFriend.FriendUserId
                 where
@@ -63,7 +63,7 @@ public sealed class UserPresenceAudienceService : IUserPresenceAudienceService
             .Distinct()
             .ToHashSetAsync(cancellationToken);
 
-        var activeServerIds = _db.ServerMembers
+        var activeServerIds = this._db.ServerMembers
             .AsNoTracking()
             .Where(member =>
                 member.UserId == userId &&
@@ -71,7 +71,7 @@ public sealed class UserPresenceAudienceService : IUserPresenceAudienceService
                 member.BannedAt == null &&
                 member.Server.DeletedAt == null)
             .Select(member => member.ServerId);
-        var sharedServerUserIds = _db.ServerMembers
+        var sharedServerUserIds = this._db.ServerMembers
             .AsNoTracking()
             .Where(member =>
                 activeServerIds.Contains(member.ServerId) &&
@@ -82,7 +82,7 @@ public sealed class UserPresenceAudienceService : IUserPresenceAudienceService
                 member.User.StatusId == UserStatusIds.Active)
             .Select(member => member.UserId);
 
-        var activePrivateSpaceIds = _db.PrivateSpaceMembers
+        var activePrivateSpaceIds = this._db.PrivateSpaceMembers
             .AsNoTracking()
             .Where(member =>
                 member.UserId == userId &&
@@ -90,7 +90,7 @@ public sealed class UserPresenceAudienceService : IUserPresenceAudienceService
                 member.PrivateSpace.DeletedAt == null &&
                 member.PrivateSpace.Space.DeletedAt == null)
             .Select(member => member.SpaceId);
-        var sharedPrivateSpaceUserIds = _db.PrivateSpaceMembers
+        var sharedPrivateSpaceUserIds = this._db.PrivateSpaceMembers
             .AsNoTracking()
             .Where(member =>
                 activePrivateSpaceIds.Contains(member.SpaceId) &&

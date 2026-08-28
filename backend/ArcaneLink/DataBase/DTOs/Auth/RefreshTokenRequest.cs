@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.DataBase.DTOs.Auth
+namespace ArcaneLink.DataBase.DTOs.Auth
 {
     public class RefreshTokenRequest
     {

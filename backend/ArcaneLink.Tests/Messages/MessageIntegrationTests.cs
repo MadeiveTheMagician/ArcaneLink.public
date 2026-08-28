@@ -19,16 +19,16 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
 
     public MessageIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _factory = factory;
-        _client = factory.CreateClient();
+        this._factory = factory;
+        this._client = factory.CreateClient();
     }
 
     [Fact]
     public async Task ActiveMember_CanCreateAndReadMessage()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
 
-        var createResponse = await _client.PostAsJsonAsync(
+        var createResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = "  hello from integration  " });
         createResponse.EnsureSuccessStatusCode();
@@ -36,7 +36,7 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
         var created = await createResponse.Content.ReadFromJsonAsync<JsonObject>();
         Assert.Equal("hello from integration", created?["body"]?.GetValue<string>());
 
-        var messages = await _client.GetFromJsonAsync<JsonArray>(MessagesPath());
+        var messages = await this._client.GetFromJsonAsync<JsonArray>(MessagesPath());
         Assert.Contains(
             messages ?? [],
             message => message?["body"]?.GetValue<string>() == "hello from integration");
@@ -45,8 +45,8 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task ActiveMember_CanEditOwnMessage()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
-        var createResponse = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
+        var createResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = "before own edit" });
         createResponse.EnsureSuccessStatusCode();
@@ -54,7 +54,7 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
         var created = await createResponse.Content.ReadFromJsonAsync<SpaceMessageResponse>();
         Assert.NotNull(created);
 
-        var updateResponse = await _client.PatchAsJsonAsync(
+        var updateResponse = await this._client.PatchAsJsonAsync(
             $"{MessagesPath()}/{created.Id}",
             new UpdateSpaceMessageRequest { Body = "after own edit" });
         updateResponse.EnsureSuccessStatusCode();
@@ -67,13 +67,13 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task CompositeCursor_DoesNotSkipMessagesWithEqualCreatedAt()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
         var marker = $"cursor-{Guid.NewGuid():N}";
         var messageIds = new List<Guid>();
 
         for (var index = 0; index < 3; index++)
         {
-            using var createResponse = await _client.PostAsJsonAsync(
+            using var createResponse = await this._client.PostAsJsonAsync(
                 MessagesPath(),
                 new CreateSpaceMessageRequest { Body = $"{marker}-{index}" });
             createResponse.EnsureSuccessStatusCode();
@@ -90,7 +90,7 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
             0,
             0,
             DateTimeKind.Utc);
-        await using (var scope = _factory.Services.CreateAsyncScope())
+        await using (var scope = this._factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await db.SpaceMessages
@@ -100,7 +100,7 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
                     .SetProperty(message => message.UpdatedAt, sharedCreatedAt));
         }
 
-        var firstPage = await _client.GetFromJsonAsync<List<SpaceMessageResponse>>(
+        var firstPage = await this._client.GetFromJsonAsync<List<SpaceMessageResponse>>(
             $"{MessagesPath()}?limit=2");
         var firstPageMatches = Assert.IsAssignableFrom<List<SpaceMessageResponse>>(
                 firstPage)
@@ -110,7 +110,7 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
 
         var cursor = firstPageMatches[0];
         var cursorCreatedAt = Uri.EscapeDataString(cursor.CreatedAt.ToString("O"));
-        var nextPage = await _client.GetFromJsonAsync<List<SpaceMessageResponse>>(
+        var nextPage = await this._client.GetFromJsonAsync<List<SpaceMessageResponse>>(
             $"{MessagesPath()}?limit=100&beforeCreatedAt={cursorCreatedAt}&beforeId={cursor.Id}");
         var nextPageIds = Assert.IsAssignableFrom<List<SpaceMessageResponse>>(
                 nextPage)
@@ -131,9 +131,9 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task Outsider_CannotCreateServerMessage()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("outsider"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("outsider"));
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = "not a member" });
 
@@ -143,8 +143,8 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task OwnerCanPinAndUnpinMessage_WithPersistedTimelineEvent()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
-        var createResponse = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
+        var createResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = "pin me" });
         createResponse.EnsureSuccessStatusCode();
@@ -153,26 +153,26 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
         var messageId = message?["id"]?.GetValue<Guid>();
         Assert.True(messageId.HasValue);
 
-        var memberPinResponse = await _client.PostAsync($"{MessagesPath()}/{messageId}/pin", null);
+        var memberPinResponse = await this._client.PostAsync($"{MessagesPath()}/{messageId}/pin", null);
         Assert.Equal(HttpStatusCode.NotFound, memberPinResponse.StatusCode);
 
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        var ownerPinResponse = await _client.PostAsync($"{MessagesPath()}/{messageId}/pin", null);
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        var ownerPinResponse = await this._client.PostAsync($"{MessagesPath()}/{messageId}/pin", null);
         ownerPinResponse.EnsureSuccessStatusCode();
-        using (var repeatedPinResponse = await _client.PostAsync(
+        using (var repeatedPinResponse = await this._client.PostAsync(
                    $"{MessagesPath()}/{messageId}/pin",
                    null))
         {
             repeatedPinResponse.EnsureSuccessStatusCode();
         }
 
-        var pinned = await _client.GetFromJsonAsync<List<SpaceMessageResponse>>(
+        var pinned = await this._client.GetFromJsonAsync<List<SpaceMessageResponse>>(
             $"{MessagesPath()}/pinned");
         Assert.Contains(
             pinned ?? [],
             pinnedMessage => pinnedMessage.Id == messageId);
 
-        var messages = await _client.GetFromJsonAsync<List<SpaceMessageResponse>>(
+        var messages = await this._client.GetFromJsonAsync<List<SpaceMessageResponse>>(
             MessagesPath());
         var pinEvent = Assert.Single(
             messages ?? [],
@@ -190,26 +190,26 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
                 payload.RootElement.GetProperty("messageId").GetGuid());
         }
 
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
-        using (var memberUnpinResponse = await _client.DeleteAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
+        using (var memberUnpinResponse = await this._client.DeleteAsync(
                    $"{MessagesPath()}/{messageId}/pin"))
         {
             Assert.Equal(HttpStatusCode.NotFound, memberUnpinResponse.StatusCode);
         }
 
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        using (var ownerUnpinResponse = await _client.DeleteAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        using (var ownerUnpinResponse = await this._client.DeleteAsync(
                    $"{MessagesPath()}/{messageId}/pin"))
         {
             Assert.Equal(HttpStatusCode.NoContent, ownerUnpinResponse.StatusCode);
         }
-        var afterUnpin = await _client.GetFromJsonAsync<List<SpaceMessageResponse>>(
+        var afterUnpin = await this._client.GetFromJsonAsync<List<SpaceMessageResponse>>(
             $"{MessagesPath()}/pinned");
         Assert.DoesNotContain(
             afterUnpin ?? [],
             pinnedMessage => pinnedMessage.Id == messageId);
 
-        await using var scope = _factory.Services.CreateAsyncScope();
+        await using var scope = this._factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var pinRecord = await db.SpacePinnedMessages
             .AsNoTracking()
@@ -221,8 +221,8 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task Member_CannotEditOrDeleteAnotherUsersMessage()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        var createResponse = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        var createResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = "owner message protected from member mutation" });
         createResponse.EnsureSuccessStatusCode();
@@ -231,16 +231,16 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
         var messageId = message?["id"]?.GetValue<Guid>();
         Assert.True(messageId.HasValue);
 
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
-        var updateResponse = await _client.PatchAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
+        var updateResponse = await this._client.PatchAsJsonAsync(
             $"{MessagesPath()}/{messageId}",
             new UpdateSpaceMessageRequest { Body = "member mutation should not land" });
-        var deleteResponse = await _client.DeleteAsync($"{MessagesPath()}/{messageId}");
+        var deleteResponse = await this._client.DeleteAsync($"{MessagesPath()}/{messageId}");
 
         Assert.Equal(HttpStatusCode.NotFound, updateResponse.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
 
-        var messages = await _client.GetFromJsonAsync<JsonArray>(MessagesPath());
+        var messages = await this._client.GetFromJsonAsync<JsonArray>(MessagesPath());
         Assert.Contains(
             messages ?? [],
             candidate =>
@@ -251,21 +251,21 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
     [Fact]
     public async Task Member_CanSendMultipleAttachmentsAndStreamUnicodeNamedVideo()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
 
-        var image = await UploadAttachmentAsync(
+        var image = await this.UploadAttachmentAsync(
             "preview.png",
             "image/png",
             [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
-        var video = await UploadAttachmentAsync(
+        var video = await this.UploadAttachmentAsync(
             "Запись экрана.mp4",
             "video/mp4",
             [0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6F, 0x6D]);
 
-        AssertStoredInIsolatedTestRoot(image);
-        AssertStoredInIsolatedTestRoot(video);
+        this.AssertStoredInIsolatedTestRoot(image);
+        this.AssertStoredInIsolatedTestRoot(video);
 
-        var createResponse = await _client.PostAsJsonAsync(
+        var createResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest
             {
@@ -288,7 +288,7 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
         var created = await createResponse.Content.ReadFromJsonAsync<JsonObject>();
         Assert.Equal(2, created?["assets"]?.AsArray().Count);
 
-        using var videoResponse = await _client.GetAsync($"/api/assets/{video.Id}/content");
+        using var videoResponse = await this._client.GetAsync($"/api/assets/{video.Id}/content");
         videoResponse.EnsureSuccessStatusCode();
         Assert.Equal("video/mp4", videoResponse.Content.Headers.ContentType?.MediaType);
         Assert.Equal("Запись экрана.mp4", videoResponse.Content.Headers.ContentDisposition?.FileNameStar);
@@ -304,7 +304,7 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
         form.Add(fileContent, "file", fileName);
 
-        using var response = await _client.PostAsync($"{MessagesPath()}/attachments", form);
+        using var response = await this._client.PostAsync($"{MessagesPath()}/attachments", form);
         response.EnsureSuccessStatusCode();
 
         return (await response.Content.ReadFromJsonAsync<AssetResponse>())!;
@@ -312,7 +312,7 @@ public sealed class MessageIntegrationTests : IClassFixture<ArcaneLinkApiFactory
 
     private void AssertStoredInIsolatedTestRoot(AssetResponse asset)
     {
-        var testStorageRoot = Path.GetFullPath(_factory.AssetStorageRootPath);
+        var testStorageRoot = Path.GetFullPath(this._factory.AssetStorageRootPath);
         var systemTempRoot = Path.GetFullPath(Path.GetTempPath());
         var storedFilePath = Path.GetFullPath(
             Assert.Single(

@@ -37,15 +37,15 @@ namespace ArcaneLink.Services.Servers
             LegacyServerPermissionMaskAdapter legacyPermissionMaskAdapter,
             ILogger<ServerCommandService> logger)
         {
-            _db = db;
-            _realtime = realtime;
-            _configurationValidator = configurationValidator;
-            _spaceAuthorization = spaceAuthorization;
-            _voiceAccess = voiceAccess;
-            _presenceCoordinator = presenceCoordinator;
-            _access = access;
-            _legacyPermissionMaskAdapter = legacyPermissionMaskAdapter;
-            _logger = logger;
+            this._db = db;
+            this._realtime = realtime;
+            this._configurationValidator = configurationValidator;
+            this._spaceAuthorization = spaceAuthorization;
+            this._voiceAccess = voiceAccess;
+            this._presenceCoordinator = presenceCoordinator;
+            this._access = access;
+            this._legacyPermissionMaskAdapter = legacyPermissionMaskAdapter;
+            this._logger = logger;
         }
 
         public async Task<ServerResponse> CreateServerAsync(
@@ -54,27 +54,27 @@ namespace ArcaneLink.Services.Servers
             CancellationToken cancellationToken = default)
         {
             var title = NormalizeTitle(request.Title);
-            var slug = await GenerateUniqueSlugAsync(
+            var slug = await this.GenerateUniqueSlugAsync(
                 title,
                 cancellationToken);
             var description = NormalizeOptionalText(request.Description);
-            var accessMode = _configurationValidator.NormalizeAccessMode(
+            var accessMode = this._configurationValidator.NormalizeAccessMode(
                 request.AccessMode);
             var iconCropOffsetX = request.IconCropOffsetX;
             var iconCropOffsetY = request.IconCropOffsetY;
             var iconCropZoom = request.IconCropZoom;
-            _configurationValidator.NormalizeIconCrop(
+            this._configurationValidator.NormalizeIconCrop(
                 ref iconCropOffsetX,
                 ref iconCropOffsetY,
                 ref iconCropZoom);
-            await _configurationValidator.EnsureIconAssetAsync(
+            await this._configurationValidator.EnsureIconAssetAsync(
                 currentUserId,
                 request.IconAssetId,
                 cancellationToken);
 
             var now = DateTime.UtcNow;
 
-            await using var transaction = await _db.Database
+            await using var transaction = await this._db.Database
                 .BeginTransactionAsync(cancellationToken);
 
             var server = new Server
@@ -156,7 +156,7 @@ namespace ArcaneLink.Services.Servers
             ownerRole.PermissionMask =
                 ServerRolePermissionMaskResolver.EncodeLegacyCompatibility(
                     ownerPermissions,
-                    _legacyPermissionMaskAdapter);
+                    this._legacyPermissionMaskAdapter);
             ownerRole.PermissionSchemaVersion =
                 ServerPermissionRegistry.SchemaVersion;
 
@@ -181,12 +181,12 @@ namespace ArcaneLink.Services.Servers
                 AssignedAt = now
             };
 
-            _db.Servers.Add(server);
-            _db.ServerMembers.Add(ownerMember);
-            _db.ServerRoles.Add(ownerRole);
-            _db.ServerRoles.Add(everyoneRole);
-            _db.ServerMemberRoles.Add(ownerRoleAssignment);
-            _db.ServerAuditLogs.Add(new ServerAuditLog
+            this._db.Servers.Add(server);
+            this._db.ServerMembers.Add(ownerMember);
+            this._db.ServerRoles.Add(ownerRole);
+            this._db.ServerRoles.Add(everyoneRole);
+            this._db.ServerMemberRoles.Add(ownerRoleAssignment);
+            this._db.ServerAuditLogs.Add(new ServerAuditLog
             {
                 Id = Guid.NewGuid(),
                 ServerId = server.Id,
@@ -198,14 +198,14 @@ namespace ArcaneLink.Services.Servers
 
             try
             {
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
-                await _realtime.NotifyUserAsync(
+                await this._realtime.NotifyUserAsync(
                     currentUserId,
                     RealtimeEventNames.ServerMembersChanged,
                     new { serverId = server.Id },
                     cancellationToken);
-                await _realtime.NotifyUserAsync(
+                await this._realtime.NotifyUserAsync(
                     currentUserId,
                     RealtimeEventNames.UserServersChanged,
                     new { serverId = server.Id },
@@ -225,7 +225,7 @@ namespace ArcaneLink.Services.Servers
             UpdateServerRequest request,
             CancellationToken cancellationToken = default)
         {
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId &&
                          x.DeletedAt == null,
@@ -248,12 +248,12 @@ namespace ArcaneLink.Services.Servers
                 request.AccessMode != null;
             if (server.OwnerUserId != currentUserId &&
                 ((!updatesProfile && !updatesSettings) ||
-                 (updatesProfile && !await _access.HasGranularPermissionAsync(
+                 (updatesProfile && !await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "MANAGE_SERVER_PROFILE",
                     cancellationToken)) ||
-                 (updatesSettings && !await _access.HasGranularPermissionAsync(
+                 (updatesSettings && !await this._access.HasGranularPermissionAsync(
                     currentUserId,
                     serverId,
                     "MANAGE_SERVER_SETTINGS",
@@ -293,12 +293,12 @@ namespace ArcaneLink.Services.Servers
                 var iconCropOffsetY = request.IconCropOffsetY ?? 0;
                 var iconCropZoom = request.IconCropZoom ?? 1;
 
-                _configurationValidator.NormalizeIconCrop(
+                this._configurationValidator.NormalizeIconCrop(
                     ref iconCropOffsetX,
                     ref iconCropOffsetY,
                     ref iconCropZoom);
 
-                await _configurationValidator.EnsureIconAssetAsync(
+                await this._configurationValidator.EnsureIconAssetAsync(
                     currentUserId,
                     request.IconAssetId,
                     cancellationToken);
@@ -326,7 +326,7 @@ namespace ArcaneLink.Services.Servers
                 var iconCropZoom = request.IconCropZoom
                     ?? server.IconCropZoom;
 
-                _configurationValidator.NormalizeIconCrop(
+                this._configurationValidator.NormalizeIconCrop(
                     ref iconCropOffsetX,
                     ref iconCropOffsetY,
                     ref iconCropZoom);
@@ -338,7 +338,7 @@ namespace ArcaneLink.Services.Servers
 
             if (request.DefaultTextSpaceId != null)
             {
-                await _configurationValidator.EnsureDefaultTextSpaceAsync(
+                await this._configurationValidator.EnsureDefaultTextSpaceAsync(
                     serverId,
                     request.DefaultTextSpaceId.Value,
                     cancellationToken);
@@ -353,7 +353,7 @@ namespace ArcaneLink.Services.Servers
             var previousAccessMode = server.AccessMode;
             if (request.AccessMode != null)
             {
-                server.AccessMode = _configurationValidator.NormalizeAccessMode(
+                server.AccessMode = this._configurationValidator.NormalizeAccessMode(
                     request.AccessMode);
             }
 
@@ -361,12 +361,12 @@ namespace ArcaneLink.Services.Servers
             server.UpdatedAt = updatedAt;
 
             IReadOnlyCollection<Guid> cancelledJoinRequestUserIds = [];
-            await using var transaction = await _db.Database
+            await using var transaction = await this._db.Database
                 .BeginTransactionAsync(cancellationToken);
             if (previousAccessMode == ServerAccessModeCodes.Restricted &&
                 server.AccessMode != ServerAccessModeCodes.Restricted)
             {
-                cancelledJoinRequestUserIds = await _db.ServerJoinRequests
+                cancelledJoinRequestUserIds = await this._db.ServerJoinRequests
                     .AsNoTracking()
                     .Where(joinRequest =>
                         joinRequest.ServerId == serverId &&
@@ -375,7 +375,7 @@ namespace ArcaneLink.Services.Servers
                     .Select(joinRequest => joinRequest.UserId)
                     .Distinct()
                     .ToArrayAsync(cancellationToken);
-                await _db.ServerJoinRequests
+                await this._db.ServerJoinRequests
                     .Where(joinRequest =>
                         joinRequest.ServerId == serverId &&
                         joinRequest.StatusCode ==
@@ -397,28 +397,28 @@ namespace ArcaneLink.Services.Servers
                         cancellationToken);
             }
 
-            await _db.SaveChangesAsync(cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             foreach (var userId in cancelledJoinRequestUserIds)
             {
-                await _realtime.NotifyUserBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUserBestEffortAsync(
+                    this._logger,
                     userId,
                     RealtimeEventNames.ServerJoinRequestChanged,
                     new { serverId },
                     CancellationToken.None);
             }
-            await _realtime.NotifyServerAsync(
+            await this._realtime.NotifyServerAsync(
                 serverId,
                 RealtimeEventNames.ServerUpdated,
                 new { serverId },
                 cancellationToken);
-            await _realtime.NotifyServerAsync(
+            await this._realtime.NotifyServerAsync(
                 serverId,
                 RealtimeEventNames.ServerGovernanceChanged,
                 new { serverId },
                 cancellationToken);
-            await _realtime.NotifyServerAsync(
+            await this._realtime.NotifyServerAsync(
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId },
@@ -432,7 +432,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId &&
                          x.DeletedAt == null,
@@ -444,14 +444,14 @@ namespace ArcaneLink.Services.Servers
             }
 
             var mutationSucceeded = false;
-            var presenceSubjects = await _presenceCoordinator
+            var presenceSubjects = await this._presenceCoordinator
                 .ExecuteTopologyMutationAsync(
                     UserPresenceTopologyKey.Server(serverId),
                     [currentUserId],
-                    token => ResolveActiveServerUserIdsAsync(serverId, token),
+                    token => this.ResolveActiveServerUserIdsAsync(serverId, token),
                     async token =>
                     {
-                        await _db.Entry(server).ReloadAsync(token);
+                        await this._db.Entry(server).ReloadAsync(token);
                         if (server.DeletedAt != null ||
                             server.OwnerUserId != currentUserId)
                         {
@@ -460,7 +460,7 @@ namespace ArcaneLink.Services.Servers
 
                         server.DeletedAt = DateTime.UtcNow;
                         server.UpdatedAt = server.DeletedAt.Value;
-                        await _db.SaveChangesAsync(token);
+                        await this._db.SaveChangesAsync(token);
                         mutationSucceeded = true;
                     },
                     cancellationToken);
@@ -469,13 +469,13 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            await _presenceCoordinator.AudienceChangedAsync(
+            await this._presenceCoordinator.AudienceChangedAsync(
                 presenceSubjects,
                 CancellationToken.None);
-            _spaceAuthorization.InvalidateServer(serverId);
-            await _voiceAccess.ReconcileServerBestEffortAsync(serverId);
-            await _realtime.NotifyServerBestEffortAsync(
-                _logger,
+            this._spaceAuthorization.InvalidateServer(serverId);
+            await this._voiceAccess.ReconcileServerBestEffortAsync(serverId);
+            await this._realtime.NotifyServerBestEffortAsync(
+                this._logger,
                 serverId,
                 RealtimeEventNames.ServerMembersChanged,
                 new { serverId },
@@ -488,7 +488,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return await _db.ServerMembers
+            return await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.ServerId == serverId &&
@@ -512,7 +512,7 @@ namespace ArcaneLink.Services.Servers
                     ? baseSlug
                     : $"{baseSlug}-{attempt + 1}";
 
-                var exists = await _db.Servers
+                var exists = await this._db.Servers
                     .AnyAsync(
                         x => x.Slug == slug,
                         cancellationToken);

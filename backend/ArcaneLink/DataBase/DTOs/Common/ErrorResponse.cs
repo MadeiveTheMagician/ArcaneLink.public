@@ -11,8 +11,8 @@ namespace ArcaneLink.DataBase.DTOs.Common
             string message,
             IReadOnlyList<ErrorDetail> errors)
         {
-            Message = message;
-            Errors = errors;
+            this.Message = message;
+            this.Errors = errors;
         }
 
         public string Message { get; set; }
@@ -24,8 +24,8 @@ namespace ArcaneLink.DataBase.DTOs.Common
     {
         public ErrorDetail(string code, string message)
         {
-            Code = code;
-            Message = message;
+            this.Code = code;
+            this.Message = message;
         }
 
         public string Code { get; set; }

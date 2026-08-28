@@ -23,7 +23,7 @@ namespace ArcaneLink.Services.Servers.Authorization
             Guid authorizationVersion,
             out ServerAuthorizationContext context)
         {
-            if (_cache.TryGetValue(
+            if (this._cache.TryGetValue(
                     new ContextCacheKey(
                         serverId,
                         memberId,
@@ -43,7 +43,7 @@ namespace ArcaneLink.Services.Servers.Authorization
         {
             ArgumentNullException.ThrowIfNull(context);
 
-            _cache.Set(
+            this._cache.Set(
                 new ContextCacheKey(
                     context.Principal.ServerId,
                     context.Principal.MemberId,
@@ -59,7 +59,7 @@ namespace ArcaneLink.Services.Servers.Authorization
 
         public void Dispose()
         {
-            _cache.Dispose();
+            this._cache.Dispose();
         }
 
         private readonly record struct ContextCacheKey(

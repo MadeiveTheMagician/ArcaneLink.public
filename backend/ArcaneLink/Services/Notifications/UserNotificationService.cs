@@ -23,17 +23,17 @@ namespace ArcaneLink.Services.Notifications
             SpaceMessageAccessService messageAccess,
             ILogger<UserNotificationService> logger)
         {
-            _db = db;
-            _realtime = realtime;
-            _messageAccess = messageAccess;
-            _logger = logger;
+            this._db = db;
+            this._realtime = realtime;
+            this._messageAccess = messageAccess;
+            this._logger = logger;
         }
 
         public async Task<IReadOnlyList<UserNotificationResponse>> GetAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var notifications = await _db.UserNotifications
+            var notifications = await this._db.UserNotifications
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
                 .OrderByDescending(x => x.CreatedAt)
@@ -76,7 +76,7 @@ namespace ArcaneLink.Services.Notifications
                 .ToList();
             var visibleMentionMessageIds = mentionMessageIds.Count == 0
                 ? []
-                : (await _db.SpaceMessages
+                : (await this._db.SpaceMessages
                     .AsNoTracking()
                     .Where(message =>
                         mentionMessageIds.Contains(message.Id) &&
@@ -101,7 +101,7 @@ namespace ArcaneLink.Services.Notifications
                 .Select(x => x.ServerId!.Value)
                 .Distinct())
             {
-                var allowedSpaceIds = await _messageAccess.GetReadableMessageSpaceIdsAsync(
+                var allowedSpaceIds = await this._messageAccess.GetReadableMessageSpaceIdsAsync(
                     userId,
                     serverId,
                     cancellationToken);
@@ -127,7 +127,7 @@ namespace ArcaneLink.Services.Notifications
             Guid notificationId,
             CancellationToken cancellationToken = default)
         {
-            var notification = await _db.UserNotifications.FirstOrDefaultAsync(
+            var notification = await this._db.UserNotifications.FirstOrDefaultAsync(
                 x => x.Id == notificationId && x.UserId == userId,
                 cancellationToken);
             if (notification == null)
@@ -136,8 +136,8 @@ namespace ArcaneLink.Services.Notifications
             }
 
             notification.ReadAt ??= DateTime.UtcNow;
-            await _db.SaveChangesAsync(cancellationToken);
-            await NotifyChangedAsync([userId], cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this.NotifyChangedAsync([userId], cancellationToken);
             return true;
         }
 
@@ -146,24 +146,24 @@ namespace ArcaneLink.Services.Notifications
             CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
-            await _db.UserNotifications
+            await this._db.UserNotifications
                 .Where(x => x.UserId == userId && x.ReadAt == null)
                 .ExecuteUpdateAsync(
                     setters => setters.SetProperty(x => x.ReadAt, now),
                     cancellationToken);
-            await NotifyChangedAsync([userId], cancellationToken);
+            await this.NotifyChangedAsync([userId], cancellationToken);
         }
 
         public async Task<int> ClearHistoryAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            var deletedCount = await _db.UserNotifications
+            var deletedCount = await this._db.UserNotifications
                 .Where(x => x.UserId == userId && x.ReadAt != null)
                 .ExecuteDeleteAsync(cancellationToken);
             if (deletedCount > 0)
             {
-                await NotifyChangedAsync([userId], cancellationToken);
+                await this.NotifyChangedAsync([userId], cancellationToken);
             }
 
             return deletedCount;
@@ -175,7 +175,7 @@ namespace ArcaneLink.Services.Notifications
             CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
-            var notifications = await _db.UserNotifications
+            var notifications = await this._db.UserNotifications
                 .Where(x =>
                     x.UserId == userId &&
                     x.InviteId == inviteId &&
@@ -196,12 +196,12 @@ namespace ArcaneLink.Services.Notifications
             Guid inviteId,
             CancellationToken cancellationToken = default)
         {
-            var serverTitle = await _db.Servers
+            var serverTitle = await this._db.Servers
                 .Where(x => x.Id == serverId)
                 .Select(x => x.Title)
                 .FirstAsync(cancellationToken);
 
-            _db.UserNotifications.Add(new UserNotification
+            this._db.UserNotifications.Add(new UserNotification
             {
                 Id = Guid.NewGuid(),
                 UserId = targetUserId,
@@ -223,7 +223,7 @@ namespace ArcaneLink.Services.Notifications
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            _db.UserNotifications.Add(new UserNotification
+            this._db.UserNotifications.Add(new UserNotification
             {
                 Id = Guid.NewGuid(),
                 UserId = targetUserId,
@@ -243,12 +243,12 @@ namespace ArcaneLink.Services.Notifications
             Guid actorUserId,
             CancellationToken cancellationToken = default)
         {
-            var actorDisplayName = await _db.UserProfiles
+            var actorDisplayName = await this._db.UserProfiles
                 .Where(profile => profile.UserId == actorUserId)
                 .Select(profile => profile.DisplayName)
                 .SingleAsync(cancellationToken);
 
-            _db.UserNotifications.Add(new UserNotification
+            this._db.UserNotifications.Add(new UserNotification
             {
                 Id = Guid.NewGuid(),
                 UserId = targetUserId,
@@ -265,7 +265,7 @@ namespace ArcaneLink.Services.Notifications
             Guid actorUserId,
             CancellationToken cancellationToken = default)
         {
-            var notifications = await _db.UserNotifications
+            var notifications = await this._db.UserNotifications
                 .Where(notification =>
                     notification.UserId == targetUserId &&
                     notification.ActorUserId == actorUserId &&
@@ -304,7 +304,7 @@ namespace ArcaneLink.Services.Notifications
                 return [];
             }
 
-            var context = await _db.Spaces
+            var context = await this._db.Spaces
                 .Where(x => x.Id == spaceId && x.ServerId == serverId)
                 .Select(x => new { SpaceTitle = x.Title, ServerTitle = x.Server!.Title })
                 .FirstOrDefaultAsync(cancellationToken);
@@ -313,7 +313,7 @@ namespace ArcaneLink.Services.Notifications
                 return [];
             }
 
-            var targets = await _db.ServerMembers
+            var targets = await this._db.ServerMembers
                 .Where(x =>
                     x.ServerId == serverId &&
                     x.UserId != actorUserId &&
@@ -328,7 +328,7 @@ namespace ArcaneLink.Services.Notifications
                 return [];
             }
 
-            targets = (await _messageAccess.FilterReadableMessageUserIdsAsync(
+            targets = (await this._messageAccess.FilterReadableMessageUserIdsAsync(
                 serverId,
                 spaceId,
                 targets,
@@ -341,7 +341,7 @@ namespace ArcaneLink.Services.Notifications
             var preview = UserNotificationText.CreatePreview(body);
             foreach (var targetUserId in targets)
             {
-                _db.UserNotifications.Add(new UserNotification
+                this._db.UserNotifications.Add(new UserNotification
                 {
                     Id = Guid.NewGuid(),
                     UserId = targetUserId,
@@ -383,7 +383,7 @@ namespace ArcaneLink.Services.Notifications
                 .ToList();
             if (serverId.HasValue)
             {
-                recipients = (await _messageAccess.FilterReadableMessageUserIdsAsync(
+                recipients = (await this._messageAccess.FilterReadableMessageUserIdsAsync(
                     serverId.Value,
                     spaceId,
                     recipients,
@@ -394,7 +394,7 @@ namespace ArcaneLink.Services.Notifications
                 }
             }
 
-            var existing = await _db.UserNotifications
+            var existing = await this._db.UserNotifications
                 .Where(x =>
                     x.Kind == UserNotificationText.MentionKind &&
                     x.MessageId == messageId &&
@@ -409,7 +409,7 @@ namespace ArcaneLink.Services.Notifications
 
             var preview = UserNotificationText.CreatePreview(body ?? string.Empty);
             var serverTitle = serverId.HasValue
-                ? await _db.Servers
+                ? await this._db.Servers
                     .Where(server => server.Id == serverId.Value)
                     .Select(server => server.Title)
                     .SingleAsync(cancellationToken)
@@ -417,7 +417,7 @@ namespace ArcaneLink.Services.Notifications
             var now = DateTime.UtcNow;
             foreach (var userId in missing)
             {
-                _db.UserNotifications.Add(new UserNotification
+                this._db.UserNotifications.Add(new UserNotification
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
@@ -445,7 +445,7 @@ namespace ArcaneLink.Services.Notifications
             string? detail = null,
             CancellationToken cancellationToken = default)
         {
-            _db.UserNotifications.Add(new UserNotification
+            this._db.UserNotifications.Add(new UserNotification
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
@@ -457,8 +457,8 @@ namespace ArcaneLink.Services.Notifications
                     : UserNotificationText.CreatePreview(detail),
                 CreatedAt = DateTime.UtcNow
             });
-            await _db.SaveChangesAsync(cancellationToken);
-            await NotifyChangedAsync([userId], cancellationToken);
+            await this._db.SaveChangesAsync(cancellationToken);
+            await this.NotifyChangedAsync([userId], cancellationToken);
         }
 
         public async Task NotifyChangedAsync(
@@ -467,8 +467,8 @@ namespace ArcaneLink.Services.Notifications
         {
             foreach (var userId in userIds.Distinct())
             {
-                await _realtime.NotifyUserBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUserBestEffortAsync(
+                    this._logger,
                     userId,
                     RealtimeEventNames.UserNotificationsChanged,
                     new { userId },

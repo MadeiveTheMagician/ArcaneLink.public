@@ -8,7 +8,7 @@ namespace ArcaneLink.Observability.HealthChecks
 
         public StorageHealthCheck(IWebHostEnvironment environment)
         {
-            _environment = environment;
+            this._environment = environment;
         }
 
         public async Task<HealthCheckResult> CheckHealthAsync(
@@ -16,7 +16,7 @@ namespace ArcaneLink.Observability.HealthChecks
             CancellationToken cancellationToken = default)
         {
             var storageRoot = Path.GetFullPath(
-                Path.Combine(_environment.ContentRootPath, "storage"));
+                Path.Combine(this._environment.ContentRootPath, "storage"));
 
             try
             {

@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.Models.AuthModels;
+using ArcaneLink.DataBase.Models.AuthModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -38,7 +38,7 @@ namespace ArcaneLink.DataBase.Configurations.AuthConfigurations
                 .HasColumnName("token_hash")
                 .IsRequired()
                 .HasMaxLength(64)
-                .IsFixedLength();   
+                .IsFixedLength();
 
             // Когда токен был создан
             entity.Property(x => x.CreatedAt)

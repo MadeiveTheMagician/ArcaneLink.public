@@ -1,4 +1,4 @@
-﻿using ArcaneLink.Exceptions;
+using ArcaneLink.Exceptions;
 using ArcaneLink.Exceptions.UserExceptions.Abstractions;
 
 namespace ArcaneLink.Exceptions.UsersExceptions

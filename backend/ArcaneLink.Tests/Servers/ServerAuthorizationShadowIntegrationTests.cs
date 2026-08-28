@@ -237,8 +237,8 @@ public sealed class ServerAuthorizationShadowIntegrationTests
             ServerAuthorizationRequirement requirement,
             CancellationToken cancellationToken = default)
         {
-            EvaluationCount++;
-            LastRequirement = requirement;
+            this.EvaluationCount++;
+            this.LastRequirement = requirement;
             if (evaluationException != null)
             {
                 throw evaluationException;

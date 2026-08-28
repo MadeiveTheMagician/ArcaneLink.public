@@ -59,7 +59,7 @@ namespace ArcaneLink.DataBase.Configurations.UsersConfigurations
                     Code = "pending_email_verification",
                     Title = "Pending email verification"
                 }
-                
+
             );
         }
     }

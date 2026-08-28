@@ -24,11 +24,11 @@ namespace ArcaneLink.Services.Servers
             IOptions<ServerAuthorizationShadowOptions>? shadowOptions = null,
             ILogger<ServerGovernanceAccessService>? logger = null)
         {
-            _db = db;
-            _authorizationRuntime = authorizationRuntime;
-            _legacyAdapter = legacyAdapter ?? new LegacyServerPermissionMaskAdapter();
-            _shadowOptions = shadowOptions?.Value ?? new ServerAuthorizationShadowOptions();
-            _logger = logger;
+            this._db = db;
+            this._authorizationRuntime = authorizationRuntime;
+            this._legacyAdapter = legacyAdapter ?? new LegacyServerPermissionMaskAdapter();
+            this._shadowOptions = shadowOptions?.Value ?? new ServerAuthorizationShadowOptions();
+            this._logger = logger;
         }
 
         public async Task<bool> CanManageServerAsync(
@@ -36,7 +36,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return await HasGranularPermissionAsync(
+            return await this.HasGranularPermissionAsync(
                 userId,
                 serverId,
                 ServerPermissionRegistry.AdministratorCode,
@@ -48,7 +48,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId &&
@@ -60,12 +60,12 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            if (!await IsActiveMemberAsync(userId, serverId, cancellationToken))
+            if (!await this.IsActiveMemberAsync(userId, serverId, cancellationToken))
             {
                 return false;
             }
 
-            return await HasGranularPermissionAsync(
+            return await this.HasGranularPermissionAsync(
                 userId,
                 serverId,
                 "CREATE_INVITES",
@@ -83,7 +83,7 @@ namespace ArcaneLink.Services.Servers
                 return false;
             }
 
-            var legacyAllowed = await _db.ServerMembers
+            var legacyAllowed = await this._db.ServerMembers
                 .AsNoTracking()
                 .AnyAsync(
                     member =>
@@ -104,7 +104,7 @@ namespace ArcaneLink.Services.Servers
                                   rolePermission.PermissionId ==
                                   ServerGovernanceIds.PermissionManageServer)))),
                     cancellationToken);
-            var shadowDecision = await EvaluateAuthorizationShadowAsync(
+            var shadowDecision = await this.EvaluateAuthorizationShadowAsync(
                 userId,
                 serverId,
                 permissionId,
@@ -124,14 +124,14 @@ namespace ArcaneLink.Services.Servers
             IReadOnlyList<string>? dependencyCodes = null)
         {
             if (!ServerPermissionRegistry.TryGet(permissionCode, out _) ||
-                _authorizationRuntime == null)
+                this._authorizationRuntime == null)
             {
                 return false;
             }
 
             try
             {
-                return await _authorizationRuntime.IsAllowedAsync(
+                return await this._authorizationRuntime.IsAllowedAsync(
                     userId,
                     serverId,
                     new ServerAuthorizationRequirement(
@@ -146,7 +146,7 @@ namespace ArcaneLink.Services.Servers
             }
             catch (Exception exception)
             {
-                _logger?.LogError(
+                this._logger?.LogError(
                     exception,
                     "Granular server authorization failed closed for server {ServerId}, member user {UserId}, permission {PermissionCode}",
                     serverId,
@@ -163,22 +163,22 @@ namespace ArcaneLink.Services.Servers
             bool legacyAllowed,
             CancellationToken cancellationToken)
         {
-            if (!_legacyAdapter.TryGetRepresentativePermissionCode(
+            if (!this._legacyAdapter.TryGetRepresentativePermissionCode(
                     legacyPermissionId,
                     out var permissionCode))
             {
                 return null;
             }
 
-            var isEnforced = _shadowOptions.IsEnforced(permissionCode);
-            if (!_shadowOptions.Enabled && !isEnforced)
+            var isEnforced = this._shadowOptions.IsEnforced(permissionCode);
+            if (!this._shadowOptions.Enabled && !isEnforced)
             {
                 return null;
             }
 
-            if (_authorizationRuntime == null)
+            if (this._authorizationRuntime == null)
             {
-                _logger?.LogError(
+                this._logger?.LogError(
                     "Server authorization v1 runtime is unavailable for {PermissionCode}; enforced={IsEnforced}",
                     permissionCode,
                     isEnforced);
@@ -189,14 +189,14 @@ namespace ArcaneLink.Services.Servers
 
             try
             {
-                var shadowAllowed = await _authorizationRuntime.IsAllowedAsync(
+                var shadowAllowed = await this._authorizationRuntime.IsAllowedAsync(
                     userId,
                     serverId,
                     new ServerAuthorizationRequirement(permissionCode),
                     cancellationToken);
                 if (shadowAllowed != legacyAllowed)
                 {
-                    _logger?.LogWarning(
+                    this._logger?.LogWarning(
                         "Server authorization shadow mismatch for server {ServerId}, member user {UserId}, legacy permission {LegacyPermissionId}, v1 permission {PermissionCode}: legacy={LegacyAllowed}, v1={ShadowAllowed}",
                         serverId,
                         userId,
@@ -216,7 +216,7 @@ namespace ArcaneLink.Services.Servers
             }
             catch (Exception exception)
             {
-                _logger?.LogWarning(
+                this._logger?.LogWarning(
                     exception,
                     "Server authorization shadow evaluation failed for server {ServerId} and legacy permission {LegacyPermissionId}",
                     serverId,
@@ -237,7 +237,7 @@ namespace ArcaneLink.Services.Servers
             Guid permissionId,
             CancellationToken cancellationToken)
         {
-            return await _db.ServerMemberRoles
+            return await this._db.ServerMemberRoles
                 .AsNoTracking()
                 .AnyAsync(
                     x => x.ServerId == serverId &&
@@ -259,7 +259,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .FirstOrDefaultAsync(
                     x => x.Id == serverId &&
                          x.DeletedAt == null,
@@ -270,7 +270,7 @@ namespace ArcaneLink.Services.Servers
                 return null;
             }
 
-            var ownerRole = await _db.ServerRoles
+            var ownerRole = await this._db.ServerRoles
                 .Include(x => x.Permissions)
                 .FirstOrDefaultAsync(
                     x => x.ServerId == serverId &&
@@ -298,7 +298,7 @@ namespace ArcaneLink.Services.Servers
                     UpdatedAt = now
                 };
 
-                _db.ServerRoles.Add(ownerRole);
+                this._db.ServerRoles.Add(ownerRole);
                 authorizationChanged = true;
                 roleChanged = true;
             }
@@ -340,7 +340,7 @@ namespace ArcaneLink.Services.Servers
             var expectedPermissionMask =
                 ServerRolePermissionMaskResolver.EncodeLegacyCompatibility(
                     permissionIds,
-                    _legacyAdapter);
+                    this._legacyAdapter);
             if (ownerRole.PermissionSchemaVersion !=
                     ServerPermissionRegistry.SchemaVersion ||
                 ownerRole.PermissionMask == null ||
@@ -359,7 +359,7 @@ namespace ArcaneLink.Services.Servers
                 ownerRole.UpdatedAt = now;
             }
 
-            var ownerMember = await _db.ServerMembers
+            var ownerMember = await this._db.ServerMembers
                 .FirstOrDefaultAsync(
                     x => x.ServerId == serverId &&
                          x.UserId == server.OwnerUserId &&
@@ -369,7 +369,7 @@ namespace ArcaneLink.Services.Servers
 
             if (ownerMember != null)
             {
-                var ownerAssignment = await _db.ServerMemberRoles
+                var ownerAssignment = await this._db.ServerMemberRoles
                     .FirstOrDefaultAsync(
                         x => x.ServerId == serverId &&
                              x.MemberId == ownerMember.Id &&
@@ -378,7 +378,7 @@ namespace ArcaneLink.Services.Servers
 
                 if (ownerAssignment == null)
                 {
-                    _db.ServerMemberRoles.Add(new ServerMemberRole
+                    this._db.ServerMemberRoles.Add(new ServerMemberRole
                     {
                         Id = Guid.NewGuid(),
                         ServerId = serverId,
@@ -403,7 +403,7 @@ namespace ArcaneLink.Services.Servers
 
             if (authorizationChanged)
             {
-                await _db.StageServerAclRevisionBumpAsync(
+                await this._db.StageServerAclRevisionBumpAsync(
                     serverId,
                     cancellationToken);
             }
@@ -416,7 +416,7 @@ namespace ArcaneLink.Services.Servers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return await _db.ServerMembers.AnyAsync(
+            return await this._db.ServerMembers.AnyAsync(
                 x => x.ServerId == serverId &&
                      x.UserId == userId &&
                      x.StatusId == ServerMemberStatusIds.Active &&
@@ -437,7 +437,7 @@ namespace ArcaneLink.Services.Servers
             Guid? relatedSpaceId = null,
             string? payload = null)
         {
-            _db.ServerAuditLogs.Add(new ServerAuditLog
+            this._db.ServerAuditLogs.Add(new ServerAuditLog
             {
                 Id = Guid.NewGuid(),
                 ServerId = serverId,

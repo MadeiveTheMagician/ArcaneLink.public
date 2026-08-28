@@ -42,11 +42,11 @@ namespace ArcaneLink.Services.Realtime
             IServerAuthorizationRuntime? serverAuthorization = null,
             IDirectMessagePrivacyService? directMessagePrivacy = null)
         {
-            _db = db;
-            _spaceAuthorization = spaceAuthorization;
-            _logger = logger;
-            _serverAuthorization = serverAuthorization;
-            _directMessagePrivacy = directMessagePrivacy;
+            this._db = db;
+            this._spaceAuthorization = spaceAuthorization;
+            this._logger = logger;
+            this._serverAuthorization = serverAuthorization;
+            this._directMessagePrivacy = directMessagePrivacy;
         }
 
         public async Task<VoiceJoinResult?> JoinAsync(
@@ -57,9 +57,9 @@ namespace ArcaneLink.Services.Realtime
             VoiceStateUpdate state,
             CancellationToken cancellationToken = default)
         {
-            if (!await CanUseVoiceChannelAsync(userId, serverId, spaceId, cancellationToken))
+            if (!await this.CanUseVoiceChannelAsync(userId, serverId, spaceId, cancellationToken))
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Voice join rejected. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId}",
                     connectionId,
                     userId,
@@ -68,20 +68,20 @@ namespace ArcaneLink.Services.Realtime
                 return null;
             }
 
-            var mediaCapabilities = await GetServerVoiceMediaCapabilitiesAsync(
+            var mediaCapabilities = await this.GetServerVoiceMediaCapabilitiesAsync(
                 userId,
                 serverId,
                 spaceId,
                 cancellationToken);
 
-            var user = await GetActiveUserAsync(
+            var user = await this.GetActiveUserAsync(
                 userId,
                 serverId,
                 cancellationToken);
 
             if (user == null)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Voice join rejected because user was not active. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId}",
                     connectionId,
                     userId,
@@ -90,7 +90,7 @@ namespace ArcaneLink.Services.Realtime
                 return null;
             }
 
-            return await JoinAccessibleChannelAsync(
+            return await this.JoinAccessibleChannelAsync(
                 connectionId,
                 user,
                 serverId,
@@ -108,9 +108,9 @@ namespace ArcaneLink.Services.Realtime
             VoiceStateUpdate state,
             CancellationToken cancellationToken = default)
         {
-            if (!await CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
+            if (!await this.CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Private voice join rejected. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId}",
                     connectionId,
                     userId,
@@ -118,14 +118,14 @@ namespace ArcaneLink.Services.Realtime
                 return null;
             }
 
-            var user = await GetActiveUserAsync(
+            var user = await this.GetActiveUserAsync(
                 userId,
                 serverId: null,
                 cancellationToken);
 
             if (user == null)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Private voice join rejected because user was not active. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId}",
                     connectionId,
                     userId,
@@ -133,7 +133,7 @@ namespace ArcaneLink.Services.Realtime
                 return null;
             }
 
-            return await JoinAccessibleChannelAsync(
+            return await this.JoinAccessibleChannelAsync(
                 connectionId,
                 user,
                 null,
@@ -151,7 +151,7 @@ namespace ArcaneLink.Services.Realtime
             VoiceStateUpdate state,
             CancellationToken cancellationToken = default)
         {
-            if (!await IsPrivateCallPrivacyAllowedAsync(
+            if (!await this.IsPrivateCallPrivacyAllowedAsync(
                     spaceId,
                     cancellationToken))
             {
@@ -185,7 +185,7 @@ namespace ArcaneLink.Services.Realtime
                         return null;
                     }
 
-                    var existingVoice = await JoinPrivateSpaceAsync(
+                    var existingVoice = await this.JoinPrivateSpaceAsync(
                         connectionId,
                         userId,
                         spaceId,
@@ -214,7 +214,7 @@ namespace ArcaneLink.Services.Realtime
                 // Membership reconciliation and call creation share this gate. Re-read
                 // the authoritative roster here so a member removed while Start was
                 // waiting cannot become a stale ringing target (or caller).
-                var activeMembers = await GetActivePrivateSpaceMembersAsync(
+                var activeMembers = await this.GetActivePrivateSpaceMembersAsync(
                     spaceId,
                     cancellationToken);
                 var caller = activeMembers.FirstOrDefault(
@@ -238,7 +238,7 @@ namespace ArcaneLink.Services.Realtime
                     return null;
                 }
 
-                var voice = await JoinPrivateSpaceAsync(
+                var voice = await this.JoinPrivateSpaceAsync(
                     connectionId,
                     userId,
                     spaceId,
@@ -286,7 +286,7 @@ namespace ArcaneLink.Services.Realtime
             VoiceStateUpdate state,
             CancellationToken cancellationToken = default)
         {
-            if (!await IsPrivateCallPrivacyAllowedAsync(
+            if (!await this.IsPrivateCallPrivacyAllowedAsync(
                     spaceId,
                     cancellationToken))
             {
@@ -303,7 +303,7 @@ namespace ArcaneLink.Services.Realtime
                     return null;
                 }
 
-                var voice = await JoinPrivateSpaceAsync(
+                var voice = await this.JoinPrivateSpaceAsync(
                     connectionId,
                     userId,
                     spaceId,
@@ -340,7 +340,7 @@ namespace ArcaneLink.Services.Realtime
             VoiceStateUpdate state,
             CancellationToken cancellationToken = default)
         {
-            if (!await IsPrivateCallPrivacyAllowedAsync(
+            if (!await this.IsPrivateCallPrivacyAllowedAsync(
                     spaceId,
                     cancellationToken))
             {
@@ -371,7 +371,7 @@ namespace ArcaneLink.Services.Realtime
                     return null;
                 }
 
-                var voice = await JoinPrivateSpaceAsync(
+                var voice = await this.JoinPrivateSpaceAsync(
                     connectionId,
                     userId,
                     spaceId,
@@ -416,7 +416,7 @@ namespace ArcaneLink.Services.Realtime
             Guid callId,
             CancellationToken cancellationToken = default)
         {
-            if (!await CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
+            if (!await this.CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
             {
                 return null;
             }
@@ -467,7 +467,7 @@ namespace ArcaneLink.Services.Realtime
             Guid callId,
             CancellationToken cancellationToken = default)
         {
-            if (!await CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
+            if (!await this.CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
             {
                 return null;
             }
@@ -510,7 +510,7 @@ namespace ArcaneLink.Services.Realtime
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            if (!await CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
+            if (!await this.CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
             {
                 return null;
             }
@@ -562,7 +562,7 @@ namespace ArcaneLink.Services.Realtime
                 return calls;
             }
 
-            var authorizedSpaceIds = await _db.PrivateSpaceMembers
+            var authorizedSpaceIds = await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.UserId == userId &&
@@ -603,7 +603,7 @@ namespace ArcaneLink.Services.Realtime
                     return null;
                 }
 
-                var activeMemberIds = (await GetActivePrivateSpaceMembersAsync(
+                var activeMemberIds = (await this.GetActivePrivateSpaceMembersAsync(
                         spaceId,
                         cancellationToken))
                     .Select(member => member.UserId)
@@ -671,7 +671,7 @@ namespace ArcaneLink.Services.Realtime
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            if (await IsPrivateCallPrivacyAllowedAsync(spaceId, cancellationToken))
+            if (await this.IsPrivateCallPrivacyAllowedAsync(spaceId, cancellationToken))
             {
                 return null;
             }
@@ -767,7 +767,7 @@ namespace ArcaneLink.Services.Realtime
                 VoiceConnectionsGate.Release();
             }
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 "Voice joined. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId} Scope={ChannelScope} Participants={ParticipantCount} RemovedConnections={RemovedConnectionCount} ReplacedConnections={ReplacedConnectionCount} Muted={IsMuted} Deafened={IsDeafened}",
                 connectionId,
                 user.Id,
@@ -796,7 +796,7 @@ namespace ArcaneLink.Services.Realtime
             Guid? serverId,
             CancellationToken cancellationToken)
         {
-            var query = _db.Users
+            var query = this._db.Users
                 .AsNoTracking()
                 .Include(x => x.Profile)
                 .AsQueryable();
@@ -874,7 +874,7 @@ namespace ArcaneLink.Services.Realtime
 
             if (removed != null)
             {
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     "Voice left. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId}",
                     connectionId,
                     removed.UserId,
@@ -911,9 +911,9 @@ namespace ArcaneLink.Services.Realtime
             if (current == null ||
                 (expectedParticipantId.HasValue &&
                     current.ParticipantId != expectedParticipantId.Value) ||
-                !await CanUseConnectionAsync(current, cancellationToken))
+                !await this.CanUseConnectionAsync(current, cancellationToken))
             {
-                _logger.LogDebug(
+                this._logger.LogDebug(
                     "Voice state update ignored because connection generation is stale, is not in channel, or is no longer authorized. ConnectionId={ConnectionId} SpaceId={SpaceId} ExpectedParticipantId={ExpectedParticipantId}",
                     connectionId,
                     spaceId,
@@ -923,7 +923,7 @@ namespace ArcaneLink.Services.Realtime
 
             var mediaCapabilities = current.ChannelScope == VoiceChannelScopes.Private
                 ? VoiceMediaCapabilities.PrivateVoice
-                : await GetServerVoiceMediaCapabilitiesAsync(
+                : await this.GetServerVoiceMediaCapabilitiesAsync(
                     current.UserId,
                     current.ServerId!.Value,
                     current.SpaceId,
@@ -961,7 +961,7 @@ namespace ArcaneLink.Services.Realtime
                 return null;
             }
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 "Voice state updated. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId} Muted={IsMuted} Deafened={IsDeafened} Camera={IsCameraEnabled} Screen={IsScreenSharing}",
                 connectionId,
                 updated.UserId,
@@ -1005,32 +1005,32 @@ namespace ArcaneLink.Services.Realtime
             }
 
             if (candidate == null ||
-                !await CanModerateServerVoiceParticipantAsync(
+                !await this.CanModerateServerVoiceParticipantAsync(
                     actorUserId,
                     serverId,
                     candidate.UserId,
                     cancellationToken) ||
-                !await HasExactSpacePermissionAsync(
+                !await this.HasExactSpacePermissionAsync(
                     actorUserId,
                     serverId,
                     sourceSpaceId,
                     MoveVoiceMembersPermission,
                     [ViewVoiceSpacesPermission],
                     cancellationToken) ||
-                !await HasExactSpacePermissionAsync(
+                !await this.HasExactSpacePermissionAsync(
                     actorUserId,
                     serverId,
                     targetSpaceId,
                     MoveVoiceMembersPermission,
                     [ViewVoiceSpacesPermission],
                     cancellationToken) ||
-                !await CanUseVoiceChannelAsync(
+                !await this.CanUseVoiceChannelAsync(
                     candidate.UserId,
                     serverId,
                     targetSpaceId,
                     cancellationToken))
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Voice participant move rejected because actor cannot moderate participant or participant cannot connect to target. ActorUserId={ActorUserId} ServerId={ServerId} SourceSpaceId={SourceSpaceId} TargetSpaceId={TargetSpaceId} ParticipantId={ParticipantId} TargetUserId={TargetUserId}",
                     actorUserId,
                     serverId,
@@ -1041,7 +1041,7 @@ namespace ArcaneLink.Services.Realtime
                 return null;
             }
 
-            var targetMediaCapabilities = await GetServerVoiceMediaCapabilitiesAsync(
+            var targetMediaCapabilities = await this.GetServerVoiceMediaCapabilitiesAsync(
                 candidate.UserId,
                 serverId,
                 targetSpaceId,
@@ -1098,7 +1098,7 @@ namespace ArcaneLink.Services.Realtime
                 VoiceConnectionsGate.Release();
             }
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 "Voice participant moved. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SourceSpaceId={SourceSpaceId} TargetSpaceId={TargetSpaceId} ParticipantId={ParticipantId}",
                 moved.ConnectionId,
                 moved.UserId,
@@ -1142,13 +1142,13 @@ namespace ArcaneLink.Services.Realtime
             }
 
             if (candidate == null ||
-                !await CanModerateServerVoiceParticipantAsync(
+                !await this.CanModerateServerVoiceParticipantAsync(
                     actorUserId,
                     serverId,
                     candidate.UserId,
                     cancellationToken) ||
                 (isServerMuted.HasValue &&
-                 !await HasExactSpacePermissionAsync(
+                 !await this.HasExactSpacePermissionAsync(
                      actorUserId,
                      serverId,
                      spaceId,
@@ -1156,7 +1156,7 @@ namespace ArcaneLink.Services.Realtime
                      [ViewVoiceSpacesPermission],
                      cancellationToken)) ||
                 (isServerDeafened.HasValue &&
-                 !await HasExactSpacePermissionAsync(
+                 !await this.HasExactSpacePermissionAsync(
                      actorUserId,
                      serverId,
                      spaceId,
@@ -1164,7 +1164,7 @@ namespace ArcaneLink.Services.Realtime
                      [ViewVoiceSpacesPermission],
                      cancellationToken)))
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Voice moderation rejected. ActorUserId={ActorUserId} ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId} TargetUserId={TargetUserId}",
                     actorUserId,
                     serverId,
@@ -1218,7 +1218,7 @@ namespace ArcaneLink.Services.Realtime
                 return null;
             }
 
-            _logger.LogInformation(
+            this._logger.LogInformation(
                 "Voice participant moderation updated. ActorUserId={ActorUserId} TargetUserId={TargetUserId} ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId} ServerMuted={IsServerMuted} ServerDeafened={IsServerDeafened}",
                 actorUserId,
                 updated.UserId,
@@ -1259,12 +1259,12 @@ namespace ArcaneLink.Services.Realtime
             }
 
             if (candidate == null ||
-                !await CanModerateServerVoiceParticipantAsync(
+                !await this.CanModerateServerVoiceParticipantAsync(
                     actorUserId,
                     serverId,
                     candidate.UserId,
                     cancellationToken) ||
-                !await HasExactSpacePermissionAsync(
+                !await this.HasExactSpacePermissionAsync(
                     actorUserId,
                     serverId,
                     spaceId,
@@ -1272,7 +1272,7 @@ namespace ArcaneLink.Services.Realtime
                     [ViewVoiceSpacesPermission],
                     cancellationToken))
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     "Voice participant disconnect rejected. ActorUserId={ActorUserId} ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId} TargetUserId={TargetUserId}",
                     actorUserId,
                     serverId,
@@ -1307,7 +1307,7 @@ namespace ArcaneLink.Services.Realtime
 
             if (removed != null)
             {
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     "Voice participant disconnected by moderator. ActorUserId={ActorUserId} TargetUserId={TargetUserId} ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId}",
                     actorUserId,
                     removed.UserId,
@@ -1347,9 +1347,9 @@ namespace ArcaneLink.Services.Realtime
             }
 
             if (sender == null || sender.UserId != userId ||
-                !await CanUseConnectionAsync(sender, cancellationToken))
+                !await this.CanUseConnectionAsync(sender, cancellationToken))
             {
-                _logger.LogDebug(
+                this._logger.LogDebug(
                     "Voice signal ignored because sender is not in channel or no longer authorized. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId} TargetUserId={TargetUserId}",
                     connectionId,
                     userId,
@@ -1363,7 +1363,7 @@ namespace ArcaneLink.Services.Realtime
             {
                 if (target.ChannelScope == sender.ChannelScope &&
                     target.ServerId == sender.ServerId &&
-                    await CanUseConnectionAsync(target, cancellationToken))
+                    await this.CanUseConnectionAsync(target, cancellationToken))
                 {
                     authorizedTargets.Add(target.ConnectionId);
                 }
@@ -1446,7 +1446,7 @@ namespace ArcaneLink.Services.Realtime
                 return [];
             }
 
-            var user = await _db.Users
+            var user = await this._db.Users
                 .AsNoTracking()
                 .Include(candidate => candidate.Profile)
                 .Include(candidate => candidate.ServerMemberships)
@@ -1519,7 +1519,7 @@ namespace ArcaneLink.Services.Realtime
 
             if (removed != null)
             {
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     "Voice disconnected. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId}",
                     connectionId,
                     removed.UserId,
@@ -1561,7 +1561,7 @@ namespace ArcaneLink.Services.Realtime
             var mediaCapabilitiesByParticipantId = new Dictionary<Guid, VoiceMediaCapabilities>();
             foreach (var connection in candidates)
             {
-                if (!await CanUseVoiceChannelAsync(
+                if (!await this.CanUseVoiceChannelAsync(
                         connection.UserId,
                         serverId,
                         connection.SpaceId,
@@ -1572,7 +1572,7 @@ namespace ArcaneLink.Services.Realtime
                 }
 
                 mediaCapabilitiesByParticipantId[connection.ParticipantId] =
-                    await GetServerVoiceMediaCapabilitiesAsync(
+                    await this.GetServerVoiceMediaCapabilitiesAsync(
                         connection.UserId,
                         serverId,
                         connection.SpaceId,
@@ -1646,7 +1646,7 @@ namespace ArcaneLink.Services.Realtime
 
             if (removed.Count > 0 || affectedSpaceIds.Count > 0)
             {
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     "Reconciled server voice access. ServerId={ServerId} RemovedConnectionCount={RemovedConnectionCount} AffectedSpaceCount={AffectedSpaceCount}",
                     serverId,
                     removed.Count,
@@ -1698,7 +1698,7 @@ namespace ArcaneLink.Services.Realtime
 
             if (removed.Count > 0)
             {
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     "Removed private voice connections after membership access changed. SpaceId={SpaceId} UserId={UserId} RemovedConnectionCount={RemovedConnectionCount}",
                     spaceId,
                     userId,
@@ -1738,13 +1738,13 @@ namespace ArcaneLink.Services.Realtime
                 return new VoiceAccessLeaseResult(IsActive: false);
             }
 
-            var hasAccess = await CanUseConnectionAsync(current, cancellationToken);
+            var hasAccess = await this.CanUseConnectionAsync(current, cancellationToken);
             VoiceMediaCapabilities? mediaCapabilities = null;
             if (hasAccess &&
                 current.ChannelScope == VoiceChannelScopes.Server &&
                 current.ServerId.HasValue)
             {
-                mediaCapabilities = await GetServerVoiceMediaCapabilitiesAsync(
+                mediaCapabilities = await this.GetServerVoiceMediaCapabilitiesAsync(
                     current.UserId,
                     current.ServerId.Value,
                     current.SpaceId,
@@ -1807,7 +1807,7 @@ namespace ArcaneLink.Services.Realtime
                     VoiceConnections.TryRemove(spaceId, out _);
                 }
 
-                _logger.LogInformation(
+                this._logger.LogInformation(
                     "Voice access lease denied and connection removed. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId} ChannelScope={ChannelScope}",
                     connectionId,
                     userId,
@@ -1830,13 +1830,13 @@ namespace ArcaneLink.Services.Realtime
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            var capabilities = await _spaceAuthorization.GetCapabilitiesAsync(
+            var capabilities = await this._spaceAuthorization.GetCapabilitiesAsync(
                 userId,
                 serverId,
                 spaceId,
                 cancellationToken);
             return capabilities?.CanConnectVoice == true &&
-                   await HasExactSpacePermissionAsync(
+                   await this.HasExactSpacePermissionAsync(
                        userId,
                        serverId,
                        spaceId,
@@ -1851,13 +1851,13 @@ namespace ArcaneLink.Services.Realtime
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            var capabilities = await _spaceAuthorization.GetCapabilitiesAsync(
+            var capabilities = await this._spaceAuthorization.GetCapabilitiesAsync(
                 userId,
                 serverId,
                 spaceId,
                 cancellationToken);
             return capabilities?.CanView == true &&
-                   await HasExactSpacePermissionAsync(
+                   await this.HasExactSpacePermissionAsync(
                        userId,
                        serverId,
                        spaceId,
@@ -1877,21 +1877,21 @@ namespace ArcaneLink.Services.Realtime
                 ViewVoiceSpacesPermission,
                 ConnectVoicePermission
             };
-            var canSpeak = await HasExactSpacePermissionAsync(
+            var canSpeak = await this.HasExactSpacePermissionAsync(
                 userId,
                 serverId,
                 spaceId,
                 SpeakInVoicePermission,
                 dependencies,
                 cancellationToken);
-            var canUseVideo = await HasExactSpacePermissionAsync(
+            var canUseVideo = await this.HasExactSpacePermissionAsync(
                 userId,
                 serverId,
                 spaceId,
                 UseVideoPermission,
                 dependencies,
                 cancellationToken);
-            var canShareScreen = await HasExactSpacePermissionAsync(
+            var canShareScreen = await this.HasExactSpacePermissionAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -1912,7 +1912,7 @@ namespace ArcaneLink.Services.Realtime
             IReadOnlyList<string> dependencyCodes,
             CancellationToken cancellationToken)
         {
-            return _spaceAuthorization.IsAllowedAsync(
+            return this._spaceAuthorization.IsAllowedAsync(
                 userId,
                 serverId,
                 spaceId,
@@ -1939,7 +1939,7 @@ namespace ArcaneLink.Services.Realtime
             Guid spaceId,
             CancellationToken cancellationToken = default)
         {
-            return await _db.PrivateSpaceMembers
+            return await this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .AnyAsync(
                     x => x.SpaceId == spaceId &&
@@ -1954,15 +1954,15 @@ namespace ArcaneLink.Services.Realtime
             CancellationToken cancellationToken)
         {
             return connection.ChannelScope == VoiceChannelScopes.Private
-                ? await CanUsePrivateVoiceChannelAsync(
+                ? await this.CanUsePrivateVoiceChannelAsync(
                       connection.UserId,
                       connection.SpaceId,
                       cancellationToken) &&
-                  await IsPrivateCallPrivacyAllowedAsync(
+                  await this.IsPrivateCallPrivacyAllowedAsync(
                       connection.SpaceId,
                       cancellationToken)
                 : connection.ServerId.HasValue &&
-                  await CanUseVoiceChannelAsync(
+                  await this.CanUseVoiceChannelAsync(
                       connection.UserId,
                       connection.ServerId.Value,
                       connection.SpaceId,
@@ -1973,12 +1973,12 @@ namespace ArcaneLink.Services.Realtime
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            if (_directMessagePrivacy == null)
+            if (this._directMessagePrivacy == null)
             {
                 return true;
             }
 
-            var direct = await _db.PrivateSpaces
+            var direct = await this._db.PrivateSpaces
                 .AsNoTracking()
                 .Where(space =>
                     space.SpaceId == spaceId &&
@@ -2005,11 +2005,11 @@ namespace ArcaneLink.Services.Realtime
                 return false;
             }
 
-            return await _directMessagePrivacy.CanSendDirectMessageAsync(
+            return await this._directMessagePrivacy.CanSendDirectMessageAsync(
                        direct.DirectUserLowId.Value,
                        spaceId,
                        cancellationToken) &&
-                   await _directMessagePrivacy.CanSendDirectMessageAsync(
+                   await this._directMessagePrivacy.CanSendDirectMessageAsync(
                        direct.DirectUserHighId.Value,
                        spaceId,
                        cancellationToken);
@@ -2026,13 +2026,13 @@ namespace ArcaneLink.Services.Realtime
                 return false;
             }
 
-            if (_serverAuthorization != null)
+            if (this._serverAuthorization != null)
             {
-                var actorContext = await _serverAuthorization.GetContextAsync(
+                var actorContext = await this._serverAuthorization.GetContextAsync(
                     actorUserId,
                     serverId,
                     cancellationToken);
-                var targetContext = await _serverAuthorization.GetContextAsync(
+                var targetContext = await this._serverAuthorization.GetContextAsync(
                     targetUserId,
                     serverId,
                     cancellationToken);
@@ -2051,7 +2051,7 @@ namespace ArcaneLink.Services.Realtime
                            targetAuthority);
             }
 
-            var server = await _db.Servers
+            var server = await this._db.Servers
                 .AsNoTracking()
                 .Where(candidate => candidate.Id == serverId && candidate.DeletedAt == null)
                 .Select(candidate => new { candidate.OwnerUserId })
@@ -2061,7 +2061,7 @@ namespace ArcaneLink.Services.Realtime
                 return false;
             }
 
-            var targetIsActive = await _db.ServerMembers
+            var targetIsActive = await this._db.ServerMembers
                 .AsNoTracking()
                 .AnyAsync(member =>
                     member.ServerId == serverId &&
@@ -2081,7 +2081,7 @@ namespace ArcaneLink.Services.Realtime
                 return true;
             }
 
-            var actorIsActive = await _db.ServerMembers
+            var actorIsActive = await this._db.ServerMembers
                 .AsNoTracking()
                 .AnyAsync(member =>
                     member.ServerId == serverId &&
@@ -2096,7 +2096,7 @@ namespace ArcaneLink.Services.Realtime
                 return false;
             }
 
-            if (await HasLegacyManageServerProtectionAsync(
+            if (await this.HasLegacyManageServerProtectionAsync(
                     targetUserId,
                     serverId,
                     cancellationToken))
@@ -2104,7 +2104,7 @@ namespace ArcaneLink.Services.Realtime
                 return false;
             }
 
-            var actorHighestRoleLevel = await GetHighestActiveRoleLevelAsync(
+            var actorHighestRoleLevel = await this.GetHighestActiveRoleLevelAsync(
                 actorUserId,
                 serverId,
                 cancellationToken);
@@ -2113,7 +2113,7 @@ namespace ArcaneLink.Services.Realtime
                 return false;
             }
 
-            var targetHighestRoleLevel = await GetHighestActiveRoleLevelAsync(
+            var targetHighestRoleLevel = await this.GetHighestActiveRoleLevelAsync(
                 targetUserId,
                 serverId,
                 cancellationToken);
@@ -2126,7 +2126,7 @@ namespace ArcaneLink.Services.Realtime
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return _db.ServerMemberRoles
+            return this._db.ServerMemberRoles
                 .AsNoTracking()
                 .AnyAsync(assignment =>
                     assignment.ServerId == serverId &&
@@ -2147,7 +2147,7 @@ namespace ArcaneLink.Services.Realtime
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return _db.ServerMemberRoles
+            return this._db.ServerMemberRoles
                 .AsNoTracking()
                 .Where(assignment =>
                     assignment.ServerId == serverId &&
@@ -2206,7 +2206,7 @@ namespace ArcaneLink.Services.Realtime
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return _db.PrivateSpaceMembers
+            return this._db.PrivateSpaceMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.SpaceId == spaceId &&
@@ -2464,13 +2464,13 @@ namespace ArcaneLink.Services.Realtime
                 string phase,
                 HashSet<Guid> ringingUserIds)
             {
-                CallId = callId;
-                SpaceId = spaceId;
-                Caller = caller;
-                StartedAt = startedAt;
-                Phase = phase;
-                RingingUserIds = ringingUserIds;
-                JoinedUserIds.Add(caller.UserId);
+                this.CallId = callId;
+                this.SpaceId = spaceId;
+                this.Caller = caller;
+                this.StartedAt = startedAt;
+                this.Phase = phase;
+                this.RingingUserIds = ringingUserIds;
+                this.JoinedUserIds.Add(caller.UserId);
             }
 
             public Guid CallId { get; }

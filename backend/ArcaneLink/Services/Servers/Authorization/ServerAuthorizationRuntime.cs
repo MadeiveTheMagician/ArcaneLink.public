@@ -22,9 +22,9 @@ namespace ArcaneLink.Services.Servers.Authorization
             ServerAuthorizationContextCache cache,
             LegacyServerPermissionMaskAdapter legacyAdapter)
         {
-            _db = db;
-            _cache = cache;
-            _legacyAdapter = legacyAdapter;
+            this._db = db;
+            this._cache = cache;
+            this._legacyAdapter = legacyAdapter;
         }
 
         public async Task<ServerAuthorizationContext?> GetContextAsync(
@@ -39,7 +39,7 @@ namespace ArcaneLink.Services.Servers.Authorization
 
             for (var attempt = 0; attempt < ContextLoadAttempts; attempt++)
             {
-                var header = await LoadHeaderAsync(
+                var header = await this.LoadHeaderAsync(
                     userId,
                     serverId,
                     cancellationToken);
@@ -53,7 +53,7 @@ namespace ArcaneLink.Services.Servers.Authorization
                     return null;
                 }
 
-                if (_cache.TryGet(
+                if (this._cache.TryGet(
                         serverId,
                         header.MemberId,
                         header.AuthorizationVersion,
@@ -62,7 +62,7 @@ namespace ArcaneLink.Services.Servers.Authorization
                     return cached;
                 }
 
-                var principal = await LoadPrincipalAsync(
+                var principal = await this.LoadPrincipalAsync(
                     serverId,
                     header,
                     cancellationToken);
@@ -75,7 +75,7 @@ namespace ArcaneLink.Services.Servers.Authorization
                     return null;
                 }
 
-                var confirmedVersion = await LoadAuthorizationVersionAsync(
+                var confirmedVersion = await this.LoadAuthorizationVersionAsync(
                     serverId,
                     cancellationToken);
                 if (confirmedVersion != header.AuthorizationVersion)
@@ -86,7 +86,7 @@ namespace ArcaneLink.Services.Servers.Authorization
                 var context = new ServerAuthorizationContext(
                     header.AuthorizationVersion,
                     principal);
-                _cache.Set(context);
+                this._cache.Set(context);
                 return context;
             }
 
@@ -101,7 +101,7 @@ namespace ArcaneLink.Services.Servers.Authorization
         {
             ArgumentNullException.ThrowIfNull(requirement);
 
-            var context = await GetContextAsync(
+            var context = await this.GetContextAsync(
                 userId,
                 serverId,
                 cancellationToken);
@@ -126,7 +126,7 @@ namespace ArcaneLink.Services.Servers.Authorization
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return await _db.ServerMembers
+            return await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(member =>
                     member.ServerId == serverId &&
@@ -149,7 +149,7 @@ namespace ArcaneLink.Services.Servers.Authorization
             ContextHeader header,
             CancellationToken cancellationToken)
         {
-            var everyoneRoles = await _db.ServerRoles
+            var everyoneRoles = await this._db.ServerRoles
                 .AsNoTracking()
                 .Include(role => role.Permissions)
                 .Where(role =>
@@ -173,12 +173,12 @@ namespace ArcaneLink.Services.Servers.Authorization
                     int.MaxValue,
                     ServerPermissionRegistry.DefaultEveryonePermissionsMask);
             }
-            else if (!TryAdaptRole(everyoneRoles[0], out everyoneRole))
+            else if (!this.TryAdaptRole(everyoneRoles[0], out everyoneRole))
             {
                 return null;
             }
 
-            var assignments = await _db.ServerMemberRoles
+            var assignments = await this._db.ServerMemberRoles
                 .AsNoTracking()
                 .Include(assignment => assignment.Role)
                     .ThenInclude(role => role.Permissions)
@@ -192,7 +192,7 @@ namespace ArcaneLink.Services.Servers.Authorization
             var assignedRoles = new List<ServerAuthorizationRole>(assignments.Count);
             foreach (var assignment in assignments)
             {
-                if (!TryAdaptRole(assignment.Role, out var role))
+                if (!this.TryAdaptRole(assignment.Role, out var role))
                 {
                     return null;
                 }
@@ -217,7 +217,7 @@ namespace ArcaneLink.Services.Servers.Authorization
             if (!TryMapRoleKind(role.Kind, out var kind) ||
                 !ServerRolePermissionMaskResolver.TryResolve(
                     role,
-                    _legacyAdapter,
+                    this._legacyAdapter,
                     out var permissionMask,
                     out _))
             {
@@ -258,7 +258,7 @@ namespace ArcaneLink.Services.Servers.Authorization
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            return await _db.Servers
+            return await this._db.Servers
                 .AsNoTracking()
                 .Where(server =>
                     server.Id == serverId &&

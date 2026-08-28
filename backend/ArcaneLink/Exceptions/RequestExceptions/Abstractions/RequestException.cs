@@ -1,10 +1,10 @@
-﻿namespace ArcaneLink.Exceptions.RequestExceptions.Abstractions
+namespace ArcaneLink.Exceptions.RequestExceptions.Abstractions
 {
-    public abstract class RequestException: Exception
+    public abstract class RequestException : Exception
     {
-        public RequestException(string message): base(message)
+        public RequestException(string message) : base(message)
         {
-            
+
         }
     }
 }

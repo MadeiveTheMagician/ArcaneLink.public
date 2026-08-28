@@ -15,7 +15,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
 
         public ServerMembersController(IServerMemberService serverMemberService)
         {
-            _serverMemberService = serverMemberService;
+            this._serverMemberService = serverMemberService;
         }
 
         [HttpGet]
@@ -29,11 +29,11 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromQuery] int limit = 100,
             CancellationToken cancellationToken = default)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
             var cursorPartCount =
@@ -48,10 +48,10 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 normalizedQuery?.Length > 100 ||
                 limit is < 1 or > 100)
             {
-                return BadRequest(new { code = "invalid_server_member_query" });
+                return this.BadRequest(new { code = "invalid_server_member_query" });
             }
 
-            var response = await _serverMemberService.GetServerMembersAsync(
+            var response = await this._serverMemberService.GetServerMembersAsync(
                 userId.Value,
                 serverId,
                 afterPriority,
@@ -63,8 +63,8 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 cancellationToken);
 
             return response == null
-                ? NotFound()
-                : Ok(response);
+                ? this.NotFound()
+                : this.Ok(response);
         }
 
         [HttpGet("by-user/{targetUserId:guid}")]
@@ -73,22 +73,22 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid targetUserId,
             CancellationToken cancellationToken = default)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _serverMemberService.GetServerMemberByUserIdAsync(
+            var response = await this._serverMemberService.GetServerMemberByUserIdAsync(
                 userId.Value,
                 serverId,
                 targetUserId,
                 cancellationToken);
 
             return response == null
-                ? NotFound()
-                : Ok(response);
+                ? this.NotFound()
+                : this.Ok(response);
         }
 
         [HttpDelete("me")]
@@ -96,21 +96,21 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid serverId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var isLeft = await _serverMemberService.LeaveServerAsync(
+            var isLeft = await this._serverMemberService.LeaveServerAsync(
                 userId.Value,
                 serverId,
                 cancellationToken);
 
             return isLeft
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [HttpDelete("{memberId:guid}")]
@@ -119,22 +119,22 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             Guid memberId,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var isRemoved = await _serverMemberService.RemoveServerMemberAsync(
+            var isRemoved = await this._serverMemberService.RemoveServerMemberAsync(
                 userId.Value,
                 serverId,
                 memberId,
                 cancellationToken);
 
             return isRemoved
-                ? NoContent()
-                : NotFound();
+                ? this.NoContent()
+                : this.NotFound();
         }
 
         [HttpPost("{memberId:guid}/ban")]
@@ -144,26 +144,26 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             [FromBody] BanServerMemberRequest request,
             CancellationToken cancellationToken)
         {
-            var userId = GetCurrentUserId();
+            var userId = this.GetCurrentUserId();
 
             if (userId == null)
             {
-                return Unauthorized();
+                return this.Unauthorized();
             }
 
-            var response = await _serverMemberService.BanServerMemberAsync(
+            var response = await this._serverMemberService.BanServerMemberAsync(
                 userId.Value,
                 serverId,
                 memberId,
                 request,
                 cancellationToken);
 
-            return response == null ? NotFound() : Ok(response);
+            return response == null ? this.NotFound() : this.Ok(response);
         }
 
         private Guid? GetCurrentUserId()
         {
-            var userIdValue = User.FindFirstValue("userId");
+            var userIdValue = this.User.FindFirstValue("userId");
 
             return Guid.TryParse(userIdValue, out var userId)
                 ? userId

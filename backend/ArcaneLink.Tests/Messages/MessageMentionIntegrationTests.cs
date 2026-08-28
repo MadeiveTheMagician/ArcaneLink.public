@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using ArcaneLink.DataBase._Data;
+using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Messages;
 using ArcaneLink.DataBase.DTOs.Users;
-using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.Models.ServersModels;
 using ArcaneLink.Services.Messages;
 using ArcaneLink.Tests.Infrastructure;
@@ -19,17 +19,17 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
 
     public MessageMentionIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _factory = factory;
-        _client = factory.CreateClient();
+        this._factory = factory;
+        this._client = factory.CreateClient();
     }
 
     [Fact]
     public async Task ExplicitUserMention_UsesUtf16Offsets_AndCreatesNotification()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
         const string body = "😀 hello @member";
         var start = body.IndexOf("@member", StringComparison.Ordinal);
-        using var response = await _client.PostAsJsonAsync(
+        using var response = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest
             {
@@ -53,7 +53,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
         Assert.Equal(start, mention.Start);
         Assert.Equal(ArcaneLinkApiFactory.MemberUserId, mention.TargetUserId);
 
-        await using var scope = _factory.Services.CreateAsyncScope();
+        await using var scope = this._factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         Assert.Single(await db.UserNotifications
             .Where(x => x.UserId == ArcaneLinkApiFactory.MemberUserId && x.MessageId == message.Id)
@@ -64,7 +64,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
     public async Task RoleAndEveryoneMentions_DeduplicateRecipient()
     {
         var roleId = Guid.NewGuid();
-        await using (var scope = _factory.Services.CreateAsyncScope())
+        await using (var scope = this._factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var now = DateTime.UtcNow;
@@ -93,7 +93,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
             await db.SaveChangesAsync();
         }
 
-        await using var readScope = _factory.Services.CreateAsyncScope();
+        await using var readScope = this._factory.Services.CreateAsyncScope();
         var readDb = readScope.ServiceProvider.GetRequiredService<AppDbContext>();
         var roleTitle = await readDb.ServerRoles
             .Where(x => x.Id == roleId)
@@ -102,8 +102,8 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
         var roleToken = $"@{roleTitle}";
         var body = $"{roleToken} @everyone";
 
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        using var response = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        using var response = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest
             {
@@ -167,7 +167,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
                 IsSystem = true
             }
         };
-        await using (var scope = _factory.Services.CreateAsyncScope())
+        await using (var scope = this._factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var now = DateTime.UtcNow;
@@ -180,11 +180,11 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
             await db.SaveChangesAsync();
         }
 
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
         foreach (var role in blockedRoles)
         {
             var token = $"@{role.Title}";
-            using var response = await _client.PostAsJsonAsync(
+            using var response = await this._client.PostAsJsonAsync(
                 MessagesPath(),
                 new CreateSpaceMessageRequest
                 {
@@ -208,8 +208,8 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
     [Fact]
     public async Task Edit_ReplacesMentions_WithoutDuplicatingNotification()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        using var createResponse = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        using var createResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = "draft", Mentions = [] });
         createResponse.EnsureSuccessStatusCode();
@@ -229,16 +229,16 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
             ]
         };
 
-        using (var first = await _client.PatchAsJsonAsync($"{MessagesPath()}/{created.Id}", request))
+        using (var first = await this._client.PatchAsJsonAsync($"{MessagesPath()}/{created.Id}", request))
         {
             first.EnsureSuccessStatusCode();
         }
-        using (var second = await _client.PatchAsJsonAsync($"{MessagesPath()}/{created.Id}", request))
+        using (var second = await this._client.PatchAsJsonAsync($"{MessagesPath()}/{created.Id}", request))
         {
             second.EnsureSuccessStatusCode();
         }
 
-        await using var scope = _factory.Services.CreateAsyncScope();
+        await using var scope = this._factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         Assert.Equal(1, await db.SpaceMessageMentions.CountAsync(x => x.MessageId == created.Id));
         Assert.Equal(1, await db.UserNotifications.CountAsync(x =>
@@ -248,11 +248,11 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
     [Fact]
     public async Task ReplyPreview_BecomesUnavailableAfterTargetDeletion()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        var original = await CreateMessageAsync("reply target");
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        var original = await this.CreateMessageAsync("reply target");
 
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
-        using var replyResponse = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
+        using var replyResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest
             {
@@ -266,12 +266,12 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
         Assert.Equal("Owner", reply.ReplyTo?.SenderDisplayName);
         Assert.False(reply.ReplyTo?.IsUnavailable);
 
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        using var deleteResponse = await _client.DeleteAsync($"{MessagesPath()}/{original.Id}");
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        using var deleteResponse = await this._client.DeleteAsync($"{MessagesPath()}/{original.Id}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
-        var messages = await _client.GetFromJsonAsync<List<SpaceMessageResponse>>(MessagesPath());
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
+        var messages = await this._client.GetFromJsonAsync<List<SpaceMessageResponse>>(MessagesPath());
         var reloaded = Assert.Single(messages!, x => x.Id == reply.Id);
         Assert.True(reloaded.ReplyTo?.IsUnavailable);
         Assert.Null(reloaded.ReplyTo?.Body);
@@ -281,8 +281,8 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
     [Fact]
     public async Task ExplicitMention_WithNonCanonicalToken_IsRejected()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        using var response = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        using var response = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest
             {
@@ -305,8 +305,8 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
     [Fact]
     public async Task ExplicitMention_AllowsSentenceDot_ButRejectsLoginContinuation()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        using var sentenceResponse = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        using var sentenceResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest
             {
@@ -324,7 +324,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
             });
         sentenceResponse.EnsureSuccessStatusCode();
 
-        using var continuationResponse = await _client.PostAsJsonAsync(
+        using var continuationResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest
             {
@@ -347,8 +347,8 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
     [Fact]
     public async Task LegacyMention_AllowsSentenceDot_ButRejectsUnknownDottedContinuation()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        using var sentenceResponse = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        using var sentenceResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = "legacy @member." });
         sentenceResponse.EnsureSuccessStatusCode();
@@ -358,7 +358,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
         Assert.Equal("@member", mention.DisplayText);
         Assert.Equal(7, mention.Length);
 
-        using var continuationResponse = await _client.PostAsJsonAsync(
+        using var continuationResponse = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = "legacy @member.extra" });
         continuationResponse.EnsureSuccessStatusCode();
@@ -366,7 +366,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
             .ReadFromJsonAsync<SpaceMessageResponse>())!;
         Assert.Empty(continuation.Mentions);
 
-        await using var scope = _factory.Services.CreateAsyncScope();
+        await using var scope = this._factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         Assert.Single(await db.UserNotifications
             .Where(x =>
@@ -384,7 +384,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
     public async Task LegacyMention_ResolvesExistingLoginWithInternalDot()
     {
         const string login = "legacy.dotted";
-        using var registerResponse = await _client.PostAsJsonAsync(
+        using var registerResponse = await this._client.PostAsJsonAsync(
             "/api/auth/register",
             new CreateUserRequest
             {
@@ -395,7 +395,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
             });
         registerResponse.EnsureSuccessStatusCode();
         var user = (await registerResponse.Content.ReadFromJsonAsync<UserResponse>())!;
-        await using (var scope = _factory.Services.CreateAsyncScope())
+        await using (var scope = this._factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var now = DateTime.UtcNow;
@@ -415,8 +415,8 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
             await db.SaveChangesAsync();
         }
 
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
-        using var response = await _client.PostAsJsonAsync(
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
+        using var response = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = $"legacy @{login}." });
         response.EnsureSuccessStatusCode();
@@ -428,7 +428,7 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
 
     private async Task<SpaceMessageResponse> CreateMessageAsync(string body)
     {
-        using var response = await _client.PostAsJsonAsync(
+        using var response = await this._client.PostAsJsonAsync(
             MessagesPath(),
             new CreateSpaceMessageRequest { Body = body, Mentions = [] });
         response.EnsureSuccessStatusCode();

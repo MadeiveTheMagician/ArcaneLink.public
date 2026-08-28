@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ArcaneLink.Controllers
 {
@@ -12,10 +12,10 @@ namespace ArcaneLink.Controllers
         [HttpGet("me")]
         public IActionResult Me()
         {
-            var userId = User.FindFirstValue("userId");
-            var login = User.FindFirstValue(ClaimTypes.Name);
+            var userId = this.User.FindFirstValue("userId");
+            var login = this.User.FindFirstValue(ClaimTypes.Name);
 
-            return Ok(new
+            return this.Ok(new
             {
                 userId,
                 login

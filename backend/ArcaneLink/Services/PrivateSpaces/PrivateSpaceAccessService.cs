@@ -10,7 +10,7 @@ namespace ArcaneLink.Services.PrivateSpaces
 
         public PrivateSpaceAccessService(AppDbContext db)
         {
-            _db = db;
+            this._db = db;
         }
 
         internal async Task<bool> IsActiveMemberAsync(
@@ -18,7 +18,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid spaceId,
             CancellationToken cancellationToken)
         {
-            return await _db.PrivateSpaceMembers.AnyAsync(
+            return await this._db.PrivateSpaceMembers.AnyAsync(
                 x => x.SpaceId == spaceId &&
                      x.UserId == userId &&
                      x.StatusId == PrivateSpaceIds.MemberStatusActive &&
@@ -30,7 +30,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             IReadOnlyCollection<Guid> userIds,
             CancellationToken cancellationToken)
         {
-            var count = await _db.Users.CountAsync(
+            var count = await this._db.Users.CountAsync(
                 x => userIds.Contains(x.Id) &&
                      x.DeletedAt == null &&
                      x.StatusId == UserStatusIds.Active,
@@ -43,7 +43,7 @@ namespace ArcaneLink.Services.PrivateSpaces
             Guid userId,
             CancellationToken cancellationToken)
         {
-            return await _db.Users.AnyAsync(
+            return await this._db.Users.AnyAsync(
                 x => x.Id == userId &&
                      x.DeletedAt == null &&
                      x.StatusId == UserStatusIds.Active,

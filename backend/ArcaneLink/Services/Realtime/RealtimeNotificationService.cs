@@ -10,7 +10,7 @@ namespace ArcaneLink.Services.Realtime
 
         public RealtimeNotificationService(IHubContext<RealtimeHub> hubContext)
         {
-            _hubContext = hubContext;
+            this._hubContext = hubContext;
         }
 
         public async Task NotifyConnectionAsync(
@@ -19,7 +19,7 @@ namespace ArcaneLink.Services.Realtime
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            await _hubContext.Clients
+            await this._hubContext.Clients
                 .Client(connectionId)
                 .SendAsync(eventName, payload, cancellationToken);
         }
@@ -30,7 +30,7 @@ namespace ArcaneLink.Services.Realtime
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            await _hubContext.Clients
+            await this._hubContext.Clients
                 .Group(RealtimeGroups.User(userId))
                 .SendAsync(eventName, payload, cancellationToken);
         }
@@ -50,7 +50,7 @@ namespace ArcaneLink.Services.Realtime
                 return;
             }
 
-            await _hubContext.Clients
+            await this._hubContext.Clients
                 .Groups(userGroups)
                 .SendAsync(eventName, payload, cancellationToken);
         }
@@ -61,7 +61,7 @@ namespace ArcaneLink.Services.Realtime
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            await _hubContext.Clients
+            await this._hubContext.Clients
                 .Group(RealtimeGroups.Server(serverId))
                 .SendAsync(eventName, payload, cancellationToken);
         }

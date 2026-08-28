@@ -24,12 +24,12 @@ namespace ArcaneLink.Services.Realtime
         {
             ArgumentNullException.ThrowIfNull(connectionId);
 
-            lock (_sync)
+            lock (this._sync)
             {
                 Guid? previousUserId = null;
                 var previousUserLostLastConnection = false;
 
-                if (_usersByConnection.TryGetValue(connectionId, out var currentUserId))
+                if (this._usersByConnection.TryGetValue(connectionId, out var currentUserId))
                 {
                     if (currentUserId == userId)
                     {
@@ -42,20 +42,20 @@ namespace ArcaneLink.Services.Realtime
                     }
 
                     previousUserId = currentUserId;
-                    previousUserLostLastConnection = RemoveFromUser(
+                    previousUserLostLastConnection = this.RemoveFromUser(
                         currentUserId,
                         connectionId);
                 }
 
-                if (!_connectionsByUser.TryGetValue(userId, out var connectionIds))
+                if (!this._connectionsByUser.TryGetValue(userId, out var connectionIds))
                 {
                     connectionIds = new HashSet<string>(StringComparer.Ordinal);
-                    _connectionsByUser.Add(userId, connectionIds);
+                    this._connectionsByUser.Add(userId, connectionIds);
                 }
 
                 var isFirstConnection = connectionIds.Count == 0;
                 connectionIds.Add(connectionId);
-                _usersByConnection[connectionId] = userId;
+                this._usersByConnection[connectionId] = userId;
 
                 return new RealtimeConnectionRegistrationResult(
                     userId,
@@ -70,14 +70,14 @@ namespace ArcaneLink.Services.Realtime
         {
             ArgumentNullException.ThrowIfNull(connectionId);
 
-            lock (_sync)
+            lock (this._sync)
             {
-                if (!_usersByConnection.Remove(connectionId, out var userId))
+                if (!this._usersByConnection.Remove(connectionId, out var userId))
                 {
                     return null;
                 }
 
-                var wasLastConnection = RemoveFromUser(userId, connectionId);
+                var wasLastConnection = this.RemoveFromUser(userId, connectionId);
                 return new RealtimeConnectionUnregistrationResult(
                     userId,
                     wasLastConnection);
@@ -86,9 +86,9 @@ namespace ArcaneLink.Services.Realtime
 
         public IReadOnlyList<string> GetConnectionIds(Guid userId)
         {
-            lock (_sync)
+            lock (this._sync)
             {
-                return _connectionsByUser.TryGetValue(userId, out var connectionIds)
+                return this._connectionsByUser.TryGetValue(userId, out var connectionIds)
                     ? connectionIds.ToArray()
                     : [];
             }
@@ -96,17 +96,17 @@ namespace ArcaneLink.Services.Realtime
 
         public bool HasConnections(Guid userId)
         {
-            lock (_sync)
+            lock (this._sync)
             {
-                return _connectionsByUser.ContainsKey(userId);
+                return this._connectionsByUser.ContainsKey(userId);
             }
         }
 
         public int GetConnectionCount(Guid userId)
         {
-            lock (_sync)
+            lock (this._sync)
             {
-                return _connectionsByUser.TryGetValue(userId, out var connectionIds)
+                return this._connectionsByUser.TryGetValue(userId, out var connectionIds)
                     ? connectionIds.Count
                     : 0;
             }
@@ -114,7 +114,7 @@ namespace ArcaneLink.Services.Realtime
 
         private bool RemoveFromUser(Guid userId, string connectionId)
         {
-            if (!_connectionsByUser.TryGetValue(userId, out var connectionIds))
+            if (!this._connectionsByUser.TryGetValue(userId, out var connectionIds))
             {
                 return false;
             }
@@ -125,7 +125,7 @@ namespace ArcaneLink.Services.Realtime
                 return false;
             }
 
-            _connectionsByUser.Remove(userId);
+            this._connectionsByUser.Remove(userId);
             return true;
         }
     }

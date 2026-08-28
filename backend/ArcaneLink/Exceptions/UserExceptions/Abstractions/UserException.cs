@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.Exceptions.UserExceptions.Abstractions
+namespace ArcaneLink.Exceptions.UserExceptions.Abstractions
 {
     // Базовое исключение пользовательского модуля.
     //

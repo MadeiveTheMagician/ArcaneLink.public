@@ -10,17 +10,17 @@ internal sealed class ManualTimeProvider(DateTimeOffset initialUtcNow) : TimePro
 
     public override DateTimeOffset GetUtcNow()
     {
-        lock (_sync)
+        lock (this._sync)
         {
-            return _utcNow;
+            return this._utcNow;
         }
     }
 
     public override long GetTimestamp()
     {
-        lock (_sync)
+        lock (this._sync)
         {
-            return _utcNow.UtcDateTime.Ticks;
+            return this._utcNow.UtcDateTime.Ticks;
         }
     }
 
@@ -43,19 +43,19 @@ internal sealed class ManualTimeProvider(DateTimeOffset initialUtcNow) : TimePro
             throw new ArgumentOutOfRangeException(nameof(amount));
         }
 
-        lock (_sync)
+        lock (this._sync)
         {
-            _utcNow += amount;
+            this._utcNow += amount;
         }
 
-        FireDueTimers();
+        this.FireDueTimers();
     }
 
     public void SetUtcNow(DateTimeOffset value)
     {
-        lock (_sync)
+        lock (this._sync)
         {
-            _utcNow = value;
+            this._utcNow = value;
         }
     }
 
@@ -64,14 +64,14 @@ internal sealed class ManualTimeProvider(DateTimeOffset initialUtcNow) : TimePro
         while (true)
         {
             List<ManualTimer> dueTimers;
-            lock (_sync)
+            lock (this._sync)
             {
-                dueTimers = _timers
-                    .Where(timer => timer.IsDue(_utcNow))
+                dueTimers = this._timers
+                    .Where(timer => timer.IsDue(this._utcNow))
                     .ToList();
                 foreach (var timer in dueTimers)
                 {
-                    timer.MarkFired(_utcNow);
+                    timer.MarkFired(this._utcNow);
                 }
             }
 
@@ -95,7 +95,7 @@ internal sealed class ManualTimeProvider(DateTimeOffset initialUtcNow) : TimePro
         ValidateTimeout(dueTime, nameof(dueTime));
         ValidateTimeout(period, nameof(period));
 
-        lock (_sync)
+        lock (this._sync)
         {
             if (timer.IsDisposed)
             {
@@ -104,17 +104,17 @@ internal sealed class ManualTimeProvider(DateTimeOffset initialUtcNow) : TimePro
 
             timer.DueAt = dueTime == Timeout.InfiniteTimeSpan
                 ? null
-                : _utcNow + dueTime;
+                : this._utcNow + dueTime;
             timer.Period = period;
-            _timers.Add(timer);
+            this._timers.Add(timer);
         }
     }
 
     private void RemoveTimer(ManualTimer timer)
     {
-        lock (_sync)
+        lock (this._sync)
         {
-            _timers.Remove(timer);
+            this._timers.Remove(timer);
         }
     }
 
@@ -138,46 +138,46 @@ internal sealed class ManualTimeProvider(DateTimeOffset initialUtcNow) : TimePro
         public bool Change(TimeSpan dueTime, TimeSpan period)
         {
             provider.ChangeTimer(this, dueTime, period);
-            return !IsDisposed;
+            return !this.IsDisposed;
         }
 
         public void Dispose()
         {
-            if (IsDisposed)
+            if (this.IsDisposed)
             {
                 return;
             }
 
-            IsDisposed = true;
-            DueAt = null;
+            this.IsDisposed = true;
+            this.DueAt = null;
             provider.RemoveTimer(this);
         }
 
         public ValueTask DisposeAsync()
         {
-            Dispose();
+            this.Dispose();
             return ValueTask.CompletedTask;
         }
 
         public bool IsDue(DateTimeOffset utcNow)
         {
-            return !IsDisposed && DueAt <= utcNow;
+            return !this.IsDisposed && this.DueAt <= utcNow;
         }
 
         public void MarkFired(DateTimeOffset utcNow)
         {
-            if (Period == Timeout.InfiniteTimeSpan || Period == TimeSpan.Zero)
+            if (this.Period == Timeout.InfiniteTimeSpan || this.Period == TimeSpan.Zero)
             {
-                DueAt = null;
+                this.DueAt = null;
                 return;
             }
 
-            DueAt = utcNow + Period;
+            this.DueAt = utcNow + this.Period;
         }
 
         public void Invoke()
         {
-            if (!IsDisposed)
+            if (!this.IsDisposed)
             {
                 callback(state);
             }

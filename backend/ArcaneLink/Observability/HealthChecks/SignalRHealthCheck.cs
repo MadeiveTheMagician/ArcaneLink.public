@@ -10,14 +10,14 @@ namespace ArcaneLink.Observability.HealthChecks
 
         public SignalRHealthCheck(IHubContext<RealtimeHub> hubContext)
         {
-            _hubContext = hubContext;
+            this._hubContext = hubContext;
         }
 
         public Task<HealthCheckResult> CheckHealthAsync(
             HealthCheckContext context,
             CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(_hubContext.Clients != null
+            return Task.FromResult(this._hubContext.Clients != null
                 ? HealthCheckResult.Healthy("SignalR realtime hub is registered.")
                 : HealthCheckResult.Unhealthy("SignalR realtime hub is not available."));
         }

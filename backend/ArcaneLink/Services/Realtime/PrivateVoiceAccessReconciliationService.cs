@@ -18,10 +18,10 @@ namespace ArcaneLink.Services.Realtime
             IRealtimeNotificationService realtime,
             ILogger<PrivateVoiceAccessReconciliationService> logger)
         {
-            _db = db;
-            _voiceConnections = voiceConnections;
-            _realtime = realtime;
-            _logger = logger;
+            this._db = db;
+            this._voiceConnections = voiceConnections;
+            this._realtime = realtime;
+            this._logger = logger;
         }
 
         public async Task RevokeMemberBestEffortAsync(Guid spaceId, Guid userId)
@@ -29,14 +29,14 @@ namespace ArcaneLink.Services.Realtime
             IReadOnlyList<VoiceConnectionSnapshot> removed;
             try
             {
-                removed = await _voiceConnections.RemovePrivateSpaceMemberConnectionsAsync(
+                removed = await this._voiceConnections.RemovePrivateSpaceMemberConnectionsAsync(
                     spaceId,
                     userId,
                     CancellationToken.None);
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Private voice access reconciliation failed after membership was closed. SpaceId={SpaceId} UserId={UserId}",
                     spaceId,
@@ -46,8 +46,8 @@ namespace ArcaneLink.Services.Realtime
 
             foreach (var connection in removed)
             {
-                await _realtime.NotifyUserBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUserBestEffortAsync(
+                    this._logger,
                     userId,
                     RealtimeEventNames.VoiceConnectionReplaced,
                     new
@@ -62,7 +62,7 @@ namespace ArcaneLink.Services.Realtime
 
             try
             {
-                var callTransition = await _voiceConnections
+                var callTransition = await this._voiceConnections
                     .SynchronizePrivateCallAsync(
                         spaceId,
                         "membership_changed",
@@ -72,7 +72,7 @@ namespace ArcaneLink.Services.Realtime
                     return;
                 }
 
-                var recipients = await _db.PrivateSpaceMembers
+                var recipients = await this._db.PrivateSpaceMembers
                     .AsNoTracking()
                     .Where(member =>
                         member.SpaceId == spaceId &&
@@ -84,13 +84,13 @@ namespace ArcaneLink.Services.Realtime
                     .Select(member => member.UserId)
                     .Distinct()
                     .ToListAsync(CancellationToken.None);
-                var payload = await _voiceConnections.GetChannelStatePayloadAsync(
+                var payload = await this._voiceConnections.GetChannelStatePayloadAsync(
                     null,
                     spaceId,
                     VoiceChannelScopes.Private,
                     CancellationToken.None);
-                await _realtime.NotifyUsersBestEffortAsync(
-                    _logger,
+                await this._realtime.NotifyUsersBestEffortAsync(
+                    this._logger,
                     recipients,
                     "VoiceChannelStateChanged",
                     payload,
@@ -98,14 +98,14 @@ namespace ArcaneLink.Services.Realtime
 
                 if (callTransition != null)
                 {
-                    await _realtime.NotifyUsersBestEffortAsync(
-                        _logger,
+                    await this._realtime.NotifyUsersBestEffortAsync(
+                        this._logger,
                         recipients,
                         RealtimeEventNames.PrivateCallStateChanged,
                         callTransition.Call,
                         CancellationToken.None);
-                    await _realtime.NotifyUserBestEffortAsync(
-                        _logger,
+                    await this._realtime.NotifyUserBestEffortAsync(
+                        this._logger,
                         userId,
                         RealtimeEventNames.PrivateCallStateChanged,
                         callTransition.Call with
@@ -122,14 +122,14 @@ namespace ArcaneLink.Services.Realtime
 
                     if (callTransition.Call.Phase == PrivateCallPhases.Ended)
                     {
-                        var emptyPayload = await _voiceConnections
+                        var emptyPayload = await this._voiceConnections
                             .GetChannelStatePayloadAsync(
                                 null,
                                 spaceId,
                                 VoiceChannelScopes.Private,
                                 CancellationToken.None);
-                        await _realtime.NotifyUsersBestEffortAsync(
-                            _logger,
+                        await this._realtime.NotifyUsersBestEffortAsync(
+                            this._logger,
                             recipients,
                             "VoiceChannelStateChanged",
                             emptyPayload,
@@ -139,7 +139,7 @@ namespace ArcaneLink.Services.Realtime
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
+                this._logger.LogWarning(
                     exception,
                     "Private voice roster broadcast failed after membership was closed. SpaceId={SpaceId} UserId={UserId}",
                     spaceId,

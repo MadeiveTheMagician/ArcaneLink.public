@@ -1,6 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using ArcaneLink.DataBase.DTOs.Messages;
 using ArcaneLink.DataBase.DTOs.Users;
-using System.ComponentModel.DataAnnotations;
 
 namespace ArcaneLink.DataBase.DTOs.Spaces
 {

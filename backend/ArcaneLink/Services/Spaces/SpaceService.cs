@@ -16,16 +16,16 @@ namespace ArcaneLink.Services.Spaces
             ISpaceReorderService reorder,
             ISpacePermissionOverrideService permissionOverrides)
         {
-            _queries = queries;
-            _commands = commands;
-            _reorder = reorder;
-            _permissionOverrides = permissionOverrides;
+            this._queries = queries;
+            this._commands = commands;
+            this._reorder = reorder;
+            this._permissionOverrides = permissionOverrides;
         }
 
         public Task<IReadOnlyList<SpaceTypeResponse>> GetSpaceTypesAsync(
             CancellationToken cancellationToken = default)
         {
-            return _queries.GetSpaceTypesAsync(cancellationToken);
+            return this._queries.GetSpaceTypesAsync(cancellationToken);
         }
 
         public Task<IReadOnlyList<SpaceResponse>?> GetServerSpacesAsync(
@@ -33,7 +33,7 @@ namespace ArcaneLink.Services.Spaces
             Guid serverId,
             CancellationToken cancellationToken = default)
         {
-            return _queries.GetServerSpacesAsync(currentUserId, serverId, cancellationToken);
+            return this._queries.GetServerSpacesAsync(currentUserId, serverId, cancellationToken);
         }
 
         public Task<SpaceResponse?> CreateSpaceAsync(
@@ -42,7 +42,7 @@ namespace ArcaneLink.Services.Spaces
             CreateSpaceRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _commands.CreateSpaceAsync(currentUserId, serverId, request, cancellationToken);
+            return this._commands.CreateSpaceAsync(currentUserId, serverId, request, cancellationToken);
         }
 
         public Task<SpaceResponse?> UpdateSpaceAsync(
@@ -52,7 +52,7 @@ namespace ArcaneLink.Services.Spaces
             UpdateSpaceRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _commands.UpdateSpaceAsync(currentUserId, serverId, spaceId, request, cancellationToken);
+            return this._commands.UpdateSpaceAsync(currentUserId, serverId, spaceId, request, cancellationToken);
         }
 
         public Task<bool> DeleteSpaceAsync(
@@ -62,7 +62,7 @@ namespace ArcaneLink.Services.Spaces
             DeleteSpaceRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _commands.DeleteSpaceAsync(currentUserId, serverId, spaceId, request, cancellationToken);
+            return this._commands.DeleteSpaceAsync(currentUserId, serverId, spaceId, request, cancellationToken);
         }
 
         public Task<bool> ReorderSpacesAsync(
@@ -71,7 +71,7 @@ namespace ArcaneLink.Services.Spaces
             ReorderSpacesRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _reorder.ReorderSpacesAsync(currentUserId, serverId, request, cancellationToken);
+            return this._reorder.ReorderSpacesAsync(currentUserId, serverId, request, cancellationToken);
         }
 
         public Task<SpacePermissionOverrideResponse?> UpsertPermissionOverrideAsync(
@@ -81,7 +81,7 @@ namespace ArcaneLink.Services.Spaces
             UpsertSpacePermissionOverrideRequest request,
             CancellationToken cancellationToken = default)
         {
-            return _permissionOverrides.UpsertPermissionOverrideAsync(
+            return this._permissionOverrides.UpsertPermissionOverrideAsync(
                 currentUserId,
                 serverId,
                 spaceId,
@@ -96,7 +96,7 @@ namespace ArcaneLink.Services.Spaces
             Guid overrideId,
             CancellationToken cancellationToken = default)
         {
-            return _permissionOverrides.DeletePermissionOverrideAsync(
+            return this._permissionOverrides.DeletePermissionOverrideAsync(
                 currentUserId,
                 serverId,
                 spaceId,

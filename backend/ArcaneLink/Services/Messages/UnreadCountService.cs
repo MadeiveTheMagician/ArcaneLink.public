@@ -18,9 +18,9 @@ namespace ArcaneLink.Services.Messages
             ISpaceAuthorizationService authorization,
             SpaceMessageAccessService messageAccess)
         {
-            _db = db;
-            _authorization = authorization;
-            _messageAccess = messageAccess;
+            this._db = db;
+            this._authorization = authorization;
+            this._messageAccess = messageAccess;
         }
 
         public async Task<Dictionary<Guid, long>> GetServerSpaceUnreadCountsAsync(
@@ -35,7 +35,7 @@ namespace ArcaneLink.Services.Messages
                 return [];
             }
 
-            var readableSpaceIds = await _messageAccess.GetReadableMessageSpaceIdsAsync(
+            var readableSpaceIds = await this._messageAccess.GetReadableMessageSpaceIdsAsync(
                 currentUserId,
                 serverId,
                 cancellationToken);
@@ -44,7 +44,7 @@ namespace ArcaneLink.Services.Messages
                 return [];
             }
 
-            var joinedAt = await _db.ServerMembers
+            var joinedAt = await this._db.ServerMembers
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId == serverId &&
@@ -58,7 +58,7 @@ namespace ArcaneLink.Services.Messages
                 return [];
             }
 
-            var messageSpaces = await _db.Spaces
+            var messageSpaces = await this._db.Spaces
                 .AsNoTracking()
                 .Where(space =>
                     space.ServerId == serverId &&
@@ -79,7 +79,7 @@ namespace ArcaneLink.Services.Messages
                 .Select(space => space.MessageSpaceId)
                 .ToList();
 
-            var eligibleMessages = _db.SpaceMessages
+            var eligibleMessages = this._db.SpaceMessages
                 .AsNoTracking()
                 .Where(x =>
                     messageSpaceIds.Contains(x.SpaceId) &&
@@ -91,7 +91,7 @@ namespace ArcaneLink.Services.Messages
                     x.SenderUserId != currentUserId &&
                     x.CreatedAt >= joinedAt.Value);
 
-            var counts = await CountUnreadAsync(
+            var counts = await this.CountUnreadAsync(
                 currentUserId,
                 eligibleMessages,
                 messageSpaceIds,
@@ -114,7 +114,7 @@ namespace ArcaneLink.Services.Messages
         {
             var distinctServerIds = serverIds.Distinct().ToList();
 
-            var messageSpaces = await _db.Spaces
+            var messageSpaces = await this._db.Spaces
                 .AsNoTracking()
                 .Where(x =>
                     x.ServerId.HasValue &&
@@ -135,7 +135,7 @@ namespace ArcaneLink.Services.Messages
             var readableSpaceIdsByServer = new Dictionary<Guid, HashSet<Guid>>();
             foreach (var serverId in distinctServerIds)
             {
-                var readableSpaceIds = await _messageAccess
+                var readableSpaceIds = await this._messageAccess
                     .GetReadableMessageSpaceIdsAsync(
                         currentUserId,
                         serverId,
@@ -151,20 +151,20 @@ namespace ArcaneLink.Services.Messages
                 .ToList();
             var visibleSpaceIds = visibleSpaces.Select(x => x.SpaceId).ToList();
 
-            var eligibleMessages = _db.SpaceMessages
+            var eligibleMessages = this._db.SpaceMessages
                 .AsNoTracking()
                 .Where(message =>
                     visibleSpaceIds.Contains(message.SpaceId) &&
                     message.DeletedAt == null &&
                     message.SenderUserId != currentUserId &&
                     message.Space.ServerId.HasValue &&
-                    _db.ServerMembers.Any(member =>
+                    this._db.ServerMembers.Any(member =>
                         member.ServerId == message.Space.ServerId.Value &&
                         member.UserId == currentUserId &&
                         member.StatusId == ServerMemberStatusIds.Active &&
                         member.BannedAt == null &&
                         message.CreatedAt >= member.JoinedAt));
-            var counts = await CountUnreadAsync(
+            var counts = await this.CountUnreadAsync(
                 currentUserId,
                 eligibleMessages,
                 visibleSpaceIds,
@@ -196,7 +196,7 @@ namespace ArcaneLink.Services.Messages
                 return [];
             }
 
-            var eligibleMessages = _db.SpaceMessages
+            var eligibleMessages = this._db.SpaceMessages
                 .AsNoTracking()
                 .Where(message =>
                     distinctSpaceIds.Contains(message.SpaceId) &&
@@ -205,7 +205,7 @@ namespace ArcaneLink.Services.Messages
                     message.DeletedAt == null &&
                     !message.UserDeletions.Any(deletion => deletion.UserId == currentUserId) &&
                     message.SenderUserId != currentUserId &&
-                    _db.PrivateSpaceMembers.Any(member =>
+                    this._db.PrivateSpaceMembers.Any(member =>
                         member.SpaceId == message.SpaceId &&
                         member.UserId == currentUserId &&
                         member.StatusId == PrivateSpaceIds.MemberStatusActive &&
@@ -213,7 +213,7 @@ namespace ArcaneLink.Services.Messages
                         (!member.HistoryClearedAt.HasValue ||
                          message.CreatedAt > member.HistoryClearedAt.Value)));
 
-            return await CountUnreadAsync(
+            return await this.CountUnreadAsync(
                 currentUserId,
                 eligibleMessages,
                 distinctSpaceIds,
@@ -228,11 +228,11 @@ namespace ArcaneLink.Services.Messages
         {
             var laterCounts = await eligibleMessages
                 .Where(message =>
-                    !_db.SpaceReadStates.Any(state =>
+                    !this._db.SpaceReadStates.Any(state =>
                         state.UserId == currentUserId &&
                         state.SpaceId == message.SpaceId &&
                         state.LastReadMessageCreatedAt.HasValue) ||
-                    _db.SpaceReadStates.Any(state =>
+                    this._db.SpaceReadStates.Any(state =>
                         state.UserId == currentUserId &&
                         state.SpaceId == message.SpaceId &&
                         state.LastReadMessageCreatedAt < message.CreatedAt))
@@ -242,7 +242,7 @@ namespace ArcaneLink.Services.Messages
                     group.LongCount()))
                 .ToListAsync(cancellationToken);
 
-            var markers = await _db.SpaceReadStates
+            var markers = await this._db.SpaceReadStates
                 .AsNoTracking()
                 .Where(state =>
                     state.UserId == currentUserId &&
@@ -255,7 +255,7 @@ namespace ArcaneLink.Services.Messages
                 .ToDictionaryAsync(x => x.SpaceId, cancellationToken);
 
             var equalTimeMessages = await eligibleMessages
-                .Where(message => _db.SpaceReadStates.Any(state =>
+                .Where(message => this._db.SpaceReadStates.Any(state =>
                     state.UserId == currentUserId &&
                     state.SpaceId == message.SpaceId &&
                     state.LastReadMessageCreatedAt == message.CreatedAt))

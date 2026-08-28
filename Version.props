@@ -1,0 +1,11 @@
+﻿<Project>
+  <PropertyGroup>
+    <MajorAppVersion>0</MajorAppVersion>
+    <MinorAppVersion>0</MinorAppVersion>
+    <PatchAppVersion>1</PatchAppVersion>
+    <ApplicationVersion>$(MajorAppVersion).$(MinorAppVersion).$(PatchAppVersion)</ApplicationVersion>
+    <AssemblyVersion>$(MajorAppVersion).0.0.0</AssemblyVersion>
+    <Version>$(ApplicationVersion)</Version>
+    <PackageVersion>$(ApplicationVersion)</PackageVersion>
+  </PropertyGroup>
+</Project>

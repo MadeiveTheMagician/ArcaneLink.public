@@ -42,6 +42,5 @@
     "html.format.wrapAttributes": "force-expand-multiline",
     "css.format.spaceAroundSelectorSeparator": true,
     "css.format.braceStyle": "collapse",
-    "razor.format.enable": true,
-    "workbench.editor.wrapTabs": false
+    "razor.format.enable": true
 }

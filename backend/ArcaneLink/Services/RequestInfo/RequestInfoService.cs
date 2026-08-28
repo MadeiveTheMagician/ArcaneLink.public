@@ -1,71 +1,70 @@
 using ArcaneLink.Exceptions.RequestExceptions;
 using ArcaneLink.Services.RequestInfo.Abstractions;
 
-namespace ArcaneLink.Services.Request
+namespace ArcaneLink.Services.Request;
+
+// Сервис получения информации о текущем HTTP-запросе.
+//
+// Нужен для извлечения:
+// - IP адреса клиента;
+// - User-Agent;
+// - device info.
+//
+// Это позволяет не тащить HttpContext в бизнес-логику.
+public class RequestInfoService : IRequestInfoService
 {
-    // Сервис получения информации о текущем HTTP-запросе.
-    //
-    // Нужен для извлечения:
-    // - IP адреса клиента;
-    // - User-Agent;
-    // - device info.
-    //
-    // Это позволяет не тащить HttpContext в бизнес-логику.
-    public class RequestInfoService : IRequestInfoService
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public RequestInfoService(
+        IHttpContextAccessor httpContextAccessor)
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        this._httpContextAccessor = httpContextAccessor;
+    }
 
-        public RequestInfoService(
-            IHttpContextAccessor httpContextAccessor)
+    // Возвращает IP адрес клиента.
+    public string GetClientIpAddress()
+    {
+        var currentIpAddress =
+            this._httpContextAccessor
+                .HttpContext?
+                .Connection
+                .RemoteIpAddress?
+                .ToString();
+
+        if (string.IsNullOrWhiteSpace(currentIpAddress))
         {
-            this._httpContextAccessor = httpContextAccessor;
+            throw new IpAddressIsNullException();
         }
 
-        // Возвращает IP адрес клиента.
-        public string GetClientIpAddress()
+        return currentIpAddress;
+    }
+
+    // Возвращает User-Agent клиента.
+    public string GetUserAgent()
+    {
+        var userAgent =
+            this._httpContextAccessor
+                .HttpContext?
+                .Request
+                .Headers["User-Agent"]
+                .ToString();
+
+        if (string.IsNullOrWhiteSpace(userAgent))
         {
-            var currentIpAddress =
-                this._httpContextAccessor
-                    .HttpContext?
-                    .Connection
-                    .RemoteIpAddress?
-                    .ToString();
-
-            if (string.IsNullOrWhiteSpace(currentIpAddress))
-            {
-                throw new IpAddressIsNullException();
-            }
-
-            return currentIpAddress;
+            throw new UserAgentIsNullException();
         }
 
-        // Возвращает User-Agent клиента.
-        public string GetUserAgent()
-        {
-            var userAgent =
-                this._httpContextAccessor
-                    .HttpContext?
-                    .Request
-                    .Headers["User-Agent"]
-                    .ToString();
+        return userAgent;
+    }
 
-            if (string.IsNullOrWhiteSpace(userAgent))
-            {
-                throw new UserAgentIsNullException();
-            }
+    // Возвращает сводную информацию об устройстве.
+    //
+    // User-Agent + IP.
+    public string GetClientDeviceInfo()
+    {
+        var userAgent = this.GetUserAgent();
+        var ipAddress = this.GetClientIpAddress();
 
-            return userAgent;
-        }
-
-        // Возвращает сводную информацию об устройстве.
-        //
-        // User-Agent + IP.
-        public string GetClientDeviceInfo()
-        {
-            var userAgent = this.GetUserAgent();
-            var ipAddress = this.GetClientIpAddress();
-
-            return $"{userAgent} | {ipAddress}";
-        }
+        return $"{userAgent} | {ipAddress}";
     }
 }

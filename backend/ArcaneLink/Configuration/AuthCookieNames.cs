@@ -1,8 +1,7 @@
-namespace ArcaneLink.Configuration
+namespace ArcaneLink.Configuration;
+
+public static class AuthCookieNames
 {
-    public static class AuthCookieNames
-    {
-        public const string RefreshToken = "arcanelink.refreshToken";
-        public const string AssetAccessToken = "arcanelink.assetAccessToken";
-    }
+    public const string RefreshToken = "arcanelink.refreshToken";
+    public const string AssetAccessToken = "arcanelink.assetAccessToken";
 }

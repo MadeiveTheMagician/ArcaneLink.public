@@ -1,254 +1,253 @@
 using ArcaneLink.DataBase.Constants;
 
-namespace ArcaneLink.Services.Spaces
+namespace ArcaneLink.Services.Spaces;
+
+public static class SpaceAccessEvaluator
 {
-    public static class SpaceAccessEvaluator
+    public static SpaceAuthorizationSnapshot Evaluate(
+        SpaceAccessPrincipal principal,
+        IReadOnlyCollection<SpaceAccessNode> spaces)
     {
-        public static SpaceAuthorizationSnapshot Evaluate(
-            SpaceAccessPrincipal principal,
-            IReadOnlyCollection<SpaceAccessNode> spaces)
+        var nodes = spaces
+            .GroupBy(x => x.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+        var capabilities = new Dictionary<Guid, SpaceAccessCapabilities>();
+
+        if (!principal.IsActiveMember)
         {
-            var nodes = spaces
-                .GroupBy(x => x.Id)
-                .ToDictionary(group => group.Key, group => group.First());
-            var capabilities = new Dictionary<Guid, SpaceAccessCapabilities>();
-
-            if (!principal.IsActiveMember)
-            {
-                foreach (var node in nodes.Values)
-                {
-                    capabilities[node.Id] = DeniedCapabilities;
-                }
-
-                return new SpaceAuthorizationSnapshot(capabilities);
-            }
-
-            if (principal.IsOwner || principal.HasManageServer)
-            {
-                foreach (var node in nodes.Values)
-                {
-                    capabilities[node.Id] = CreateBypassCapabilities(node.TypeId);
-                }
-
-                return new SpaceAuthorizationSnapshot(capabilities);
-            }
-
-            var states = new Dictionary<Guid, EvaluationState>();
-            var visiting = new HashSet<Guid>();
             foreach (var node in nodes.Values)
             {
-                var state = EvaluateNode(
-                    node,
-                    principal,
-                    nodes,
-                    states,
-                    visiting);
-                capabilities[node.Id] = ToCapabilities(node.TypeId, state);
+                capabilities[node.Id] = DeniedCapabilities;
             }
 
             return new SpaceAuthorizationSnapshot(capabilities);
         }
 
-        public static SpaceAccessCapabilities EvaluateTarget(
-            SpaceAccessPrincipal principal,
-            IReadOnlyDictionary<Guid, SpaceAccessNode> nodes,
-            Guid spaceId)
+        if (principal.IsOwner || principal.HasManageServer)
         {
-            if (!nodes.TryGetValue(spaceId, out var node) ||
-                !principal.IsActiveMember)
+            foreach (var node in nodes.Values)
             {
-                return DeniedCapabilities;
+                capabilities[node.Id] = CreateBypassCapabilities(node.TypeId);
             }
 
-            if (principal.IsOwner || principal.HasManageServer)
-            {
-                return CreateBypassCapabilities(node.TypeId);
-            }
+            return new SpaceAuthorizationSnapshot(capabilities);
+        }
 
+        var states = new Dictionary<Guid, EvaluationState>();
+        var visiting = new HashSet<Guid>();
+        foreach (var node in nodes.Values)
+        {
             var state = EvaluateNode(
                 node,
                 principal,
                 nodes,
-                new Dictionary<Guid, EvaluationState>(),
-                new HashSet<Guid>());
-            return ToCapabilities(node.TypeId, state);
+                states,
+                visiting);
+            capabilities[node.Id] = ToCapabilities(node.TypeId, state);
         }
 
-        private static EvaluationState EvaluateNode(
-            SpaceAccessNode node,
-            SpaceAccessPrincipal principal,
-            IReadOnlyDictionary<Guid, SpaceAccessNode> nodes,
-            IDictionary<Guid, EvaluationState> states,
-            ISet<Guid> visiting)
+        return new SpaceAuthorizationSnapshot(capabilities);
+    }
+
+    public static SpaceAccessCapabilities EvaluateTarget(
+        SpaceAccessPrincipal principal,
+        IReadOnlyDictionary<Guid, SpaceAccessNode> nodes,
+        Guid spaceId)
+    {
+        if (!nodes.TryGetValue(spaceId, out var node) ||
+            !principal.IsActiveMember)
         {
-            if (states.TryGetValue(node.Id, out var cached))
-            {
-                return cached;
-            }
+            return DeniedCapabilities;
+        }
 
-            if (!visiting.Add(node.Id))
-            {
-                return EvaluationState.Invalid;
-            }
+        if (principal.IsOwner || principal.HasManageServer)
+        {
+            return CreateBypassCapabilities(node.TypeId);
+        }
 
-            EvaluationState state;
-            if (node.ParentSpaceId.HasValue)
+        var state = EvaluateNode(
+            node,
+            principal,
+            nodes,
+            new Dictionary<Guid, EvaluationState>(),
+            new HashSet<Guid>());
+        return ToCapabilities(node.TypeId, state);
+    }
+
+    private static EvaluationState EvaluateNode(
+        SpaceAccessNode node,
+        SpaceAccessPrincipal principal,
+        IReadOnlyDictionary<Guid, SpaceAccessNode> nodes,
+        IDictionary<Guid, EvaluationState> states,
+        ISet<Guid> visiting)
+    {
+        if (states.TryGetValue(node.Id, out var cached))
+        {
+            return cached;
+        }
+
+        if (!visiting.Add(node.Id))
+        {
+            return EvaluationState.Invalid;
+        }
+
+        EvaluationState state;
+        if (node.ParentSpaceId.HasValue)
+        {
+            if (!nodes.TryGetValue(node.ParentSpaceId.Value, out var parent))
             {
-                if (!nodes.TryGetValue(node.ParentSpaceId.Value, out var parent))
-                {
-                    state = EvaluationState.Invalid;
-                }
-                else
-                {
-                    var parentState = EvaluateNode(
-                        parent,
-                        principal,
-                        nodes,
-                        states,
-                        visiting);
-                    state = !parentState.IsValid || !parentState.CanView
-                        ? EvaluationState.Invalid
-                        : parentState;
-                }
+                state = EvaluationState.Invalid;
             }
             else
             {
-                state = EvaluationState.Default;
-            }
-
-            visiting.Remove(node.Id);
-
-            if (!state.IsValid)
-            {
-                states[node.Id] = EvaluationState.Invalid;
-                return EvaluationState.Invalid;
-            }
-
-            var canView = !node.RequiredRoleId.HasValue ||
-                          principal.RoleIds.Contains(node.RequiredRoleId.Value);
-            canView = ApplyOverride(
-                node,
-                principal,
-                SpacePermissionIds.ViewSpace,
-                canView);
-
-            if (!canView)
-            {
-                state = state with { CanView = false };
-                states[node.Id] = state;
-                return state;
-            }
-
-            state = state with
-            {
-                CanView = true,
-                CanSendMessages = ApplyOverride(
-                    node,
+                var parentState = EvaluateNode(
+                    parent,
                     principal,
-                    SpacePermissionIds.SendMessages,
-                    state.CanSendMessages),
-                CanConnectVoice = ApplyOverride(
-                    node,
-                    principal,
-                    SpacePermissionIds.ConnectVoice,
-                    state.CanConnectVoice),
-                CanManage = ApplyOverride(
-                    node,
-                    principal,
-                    SpacePermissionIds.ManageSpace,
-                    state.CanManage)
-            };
+                    nodes,
+                    states,
+                    visiting);
+                state = !parentState.IsValid || !parentState.CanView
+                    ? EvaluationState.Invalid
+                    : parentState;
+            }
+        }
+        else
+        {
+            state = EvaluationState.Default;
+        }
+
+        visiting.Remove(node.Id);
+
+        if (!state.IsValid)
+        {
+            states[node.Id] = EvaluationState.Invalid;
+            return EvaluationState.Invalid;
+        }
+
+        var canView = !node.RequiredRoleId.HasValue ||
+                      principal.RoleIds.Contains(node.RequiredRoleId.Value);
+        canView = ApplyOverride(
+            node,
+            principal,
+            SpacePermissionIds.ViewSpace,
+            canView);
+
+        if (!canView)
+        {
+            state = state with { CanView = false };
             states[node.Id] = state;
             return state;
         }
 
-        private static bool ApplyOverride(
-            SpaceAccessNode node,
-            SpaceAccessPrincipal principal,
-            Guid permissionId,
-            bool inheritedValue)
+        state = state with
         {
-            var memberOverrides = node.Overrides
-                .Where(x =>
-                    x.PermissionId == permissionId &&
-                    x.MemberId.HasValue &&
-                    x.MemberId == principal.MemberId)
-                .ToList();
-            if (memberOverrides.Count > 0)
-            {
-                if (memberOverrides.Any(x => x.Deny))
-                {
-                    return false;
-                }
+            CanView = true,
+            CanSendMessages = ApplyOverride(
+                node,
+                principal,
+                SpacePermissionIds.SendMessages,
+                state.CanSendMessages),
+            CanConnectVoice = ApplyOverride(
+                node,
+                principal,
+                SpacePermissionIds.ConnectVoice,
+                state.CanConnectVoice),
+            CanManage = ApplyOverride(
+                node,
+                principal,
+                SpacePermissionIds.ManageSpace,
+                state.CanManage)
+        };
+        states[node.Id] = state;
+        return state;
+    }
 
-                if (memberOverrides.Any(x => x.Allow))
-                {
-                    return true;
-                }
-            }
-
-            var roleOverrides = node.Overrides
-                .Where(x =>
-                    x.PermissionId == permissionId &&
-                    x.RoleId.HasValue &&
-                    principal.RoleIds.Contains(x.RoleId.Value))
-                .ToList();
-            if (roleOverrides.Any(x => x.Deny))
+    private static bool ApplyOverride(
+        SpaceAccessNode node,
+        SpaceAccessPrincipal principal,
+        Guid permissionId,
+        bool inheritedValue)
+    {
+        var memberOverrides = node.Overrides
+            .Where(x =>
+                x.PermissionId == permissionId &&
+                x.MemberId.HasValue &&
+                x.MemberId == principal.MemberId)
+            .ToList();
+        if (memberOverrides.Count > 0)
+        {
+            if (memberOverrides.Any(x => x.Deny))
             {
                 return false;
             }
 
-            return roleOverrides.Any(x => x.Allow)
-                ? true
-                : inheritedValue;
-        }
-
-        private static SpaceAccessCapabilities ToCapabilities(
-            Guid typeId,
-            EvaluationState state)
-        {
-            if (!state.IsValid || !state.CanView)
+            if (memberOverrides.Any(x => x.Allow))
             {
-                return DeniedCapabilities;
+                return true;
             }
-
-            return new SpaceAccessCapabilities(
-                CanView: true,
-                CanSendMessages:
-                    (typeId == SpaceIds.TypeTextRoom ||
-                     typeId == SpaceIds.TypeVoiceRoom) &&
-                    state.CanSendMessages,
-                CanConnectVoice:
-                    typeId == SpaceIds.TypeVoiceRoom &&
-                    state.CanConnectVoice,
-                CanManage: state.CanManage);
         }
 
-        private static SpaceAccessCapabilities CreateBypassCapabilities(Guid typeId)
+        var roleOverrides = node.Overrides
+            .Where(x =>
+                x.PermissionId == permissionId &&
+                x.RoleId.HasValue &&
+                principal.RoleIds.Contains(x.RoleId.Value))
+            .ToList();
+        if (roleOverrides.Any(x => x.Deny))
         {
-            return new SpaceAccessCapabilities(
-                CanView: true,
-                CanSendMessages:
-                    typeId == SpaceIds.TypeTextRoom ||
-                    typeId == SpaceIds.TypeVoiceRoom,
-                CanConnectVoice: typeId == SpaceIds.TypeVoiceRoom,
-                CanManage: true);
+            return false;
         }
 
-        private static readonly SpaceAccessCapabilities DeniedCapabilities =
-            new(false, false, false, false);
+        return roleOverrides.Any(x => x.Allow)
+            ? true
+            : inheritedValue;
+    }
 
-        private sealed record EvaluationState(
-            bool IsValid,
-            bool CanView,
-            bool CanSendMessages,
-            bool CanConnectVoice,
-            bool CanManage)
+    private static SpaceAccessCapabilities ToCapabilities(
+        Guid typeId,
+        EvaluationState state)
+    {
+        if (!state.IsValid || !state.CanView)
         {
-            public static EvaluationState Default { get; } =
-                new(true, true, true, true, false);
-            public static EvaluationState Invalid { get; } =
-                new(false, false, false, false, false);
+            return DeniedCapabilities;
         }
+
+        return new SpaceAccessCapabilities(
+            CanView: true,
+            CanSendMessages:
+                (typeId == SpaceIds.TypeTextRoom ||
+                 typeId == SpaceIds.TypeVoiceRoom) &&
+                state.CanSendMessages,
+            CanConnectVoice:
+                typeId == SpaceIds.TypeVoiceRoom &&
+                state.CanConnectVoice,
+            CanManage: state.CanManage);
+    }
+
+    private static SpaceAccessCapabilities CreateBypassCapabilities(Guid typeId)
+    {
+        return new SpaceAccessCapabilities(
+            CanView: true,
+            CanSendMessages:
+                typeId == SpaceIds.TypeTextRoom ||
+                typeId == SpaceIds.TypeVoiceRoom,
+            CanConnectVoice: typeId == SpaceIds.TypeVoiceRoom,
+            CanManage: true);
+    }
+
+    private static readonly SpaceAccessCapabilities DeniedCapabilities =
+        new(false, false, false, false);
+
+    private sealed record EvaluationState(
+        bool IsValid,
+        bool CanView,
+        bool CanSendMessages,
+        bool CanConnectVoice,
+        bool CanManage)
+    {
+        public static EvaluationState Default { get; } =
+            new(true, true, true, true, false);
+        public static EvaluationState Invalid { get; } =
+            new(false, false, false, false, false);
     }
 }

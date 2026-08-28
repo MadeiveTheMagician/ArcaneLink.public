@@ -1,7 +1,6 @@
-namespace ArcaneLink.DataBase.DTOs.Messages
+namespace ArcaneLink.DataBase.DTOs.Messages;
+
+public sealed class SetSpaceMessageReactionRequest
 {
-    public sealed class SetSpaceMessageReactionRequest
-    {
-        public string EmojiCode { get; set; } = string.Empty;
-    }
+    public string EmojiCode { get; set; } = string.Empty;
 }

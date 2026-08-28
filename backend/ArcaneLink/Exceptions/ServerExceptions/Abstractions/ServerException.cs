@@ -1,10 +1,9 @@
-namespace ArcaneLink.Exceptions.ServerExceptions.Abstractions
+namespace ArcaneLink.Exceptions.ServerExceptions.Abstractions;
+
+public abstract class ServerException : Exception
 {
-    public abstract class ServerException : Exception
+    protected ServerException(string message)
+        : base(message)
     {
-        protected ServerException(string message)
-            : base(message)
-        {
-        }
     }
 }

@@ -1,12 +1,11 @@
 using ArcaneLink.Exceptions.ServerExceptions.Abstractions;
 
-namespace ArcaneLink.Exceptions.ServerExceptions
+namespace ArcaneLink.Exceptions.ServerExceptions;
+
+public class ServerOwnerCannotBeRemovedException : ServerException
 {
-    public class ServerOwnerCannotBeRemovedException : ServerException
+    public ServerOwnerCannotBeRemovedException()
+        : base(ExceptionMessages.ServerOwnerCannotBeRemoved)
     {
-        public ServerOwnerCannotBeRemovedException()
-            : base(ExceptionMessages.ServerOwnerCannotBeRemoved)
-        {
-        }
     }
 }

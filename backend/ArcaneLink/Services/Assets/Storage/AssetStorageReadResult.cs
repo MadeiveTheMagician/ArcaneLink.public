@@ -1,7 +1,6 @@
-namespace ArcaneLink.Services.Assets.Storage
+namespace ArcaneLink.Services.Assets.Storage;
+
+public class AssetStorageReadResult
 {
-    public class AssetStorageReadResult
-    {
-        public required Stream Content { get; set; }
-    }
+    public required Stream Content { get; set; }
 }

@@ -1,10 +1,9 @@
-namespace ArcaneLink.Services.Users.Abstractions
+namespace ArcaneLink.Services.Users.Abstractions;
+
+public interface IUserPresencePolicyService
 {
-    public interface IUserPresencePolicyService
-    {
-        Task<IReadOnlyDictionary<Guid, UserPresenceSnapshot>> ResolveAsync(
-            Guid? viewerUserId,
-            IEnumerable<Guid> targetUserIds,
-            CancellationToken cancellationToken = default);
-    }
+    Task<IReadOnlyDictionary<Guid, UserPresenceSnapshot>> ResolveAsync(
+        Guid? viewerUserId,
+        IEnumerable<Guid> targetUserIds,
+        CancellationToken cancellationToken = default);
 }

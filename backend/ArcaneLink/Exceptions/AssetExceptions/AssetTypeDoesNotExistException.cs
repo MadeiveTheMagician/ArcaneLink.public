@@ -1,12 +1,11 @@
 using ArcaneLink.Exceptions.AssetExceptions.Abstractions;
 
-namespace ArcaneLink.Exceptions.AssetExceptions
+namespace ArcaneLink.Exceptions.AssetExceptions;
+
+public class AssetTypeDoesNotExistException : AssetException
 {
-    public class AssetTypeDoesNotExistException : AssetException
+    public AssetTypeDoesNotExistException()
+        : base(ExceptionMessages.AssetTypeDoesNotExist)
     {
-        public AssetTypeDoesNotExistException()
-            : base(ExceptionMessages.AssetTypeDoesNotExist)
-        {
-        }
     }
 }

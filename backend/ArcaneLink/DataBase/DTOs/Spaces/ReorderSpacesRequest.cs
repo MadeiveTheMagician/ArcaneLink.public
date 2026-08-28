@@ -1,7 +1,6 @@
-namespace ArcaneLink.DataBase.DTOs.Spaces
+namespace ArcaneLink.DataBase.DTOs.Spaces;
+
+public class ReorderSpacesRequest
 {
-    public class ReorderSpacesRequest
-    {
-        public IReadOnlyList<SpacePositionRequest> Spaces { get; set; } = [];
-    }
+    public IReadOnlyList<SpacePositionRequest> Spaces { get; set; } = [];
 }

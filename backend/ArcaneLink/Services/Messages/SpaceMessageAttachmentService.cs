@@ -7,80 +7,79 @@ using ArcaneLink.Services.Messages.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace ArcaneLink.Services.Messages
+namespace ArcaneLink.Services.Messages;
+
+public class SpaceMessageAttachmentService : ISpaceMessageAttachmentService
 {
-    public class SpaceMessageAttachmentService : ISpaceMessageAttachmentService
+    private readonly AppDbContext _db;
+    private readonly AssetUploadOptions _uploadOptions;
+
+    public SpaceMessageAttachmentService(
+        AppDbContext db,
+        IOptions<AssetUploadOptions> uploadOptions)
     {
-        private readonly AppDbContext _db;
-        private readonly AssetUploadOptions _uploadOptions;
+        this._db = db;
+        this._uploadOptions = uploadOptions.Value;
+    }
 
-        public SpaceMessageAttachmentService(
-            AppDbContext db,
-            IOptions<AssetUploadOptions> uploadOptions)
+    public async Task<SpaceMessageAttachmentValidationResult> BuildAttachmentsAsync(
+        Guid currentUserId,
+        Guid messageId,
+        IReadOnlyList<CreateSpaceMessageAttachmentRequest> requestedAttachments,
+        CancellationToken cancellationToken = default)
+    {
+        if (requestedAttachments.Count == 0)
         {
-            this._db = db;
-            this._uploadOptions = uploadOptions.Value;
+            return SpaceMessageAttachmentValidationResult.Valid([]);
         }
 
-        public async Task<SpaceMessageAttachmentValidationResult> BuildAttachmentsAsync(
-            Guid currentUserId,
-            Guid messageId,
-            IReadOnlyList<CreateSpaceMessageAttachmentRequest> requestedAttachments,
-            CancellationToken cancellationToken = default)
+        var attachments = requestedAttachments
+            .GroupBy(x => x.AssetId)
+            .Select(group => group.First())
+            .ToList();
+        var uniqueAssetIds = attachments.Select(x => x.AssetId).ToList();
+
+        if (uniqueAssetIds.Count > this._uploadOptions.MaxAttachmentsPerMessage)
         {
-            if (requestedAttachments.Count == 0)
-            {
-                return SpaceMessageAttachmentValidationResult.Valid([]);
-            }
-
-            var attachments = requestedAttachments
-                .GroupBy(x => x.AssetId)
-                .Select(group => group.First())
-                .ToList();
-            var uniqueAssetIds = attachments.Select(x => x.AssetId).ToList();
-
-            if (uniqueAssetIds.Count > this._uploadOptions.MaxAttachmentsPerMessage)
-            {
-                return SpaceMessageAttachmentValidationResult.Invalid();
-            }
-
-            var validAssetIds = await this._db.Assets
-                .AsNoTracking()
-                .Where(x => uniqueAssetIds.Contains(x.Id) &&
-                            x.OwnerUserId == currentUserId &&
-                            x.AssetTypeId == AssetTypeIds.MessageAttachment &&
-                            x.DeletedAt == null)
-                .Select(x => x.Id)
-                .ToListAsync(cancellationToken);
-
-            if (validAssetIds.Count != uniqueAssetIds.Count)
-            {
-                return SpaceMessageAttachmentValidationResult.Invalid();
-            }
-
-            var validAssetIdSet = validAssetIds.ToHashSet();
-            var displayOrder = 0;
-            var messageAttachments = attachments
-                .Where(attachment => validAssetIdSet.Contains(attachment.AssetId))
-                .Select(attachment => new SpaceMessageAsset
-                {
-                    MessageId = messageId,
-                    AssetId = attachment.AssetId,
-                    DisplayOrder = displayOrder++,
-                    DisplayName = NormalizeDisplayName(attachment.DisplayName),
-                    IsSpoiler = attachment.IsSpoiler
-                })
-                .ToList();
-
-            return SpaceMessageAttachmentValidationResult.Valid(messageAttachments);
+            return SpaceMessageAttachmentValidationResult.Invalid();
         }
 
-        private static string? NormalizeDisplayName(string? displayName)
+        var validAssetIds = await this._db.Assets
+            .AsNoTracking()
+            .Where(x => uniqueAssetIds.Contains(x.Id) &&
+                        x.OwnerUserId == currentUserId &&
+                        x.AssetTypeId == AssetTypeIds.MessageAttachment &&
+                        x.DeletedAt == null)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        if (validAssetIds.Count != uniqueAssetIds.Count)
         {
-            var normalized = displayName?.Trim();
-            return string.IsNullOrWhiteSpace(normalized)
-                ? null
-                : normalized[..Math.Min(normalized.Length, 255)];
+            return SpaceMessageAttachmentValidationResult.Invalid();
         }
+
+        var validAssetIdSet = validAssetIds.ToHashSet();
+        var displayOrder = 0;
+        var messageAttachments = attachments
+            .Where(attachment => validAssetIdSet.Contains(attachment.AssetId))
+            .Select(attachment => new SpaceMessageAsset
+            {
+                MessageId = messageId,
+                AssetId = attachment.AssetId,
+                DisplayOrder = displayOrder++,
+                DisplayName = NormalizeDisplayName(attachment.DisplayName),
+                IsSpoiler = attachment.IsSpoiler
+            })
+            .ToList();
+
+        return SpaceMessageAttachmentValidationResult.Valid(messageAttachments);
+    }
+
+    private static string? NormalizeDisplayName(string? displayName)
+    {
+        var normalized = displayName?.Trim();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? null
+            : normalized[..Math.Min(normalized.Length, 255)];
     }
 }

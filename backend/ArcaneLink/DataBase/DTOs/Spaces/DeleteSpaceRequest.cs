@@ -1,7 +1,6 @@
-namespace ArcaneLink.DataBase.DTOs.Spaces
+namespace ArcaneLink.DataBase.DTOs.Spaces;
+
+public class DeleteSpaceRequest
 {
-    public class DeleteSpaceRequest
-    {
-        public string CategoryChildrenAction { get; set; } = "delete";
-    }
+    public string CategoryChildrenAction { get; set; } = "delete";
 }

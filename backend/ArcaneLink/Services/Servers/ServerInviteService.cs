@@ -10,286 +10,285 @@ using ArcaneLink.Services.Realtime.Abstractions;
 using ArcaneLink.Services.Servers.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
-namespace ArcaneLink.Services.Servers
-{
-    public class ServerInviteService : IServerInviteService
-    {
-        private readonly AppDbContext _db;
-        private readonly IRealtimeNotificationService _realtime;
-        private readonly IServerGovernanceAccessService _access;
-        private readonly ServerPermissionRealtimeAudienceService _permissionAudience;
-        private readonly ServerInviteEligibilityService _eligibility;
-        private readonly ILogger<ServerInviteService> _logger;
-        private readonly IUserNotificationService _notifications;
+namespace ArcaneLink.Services.Servers;
 
-        public ServerInviteService(
-            AppDbContext db,
-            IRealtimeNotificationService realtime,
-            IServerGovernanceAccessService access,
-            ServerPermissionRealtimeAudienceService permissionAudience,
-            ServerInviteEligibilityService eligibility,
-            IUserNotificationService notifications,
-            ILogger<ServerInviteService> logger)
+public class ServerInviteService : IServerInviteService
+{
+    private readonly AppDbContext _db;
+    private readonly IRealtimeNotificationService _realtime;
+    private readonly IServerGovernanceAccessService _access;
+    private readonly ServerPermissionRealtimeAudienceService _permissionAudience;
+    private readonly ServerInviteEligibilityService _eligibility;
+    private readonly ILogger<ServerInviteService> _logger;
+    private readonly IUserNotificationService _notifications;
+
+    public ServerInviteService(
+        AppDbContext db,
+        IRealtimeNotificationService realtime,
+        IServerGovernanceAccessService access,
+        ServerPermissionRealtimeAudienceService permissionAudience,
+        ServerInviteEligibilityService eligibility,
+        IUserNotificationService notifications,
+        ILogger<ServerInviteService> logger)
+    {
+        this._db = db;
+        this._realtime = realtime;
+        this._access = access;
+        this._permissionAudience = permissionAudience;
+        this._eligibility = eligibility;
+        this._notifications = notifications;
+        this._logger = logger;
+    }
+
+    public async Task<ServerInviteResponse?> CreateInviteAsync(
+        Guid currentUserId,
+        Guid serverId,
+        CreateServerInviteRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await this._access.CanCreateInvitesAsync(currentUserId, serverId, cancellationToken))
         {
-            this._db = db;
-            this._realtime = realtime;
-            this._access = access;
-            this._permissionAudience = permissionAudience;
-            this._eligibility = eligibility;
-            this._notifications = notifications;
-            this._logger = logger;
+            return null;
         }
 
-        public async Task<ServerInviteResponse?> CreateInviteAsync(
-            Guid currentUserId,
-            Guid serverId,
-            CreateServerInviteRequest request,
-            CancellationToken cancellationToken = default)
+        var kindCode = ServerInviteRules.NormalizeCode(request.KindCode);
+        var kindId = kindCode == ServerInviteRules.DirectKindCode
+            ? ServerGovernanceIds.InviteKindDirect
+            : ServerGovernanceIds.InviteKindLink;
+        var now = DateTime.UtcNow;
+
+        if (kindCode == ServerInviteRules.DirectKindCode)
         {
-            if (!await this._access.CanCreateInvitesAsync(currentUserId, serverId, cancellationToken))
+            if (request.TargetUserId == null ||
+                request.TargetUserId == currentUserId ||
+                await this._eligibility.IsActiveServerMemberAsync(
+                    request.TargetUserId.Value,
+                    serverId,
+                    cancellationToken) ||
+                await this._eligibility.IsBannedServerMemberAsync(
+                    request.TargetUserId.Value,
+                    serverId,
+                    cancellationToken))
             {
                 return null;
             }
 
-            var kindCode = ServerInviteRules.NormalizeCode(request.KindCode);
-            var kindId = kindCode == ServerInviteRules.DirectKindCode
-                ? ServerGovernanceIds.InviteKindDirect
-                : ServerGovernanceIds.InviteKindLink;
-            var now = DateTime.UtcNow;
-
-            if (kindCode == ServerInviteRules.DirectKindCode)
-            {
-                if (request.TargetUserId == null ||
-                    request.TargetUserId == currentUserId ||
-                    await this._eligibility.IsActiveServerMemberAsync(
-                        request.TargetUserId.Value,
-                        serverId,
-                        cancellationToken) ||
-                    await this._eligibility.IsBannedServerMemberAsync(
-                        request.TargetUserId.Value,
-                        serverId,
-                        cancellationToken))
-                {
-                    return null;
-                }
-
-                var existingDirectInvite = await this._eligibility.LoadActiveDirectInviteAsync(
-                    currentUserId,
-                    serverId,
-                    request.TargetUserId,
-                    now,
-                    cancellationToken);
-
-                if (existingDirectInvite != null)
-                {
-                    return existingDirectInvite;
-                }
-
-                if (!await this._eligibility.CanCreateDirectInviteToTargetAsync(
-                        currentUserId,
-                        serverId,
-                        request.TargetUserId.Value,
-                        cancellationToken))
-                {
-                    return null;
-                }
-            }
-
-            var invite = new ServerInvite
-            {
-                Id = Guid.NewGuid(),
-                ServerId = serverId,
-                CreatedByUserId = currentUserId,
-                KindId = kindId,
-                Code = kindCode == ServerInviteRules.LinkKindCode
-                    ? await this.GenerateInviteCodeAsync(cancellationToken)
-                    : null,
-                TargetUserId = kindCode == ServerInviteRules.DirectKindCode
-                    ? request.TargetUserId
-                    : null,
-                MaxUses = kindCode == ServerInviteRules.DirectKindCode
-                    ? 1
-                    : request.MaxUses is > 0 ? request.MaxUses : null,
-                UsedCount = 0,
-                ExpiresAt = kindCode == ServerInviteRules.DirectKindCode
-                    ? now + ServerInviteRules.DirectInviteLifetime
-                    : request.ExpiresAt,
-                CreatedAt = now
-            };
-
-            this._db.ServerInvites.Add(invite);
-            this._access.AddAudit(
-                serverId,
-                ServerGovernanceIds.AuditInviteCreated,
+            var existingDirectInvite = await this._eligibility.LoadActiveDirectInviteAsync(
                 currentUserId,
+                serverId,
                 request.TargetUserId,
-                relatedInviteId: invite.Id);
-            if (invite.TargetUserId != null)
+                now,
+                cancellationToken);
+
+            if (existingDirectInvite != null)
             {
-                await this._notifications.StageDirectInviteAsync(
-                    invite.TargetUserId.Value,
+                return existingDirectInvite;
+            }
+
+            if (!await this._eligibility.CanCreateDirectInviteToTargetAsync(
                     currentUserId,
                     serverId,
-                    invite.Id,
-                    cancellationToken);
+                    request.TargetUserId.Value,
+                    cancellationToken))
+            {
+                return null;
             }
-            await this._db.SaveChangesAsync(cancellationToken);
-            this._logger.LogInformation(
-                ObservabilityEventIds.ServerInviteCreated,
-                "Server invite created. ServerId={ServerId} InviteId={InviteId} CreatedByUserId={CreatedByUserId} Kind={Kind} TargetUserId={TargetUserId} ExpiresAt={ExpiresAt} MaxUses={MaxUses}",
-                serverId,
-                invite.Id,
+        }
+
+        var invite = new ServerInvite
+        {
+            Id = Guid.NewGuid(),
+            ServerId = serverId,
+            CreatedByUserId = currentUserId,
+            KindId = kindId,
+            Code = kindCode == ServerInviteRules.LinkKindCode
+                ? await this.GenerateInviteCodeAsync(cancellationToken)
+                : null,
+            TargetUserId = kindCode == ServerInviteRules.DirectKindCode
+                ? request.TargetUserId
+                : null,
+            MaxUses = kindCode == ServerInviteRules.DirectKindCode
+                ? 1
+                : request.MaxUses is > 0 ? request.MaxUses : null,
+            UsedCount = 0,
+            ExpiresAt = kindCode == ServerInviteRules.DirectKindCode
+                ? now + ServerInviteRules.DirectInviteLifetime
+                : request.ExpiresAt,
+            CreatedAt = now
+        };
+
+        this._db.ServerInvites.Add(invite);
+        this._access.AddAudit(
+            serverId,
+            ServerGovernanceIds.AuditInviteCreated,
+            currentUserId,
+            request.TargetUserId,
+            relatedInviteId: invite.Id);
+        if (invite.TargetUserId != null)
+        {
+            await this._notifications.StageDirectInviteAsync(
+                invite.TargetUserId.Value,
                 currentUserId,
-                kindCode,
-                invite.TargetUserId,
-                invite.ExpiresAt,
-                invite.MaxUses);
-
-            await this.NotifyInviteAudienceAsync(
                 serverId,
                 invite.Id,
-                [currentUserId],
-                CancellationToken.None);
+                cancellationToken);
+        }
+        await this._db.SaveChangesAsync(cancellationToken);
+        this._logger.LogInformation(
+            ObservabilityEventIds.ServerInviteCreated,
+            "Server invite created. ServerId={ServerId} InviteId={InviteId} CreatedByUserId={CreatedByUserId} Kind={Kind} TargetUserId={TargetUserId} ExpiresAt={ExpiresAt} MaxUses={MaxUses}",
+            serverId,
+            invite.Id,
+            currentUserId,
+            kindCode,
+            invite.TargetUserId,
+            invite.ExpiresAt,
+            invite.MaxUses);
 
-            if (invite.TargetUserId != null)
+        await this.NotifyInviteAudienceAsync(
+            serverId,
+            invite.Id,
+            [currentUserId],
+            CancellationToken.None);
+
+        if (invite.TargetUserId != null)
+        {
+            await this._notifications.NotifyChangedAsync(
+                [invite.TargetUserId.Value],
+                CancellationToken.None);
+            await this._realtime.NotifyUserBestEffortAsync(
+                this._logger,
+                invite.TargetUserId.Value,
+                RealtimeEventNames.ServerInviteReceived,
+                new { serverId, inviteId = invite.Id },
+                CancellationToken.None);
+        }
+
+        invite.Kind = await this._db.ServerInviteKinds.FindAsync([kindId], cancellationToken)
+            ?? new ServerInviteKind { Id = kindId, Code = kindCode, Title = kindCode };
+
+        return ServerGovernanceMapper.ToInviteResponse(invite, now);
+    }
+
+    public async Task<bool> RevokeInviteAsync(
+        Guid currentUserId,
+        Guid serverId,
+        Guid inviteId,
+        CancellationToken cancellationToken = default)
+    {
+        var canCreateInvites = await this._access.CanCreateInvitesAsync(
+            currentUserId,
+            serverId,
+            cancellationToken);
+        var canManageInvites = await this._access.HasGranularPermissionAsync(
+            currentUserId,
+            serverId,
+            "MANAGE_INVITES",
+            cancellationToken);
+        if (!canCreateInvites && !canManageInvites)
+        {
+            return false;
+        }
+
+        var invite = await this._db.ServerInvites.FirstOrDefaultAsync(
+            x => x.Id == inviteId &&
+                 x.ServerId == serverId,
+            cancellationToken);
+
+        if (invite == null)
+        {
+            return false;
+        }
+
+        if (invite.CreatedByUserId != currentUserId && !canManageInvites)
+        {
+            return false;
+        }
+
+        invite.RevokedAt = DateTime.UtcNow;
+        invite.RevokedByUserId = currentUserId;
+        this._access.AddAudit(
+            serverId,
+            ServerGovernanceIds.AuditInviteRevoked,
+            currentUserId,
+            invite.TargetUserId,
+            relatedInviteId: invite.Id);
+        var notificationChanged = invite.TargetUserId != null &&
+            await this._notifications.StageInviteReadAsync(
+                invite.TargetUserId.Value,
+                invite.Id,
+                cancellationToken);
+        await this._db.SaveChangesAsync(cancellationToken);
+
+        await this.NotifyInviteAudienceAsync(
+            serverId,
+            invite.Id,
+            [currentUserId, invite.CreatedByUserId],
+            cancellationToken);
+
+        if (invite.TargetUserId != null)
+        {
+            if (notificationChanged)
             {
                 await this._notifications.NotifyChangedAsync(
                     [invite.TargetUserId.Value],
-                    CancellationToken.None);
-                await this._realtime.NotifyUserBestEffortAsync(
-                    this._logger,
-                    invite.TargetUserId.Value,
-                    RealtimeEventNames.ServerInviteReceived,
-                    new { serverId, inviteId = invite.Id },
-                    CancellationToken.None);
-            }
-
-            invite.Kind = await this._db.ServerInviteKinds.FindAsync([kindId], cancellationToken)
-                ?? new ServerInviteKind { Id = kindId, Code = kindCode, Title = kindCode };
-
-            return ServerGovernanceMapper.ToInviteResponse(invite, now);
-        }
-
-        public async Task<bool> RevokeInviteAsync(
-            Guid currentUserId,
-            Guid serverId,
-            Guid inviteId,
-            CancellationToken cancellationToken = default)
-        {
-            var canCreateInvites = await this._access.CanCreateInvitesAsync(
-                currentUserId,
-                serverId,
-                cancellationToken);
-            var canManageInvites = await this._access.HasGranularPermissionAsync(
-                currentUserId,
-                serverId,
-                "MANAGE_INVITES",
-                cancellationToken);
-            if (!canCreateInvites && !canManageInvites)
-            {
-                return false;
-            }
-
-            var invite = await this._db.ServerInvites.FirstOrDefaultAsync(
-                x => x.Id == inviteId &&
-                     x.ServerId == serverId,
-                cancellationToken);
-
-            if (invite == null)
-            {
-                return false;
-            }
-
-            if (invite.CreatedByUserId != currentUserId && !canManageInvites)
-            {
-                return false;
-            }
-
-            invite.RevokedAt = DateTime.UtcNow;
-            invite.RevokedByUserId = currentUserId;
-            this._access.AddAudit(
-                serverId,
-                ServerGovernanceIds.AuditInviteRevoked,
-                currentUserId,
-                invite.TargetUserId,
-                relatedInviteId: invite.Id);
-            var notificationChanged = invite.TargetUserId != null &&
-                await this._notifications.StageInviteReadAsync(
-                    invite.TargetUserId.Value,
-                    invite.Id,
-                    cancellationToken);
-            await this._db.SaveChangesAsync(cancellationToken);
-
-            await this.NotifyInviteAudienceAsync(
-                serverId,
-                invite.Id,
-                [currentUserId, invite.CreatedByUserId],
-                cancellationToken);
-
-            if (invite.TargetUserId != null)
-            {
-                if (notificationChanged)
-                {
-                    await this._notifications.NotifyChangedAsync(
-                        [invite.TargetUserId.Value],
-                        cancellationToken);
-                }
-                await this._realtime.NotifyUserBestEffortAsync(
-                    this._logger,
-                    invite.TargetUserId.Value,
-                    RealtimeEventNames.ServerInviteReceived,
-                    new { serverId, inviteId = invite.Id },
                     cancellationToken);
             }
-
-            return true;
-        }
-
-        private async Task NotifyInviteAudienceAsync(
-            Guid serverId,
-            Guid inviteId,
-            IEnumerable<Guid> explicitlyIncludedUserIds,
-            CancellationToken cancellationToken)
-        {
-            var ownInviteAudience = new List<Guid>();
-            foreach (var userId in explicitlyIncludedUserIds.Distinct())
-            {
-                if (await this._access.HasGranularPermissionAsync(
-                        userId,
-                        serverId,
-                        "CREATE_INVITES",
-                        cancellationToken))
-                {
-                    ownInviteAudience.Add(userId);
-                }
-            }
-
-            var audience = await this._permissionAudience.ResolveAsync(
-                serverId,
-                ["VIEW_INVITE_LOG", "MANAGE_INVITES"],
-                ownInviteAudience,
-                cancellationToken: cancellationToken);
-            await this._realtime.NotifyUsersBestEffortAsync(
+            await this._realtime.NotifyUserBestEffortAsync(
                 this._logger,
-                audience,
-                RealtimeEventNames.ServerGovernanceChanged,
-                new { serverId, inviteId },
+                invite.TargetUserId.Value,
+                RealtimeEventNames.ServerInviteReceived,
+                new { serverId, inviteId = invite.Id },
                 cancellationToken);
         }
 
-        private async Task<string> GenerateInviteCodeAsync(CancellationToken cancellationToken)
-        {
-            for (var attempt = 0; attempt < 20; attempt++)
-            {
-                var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
-                var exists = await this._db.ServerInvites.AnyAsync(x => x.Code == code, cancellationToken);
-                if (!exists)
-                {
-                    return code;
-                }
-            }
+        return true;
+    }
 
-            return Guid.NewGuid().ToString("N")[..16];
+    private async Task NotifyInviteAudienceAsync(
+        Guid serverId,
+        Guid inviteId,
+        IEnumerable<Guid> explicitlyIncludedUserIds,
+        CancellationToken cancellationToken)
+    {
+        var ownInviteAudience = new List<Guid>();
+        foreach (var userId in explicitlyIncludedUserIds.Distinct())
+        {
+            if (await this._access.HasGranularPermissionAsync(
+                    userId,
+                    serverId,
+                    "CREATE_INVITES",
+                    cancellationToken))
+            {
+                ownInviteAudience.Add(userId);
+            }
         }
+
+        var audience = await this._permissionAudience.ResolveAsync(
+            serverId,
+            ["VIEW_INVITE_LOG", "MANAGE_INVITES"],
+            ownInviteAudience,
+            cancellationToken: cancellationToken);
+        await this._realtime.NotifyUsersBestEffortAsync(
+            this._logger,
+            audience,
+            RealtimeEventNames.ServerGovernanceChanged,
+            new { serverId, inviteId },
+            cancellationToken);
+    }
+
+    private async Task<string> GenerateInviteCodeAsync(CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
+            var exists = await this._db.ServerInvites.AnyAsync(x => x.Code == code, cancellationToken);
+            if (!exists)
+            {
+                return code;
+            }
+        }
+
+        return Guid.NewGuid().ToString("N")[..16];
     }
 }

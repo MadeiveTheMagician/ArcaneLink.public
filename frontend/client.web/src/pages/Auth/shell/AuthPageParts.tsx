@@ -1,29 +1,33 @@
-import { authCopy } from '../../../system/shared/index'
-import type { AuthMessage, AuthMode, AuthView } from '../model/AuthPageModel'
-import styles from './AuthShell.module.css'
+import { authCopy } from '../../../system/shared/index';
+import type { AuthMessage, AuthMode, AuthView } from '../model/AuthPageModel';
 
-export { AuthLoginForm } from '../login/AuthLoginForm'
-export { AuthRegisterForm } from '../registration/AuthRegisterForm'
-export { registerSteps } from '../model/AuthPageModel'
+import styles from './AuthShell.module.css';
+
+export { AuthLoginForm } from '../login/AuthLoginForm';
+export { AuthRegisterForm } from '../registration/AuthRegisterForm';
+export { registerSteps } from '../model/AuthPageModel';
 export type {
   AuthMessage,
   AuthMode,
   AuthView,
   LoginForm,
-  RegisterForm,
-} from '../model/AuthPageModel'
+  RegisterForm
+} from '../model/AuthPageModel';
 
 export function AuthModeSwitch({
   mode,
   isSwitchingMode,
-  onSwitchMode,
+  onSwitchMode
 }: {
-  mode: AuthMode
-  isSwitchingMode: boolean
-  onSwitchMode: (mode: AuthMode) => void
+  mode: AuthMode;
+  isSwitchingMode: boolean;
+  onSwitchMode: (mode: AuthMode) => void;
 }) {
   return (
-    <nav className={styles.authModeSwitch} aria-label={authCopy.aria.changeForm}>
+    <nav
+      className={styles.authModeSwitch}
+      aria-label={authCopy.aria.changeForm}
+    >
       <button
         className={mode === 'login' ? styles.isActive : ''}
         type="button"
@@ -41,38 +45,38 @@ export function AuthModeSwitch({
         {authCopy.tabs.register}
       </button>
     </nav>
-  )
+  );
 }
 
 const authViewCopy: Record<AuthView, { title: string; description: string }> = {
   login: {
     title: authCopy.tabs.login,
-    description: authCopy.hints.loginCopy,
+    description: authCopy.hints.loginCopy
   },
   register: {
     title: authCopy.actions.createAccount,
-    description: authCopy.hints.registerCopy,
+    description: authCopy.hints.registerCopy
   },
   'verify-email': {
     title: authCopy.titles.verifyEmail,
-    description: authCopy.hints.registrationEmailVerification,
+    description: authCopy.hints.registrationEmailVerification
   },
   'forgot-password': {
     title: authCopy.titles.forgotPassword,
-    description: authCopy.hints.forgotPasswordCopy,
+    description: authCopy.hints.forgotPasswordCopy
   },
   'confirm-email': {
     title: authCopy.titles.confirmEmail,
-    description: authCopy.hints.confirmEmailCopy,
+    description: authCopy.hints.confirmEmailCopy
   },
   'reset-password': {
     title: authCopy.titles.resetPassword,
-    description: authCopy.hints.resetPasswordCopy,
-  },
-}
+    description: authCopy.hints.resetPasswordCopy
+  }
+};
 
 export function AuthCopy({ view }: { view: AuthView }) {
-  const copy = authViewCopy[view]
+  const copy = authViewCopy[view];
 
   return (
     <div className={styles.authCopy}>
@@ -80,7 +84,7 @@ export function AuthCopy({ view }: { view: AuthView }) {
       <h1 id="auth-title">{copy.title}</h1>
       <p>{copy.description}</p>
     </div>
-  )
+  );
 }
 
 export function AuthMessageView({ message }: { message: AuthMessage }) {
@@ -96,5 +100,5 @@ export function AuthMessageView({ message }: { message: AuthMessage }) {
     >
       {message.text}
     </div>
-  )
+  );
 }

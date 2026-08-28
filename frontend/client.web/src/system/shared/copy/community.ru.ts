@@ -13,7 +13,7 @@ export const communityCopy = {
     message: 'Написать сообщение',
     moreFriendActions: 'Действия с другом',
     open: 'Открыть',
-    showAll: 'Показать все',
+    showAll: 'Показать все'
   },
   direct: {
     defaultDirectTitle: 'Личная переписка',
@@ -36,10 +36,8 @@ export const communityCopy = {
     createDialogGroup: 'Создать группу',
     creating: 'Создаём…',
     groupTitle: 'Название группы',
-    groupTitlePlaceholder:
-      'Сформируется автоматически, если оставить пустым',
-    emptyFriendsCreateGroup:
-      'Друзей пока нет — можно создать пустую группу.',
+    groupTitlePlaceholder: 'Сформируется автоматически, если оставить пустым',
+    emptyFriendsCreateGroup: 'Друзей пока нет — можно создать пустую группу.',
     actionErrorTitle: 'Личная переписка',
     settingsSaveFailed: 'Не удалось сохранить настройки переписки.',
     createFailed: 'Не удалось создать приватный спейс.',
@@ -63,7 +61,8 @@ export const communityCopy = {
     leaveGroupFailed: 'Не удалось покинуть группу.',
     deleteDirectFailed: 'Не удалось удалить переписку.',
     chooseFriend: 'Выберите друга',
-    allFriendsAlreadyHaveDirectMessages: 'Со всеми друзьями уже есть личные переписки.',
+    allFriendsAlreadyHaveDirectMessages:
+      'Со всеми друзьями уже есть личные переписки.',
     attachment: 'Есть вложение',
     folders: 'Папки личных сообщений',
     folderArchive: 'Архив',
@@ -96,8 +95,7 @@ export const communityCopy = {
     personalAvatarTitle: 'Настроить свой аватар',
     personalAvatarDescription:
       'JPG, PNG, WebP, GIF или BMP до 10 MB. Аватар будет виден только вам.',
-    personalAvatarOpenFailed:
-      'Не удалось открыть выбранное изображение.',
+    personalAvatarOpenFailed: 'Не удалось открыть выбранное изображение.',
     selectedFileIsNotImage: 'Выбранный файл не является изображением.',
     markAllRead: 'Отметить как прочитанное',
     markAllReadTitle: 'Прочитать все сообщения?',
@@ -149,8 +147,7 @@ export const communityCopy = {
     noActiveInvites: 'Активных приглашений пока нет.',
     noMessages: 'Личных переписок пока нет.',
     messagesLoadFailed: 'Не удалось загрузить сообщения.',
-    pinnedMessagesLoadFailed:
-      'Не удалось загрузить закреплённые сообщения.',
+    pinnedMessagesLoadFailed: 'Не удалось загрузить закреплённые сообщения.',
     messageSendFailed: 'Не удалось отправить сообщение.',
     messageUpdateFailed: 'Не удалось изменить сообщение.',
     messageDeleteFailed: 'Не удалось удалить сообщение.',
@@ -191,7 +188,7 @@ export const communityCopy = {
       label: 'По вложению',
       noFilter: 'Без фильтра',
       sender: 'От пользователя',
-      video: 'Видео',
+      video: 'Видео'
     },
     search: 'Поиск сообщений',
     searchInDirectMessages: 'Поиск сообщений в личных сообщениях',
@@ -199,7 +196,7 @@ export const communityCopy = {
     serverMembers: 'Участники',
     memberStatusOnline: 'В сети',
     memberStatusOffline: 'Оффлайн',
-    title: 'Личные сообщения',
+    title: 'Личные сообщения'
   },
   filters: {
     firstRecent: 'Сначала недавно активные',
@@ -211,7 +208,7 @@ export const communityCopy = {
     online: 'Онлайн',
     public: 'Публичные',
     sharedServers: 'Общие серверы',
-    tags: 'Теги',
+    tags: 'Теги'
   },
   labels: {
     commonServer: 'Общий сервер',
@@ -222,7 +219,7 @@ export const communityCopy = {
     recommendations: 'Рекомендуемые',
     recommendationsEmpty: 'Рекомендации появятся после поиска людей.',
     sections: 'Разделы комьюнити',
-    sharedPeople: 'Люди с общих серверов',
+    sharedPeople: 'Люди с общих серверов'
   },
   people: {
     defaultEmpty: 'Пользователи с общих серверов появятся здесь.',
@@ -232,7 +229,7 @@ export const communityCopy = {
     searchTips: 'Советы по поиску',
     searchTipsText:
       'Ищите по нику или имени. Серверные фильтры можно подключить позже, когда появится отдельный каталог.',
-    searchPlaceholder: 'Поиск по имени, нику или интересам...',
+    searchPlaceholder: 'Поиск по имени, нику или интересам...'
   },
   requests: {
     empty: 'Заявок нет.',
@@ -242,7 +239,7 @@ export const communityCopy = {
     noIncoming: 'Входящих заявок нет.',
     noOutgoing: 'Исходящих заявок нет.',
     sortOld: 'Сначала старые',
-    sortRecent: 'Сначала последние',
+    sortRecent: 'Сначала последние'
   },
   search: {
     friendPlaceholder: 'Поиск друзей по имени или нику',
@@ -250,7 +247,7 @@ export const communityCopy = {
     requestAccept: 'Принять заявку',
     requestDecline: 'Отклонить заявку',
     searchFilters: 'Фильтры поиска',
-    serverFilters: 'Фильтры серверов',
+    serverFilters: 'Фильтры серверов'
   },
   states: {
     friendConfirmRemove: (displayName: string) =>
@@ -261,13 +258,13 @@ export const communityCopy = {
     friendsLoading: 'Загружаем друзей...',
     offline: 'Оффлайн',
     online: 'Онлайн',
-    tagsEmpty: 'Теги пока не загружены.',
+    tagsEmpty: 'Теги пока не загружены.'
   },
   tabs: {
     friends: 'Друзья',
     people: 'Поиск людей',
     blocklist: 'Чёрный список',
-    servers: 'Поиск серверов',
+    servers: 'Поиск серверов'
   },
-  title: 'Комьюнити',
-} as const
+  title: 'Комьюнити'
+} as const;

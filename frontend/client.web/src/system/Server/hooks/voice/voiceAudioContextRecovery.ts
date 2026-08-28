@@ -1,32 +1,31 @@
 export type ResumableVoiceAudioContext = {
-  readonly state: AudioContextState
-  resume: () => Promise<void>
-}
+  readonly state: AudioContextState;
+  resume: () => Promise<void>;
+};
 
-export function resolveVoiceAudioContext<TContext extends { state: AudioContextState }>(
-  existingContext: TContext | null,
-  createContext: () => TContext,
-) {
+export function resolveVoiceAudioContext<
+  TContext extends { state: AudioContextState }
+>(existingContext: TContext | null, createContext: () => TContext) {
   return !existingContext || existingContext.state === 'closed'
     ? createContext()
-    : existingContext
+    : existingContext;
 }
 
 export async function resumeVoiceAudioContext(
-  audioContext: ResumableVoiceAudioContext | null,
+  audioContext: ResumableVoiceAudioContext | null
 ) {
   if (!audioContext || audioContext.state === 'closed') {
-    return false
+    return false;
   }
   if (audioContext.state === 'running') {
-    return true
+    return true;
   }
 
   try {
-    await audioContext.resume()
+    await audioContext.resume();
   } catch {
-    return false
+    return false;
   }
 
-  return (audioContext.state as AudioContextState) === 'running'
+  return (audioContext.state as AudioContextState) === 'running';
 }

@@ -1,128 +1,145 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { type FormEvent, type ReactNode, useState } from 'react';
+
 import {
   changeAccountLogin,
   changeAccountPassword,
-  requestAccountEmailChange,
-} from '../../../../shared/api/accountLifecycleApi'
-import type { UserResponse } from '../../../../shared/types'
-import { settingsCopy } from '../../../shared/copy'
+  requestAccountEmailChange
+} from '../../../../shared/api/accountLifecycleApi';
+import type { UserResponse } from '../../../../shared/types';
+import { settingsCopy } from '../../../shared/copy';
 import {
+  type AccountCredentialEditor,
   isValidEmailChange,
   isValidLoginChange,
-  isValidPasswordChange,
-  type AccountCredentialEditor,
-} from './accountCredentialModel'
-import styles from './SystemSettingsAccount.module.css'
+  isValidPasswordChange
+} from './accountCredentialModel';
+
+import styles from './SystemSettingsAccount.module.css';
 
 type EditorStatus = {
-  tone: 'success' | 'error'
-  text: string
-} | null
+  tone: 'success' | 'error';
+  text: string;
+} | null;
 
 export function AccountCredentialEditors({
   accessToken,
   user,
   editors = ['login', 'email', 'password'],
-  onReauthenticationRequired,
+  onReauthenticationRequired
 }: {
-  accessToken: string
-  user: UserResponse
-  editors?: readonly AccountCredentialEditor[]
-  onReauthenticationRequired: (message: string) => void
+  accessToken: string;
+  user: UserResponse;
+  editors?: readonly AccountCredentialEditor[];
+  onReauthenticationRequired: (message: string) => void;
 }) {
   const [activeEditor, setActiveEditor] =
-    useState<AccountCredentialEditor | null>(null)
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newLogin, setNewLogin] = useState(user.login)
-  const [newEmail, setNewEmail] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmedPassword, setConfirmedPassword] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [status, setStatus] = useState<EditorStatus>(null)
+    useState<AccountCredentialEditor | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newLogin, setNewLogin] = useState(user.login);
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmedPassword, setConfirmedPassword] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [status, setStatus] = useState<EditorStatus>(null);
 
   function openEditor(editor: AccountCredentialEditor) {
-    setActiveEditor((current) => (current === editor ? null : editor))
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmedPassword('')
-    setNewEmail('')
-    setNewLogin(user.login)
-    setStatus(null)
+    setActiveEditor((current) => (current === editor ? null : editor));
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmedPassword('');
+    setNewEmail('');
+    setNewLogin(user.login);
+    setStatus(null);
   }
 
   function closeEditor() {
-    setActiveEditor(null)
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmedPassword('')
-    setStatus(null)
+    setActiveEditor(null);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmedPassword('');
+    setStatus(null);
   }
 
   async function submitLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!isValidLoginChange(newLogin, currentPassword)) return
+    event.preventDefault();
+    if (!isValidLoginChange(newLogin, currentPassword)) return;
 
-    setIsSaving(true)
-    setStatus(null)
+    setIsSaving(true);
+    setStatus(null);
     try {
       const response = await changeAccountLogin(
         accessToken,
         newLogin.trim(),
-        currentPassword,
-      )
+        currentPassword
+      );
       if (response.requiresReauthentication) {
-        onReauthenticationRequired(settingsCopy.account.loginChangedReauthentication)
+        onReauthenticationRequired(
+          settingsCopy.account.loginChangedReauthentication
+        );
       }
     } catch {
-      setStatus({ tone: 'error', text: settingsCopy.account.loginChangeFailed })
+      setStatus({
+        tone: 'error',
+        text: settingsCopy.account.loginChangeFailed
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   async function submitEmail(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!isValidEmailChange(newEmail, currentPassword)) return
+    event.preventDefault();
+    if (!isValidEmailChange(newEmail, currentPassword)) return;
 
-    setIsSaving(true)
-    setStatus(null)
+    setIsSaving(true);
+    setStatus(null);
     try {
       await requestAccountEmailChange(
         accessToken,
         newEmail.trim(),
-        currentPassword,
-      )
-      setCurrentPassword('')
-      setStatus({ tone: 'success', text: settingsCopy.account.emailChangeRequested })
+        currentPassword
+      );
+      setCurrentPassword('');
+      setStatus({
+        tone: 'success',
+        text: settingsCopy.account.emailChangeRequested
+      });
     } catch {
-      setStatus({ tone: 'error', text: settingsCopy.account.emailChangeFailed })
+      setStatus({
+        tone: 'error',
+        text: settingsCopy.account.emailChangeFailed
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   async function submitPassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
     if (
-      !isValidPasswordChange(
-        currentPassword,
-        newPassword,
-        confirmedPassword,
-      )
+      !isValidPasswordChange(currentPassword, newPassword, confirmedPassword)
     ) {
-      setStatus({ tone: 'error', text: settingsCopy.account.passwordRequirements })
-      return
+      setStatus({
+        tone: 'error',
+        text: settingsCopy.account.passwordRequirements
+      });
+      return;
     }
 
-    setIsSaving(true)
-    setStatus(null)
+    setIsSaving(true);
+    setStatus(null);
     try {
-      await changeAccountPassword(accessToken, currentPassword, newPassword)
-      onReauthenticationRequired(settingsCopy.account.passwordChangedReauthentication)
+      await changeAccountPassword(accessToken, currentPassword, newPassword);
+      onReauthenticationRequired(
+        settingsCopy.account.passwordChangedReauthentication
+      );
     } catch {
-      setStatus({ tone: 'error', text: settingsCopy.account.passwordChangeFailed })
+      setStatus({
+        tone: 'error',
+        text: settingsCopy.account.passwordChangeFailed
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
@@ -137,27 +154,27 @@ export function AccountCredentialEditors({
           onToggle={openEditor}
         >
           <form className={styles.credentialForm} onSubmit={submitLogin}>
-          <CredentialInput
-            label={settingsCopy.account.newLogin}
-            name="newLogin"
-            autoComplete="username"
-            value={newLogin}
-            onChange={setNewLogin}
-          />
-          <CredentialInput
-            label={settingsCopy.account.currentPassword}
-            name="currentPasswordForLogin"
-            type="password"
-            autoComplete="current-password"
-            value={currentPassword}
-            onChange={setCurrentPassword}
-          />
-          <CredentialActions
-            disabled={!isValidLoginChange(newLogin, currentPassword)}
-            isSaving={isSaving}
-            onCancel={closeEditor}
-          />
-          <CredentialStatus status={status} />
+            <CredentialInput
+              label={settingsCopy.account.newLogin}
+              name="newLogin"
+              autoComplete="username"
+              value={newLogin}
+              onChange={setNewLogin}
+            />
+            <CredentialInput
+              label={settingsCopy.account.currentPassword}
+              name="currentPasswordForLogin"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={setCurrentPassword}
+            />
+            <CredentialActions
+              disabled={!isValidLoginChange(newLogin, currentPassword)}
+              isSaving={isSaving}
+              onCancel={closeEditor}
+            />
+            <CredentialStatus status={status} />
           </form>
         </CredentialEditorRow>
       )}
@@ -171,28 +188,28 @@ export function AccountCredentialEditors({
           onToggle={openEditor}
         >
           <form className={styles.credentialForm} onSubmit={submitEmail}>
-          <CredentialInput
-            label={settingsCopy.account.newEmail}
-            name="newEmail"
-            type="email"
-            autoComplete="email"
-            value={newEmail}
-            onChange={setNewEmail}
-          />
-          <CredentialInput
-            label={settingsCopy.account.currentPassword}
-            name="currentPasswordForEmail"
-            type="password"
-            autoComplete="current-password"
-            value={currentPassword}
-            onChange={setCurrentPassword}
-          />
-          <CredentialActions
-            disabled={!isValidEmailChange(newEmail, currentPassword)}
-            isSaving={isSaving}
-            onCancel={closeEditor}
-          />
-          <CredentialStatus status={status} />
+            <CredentialInput
+              label={settingsCopy.account.newEmail}
+              name="newEmail"
+              type="email"
+              autoComplete="email"
+              value={newEmail}
+              onChange={setNewEmail}
+            />
+            <CredentialInput
+              label={settingsCopy.account.currentPassword}
+              name="currentPasswordForEmail"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={setCurrentPassword}
+            />
+            <CredentialActions
+              disabled={!isValidEmailChange(newEmail, currentPassword)}
+              isSaving={isSaving}
+              onCancel={closeEditor}
+            />
+            <CredentialStatus status={status} />
           </form>
         </CredentialEditorRow>
       )}
@@ -206,50 +223,50 @@ export function AccountCredentialEditors({
           onToggle={openEditor}
         >
           <form className={styles.credentialForm} onSubmit={submitPassword}>
-          <CredentialInput
-            label={settingsCopy.account.currentPassword}
-            name="currentPasswordForPassword"
-            type="password"
-            autoComplete="current-password"
-            value={currentPassword}
-            onChange={setCurrentPassword}
-          />
-          <CredentialInput
-            label={settingsCopy.account.newPassword}
-            name="newPassword"
-            type="password"
-            autoComplete="new-password"
-            value={newPassword}
-            onChange={setNewPassword}
-          />
-          <CredentialInput
-            label={settingsCopy.account.confirmNewPassword}
-            name="confirmNewPassword"
-            type="password"
-            autoComplete="new-password"
-            value={confirmedPassword}
-            onChange={setConfirmedPassword}
-          />
-          <p className={styles.credentialHint}>
-            {settingsCopy.account.passwordRequirements}
-          </p>
-          <CredentialActions
-            disabled={
-              !isValidPasswordChange(
-                currentPassword,
-                newPassword,
-                confirmedPassword,
-              )
-            }
-            isSaving={isSaving}
-            onCancel={closeEditor}
-          />
-          <CredentialStatus status={status} />
+            <CredentialInput
+              label={settingsCopy.account.currentPassword}
+              name="currentPasswordForPassword"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={setCurrentPassword}
+            />
+            <CredentialInput
+              label={settingsCopy.account.newPassword}
+              name="newPassword"
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={setNewPassword}
+            />
+            <CredentialInput
+              label={settingsCopy.account.confirmNewPassword}
+              name="confirmNewPassword"
+              type="password"
+              autoComplete="new-password"
+              value={confirmedPassword}
+              onChange={setConfirmedPassword}
+            />
+            <p className={styles.credentialHint}>
+              {settingsCopy.account.passwordRequirements}
+            </p>
+            <CredentialActions
+              disabled={
+                !isValidPasswordChange(
+                  currentPassword,
+                  newPassword,
+                  confirmedPassword
+                )
+              }
+              isSaving={isSaving}
+              onCancel={closeEditor}
+            />
+            <CredentialStatus status={status} />
           </form>
         </CredentialEditorRow>
       )}
     </div>
-  )
+  );
 }
 
 function CredentialEditorRow({
@@ -258,22 +275,28 @@ function CredentialEditorRow({
   editor,
   isOpen,
   onToggle,
-  children,
+  children
 }: {
-  label: string
-  value: string
-  editor: AccountCredentialEditor
-  isOpen: boolean
-  onToggle: (editor: AccountCredentialEditor) => void
-  children: ReactNode
+  label: string;
+  value: string;
+  editor: AccountCredentialEditor;
+  isOpen: boolean;
+  onToggle: (editor: AccountCredentialEditor) => void;
+  children: ReactNode;
 }) {
   return (
     <div className={styles.credentialRow}>
       <div className={styles.credentialSummary}>
         <span>{label}</span>
         <strong>{value}</strong>
-        <button type="button" aria-expanded={isOpen} onClick={() => onToggle(editor)}>
-          {isOpen ? settingsCopy.account.cancelChange : settingsCopy.account.change}
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          onClick={() => onToggle(editor)}
+        >
+          {isOpen
+            ? settingsCopy.account.cancelChange
+            : settingsCopy.account.change}
         </button>
       </div>
       <div
@@ -286,7 +309,7 @@ function CredentialEditorRow({
         <div>{children}</div>
       </div>
     </div>
-  )
+  );
 }
 
 function CredentialInput({
@@ -295,14 +318,14 @@ function CredentialInput({
   type = 'text',
   autoComplete,
   value,
-  onChange,
+  onChange
 }: {
-  label: string
-  name: string
-  type?: string
-  autoComplete: string
-  value: string
-  onChange: (value: string) => void
+  label: string;
+  name: string;
+  type?: string;
+  autoComplete: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <label className={styles.credentialInput}>
@@ -316,36 +339,42 @@ function CredentialInput({
         onChange={(event) => onChange(event.target.value)}
       />
     </label>
-  )
+  );
 }
 
 function CredentialActions({
   disabled,
   isSaving,
-  onCancel,
+  onCancel
 }: {
-  disabled: boolean
-  isSaving: boolean
-  onCancel: () => void
+  disabled: boolean;
+  isSaving: boolean;
+  onCancel: () => void;
 }) {
   return (
     <div className={styles.credentialActions}>
       <button type="submit" disabled={disabled || isSaving}>
-        {isSaving ? settingsCopy.account.savingChange : settingsCopy.account.saveChange}
+        {isSaving
+          ? settingsCopy.account.savingChange
+          : settingsCopy.account.saveChange}
       </button>
       <button type="button" disabled={isSaving} onClick={onCancel}>
         {settingsCopy.account.cancelChange}
       </button>
     </div>
-  )
+  );
 }
 
 function CredentialStatus({ status }: { status: EditorStatus }) {
-  if (!status) return null
+  if (!status) return null;
 
   return (
-    <p className={styles.credentialStatus} data-tone={status.tone} role={status.tone === 'error' ? 'alert' : 'status'}>
+    <p
+      className={styles.credentialStatus}
+      data-tone={status.tone}
+      role={status.tone === 'error' ? 'alert' : 'status'}
+    >
       {status.text}
     </p>
-  )
+  );
 }

@@ -1,125 +1,127 @@
-import { Rnnoise } from '@shiguredo/rnnoise-wasm'
+import { Rnnoise } from '@shiguredo/rnnoise-wasm';
 
 type RnnoiseWorkerMessage =
-  | { type: 'connect'; port: MessagePort }
-  | { type: 'dispose' }
+  { type: 'connect'; port: MessagePort } | { type: 'dispose' };
 
 type RnnoiseProcessingMessage =
   | { type: 'process'; sequence: number; frame: Float32Array }
-  | { type: 'dispose' }
+  | { type: 'dispose' };
 
 const workerScope = self as unknown as {
-  onmessage: ((event: MessageEvent<RnnoiseWorkerMessage>) => void) | null
-  close: () => void
-}
+  onmessage: ((event: MessageEvent<RnnoiseWorkerMessage>) => void) | null;
+  close: () => void;
+};
 
-let processingPort: MessagePort | null = null
-let denoiseState: ReturnType<Rnnoise['createDenoiseState']> | null = null
-let isDisposed = false
+let processingPort: MessagePort | null = null;
+let denoiseState: ReturnType<Rnnoise['createDenoiseState']> | null = null;
+let isDisposed = false;
 
 workerScope.onmessage = (event) => {
-  const message = event.data
+  const message = event.data;
   if (message.type === 'dispose') {
-    dispose()
-    return
+    dispose();
+    return;
   }
 
-  processingPort?.close()
-  processingPort = message.port
-  processingPort.onmessage = handleProcessingMessage
-  processingPort.start()
-  void initializeRnnoise()
-}
+  processingPort?.close();
+  processingPort = message.port;
+  processingPort.onmessage = handleProcessingMessage;
+  processingPort.start();
+  void initializeRnnoise();
+};
 
 async function initializeRnnoise() {
-  const port = processingPort
+  const port = processingPort;
   if (!port || isDisposed) {
-    return
+    return;
   }
 
   try {
-    const rnnoise = await Rnnoise.load()
+    const rnnoise = await Rnnoise.load();
     if (isDisposed || processingPort !== port) {
-      return
+      return;
     }
 
-    denoiseState?.destroy()
-    denoiseState = rnnoise.createDenoiseState()
-    port.postMessage({ type: 'ready', frameSize: rnnoise.frameSize })
+    denoiseState?.destroy();
+    denoiseState = rnnoise.createDenoiseState();
+    port.postMessage({ type: 'ready', frameSize: rnnoise.frameSize });
   } catch (error) {
     if (!isDisposed && processingPort === port) {
       port.postMessage({
         type: 'error',
-        message: error instanceof Error
-          ? error.message
-          : 'RNNoise initialization failed.',
-      })
+        message:
+          error instanceof Error
+            ? error.message
+            : 'RNNoise initialization failed.'
+      });
     }
   }
 }
 
 function handleProcessingMessage(
-  event: MessageEvent<RnnoiseProcessingMessage>,
+  event: MessageEvent<RnnoiseProcessingMessage>
 ) {
-  const message = event.data
+  const message = event.data;
   if (message.type === 'dispose') {
-    dispose()
-    return
+    dispose();
+    return;
   }
 
-  const port = processingPort
-  const state = denoiseState
+  const port = processingPort;
+  const state = denoiseState;
   if (!port || !state || isDisposed) {
-    return
+    return;
   }
 
-  const startedAt = performance.now()
+  const startedAt = performance.now();
   try {
     for (let index = 0; index < message.frame.length; index += 1) {
-      message.frame[index] = clampUnitSample(message.frame[index] ?? 0) * 32_768
+      message.frame[index] =
+        clampUnitSample(message.frame[index] ?? 0) * 32_768;
     }
-    const voiceProbability = state.processFrame(message.frame)
+    const voiceProbability = state.processFrame(message.frame);
     for (let index = 0; index < message.frame.length; index += 1) {
       message.frame[index] = clampUnitSample(
-        (message.frame[index] ?? 0) / 32_768,
-      )
+        (message.frame[index] ?? 0) / 32_768
+      );
     }
-    const processingTimeMs = performance.now() - startedAt
+    const processingTimeMs = performance.now() - startedAt;
     port.postMessage(
       {
         type: 'processed',
         sequence: message.sequence,
         frame: message.frame,
         processingTimeMs,
-        voiceProbability,
+        voiceProbability
       },
-      [message.frame.buffer],
-    )
+      [message.frame.buffer]
+    );
   } catch (error) {
     port.postMessage({
       type: 'error',
-      message: error instanceof Error
-        ? error.message
-        : 'RNNoise frame processing failed.',
-    })
+      message:
+        error instanceof Error
+          ? error.message
+          : 'RNNoise frame processing failed.'
+    });
   }
 }
 
 function clampUnitSample(value: number) {
-  return Math.min(1, Math.max(-1, value))
+  return Math.min(1, Math.max(-1, value));
 }
 
 function dispose() {
   if (isDisposed) {
-    return
+    return;
   }
 
-  isDisposed = true
-  denoiseState?.destroy()
-  denoiseState = null
-  processingPort?.close()
-  processingPort = null
-  workerScope.close()
+  isDisposed = true;
+  denoiseState?.destroy();
+  denoiseState = null;
+  processingPort?.close();
+  processingPort = null;
+  workerScope.close();
 }
 
-export {}
+export {};

@@ -2,33 +2,34 @@ import {
   getStreamingTierLabel,
   isStreamingTierAllowed,
   streamingFrameRateOptions,
-  streamingResolutionOptions,
-} from '../../../../shared/streaming/streamingSettings'
+  streamingResolutionOptions
+} from '../../../../shared/streaming/streamingSettings';
 import type {
   StreamingFrameRate,
   StreamingOption,
   StreamingResolution,
-  StreamingSettings,
-} from '../../../../shared/streaming/streamingSettings'
-import type { UserResponse } from '../../../../shared/types'
-import { settingsCopy } from '../../../shared/copy'
-import { SettingsSection } from './SystemSettingsControls'
-import styles from './SystemSettingsControls.module.css'
+  StreamingSettings
+} from '../../../../shared/streaming/streamingSettings';
+import type { UserResponse } from '../../../../shared/types';
+import { settingsCopy } from '../../../shared/copy';
+import { SettingsSection } from './SystemSettingsControls';
 
-export { VoiceSettingsTab } from './VoiceSettingsTab'
+import styles from './SystemSettingsControls.module.css';
+
+export { VoiceSettingsTab } from './VoiceSettingsTab';
 
 type StreamingSettingsTabProps = {
-  settings: StreamingSettings
-  user: UserResponse
-  onChange: (patch: Partial<StreamingSettings>) => void
-  onReset: () => void
-}
+  settings: StreamingSettings;
+  user: UserResponse;
+  onChange: (patch: Partial<StreamingSettings>) => void;
+  onReset: () => void;
+};
 
 export function StreamingSettingsTab({
   settings,
   user,
   onChange,
-  onReset,
+  onReset
 }: StreamingSettingsTabProps) {
   return (
     <>
@@ -67,32 +68,32 @@ export function StreamingSettingsTab({
         {settingsCopy.actions.resetStreaming}
       </button>
     </>
-  )
+  );
 }
 
 function StreamingRadioGroup<
-  TValue extends StreamingFrameRate | StreamingResolution,
+  TValue extends StreamingFrameRate | StreamingResolution
 >({
   name,
   title,
   value,
   options,
   user,
-  onChange,
+  onChange
 }: {
-  name: string
-  title: string
-  value: TValue
-  options: readonly StreamingOption<TValue>[]
-  user: UserResponse
-  onChange: (value: TValue) => void
+  name: string;
+  title: string;
+  value: TValue;
+  options: readonly StreamingOption<TValue>[];
+  user: UserResponse;
+  onChange: (value: TValue) => void;
 }) {
   return (
     <fieldset className="ui-radio-group">
       <legend>{title}</legend>
       <div className="ui-radio-grid">
         {options.map((option) => {
-          const isAllowed = isStreamingTierAllowed(option.requiredTier, user)
+          const isAllowed = isStreamingTierAllowed(option.requiredTier, user);
 
           return (
             <label className="ui-radio-card" key={option.value}>
@@ -110,9 +111,9 @@ function StreamingRadioGroup<
                 <em>{getStreamingTierLabel(option.requiredTier)}</em>
               )}
             </label>
-          )
+          );
         })}
       </div>
     </fieldset>
-  )
+  );
 }

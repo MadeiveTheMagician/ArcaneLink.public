@@ -1,42 +1,39 @@
-import type { UserDeviceSessionResponse } from '../../../../shared/types'
+import type { UserDeviceSessionResponse } from '../../../../shared/types';
 
 export function isAccountSessionCurrent(
   session: UserDeviceSessionResponse,
-  currentDeviceSessionId?: string | null,
+  currentDeviceSessionId?: string | null
 ) {
-  return session.isCurrent || session.id === currentDeviceSessionId
+  return session.isCurrent || session.id === currentDeviceSessionId;
 }
 
 export function sortAccountSessions(
   sessions: UserDeviceSessionResponse[],
-  currentDeviceSessionId?: string | null,
+  currentDeviceSessionId?: string | null
 ) {
   return [...sessions].sort((first, second) => {
-    const firstCurrent = isAccountSessionCurrent(
-      first,
-      currentDeviceSessionId,
-    )
+    const firstCurrent = isAccountSessionCurrent(first, currentDeviceSessionId);
     const secondCurrent = isAccountSessionCurrent(
       second,
-      currentDeviceSessionId,
-    )
+      currentDeviceSessionId
+    );
 
     if (firstCurrent !== secondCurrent) {
-      return firstCurrent ? -1 : 1
+      return firstCurrent ? -1 : 1;
     }
 
     return (
       new Date(second.lastUsedAt).getTime() -
       new Date(first.lastUsedAt).getTime()
-    )
-  })
+    );
+  });
 }
 
 export function getOtherAccountSessions(
   sessions: UserDeviceSessionResponse[],
-  currentDeviceSessionId?: string | null,
+  currentDeviceSessionId?: string | null
 ) {
   return sessions.filter(
-    (session) => !isAccountSessionCurrent(session, currentDeviceSessionId),
-  )
+    (session) => !isAccountSessionCurrent(session, currentDeviceSessionId)
+  );
 }

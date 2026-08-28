@@ -1,7 +1,7 @@
 import {
-  getSystemIconCss,
   type SystemIconCssName,
-} from '../../../../shared/icons/systemIconCss'
+  getSystemIconCss
+} from '../../../../shared/icons/systemIconCss';
 
 export type DetachedControlIconName =
   | 'mic'
@@ -12,9 +12,9 @@ export type DetachedControlIconName =
   | 'message'
   | 'settings'
   | 'fullscreen'
-  | 'close'
+  | 'close';
 
-export type DetachedUtilityIconName = 'lock' | 'plus' | 'settings' | 'unlock'
+export type DetachedUtilityIconName = 'lock' | 'plus' | 'settings' | 'unlock';
 
 const detachedControlIconByName = {
   camera: 'camera-off',
@@ -25,8 +25,8 @@ const detachedControlIconByName = {
   message: 'message',
   mic: 'mic-off',
   screen: 'screen-off',
-  settings: 'settings',
-} as const satisfies Record<DetachedControlIconName, SystemIconCssName>
+  settings: 'settings'
+} as const satisfies Record<DetachedControlIconName, SystemIconCssName>;
 
 const activeDetachedControlIconByName: Partial<
   Record<DetachedControlIconName, SystemIconCssName>
@@ -34,24 +34,24 @@ const activeDetachedControlIconByName: Partial<
   camera: 'camera',
   headphones: 'headphones-on',
   mic: 'mic-on',
-  screen: 'screen',
-}
+  screen: 'screen'
+};
 
 const detachedUtilityIconByName = {
   lock: 'lock',
   plus: 'plus',
   settings: 'settings',
-  unlock: 'unlock',
-} as const satisfies Record<DetachedUtilityIconName, SystemIconCssName>
+  unlock: 'unlock'
+} as const satisfies Record<DetachedUtilityIconName, SystemIconCssName>;
 
 export function getDetachedControlIconCss(
   icon: DetachedControlIconName,
-  active = false,
+  active = false
 ) {
-  const activeIcon = active ? activeDetachedControlIconByName[icon] : undefined
-  return getSystemIconCss(activeIcon ?? detachedControlIconByName[icon])
+  const activeIcon = active ? activeDetachedControlIconByName[icon] : undefined;
+  return getSystemIconCss(activeIcon ?? detachedControlIconByName[icon]);
 }
 
 export function getDetachedUtilityIconCss(icon: DetachedUtilityIconName) {
-  return getSystemIconCss(detachedUtilityIconByName[icon])
+  return getSystemIconCss(detachedUtilityIconByName[icon]);
 }

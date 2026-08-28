@@ -1,48 +1,48 @@
-export const attachmentDownloadWarningDelayMs = 3_000
+export const attachmentDownloadWarningDelayMs = 3_000;
 
 export function getAttachmentDownloadWarningRemainingMs(
   openedAtMs: number,
-  nowMs: number,
+  nowMs: number
 ) {
   if (!Number.isFinite(openedAtMs) || !Number.isFinite(nowMs)) {
-    return attachmentDownloadWarningDelayMs
+    return attachmentDownloadWarningDelayMs;
   }
 
-  const elapsedMs = Math.max(0, nowMs - openedAtMs)
-  return Math.max(0, attachmentDownloadWarningDelayMs - elapsedMs)
+  const elapsedMs = Math.max(0, nowMs - openedAtMs);
+  return Math.max(0, attachmentDownloadWarningDelayMs - elapsedMs);
 }
 
 export function getAttachmentDownloadWarningCountdownSeconds(
   openedAtMs: number,
-  nowMs: number,
+  nowMs: number
 ) {
   return Math.ceil(
-    getAttachmentDownloadWarningRemainingMs(openedAtMs, nowMs) / 1_000,
-  )
+    getAttachmentDownloadWarningRemainingMs(openedAtMs, nowMs) / 1_000
+  );
 }
 
 export function getAttachmentDownloadWarningProgress(
   openedAtMs: number,
-  nowMs: number,
+  nowMs: number
 ) {
   const remainingMs = getAttachmentDownloadWarningRemainingMs(
     openedAtMs,
-    nowMs,
-  )
+    nowMs
+  );
 
   return Math.min(
     1,
     Math.max(
       0,
       (attachmentDownloadWarningDelayMs - remainingMs) /
-        attachmentDownloadWarningDelayMs,
-    ),
-  )
+        attachmentDownloadWarningDelayMs
+    )
+  );
 }
 
 export function canConfirmAttachmentDownload(
   openedAtMs: number,
-  nowMs: number,
+  nowMs: number
 ) {
-  return getAttachmentDownloadWarningRemainingMs(openedAtMs, nowMs) === 0
+  return getAttachmentDownloadWarningRemainingMs(openedAtMs, nowMs) === 0;
 }

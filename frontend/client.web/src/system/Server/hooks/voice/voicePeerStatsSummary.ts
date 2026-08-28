@@ -1,27 +1,27 @@
-type StatsRecord = Record<string, unknown>
+type StatsRecord = Record<string, unknown>;
 
 export type VoicePeerStatsTrackInput = {
-  kind?: string | null
-  enabled?: boolean
-  muted?: boolean
-  readyState?: string
-}
+  kind?: string | null;
+  enabled?: boolean;
+  muted?: boolean;
+  readyState?: string;
+};
 
 export type VoicePeerStatsTransceiverInput = {
-  direction?: string
-  currentDirection?: string | null
-  senderTrack?: VoicePeerStatsTrackInput | null
-  receiverTrack?: VoicePeerStatsTrackInput | null
-}
+  direction?: string;
+  currentDirection?: string | null;
+  senderTrack?: VoicePeerStatsTrackInput | null;
+  receiverTrack?: VoicePeerStatsTrackInput | null;
+};
 
 export type VoicePeerStatsSummaryInput = {
-  sample?: string
-  connectionState?: string
-  iceConnectionState?: string
-  signalingState?: string
-  stats: readonly unknown[]
-  transceivers: readonly VoicePeerStatsTransceiverInput[]
-}
+  sample?: string;
+  connectionState?: string;
+  iceConnectionState?: string;
+  signalingState?: string;
+  stats: readonly unknown[];
+  transceivers: readonly VoicePeerStatsTransceiverInput[];
+};
 
 const peerConnectionStates = new Set([
   'new',
@@ -29,8 +29,8 @@ const peerConnectionStates = new Set([
   'connected',
   'disconnected',
   'failed',
-  'closed',
-])
+  'closed'
+]);
 const iceConnectionStates = new Set([
   'new',
   'checking',
@@ -38,43 +38,44 @@ const iceConnectionStates = new Set([
   'completed',
   'disconnected',
   'failed',
-  'closed',
-])
+  'closed'
+]);
 const signalingStates = new Set([
   'stable',
   'have-local-offer',
   'have-remote-offer',
   'have-local-pranswer',
   'have-remote-pranswer',
-  'closed',
-])
+  'closed'
+]);
 const transceiverDirections = new Set([
   'sendrecv',
   'sendonly',
   'recvonly',
   'inactive',
-  'stopped',
-])
-const safeSamplePattern = /^[a-z0-9+_-]{1,40}$/i
+  'stopped'
+]);
+const safeSamplePattern = /^[a-z0-9+_-]{1,40}$/i;
 
 export function createSafeVoicePeerStatsSummary(
-  input: VoicePeerStatsSummaryInput,
+  input: VoicePeerStatsSummaryInput
 ) {
-  const inboundAudio: ReturnType<typeof summarizeInboundAudio>[] = []
-  const outboundAudio: ReturnType<typeof summarizeOutboundAudio>[] = []
-  const remoteInboundAudio: ReturnType<typeof summarizeRemoteInboundAudio>[] = []
+  const inboundAudio: ReturnType<typeof summarizeInboundAudio>[] = [];
+  const outboundAudio: ReturnType<typeof summarizeOutboundAudio>[] = [];
+  const remoteInboundAudio: ReturnType<typeof summarizeRemoteInboundAudio>[] =
+    [];
 
   for (const candidate of input.stats) {
     if (!isStatsRecord(candidate) || !isAudioRtpRecord(candidate)) {
-      continue
+      continue;
     }
 
     if (candidate.type === 'inbound-rtp') {
-      inboundAudio.push(summarizeInboundAudio(candidate))
+      inboundAudio.push(summarizeInboundAudio(candidate));
     } else if (candidate.type === 'outbound-rtp') {
-      outboundAudio.push(summarizeOutboundAudio(candidate))
+      outboundAudio.push(summarizeOutboundAudio(candidate));
     } else if (candidate.type === 'remote-inbound-rtp') {
-      remoteInboundAudio.push(summarizeRemoteInboundAudio(candidate))
+      remoteInboundAudio.push(summarizeRemoteInboundAudio(candidate));
     }
   }
 
@@ -83,33 +84,30 @@ export function createSafeVoicePeerStatsSummary(
     connectionState: normalizeEnum(input.connectionState, peerConnectionStates),
     iceConnectionState: normalizeEnum(
       input.iceConnectionState,
-      iceConnectionStates,
+      iceConnectionStates
     ),
     signalingState: normalizeEnum(input.signalingState, signalingStates),
     audioTransceivers: input.transceivers
       .filter(isAudioTransceiver)
       .map((transceiver) => ({
-        direction: normalizeEnum(
-          transceiver.direction,
-          transceiverDirections,
-        ),
+        direction: normalizeEnum(transceiver.direction, transceiverDirections),
         currentDirection: normalizeEnum(
           transceiver.currentDirection,
-          transceiverDirections,
+          transceiverDirections
         ),
         sender: summarizeTrack(transceiver.senderTrack),
-        receiver: summarizeTrack(transceiver.receiverTrack),
+        receiver: summarizeTrack(transceiver.receiverTrack)
       })),
     inboundAudio,
     outboundAudio,
-    remoteInboundAudio,
-  }
+    remoteInboundAudio
+  };
 }
 
 export function serializeSafeVoicePeerStatsSummary(
-  summary: ReturnType<typeof createSafeVoicePeerStatsSummary>,
+  summary: ReturnType<typeof createSafeVoicePeerStatsSummary>
 ) {
-  return JSON.stringify(summary)
+  return JSON.stringify(summary);
 }
 
 function summarizeInboundAudio(record: StatsRecord) {
@@ -117,16 +115,16 @@ function summarizeInboundAudio(record: StatsRecord) {
     packetsReceived: readFiniteNumber(record.packetsReceived),
     packetsLost: readFiniteNumber(record.packetsLost),
     bytesReceived: readFiniteNumber(record.bytesReceived),
-    totalAudioEnergy: readFiniteNumber(record.totalAudioEnergy),
-  }
+    totalAudioEnergy: readFiniteNumber(record.totalAudioEnergy)
+  };
 }
 
 function summarizeOutboundAudio(record: StatsRecord) {
   return {
     packetsSent: readFiniteNumber(record.packetsSent),
     bytesSent: readFiniteNumber(record.bytesSent),
-    totalAudioEnergy: readFiniteNumber(record.totalAudioEnergy),
-  }
+    totalAudioEnergy: readFiniteNumber(record.totalAudioEnergy)
+  };
 }
 
 function summarizeRemoteInboundAudio(record: StatsRecord) {
@@ -136,13 +134,13 @@ function summarizeRemoteInboundAudio(record: StatsRecord) {
     bytesReceived: readFiniteNumber(record.bytesReceived),
     totalAudioEnergy: readFiniteNumber(record.totalAudioEnergy),
     fractionLost: readFiniteNumber(record.fractionLost),
-    roundTripTime: readFiniteNumber(record.roundTripTime),
-  }
+    roundTripTime: readFiniteNumber(record.roundTripTime)
+  };
 }
 
 function summarizeTrack(track: VoicePeerStatsTrackInput | null | undefined) {
   if (!track) {
-    return null
+    return null;
   }
 
   return {
@@ -151,15 +149,15 @@ function summarizeTrack(track: VoicePeerStatsTrackInput | null | undefined) {
     readyState:
       track.readyState === 'live' || track.readyState === 'ended'
         ? track.readyState
-        : null,
-  }
+        : null
+  };
 }
 
 function isAudioTransceiver(transceiver: VoicePeerStatsTransceiverInput) {
   return (
     transceiver.senderTrack?.kind === 'audio' ||
     transceiver.receiverTrack?.kind === 'audio'
-  )
+  );
 }
 
 function isAudioRtpRecord(record: StatsRecord) {
@@ -168,26 +166,26 @@ function isAudioRtpRecord(record: StatsRecord) {
     record.type !== 'outbound-rtp' &&
     record.type !== 'remote-inbound-rtp'
   ) {
-    return false
+    return false;
   }
 
-  return record.kind === 'audio' || record.mediaType === 'audio'
+  return record.kind === 'audio' || record.mediaType === 'audio';
 }
 
 function isStatsRecord(value: unknown): value is StatsRecord {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function readFiniteNumber(value: unknown) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function normalizeEnum(value: unknown, allowed: ReadonlySet<string>) {
-  return typeof value === 'string' && allowed.has(value) ? value : null
+  return typeof value === 'string' && allowed.has(value) ? value : null;
 }
 
 function normalizeSample(value: unknown) {
   return typeof value === 'string' && safeSamplePattern.test(value)
     ? value
-    : 'event'
+    : 'event';
 }

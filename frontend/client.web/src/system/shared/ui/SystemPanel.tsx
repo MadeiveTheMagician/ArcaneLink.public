@@ -1,11 +1,12 @@
-import type { HTMLAttributes, ReactNode } from 'react'
-import styles from './SystemPanel.module.css'
+import type { HTMLAttributes, ReactNode } from 'react';
+
+import styles from './SystemPanel.module.css';
 
 type SystemPanelProps = HTMLAttributes<HTMLElement> & {
-  children?: ReactNode
-  padding?: 'compact' | 'comfortable' | 'spacious'
-  tone?: 'raised' | 'flat'
-}
+  children?: ReactNode;
+  padding?: 'compact' | 'comfortable' | 'spacious';
+  tone?: 'raised' | 'flat';
+};
 
 export function SystemPanel({
   children,
@@ -21,10 +22,12 @@ export function SystemPanel({
         styles.panel,
         styles[padding],
         tone === 'flat' ? styles.flat : '',
-        className,
-      ].filter(Boolean).join(' ')}
+        className
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       {children}
     </section>
-  )
+  );
 }

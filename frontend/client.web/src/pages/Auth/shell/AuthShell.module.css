@@ -27,15 +27,20 @@
   --theme-backdrop-glow: rgba(103, 63, 237, 0.22);
   --theme-glow: rgba(123, 97, 255, 0.24);
   --theme-glow-strong: rgba(132, 92, 255, 0.42);
-  --theme-surface-accent: linear-gradient(135deg, rgba(101, 74, 223, 0.92), rgba(56, 169, 224, 0.72));
+  --theme-surface-accent: linear-gradient(
+    135deg,
+    rgba(101, 74, 223, 0.92),
+    rgba(56, 169, 224, 0.72)
+  );
   --authPanel-width: min(520px, 36vw);
   --auth-line: color-mix(in srgb, var(--theme-accent), transparent 70%);
   --auth-line-strong: var(--theme-border-accent);
   --auth-muted: rgba(177, 184, 216, 0.72);
   --auth-text: rgba(246, 248, 255, 0.96);
-  --auth-fantasy-font: "Bree Cyrillic Variable", "Fritz Quadrata Cyrillic",
-    "FrizQuadrata", "Cinzel", "Cormorant Garamond", Georgia, serif;
-  --auth-art: url("/auth/login-bg.webp");
+  --auth-fantasy-font:
+    'Bree Cyrillic Variable', 'Fritz Quadrata Cyrillic', 'FrizQuadrata',
+    'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  --auth-art: url('/auth/login-bg.webp');
   --auth-art-height: 100svh;
   --auth-art-left: max(-160px, -7vw);
   --auth-art-bottom: 0px;
@@ -51,7 +56,11 @@
   font-family: var(--auth-fantasy-font);
   background-color: #020613;
   background-image:
-    radial-gradient(ellipse at 78% 50%, var(--theme-backdrop-glow), transparent 36%),
+    radial-gradient(
+      ellipse at 78% 50%,
+      var(--theme-backdrop-glow),
+      transparent 36%
+    ),
     linear-gradient(90deg, #020613, #030716 62%, #020613);
   background-position: center;
   background-repeat: no-repeat;
@@ -61,16 +70,26 @@
 .authPage::after {
   position: absolute;
   inset: 0;
-  content: "";
+  content: '';
   pointer-events: none;
   z-index: 1;
   background:
-    linear-gradient(90deg, transparent 0%, transparent 42%, rgba(2, 6, 18, 0.38) 60%, #020613 82%),
-    radial-gradient(ellipse at 78% 52%, var(--theme-backdrop-glow), transparent 34%);
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 42%,
+      rgba(2, 6, 18, 0.38) 60%,
+      #020613 82%
+    ),
+    radial-gradient(
+      ellipse at 78% 52%,
+      var(--theme-backdrop-glow),
+      transparent 34%
+    );
 }
 
 .authPageLogin {
-  --auth-art: url("/auth/login-bg.webp");
+  --auth-art: url('/auth/login-bg.webp');
   --auth-art-height: 100svh;
   --auth-art-left: max(-240px, -11vw);
   justify-items: end;
@@ -78,7 +97,7 @@
 
 .authPageRegister {
   --authPanel-width: min(670px, 40vw);
-  --auth-art: url("/auth/register-bg.webp");
+  --auth-art: url('/auth/register-bg.webp');
   --auth-art-height: 100svh;
   --auth-art-left: max(-10px, -4vw);
 }
@@ -129,9 +148,14 @@
   bottom: -8px;
   left: 0;
   height: 2px;
-  content: "";
+  content: '';
   opacity: 0;
-  background: linear-gradient(90deg, transparent, var(--theme-accent), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--theme-accent),
+    transparent
+  );
   box-shadow: 0 0 18px color-mix(in srgb, var(--theme-accent), transparent 30%);
 }
 
@@ -226,15 +250,35 @@
     overflow: hidden;
     padding: 12px 18px 12px;
     background-image:
-      linear-gradient(180deg, transparent 0 30%, rgba(2, 6, 18, 0.42) 45%, #020613 64%),
-      radial-gradient(ellipse at 50% 22%, var(--theme-backdrop-glow), transparent 42%),
+      linear-gradient(
+        180deg,
+        transparent 0 30%,
+        rgba(2, 6, 18, 0.42) 45%,
+        #020613 64%
+      ),
+      radial-gradient(
+        ellipse at 50% 22%,
+        var(--theme-backdrop-glow),
+        transparent 42%
+      ),
       linear-gradient(180deg, #020613, #030716 64%, #020613);
   }
 
   .authPage::after {
     background:
-      linear-gradient(180deg, transparent 0 26%, rgba(2, 6, 18, 0.32) 42%, #020613 66%),
-      linear-gradient(90deg, rgba(2, 6, 18, 0.86), transparent 24%, transparent 76%, rgba(2, 6, 18, 0.86));
+      linear-gradient(
+        180deg,
+        transparent 0 26%,
+        rgba(2, 6, 18, 0.32) 42%,
+        #020613 66%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(2, 6, 18, 0.86),
+        transparent 24%,
+        transparent 76%,
+        rgba(2, 6, 18, 0.86)
+      );
   }
 
   .authPageLogin,

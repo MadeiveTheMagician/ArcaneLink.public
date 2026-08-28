@@ -1,19 +1,20 @@
 import {
-  useLayoutEffect,
-  useRef,
   type AnimationEvent,
   type HTMLAttributes,
   type ReactNode,
-} from 'react'
-import styles from './WorkspaceTransitionSurface.module.css'
+  useLayoutEffect,
+  useRef
+} from 'react';
+
+import styles from './WorkspaceTransitionSurface.module.css';
 
 type WorkspaceTransitionSurfaceProps = Omit<
   HTMLAttributes<HTMLDivElement>,
   'children'
 > & {
-  children: ReactNode
-  transitionKey: string
-}
+  children: ReactNode;
+  transitionKey: string;
+};
 
 export function WorkspaceTransitionSurface({
   children,
@@ -22,36 +23,36 @@ export function WorkspaceTransitionSurface({
   transitionKey,
   ...props
 }: WorkspaceTransitionSurfaceProps) {
-  const surfaceRef = useRef<HTMLDivElement>(null)
-  const previousTransitionKeyRef = useRef(transitionKey)
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  const previousTransitionKeyRef = useRef(transitionKey);
 
   useLayoutEffect(() => {
     if (previousTransitionKeyRef.current === transitionKey) {
-      return
+      return;
     }
 
-    previousTransitionKeyRef.current = transitionKey
+    previousTransitionKeyRef.current = transitionKey;
 
-    const surface = surfaceRef.current
+    const surface = surfaceRef.current;
     if (!surface) {
-      return
+      return;
     }
 
-    surface.classList.remove(styles.entering)
-    void surface.offsetWidth
-    surface.classList.add(styles.entering)
-  }, [transitionKey])
+    surface.classList.remove(styles.entering);
+    void surface.offsetWidth;
+    surface.classList.add(styles.entering);
+  }, [transitionKey]);
 
   function handleAnimationEnd(event: AnimationEvent<HTMLDivElement>) {
-    const target = event.target
+    const target = event.target;
     if (
       target instanceof HTMLElement &&
       target.dataset.workspaceTransitionContent === 'true'
     ) {
-      event.currentTarget.classList.remove(styles.entering)
+      event.currentTarget.classList.remove(styles.entering);
     }
 
-    onAnimationEnd?.(event)
+    onAnimationEnd?.(event);
   }
 
   return (
@@ -64,5 +65,5 @@ export function WorkspaceTransitionSurface({
     >
       {children}
     </div>
-  )
+  );
 }

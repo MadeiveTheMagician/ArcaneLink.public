@@ -22,7 +22,7 @@
 }
 
 .pinnedToggle:hover,
-.pinnedToggle[aria-pressed="true"] {
+.pinnedToggle[aria-pressed='true'] {
   color: var(--color-text);
   filter: drop-shadow(0 0 12px var(--theme-glow-strong));
   transform: scale(1.06);
@@ -33,8 +33,7 @@
   width: 16px;
   height: 16px;
   place-items: center;
-  filter:
-    drop-shadow(0 0 5px var(--theme-glow-strong))
+  filter: drop-shadow(0 0 5px var(--theme-glow-strong))
     drop-shadow(0 0 10px var(--theme-glow));
 }
 

@@ -47,47 +47,48 @@
   min-height: 0;
 }
 
-.privateChatColumn :global([class*="textFeed"]) {
+.privateChatColumn :global([class*='textFeed']) {
   scrollbar-color: var(--theme-scrollbar-thumb) var(--theme-scrollbar-track);
   scrollbar-width: thin;
   scrollbar-gutter: stable;
 }
 
-.privateChatColumn :global([class*="textFeed"]::-webkit-scrollbar) {
+.privateChatColumn :global([class*='textFeed']::-webkit-scrollbar) {
   width: 18px;
 }
 
-.privateChatColumn :global([class*="textFeed"]::-webkit-scrollbar-track) {
+.privateChatColumn :global([class*='textFeed']::-webkit-scrollbar-track) {
   border-radius: 999px;
   margin: 14px 4px;
-  background:
-    linear-gradient(180deg, var(--theme-scrollbar-track), color-mix(in srgb, var(--theme-scrollbar-track), #000 16%));
+  background: linear-gradient(
+    180deg,
+    var(--theme-scrollbar-track),
+    color-mix(in srgb, var(--theme-scrollbar-track), #000 16%)
+  );
 }
 
-.privateChatColumn :global([class*="textFeed"]::-webkit-scrollbar-thumb) {
+.privateChatColumn :global([class*='textFeed']::-webkit-scrollbar-thumb) {
   min-height: 72px;
   border: 5px solid transparent;
   border-radius: 999px;
-  background:
-    var(--theme-surface-accent-strong)
-      padding-box;
+  background: var(--theme-surface-accent-strong) padding-box;
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 80%),
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent-light), transparent 80%),
     0 0 22px var(--theme-glow-strong),
     0 0 64px var(--theme-glow);
 }
 
-.privateChatColumn :global([class*="textFeed"]::-webkit-scrollbar-thumb:hover) {
-  background:
-    var(--theme-surface-accent)
-      padding-box;
+.privateChatColumn :global([class*='textFeed']::-webkit-scrollbar-thumb:hover) {
+  background: var(--theme-surface-accent) padding-box;
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 66%),
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent-light), transparent 66%),
     0 0 28px var(--theme-glow-strong),
     0 0 84px var(--theme-glow);
 }
 
-.privateChatColumn :global([class*="textSurface"]) {
+.privateChatColumn :global([class*='textSurface']) {
   position: relative;
   display: flex;
   height: 100%;
@@ -96,7 +97,7 @@
   overflow: hidden;
 }
 
-.privateChatColumn :global([class*="textMain"]) {
+.privateChatColumn :global([class*='textMain']) {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
@@ -104,12 +105,12 @@
   flex: 1 1 auto;
 }
 
-.privateChatColumn :global([class*="textMain"] > header),
-.privateChatColumn :global([class*="textComposer"]) {
+.privateChatColumn :global([class*='textMain'] > header),
+.privateChatColumn :global([class*='textComposer']) {
   position: static;
 }
 
-.privateChatColumn :global([class*="textFeed"]) {
+.privateChatColumn :global([class*='textFeed']) {
   min-height: 0;
   max-height: none;
   overflow-x: hidden;
@@ -117,7 +118,7 @@
   overscroll-behavior: contain;
 }
 
-.privateChatColumn :global([class*="textComposer"]) {
+.privateChatColumn :global([class*='textComposer']) {
   z-index: 3;
   min-height: var(--server-composer-height);
   margin: 0 18px 10px;
@@ -127,7 +128,7 @@
   backdrop-filter: none;
 }
 
-.privateChatColumn :global([class*="textComposer"] textarea) {
+.privateChatColumn :global([class*='textComposer'] textarea) {
   font-size: calc(14px * var(--profile-font-scale));
   line-height: 1.4;
 }
@@ -154,7 +155,7 @@
   bottom: 0;
   left: 50%;
   width: 1px;
-  content: "";
+  content: '';
   background: var(--theme-border-soft);
   box-shadow: none;
   transform: translateX(-50%);
@@ -194,16 +195,17 @@
 }
 
 @media (max-width: 380px) {
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textComposer"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textComposer']) {
     right: 10px;
     left: 10px;
   }
 }
 
-
-
 @media (max-width: 760px) {
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateSpaceLayout {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateSpaceLayout {
     --server-composer-control-height: 32px;
     --server-composer-padding-start: 8px;
     --server-composer-padding-end: 8px;
@@ -213,15 +215,25 @@
     width: 100%;
     height: 100%;
     background:
-      radial-gradient(circle at 72% 0%, var(--theme-backdrop-glow), transparent 34%),
-      linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+      radial-gradient(
+        circle at 72% 0%,
+        var(--theme-backdrop-glow),
+        transparent 34%
+      ),
+      linear-gradient(
+        180deg,
+        var(--theme-frame-bg),
+        var(--theme-control-bg-strong)
+      );
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateInfoResizer {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateInfoResizer {
     display: none;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn {
     min-width: 0;
     max-width: 100%;
     width: 100%;
@@ -229,7 +241,8 @@
     overflow: hidden;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatBack {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatBack {
     display: grid;
     width: 38px;
     min-height: 38px;
@@ -242,7 +255,9 @@
     font: inherit;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatBack svg {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatBack
+    svg {
     display: block;
     width: 25px;
     height: 25px;
@@ -251,10 +266,14 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 2.15;
-    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--theme-accent), transparent 62%));
+    filter: drop-shadow(
+      0 0 8px color-mix(in srgb, var(--theme-accent), transparent 62%)
+    );
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="chatSurface"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='chatSurface']) {
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -263,15 +282,21 @@
     background: transparent;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textSurface"]),
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textSurface']),
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textMain']) {
     width: 100%;
     min-width: 0;
     max-width: 100%;
     overflow-x: hidden;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"] > header) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textMain'] > header) {
     position: relative;
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr) auto;
@@ -286,11 +311,16 @@
     min-height: var(--mobile-nav-panel-height, 54px);
     border: 0;
     padding: 8px 14px 6px 8px;
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-raised), transparent 10%), transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-raised), transparent 10%),
+      transparent
+    );
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"] > header)::after {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textMain'] > header)::after {
     position: absolute;
     right: 0;
     bottom: -26px;
@@ -298,17 +328,20 @@
     z-index: 1;
     height: 26px;
     pointer-events: none;
-    content: "";
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--theme-frame-bg), transparent 4%) 0%,
-        color-mix(in srgb, var(--theme-frame-bg), transparent 48%) 48%,
-        transparent 100%
-      );
+    content: '';
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-frame-bg), transparent 4%) 0%,
+      color-mix(in srgb, var(--theme-frame-bg), transparent 48%) 48%,
+      transparent 100%
+    );
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"] > header > div:not([class*="messageHeaderActions"])) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global(
+      [class*='textMain'] > header > div:not([class*='messageHeaderActions'])
+    ) {
     display: flex;
     align-items: center;
     flex: 1 1 auto;
@@ -317,21 +350,32 @@
     margin-right: 6px;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"] > header > div:not([class*="messageHeaderActions"]) strong) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global(
+      [class*='textMain']
+        > header
+        > div:not([class*='messageHeaderActions'])
+        strong
+    ) {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="messageHeaderActions"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='messageHeaderActions']) {
     display: inline-flex;
     flex: 0 0 auto;
     justify-self: end;
     margin-left: 0;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textFeed"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textFeed']) {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
@@ -340,18 +384,23 @@
     overflow-y: auto;
     padding-bottom: calc(
       var(--mobile-nav-panel-height, 54px) +
-      var(--mobile-voice-dock-reserve, 0px) +
-      28px +
-      env(safe-area-inset-bottom)
+        var(--mobile-voice-dock-reserve, 0px) + 28px +
+        env(safe-area-inset-bottom)
     );
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="messageDayDivider"]),
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="messageAuthorDivider"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='messageDayDivider']),
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='messageAuthorDivider']) {
     max-width: 100%;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="messageRow"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='messageRow']) {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
@@ -362,33 +411,43 @@
     padding-left: 16px;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="messageContent"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='messageContent']) {
     min-width: 0;
     max-width: 100%;
     overflow: visible;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="messageAttachments"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='messageAttachments']) {
     grid-template-columns: minmax(0, 1fr);
     width: 100%;
     max-width: 100%;
     overflow: visible;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="messageImageAttachment"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='messageImageAttachment']) {
     box-sizing: border-box;
     width: min(100%, 360px);
     max-width: 100%;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="messageImageAttachment"] img) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='messageImageAttachment'] img) {
     display: block;
     width: 100%;
     height: auto;
     max-width: 100%;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textComposer"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textComposer']) {
     position: fixed;
     right: 18px;
     bottom: calc(8px + env(safe-area-inset-bottom));
@@ -400,11 +459,15 @@
     min-height: var(--mobile-nav-panel-height, 54px);
     height: auto;
     margin: 0;
-    border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 54%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-border-control), transparent 54%);
     border-radius: 14px;
     padding: 5px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
     box-shadow:
       0 12px 28px rgba(0, 0, 0, 0.34),
       0 0 14px var(--theme-glow),
@@ -412,12 +475,18 @@
     animation: composerSlideUp 220ms cubic-bezier(0.2, 0.82, 0.2, 1) both;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textComposer"] textarea),
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textComposer"] button) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textComposer'] textarea),
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textComposer'] button) {
     min-height: 42px;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textComposer"] textarea) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textComposer'] textarea) {
     box-sizing: border-box;
     height: 42px;
     min-height: 42px;
@@ -430,8 +499,12 @@
     align-self: center;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="spaceViewport"]),
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textChannel"]) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='spaceViewport']),
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateChatColumn
+    :global([class*='textChannel']) {
     height: 100%;
     min-height: 0;
   }

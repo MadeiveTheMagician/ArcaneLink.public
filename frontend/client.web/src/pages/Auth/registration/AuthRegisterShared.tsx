@@ -1,46 +1,53 @@
-import type { ReactNode } from 'react'
-import { authCopy, SystemIcon, type SystemIconName } from '../../../system/shared/index'
-import type { AuthRequirement } from './AuthPageValidation'
+import type { ReactNode } from 'react';
+
+import {
+  SystemIcon,
+  type SystemIconName,
+  authCopy
+} from '../../../system/shared/index';
+import { AuthPasswordField } from '../fields/AuthPasswordField';
+import type { RegisterForm } from '../model/AuthPageModel';
+import type { AuthRequirement } from './AuthPageValidation';
 import {
   getDisplayNameRequirements,
   getLoginRequirements,
-  getPasswordRequirements,
-} from './AuthPageValidation'
-import type { RegisterForm } from '../model/AuthPageModel'
-import { AuthPasswordField } from '../fields/AuthPasswordField'
-import formStyles from '../login/AuthFormControls.module.css'
-import styles from './AuthRegisterForm.module.css'
+  getPasswordRequirements
+} from './AuthPageValidation';
+
+import formStyles from '../login/AuthFormControls.module.css';
+import styles from './AuthRegisterForm.module.css';
 
 export const requirementTitles = {
   login: authCopy.requirements.login,
   displayName: authCopy.requirements.displayName,
-  password: authCopy.requirements.password,
-}
+  password: authCopy.requirements.password
+};
 
-export const registerStepRequirementTitles: Record<keyof RegisterForm, string> = {
-  login: authCopy.requirements.login,
-  displayName: authCopy.requirements.displayName,
-  email: authCopy.requirements.email,
-  password: authCopy.requirements.password,
-}
+export const registerStepRequirementTitles: Record<keyof RegisterForm, string> =
+  {
+    login: authCopy.requirements.login,
+    displayName: authCopy.requirements.displayName,
+    email: authCopy.requirements.email,
+    password: authCopy.requirements.password
+  };
 
 export function getRegisterStepRequirements(
   registerForm: RegisterForm,
-  key: keyof RegisterForm,
+  key: keyof RegisterForm
 ): AuthRequirement[] {
-  if (key === 'login') return getLoginRequirements(registerForm.login)
+  if (key === 'login') return getLoginRequirements(registerForm.login);
   if (key === 'displayName') {
-    return getDisplayNameRequirements(registerForm.displayName)
+    return getDisplayNameRequirements(registerForm.displayName);
   }
-  if (key === 'password') return getPasswordRequirements(registerForm.password)
+  if (key === 'password') return getPasswordRequirements(registerForm.password);
 
   return [
     {
       id: 'email-required',
       label: authCopy.fields.emailComplete,
-      isMet: registerForm.email.trim().length > 0,
-    },
-  ]
+      isMet: registerForm.email.trim().length > 0
+    }
+  ];
 }
 
 export function RegisterWizardField({
@@ -48,13 +55,13 @@ export function RegisterWizardField({
   registerForm,
   isPasswordVisible,
   onChange,
-  onPasswordVisibilityChange,
+  onPasswordVisibilityChange
 }: {
-  stepKey: keyof RegisterForm
-  registerForm: RegisterForm
-  isPasswordVisible: boolean
-  onChange: (form: RegisterForm) => void
-  onPasswordVisibilityChange: (isVisible: boolean) => void
+  stepKey: keyof RegisterForm;
+  registerForm: RegisterForm;
+  isPasswordVisible: boolean;
+  onChange: (form: RegisterForm) => void;
+  onPasswordVisibilityChange: (isVisible: boolean) => void;
 }) {
   if (stepKey === 'password') {
     return (
@@ -70,7 +77,7 @@ export function RegisterWizardField({
         }
         onVisibilityChange={onPasswordVisibilityChange}
       />
-    )
+    );
   }
 
   const field = {
@@ -79,23 +86,23 @@ export function RegisterWizardField({
       label: authCopy.fields.login,
       autoComplete: 'username',
       placeholder: authCopy.fields.loginRegisterPlaceholder,
-      type: 'text',
+      type: 'text'
     },
     displayName: {
       icon: 'user' as const,
       label: authCopy.fields.displayName,
       autoComplete: 'name',
       placeholder: authCopy.fields.displayNamePlaceholder,
-      type: 'text',
+      type: 'text'
     },
     email: {
       icon: 'mail' as const,
       label: 'Email',
       autoComplete: 'email',
       placeholder: 'Email',
-      type: 'email',
-    },
-  }[stepKey]
+      type: 'email'
+    }
+  }[stepKey];
 
   return (
     <label className={formStyles.authField}>
@@ -114,17 +121,17 @@ export function RegisterWizardField({
         }
       />
     </label>
-  )
+  );
 }
 
 export function ValidatedRegisterField({
   icon,
   label,
-  children,
+  children
 }: {
-  icon: SystemIconName
-  label: string
-  children: ReactNode
+  icon: SystemIconName;
+  label: string;
+  children: ReactNode;
 }) {
   return (
     <div className={styles.authValidatedField}>
@@ -136,17 +143,17 @@ export function ValidatedRegisterField({
         {children}
       </label>
     </div>
-  )
+  );
 }
 
 export function RegisterRequirementsPanel({
   title,
   requirements,
-  isVisible,
+  isVisible
 }: {
-  title: string
-  requirements: AuthRequirement[]
-  isVisible: boolean
+  title: string;
+  requirements: AuthRequirement[];
+  isVisible: boolean;
 }) {
   return (
     <aside
@@ -177,5 +184,5 @@ export function RegisterRequirementsPanel({
         ))}
       </ul>
     </aside>
-  )
+  );
 }

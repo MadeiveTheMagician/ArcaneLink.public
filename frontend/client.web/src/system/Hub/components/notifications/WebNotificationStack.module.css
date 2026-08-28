@@ -28,18 +28,26 @@
   padding: 14px;
   color: var(--color-text);
   background:
-    linear-gradient(110deg, color-mix(in srgb, var(--notification-accent), var(--theme-frame-bg-strong) 92%), var(--theme-frame-bg-strong) 58%),
+    linear-gradient(
+      110deg,
+      color-mix(
+        in srgb,
+        var(--notification-accent),
+        var(--theme-frame-bg-strong) 92%
+      ),
+      var(--theme-frame-bg-strong) 58%
+    ),
     var(--theme-frame-bg-strong);
   box-shadow:
     0 18px 46px color-mix(in srgb, #000, transparent 40%),
     -4px 0 10px color-mix(in srgb, var(--notification-accent), transparent 42%),
     -8px 0 20px color-mix(in srgb, var(--notification-accent), transparent 76%);
-  animation: notification-enter 220ms cubic-bezier(.2, .8, .2, 1) both;
+  animation: notification-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   pointer-events: auto;
 }
 
 .closing {
-  animation: notification-exit 220ms cubic-bezier(.4, 0, 1, 1) both;
+  animation: notification-exit 220ms cubic-bezier(0.4, 0, 1, 1) both;
   pointer-events: none;
 }
 
@@ -68,7 +76,8 @@
   width: 52px;
   height: 52px;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--notification-accent), transparent 72%);
+  border: 1px solid
+    color-mix(in srgb, var(--notification-accent), transparent 72%);
   border-radius: 8px;
   color: var(--notification-accent);
   background: color-mix(in srgb, var(--notification-accent), transparent 88%);
@@ -225,7 +234,7 @@
 @keyframes notification-exit {
   to {
     opacity: 0;
-    transform: translate3d(32px, 0, 0) scale(.98);
+    transform: translate3d(32px, 0, 0) scale(0.98);
   }
 }
 

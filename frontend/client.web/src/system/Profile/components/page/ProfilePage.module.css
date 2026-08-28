@@ -9,29 +9,31 @@
   border: 1px solid var(--theme-section-border);
   padding: 0;
   color: var(--color-text);
-  background-image:
-    var(--theme-arcane-backdrop),
-    var(--theme-profile-bg-image);
+  background-image: var(--theme-arcane-backdrop), var(--theme-profile-bg-image);
   background-position:
     center,
     center top;
-  background-size:
-    cover,
-    cover;
-  background-repeat:
-    no-repeat,
-    no-repeat;
+  background-size: cover, cover;
+  background-repeat: no-repeat, no-repeat;
   background-blend-mode: normal, normal;
   background-color: var(--profile-surface-panel);
   box-shadow: none;
   font-family: var(--profile-fantasy-font);
 }
 
-:global(html[data-system-theme-assets="none"]) .profileCard {
+:global(html[data-system-theme-assets='none']) .profileCard {
   background:
     var(--theme-arcane-backdrop),
-    radial-gradient(circle at 82% 18%, var(--theme-backdrop-glow), transparent 32%),
-    linear-gradient(135deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+    radial-gradient(
+      circle at 82% 18%,
+      var(--theme-backdrop-glow),
+      transparent 32%
+    ),
+    linear-gradient(
+      135deg,
+      var(--theme-frame-bg),
+      var(--theme-control-bg-strong)
+    );
 }
 
 .profileCard::before {
@@ -39,10 +41,18 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  content: "";
+  content: '';
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-bg), transparent 84%), transparent 48%),
-    radial-gradient(circle at 76% 26%, color-mix(in srgb, var(--theme-accent), transparent 92%), transparent 30%);
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-bg), transparent 84%),
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 76% 26%,
+      color-mix(in srgb, var(--theme-accent), transparent 92%),
+      transparent 30%
+    );
   opacity: 0.76;
 }
 
@@ -103,7 +113,7 @@
   z-index: 0;
   border-radius: 22px;
   background: var(--profile-avatar-glow-image) center / cover no-repeat;
-  content: "";
+  content: '';
   filter: blur(18px) saturate(2.4);
   opacity: 0.46;
   pointer-events: none;
@@ -120,13 +130,12 @@
   z-index: 2;
   border-radius: 17px;
   padding: 3px;
-  background:
-    linear-gradient(
-      135deg,
-      rgb(var(--profile-avatar-accent, 128, 128, 128)),
-      rgba(var(--profile-avatar-accent, 128, 128, 128), 0.54)
-    );
-  content: "";
+  background: linear-gradient(
+    135deg,
+    rgb(var(--profile-avatar-accent, 128, 128, 128)),
+    rgba(var(--profile-avatar-accent, 128, 128, 128), 0.54)
+  );
+  content: '';
   box-shadow:
     0 0 16px rgba(var(--profile-avatar-accent, 128, 128, 128), 0.34),
     0 0 28px rgba(var(--profile-avatar-accent, 128, 128, 128), 0.2);
@@ -278,7 +287,8 @@
 }
 
 .profileMeta em {
-  border: 1px solid color-mix(in srgb, var(--theme-border-accent), transparent 36%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-border-accent), transparent 36%);
   border-radius: 999px;
   padding: 3px 8px;
   color: var(--color-text);
@@ -304,11 +314,21 @@
 .profileBanner {
   z-index: 2;
   min-height: 0;
-  border-top: 1px solid color-mix(in srgb, var(--theme-border-accent), transparent 54%);
-  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-accent), transparent 54%);
+  border-top: 1px solid
+    color-mix(in srgb, var(--theme-border-accent), transparent 54%);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--theme-border-accent), transparent 54%);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 78%), transparent 52%),
-    radial-gradient(circle at 78% 36%, var(--theme-backdrop-glow), transparent 36%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 78%),
+      transparent 52%
+    ),
+    radial-gradient(
+      circle at 78% 36%,
+      var(--theme-backdrop-glow),
+      transparent 36%
+    ),
     var(--theme-control-bg-strong);
   background-position: center;
   background-repeat: no-repeat;
@@ -338,8 +358,11 @@
   border: 1px solid var(--theme-section-border);
   border-radius: 12px;
   padding: 18px;
-  background:
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg));
+  background: linear-gradient(
+    180deg,
+    var(--theme-frame-bg),
+    var(--theme-control-bg)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     0 18px 46px rgba(0, 0, 0, 0.18);
@@ -375,7 +398,11 @@
   border-radius: 7px;
   color: var(--color-rune);
   background:
-    radial-gradient(circle at 35% 28%, var(--theme-glow-strong), transparent 30%),
+    radial-gradient(
+      circle at 35% 28%,
+      var(--theme-glow-strong),
+      transparent 30%
+    ),
     var(--theme-surface-raised);
   box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.54);
   font-family: Georgia, serif;
@@ -399,7 +426,7 @@
 }
 
 .runeGrid span.locked::after {
-  content: "Lock";
+  content: 'Lock';
   color: var(--theme-text-faint);
   font-size: 12px;
   font-family: inherit;

@@ -1,8 +1,9 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
+
 import {
   createSafeVoicePeerStatsSummary,
-  serializeSafeVoicePeerStatsSummary,
-} from '../../src/system/Server/hooks/voice/voicePeerStatsSummary'
+  serializeSafeVoicePeerStatsSummary
+} from '../../src/system/Server/hooks/voice/voicePeerStatsSummary';
 
 test.describe('safe voice peer stats summary', () => {
   test('keeps audio direction, track state and RTP counters', () => {
@@ -19,21 +20,21 @@ test.describe('safe voice peer stats summary', () => {
             kind: 'audio',
             enabled: true,
             muted: false,
-            readyState: 'live',
+            readyState: 'live'
           },
           receiverTrack: {
             kind: 'audio',
             enabled: true,
             muted: true,
-            readyState: 'live',
-          },
+            readyState: 'live'
+          }
         },
         {
           direction: 'sendrecv',
           currentDirection: 'recvonly',
           senderTrack: { kind: 'video', readyState: 'live' },
-          receiverTrack: { kind: 'video', readyState: 'live' },
-        },
+          receiverTrack: { kind: 'video', readyState: 'live' }
+        }
       ],
       stats: [
         {
@@ -42,14 +43,14 @@ test.describe('safe voice peer stats summary', () => {
           packetsReceived: 12,
           packetsLost: 1,
           bytesReceived: 1_024,
-          totalAudioEnergy: 0.25,
+          totalAudioEnergy: 0.25
         },
         {
           type: 'outbound-rtp',
           mediaType: 'audio',
           packetsSent: 20,
           bytesSent: 2_048,
-          totalAudioEnergy: 0.75,
+          totalAudioEnergy: 0.75
         },
         {
           type: 'remote-inbound-rtp',
@@ -59,16 +60,16 @@ test.describe('safe voice peer stats summary', () => {
           bytesReceived: 1_900,
           totalAudioEnergy: 0.7,
           fractionLost: 0.05,
-          roundTripTime: 0.08,
+          roundTripTime: 0.08
         },
         {
           type: 'inbound-rtp',
           kind: 'video',
           packetsReceived: 500,
-          bytesReceived: 900_000,
-        },
-      ],
-    })
+          bytesReceived: 900_000
+        }
+      ]
+    });
 
     expect(summary).toEqual({
       sample: 'connected+5000ms',
@@ -80,23 +81,23 @@ test.describe('safe voice peer stats summary', () => {
           direction: 'sendrecv',
           currentDirection: 'sendrecv',
           sender: { enabled: true, muted: false, readyState: 'live' },
-          receiver: { enabled: true, muted: true, readyState: 'live' },
-        },
+          receiver: { enabled: true, muted: true, readyState: 'live' }
+        }
       ],
       inboundAudio: [
         {
           packetsReceived: 12,
           packetsLost: 1,
           bytesReceived: 1_024,
-          totalAudioEnergy: 0.25,
-        },
+          totalAudioEnergy: 0.25
+        }
       ],
       outboundAudio: [
         {
           packetsSent: 20,
           bytesSent: 2_048,
-          totalAudioEnergy: 0.75,
-        },
+          totalAudioEnergy: 0.75
+        }
       ],
       remoteInboundAudio: [
         {
@@ -105,11 +106,11 @@ test.describe('safe voice peer stats summary', () => {
           bytesReceived: 1_900,
           totalAudioEnergy: 0.7,
           fractionLost: 0.05,
-          roundTripTime: 0.08,
-        },
-      ],
-    })
-  })
+          roundTripTime: 0.08
+        }
+      ]
+    });
+  });
 
   test('serializes only allowlisted fields and discards sensitive metadata', () => {
     const summary = createSafeVoicePeerStatsSummary({
@@ -127,10 +128,10 @@ test.describe('safe voice peer stats summary', () => {
             muted: false,
             readyState: 'live',
             label: 'Private microphone',
-            deviceId: 'device-secret',
+            deviceId: 'device-secret'
           } as never,
-          receiverTrack: { kind: 'audio', readyState: 'live' },
-        },
+          receiverTrack: { kind: 'audio', readyState: 'live' }
+        }
       ],
       stats: [
         {
@@ -144,20 +145,20 @@ test.describe('safe voice peer stats summary', () => {
           sdp: 'v=0 secret',
           jwt: 'secret-token',
           codecId: 'codec-secret',
-          trackIdentifier: 'track-secret',
+          trackIdentifier: 'track-secret'
         },
         {
           type: 'local-candidate',
           address: '198.51.100.7',
-          deviceId: 'device-secret',
-        },
-      ],
-    })
-    const serialized = serializeSafeVoicePeerStatsSummary(summary)
+          deviceId: 'device-secret'
+        }
+      ]
+    });
+    const serialized = serializeSafeVoicePeerStatsSummary(summary);
 
-    expect(summary.sample).toBe('event')
-    expect(summary.connectionState).toBeNull()
-    expect(serialized).toContain('"packetsReceived":1')
+    expect(summary.sample).toBe('event');
+    expect(summary.connectionState).toBeNull();
+    expect(serialized).toContain('"packetsReceived":1');
     for (const secret of [
       'secret',
       '192.0.2.10',
@@ -168,9 +169,9 @@ test.describe('safe voice peer stats summary', () => {
       'sdp',
       'jwt',
       'codecId',
-      'trackIdentifier',
+      'trackIdentifier'
     ]) {
-      expect(serialized).not.toContain(secret)
+      expect(serialized).not.toContain(secret);
     }
-  })
-})
+  });
+});

@@ -6,7 +6,8 @@
   0%,
   100% {
     background: transparent;
-    box-shadow: inset 0 0 0 color-mix(in srgb, var(--theme-accent), transparent 100%);
+    box-shadow: inset 0 0 0
+      color-mix(in srgb, var(--theme-accent), transparent 100%);
   }
 
   18%,
@@ -36,15 +37,14 @@
 .messageDayDivider::after,
 .messageAuthorDivider {
   height: 1px;
-  content: "";
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      var(--theme-accent),
-      var(--theme-accent-light),
-      transparent
-    );
+  content: '';
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--theme-accent),
+    var(--theme-accent-light),
+    transparent
+  );
   box-shadow: 0 0 14px var(--theme-glow-strong);
 }
 
@@ -146,7 +146,11 @@
   border-radius: 12px;
   color: var(--theme-accent-contrast);
   background:
-    radial-gradient(circle at 32% 24%, var(--theme-glow-strong), transparent 58%),
+    radial-gradient(
+      circle at 32% 24%,
+      var(--theme-glow-strong),
+      transparent 58%
+    ),
     var(--theme-control-bg-strong);
   box-shadow: 0 0 18px var(--theme-glow);
   font-weight: 900;
@@ -245,7 +249,11 @@
 
 .messageReceiptRead,
 .messageReceiptRead > span {
-  color: color-mix(in srgb, var(--theme-accent-contrast), var(--theme-accent-light) 28%);
+  color: color-mix(
+    in srgb,
+    var(--theme-accent-contrast),
+    var(--theme-accent-light) 28%
+  );
   text-shadow:
     0 0 8px var(--theme-accent),
     0 0 13px var(--theme-glow-strong);
@@ -269,12 +277,11 @@
   align-items: center;
   gap: 4px;
   padding-left: 16px;
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in srgb, var(--theme-control-bg), transparent 8%) 35%
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--theme-control-bg), transparent 8%) 35%
+  );
   pointer-events: none;
 }
 
@@ -285,7 +292,7 @@
 }
 
 .messageBubble {
-  grid-template-areas: "avatar content edge";
+  grid-template-areas: 'avatar content edge';
   grid-template-columns: 42px minmax(0, 1fr) 42px;
   align-items: end;
   padding-top: 3px;
@@ -298,8 +305,11 @@
 }
 
 .messageBubble .messageContent {
-  --message-bubble-tail-background:
-    color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 8%);
+  --message-bubble-tail-background: color-mix(
+    in srgb,
+    var(--theme-control-bg-strong),
+    var(--theme-accent) 8%
+  );
   position: relative;
   grid-area: content;
   box-sizing: border-box;
@@ -308,14 +318,14 @@
   max-width: min(75%, 720px);
   justify-self: start;
   padding: 8px 11px;
-  border: 1px solid color-mix(in srgb, var(--theme-section-border), transparent 10%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-section-border), transparent 10%);
   border-radius: 12px;
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 8%),
-      var(--theme-control-bg)
-    );
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 8%),
+    var(--theme-control-bg)
+  );
   box-shadow:
     0 8px 20px color-mix(in srgb, var(--theme-page-bg), transparent 48%),
     inset 0 1px 0 color-mix(in srgb, white, transparent 94%);
@@ -332,25 +342,19 @@
   display: none;
   width: 14px;
   height: 18px;
-  content: "";
+  content: '';
   background: var(--message-bubble-tail-background);
-  filter:
-    drop-shadow(
-      -1px 1px 0
-      color-mix(in srgb, var(--theme-section-border), transparent 10%)
-    );
+  filter: drop-shadow(
+    -1px 1px 0 color-mix(in srgb, var(--theme-section-border), transparent 10%)
+  );
   pointer-events: none;
 }
 
 .messageBubbleExternalMedia .messageContent {
-  max-width:
-    min(
-      95%,
-      max(
-        720px,
-        calc(var(--message-bubble-media-width) + 24px)
-      )
-    );
+  max-width: min(
+    95%,
+    max(720px, calc(var(--message-bubble-media-width) + 24px))
+  );
 }
 
 .messageBubble:hover,
@@ -367,7 +371,7 @@
 }
 
 .messageBubbleRight {
-  grid-template-areas: "edge content avatar";
+  grid-template-areas: 'edge content avatar';
   grid-template-columns: 42px minmax(0, 1fr) 42px;
 }
 
@@ -382,18 +386,15 @@
 .messageBubbleRight.messageBubbleSequenceStart .messageContent::before {
   right: -13px;
   left: auto;
-  filter:
-    drop-shadow(
-      1px 1px 0
-      color-mix(in srgb, var(--theme-section-border), transparent 10%)
-    );
+  filter: drop-shadow(
+    1px 1px 0 color-mix(in srgb, var(--theme-section-border), transparent 10%)
+  );
 }
 
-@supports (clip-path: path("M 0 0 L 1 1")) {
+@supports (clip-path: path('M 0 0 L 1 1')) {
   .messageBubbleSequenceStart .messageContent::before {
     display: block;
-    clip-path:
-      path("M 14 0 C 13 7 10 13 1 17 C 7 17 12 15 14 11 Z");
+    clip-path: path('M 14 0 C 13 7 10 13 1 17 C 7 17 12 15 14 11 Z');
   }
 
   .messageBubbleRight.messageBubbleSequenceStart .messageContent::before {
@@ -402,15 +403,17 @@
 }
 
 .messageBubbleOwn .messageContent {
-  --message-bubble-tail-background:
-    color-mix(in srgb, var(--theme-accent), var(--theme-control-bg) 72%);
+  --message-bubble-tail-background: color-mix(
+    in srgb,
+    var(--theme-accent),
+    var(--theme-control-bg) 72%
+  );
   border-color: color-mix(in srgb, var(--theme-accent), transparent 58%);
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--theme-accent), var(--theme-control-bg) 72%),
-      color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 16%)
-    );
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--theme-accent), var(--theme-control-bg) 72%),
+    color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 16%)
+  );
 }
 
 .messageBubbleFullWidth .messageContent {
@@ -440,12 +443,12 @@
 }
 
 @media (max-width: 760px) {
-   :global(.profile-page.is-server-mode) .messageDayDivider,
-   :global(.profile-page.is-server-mode) .messageAuthorDivider {
+  :global(.profile-page.is-server-mode) .messageDayDivider,
+  :global(.profile-page.is-server-mode) .messageAuthorDivider {
     max-width: 100%;
   }
 
-   :global(.profile-page.is-server-mode) .messageRow {
+  :global(.profile-page.is-server-mode) .messageRow {
     box-sizing: border-box;
     width: 100%;
     min-width: 0;
@@ -456,32 +459,33 @@
     padding-left: 16px;
   }
 
-   :global(.profile-page.is-server-mode) .messageContent {
+  :global(.profile-page.is-server-mode) .messageContent {
     min-width: 0;
     max-width: 100%;
     overflow: visible;
-   }
+  }
 
-   :global(.profile-page.is-server-mode) .messageBubble .messageContent {
+  :global(.profile-page.is-server-mode) .messageBubble .messageContent {
     min-width: 0;
     max-width: min(86%, 620px);
   }
 
-   :global(.profile-page.is-server-mode) .messageBubble {
-    grid-template-areas: "avatar content edge";
+  :global(.profile-page.is-server-mode) .messageBubble {
+    grid-template-areas: 'avatar content edge';
     grid-template-columns: 42px minmax(0, 1fr) 42px;
   }
 
-   :global(.profile-page.is-server-mode) .messageBubbleFullWidth .messageContent {
+  :global(.profile-page.is-server-mode)
+    .messageBubbleFullWidth
+    .messageContent {
     width: fit-content;
     max-width: 100%;
   }
 
-   :global(.profile-page.is-server-mode) .messageBubbleRight {
-    grid-template-areas: "edge content avatar";
+  :global(.profile-page.is-server-mode) .messageBubbleRight {
+    grid-template-areas: 'edge content avatar';
     grid-template-columns: 42px minmax(0, 1fr) 42px;
   }
-
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -492,4 +496,3 @@
       background-color 160ms ease;
   }
 }
-

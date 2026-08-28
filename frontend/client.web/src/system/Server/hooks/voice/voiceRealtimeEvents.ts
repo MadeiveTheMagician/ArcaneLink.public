@@ -1,6 +1,8 @@
-import type * as signalR from '@microsoft/signalr'
+import type * as signalR from '@microsoft/signalr';
 
-export function registerIgnoredRealtimeEvents(connection: signalR.HubConnection) {
+export function registerIgnoredRealtimeEvents(
+  connection: signalR.HubConnection
+) {
   const eventNames = [
     'FriendRequestReceived',
     'FriendRequestUpdated',
@@ -20,10 +22,10 @@ export function registerIgnoredRealtimeEvents(connection: signalR.HubConnection)
     'UserPresenceChanged',
     'UserAssetsChanged',
     'UserSessionsChanged',
-    'CurrentSessionRevoked',
-  ]
+    'CurrentSessionRevoked'
+  ];
 
   for (const eventName of eventNames) {
-    connection.on(eventName, () => undefined)
+    connection.on(eventName, () => undefined);
   }
 }

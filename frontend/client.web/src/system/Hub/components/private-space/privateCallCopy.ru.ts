@@ -7,5 +7,5 @@ export const privateCallCopy = {
   accepting: 'Соединяем…',
   declining: 'Отклоняем…',
   unavailable: 'Не удалось выполнить действие. Попробуйте ещё раз.',
-  stackLabel: 'Входящие звонки',
-} as const
+  stackLabel: 'Входящие звонки'
+} as const;

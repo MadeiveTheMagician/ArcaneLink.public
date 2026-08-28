@@ -42,7 +42,11 @@
   border-radius: 12px;
   color: var(--theme-avatar-contrast);
   background:
-    radial-gradient(circle at 32% 24%, var(--theme-glow-strong), transparent 58%),
+    radial-gradient(
+      circle at 32% 24%,
+      var(--theme-glow-strong),
+      transparent 58%
+    ),
     var(--theme-avatar-bg);
   box-shadow: 0 0 22px var(--theme-glow);
   font-size: 15px;
@@ -118,8 +122,7 @@
 
 .close:hover > span,
 .close:focus-visible > span {
-  filter:
-    drop-shadow(0 0 5px rgb(255 255 255 / 58%))
+  filter: drop-shadow(0 0 5px rgb(255 255 255 / 58%))
     drop-shadow(0 0 12px rgb(255 255 255 / 24%));
   transform: scale(1.06);
 }
@@ -164,7 +167,11 @@
 @media (max-width: 760px) {
   .backdrop {
     background:
-      radial-gradient(circle at 50% 46%, var(--theme-backdrop-glow), transparent 48%),
+      radial-gradient(
+        circle at 50% 46%,
+        var(--theme-backdrop-glow),
+        transparent 48%
+      ),
       rgba(0, 0, 0, 0.92);
   }
 
@@ -191,9 +198,12 @@
     background: transparent;
     box-shadow: none;
     color: var(--theme-accent-light);
-    filter:
-      drop-shadow(0 0 7px color-mix(in srgb, var(--theme-accent), transparent 42%))
-      drop-shadow(0 0 15px color-mix(in srgb, var(--theme-accent-light), transparent 72%));
+    filter: drop-shadow(
+        0 0 7px color-mix(in srgb, var(--theme-accent), transparent 42%)
+      )
+      drop-shadow(
+        0 0 15px color-mix(in srgb, var(--theme-accent-light), transparent 72%)
+      );
     transition:
       opacity 160ms ease,
       transform 180ms ease,
@@ -205,9 +215,12 @@
   .close:focus-visible {
     color: #fff;
     background: transparent;
-    filter:
-      drop-shadow(0 0 8px color-mix(in srgb, var(--theme-accent-light), transparent 24%))
-      drop-shadow(0 0 18px color-mix(in srgb, var(--theme-accent), transparent 58%));
+    filter: drop-shadow(
+        0 0 8px color-mix(in srgb, var(--theme-accent-light), transparent 24%)
+      )
+      drop-shadow(
+        0 0 18px color-mix(in srgb, var(--theme-accent), transparent 58%)
+      );
   }
 
   .imageFrame {

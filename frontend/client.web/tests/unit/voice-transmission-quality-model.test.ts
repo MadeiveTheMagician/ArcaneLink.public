@@ -1,10 +1,11 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
+
+import type { VoiceConnectionQualityState } from '../../src/system/Server/hooks/voice/voiceConnectionQualityModel';
 import {
   resolveVoiceTransmissionMaxBitrateBps,
   resolveVoiceTransmissionQualityPlan,
-  voiceTransmissionProfileMaxBitrateBps,
-} from '../../src/system/Server/hooks/voice/voiceTransmissionQualityModel'
-import type { VoiceConnectionQualityState } from '../../src/system/Server/hooks/voice/voiceConnectionQualityModel'
+  voiceTransmissionProfileMaxBitrateBps
+} from '../../src/system/Server/hooks/voice/voiceTransmissionQualityModel';
 
 test.describe('voice transmission quality model', () => {
   test('uses stable bitrate ceilings for explicit profiles', () => {
@@ -12,28 +13,28 @@ test.describe('voice transmission quality model', () => {
       automatic: 64_000,
       'data-saver': 24_000,
       balanced: 48_000,
-      high: 96_000,
-    })
+      high: 96_000
+    });
 
     for (const [qualityProfile, expectedBitrate] of [
       ['data-saver', 24_000],
       ['balanced', 48_000],
-      ['high', 96_000],
+      ['high', 96_000]
     ] as const) {
       expect(
         resolveVoiceTransmissionQualityPlan({
           qualityProfile,
           adaptiveQuality: true,
-          diagnosticsQualityState: 'poor',
-        }),
+          diagnosticsQualityState: 'poor'
+        })
       ).toEqual({
         requestedProfile: qualityProfile,
         maxBitrateBps: expectedBitrate,
         isAdaptive: false,
-        reason: 'fixed-profile',
-      })
+        reason: 'fixed-profile'
+      });
     }
-  })
+  });
 
   test('adapts the automatic profile to diagnostics quality', () => {
     const expectations: ReadonlyArray<
@@ -45,45 +46,49 @@ test.describe('voice transmission quality model', () => {
       ['connecting', 48_000, 'adaptive-transitional'],
       ['reconnecting', 24_000, 'adaptive-transitional'],
       ['disconnected', 24_000, 'adaptive-transitional'],
-      ['unknown', 48_000, 'adaptive-transitional'],
-    ]
+      ['unknown', 48_000, 'adaptive-transitional']
+    ];
 
-    for (const [diagnosticsQualityState, expectedBitrate, reason] of expectations) {
+    for (const [
+      diagnosticsQualityState,
+      expectedBitrate,
+      reason
+    ] of expectations) {
       expect(
         resolveVoiceTransmissionQualityPlan({
           qualityProfile: 'automatic',
           adaptiveQuality: true,
-          diagnosticsQualityState,
-        }),
+          diagnosticsQualityState
+        })
       ).toEqual({
         requestedProfile: 'automatic',
         maxBitrateBps: expectedBitrate,
         isAdaptive: true,
-        reason,
-      })
+        reason
+      });
     }
-  })
+  });
 
   test('makes adaptiveQuality an opt-out for automatic mode only', () => {
     expect(
       resolveVoiceTransmissionQualityPlan({
         qualityProfile: 'automatic',
         adaptiveQuality: false,
-        diagnosticsQualityState: 'poor',
-      }),
+        diagnosticsQualityState: 'poor'
+      })
     ).toEqual({
       requestedProfile: 'automatic',
       maxBitrateBps: 64_000,
       isAdaptive: false,
-      reason: 'adaptation-disabled',
-    })
+      reason: 'adaptation-disabled'
+    });
 
     expect(
       resolveVoiceTransmissionMaxBitrateBps({
         qualityProfile: 'high',
         adaptiveQuality: false,
-        diagnosticsQualityState: 'poor',
-      }),
-    ).toBe(96_000)
-  })
-})
+        diagnosticsQualityState: 'poor'
+      })
+    ).toBe(96_000);
+  });
+});

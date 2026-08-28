@@ -1,19 +1,21 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { authCopy } from '../../../system/shared/index'
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+
+import { authCopy } from '../../../system/shared/index';
+import type { RegisterForm } from '../model/AuthPageModel';
+import { registerSteps } from '../model/AuthPageModel';
+import { AuthDesktopRegisterForm } from './AuthDesktopRegisterForm';
+import { AuthMobileRegisterWizard } from './AuthMobileRegisterWizard';
 import {
+  type ValidatedRegisterFieldKey,
   getDisplayNameRequirements,
   getLoginRequirements,
-  getPasswordRequirements,
-  type ValidatedRegisterFieldKey,
-} from './AuthPageValidation'
-import type { RegisterForm } from '../model/AuthPageModel'
-import { registerSteps } from '../model/AuthPageModel'
-import { AuthDesktopRegisterForm } from './AuthDesktopRegisterForm'
-import { AuthMobileRegisterWizard } from './AuthMobileRegisterWizard'
-import { requirementTitles } from './AuthRegisterShared'
-import formStyles from '../login/AuthFormControls.module.css'
-import styles from './AuthRegisterForm.module.css'
+  getPasswordRequirements
+} from './AuthPageValidation';
+import { requirementTitles } from './AuthRegisterShared';
+
+import formStyles from '../login/AuthFormControls.module.css';
+import styles from './AuthRegisterForm.module.css';
 
 export function AuthRegisterForm({
   registerForm,
@@ -21,36 +23,36 @@ export function AuthRegisterForm({
   activeRegisterStep,
   isLoading,
   onSubmit,
-  onChange,
+  onChange
 }: {
-  registerForm: RegisterForm
-  registerProgress: boolean[]
-  activeRegisterStep: number
-  isLoading: boolean
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
-  onChange: (form: RegisterForm) => void
+  registerForm: RegisterForm;
+  registerProgress: boolean[];
+  activeRegisterStep: number;
+  isLoading: boolean;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onChange: (form: RegisterForm) => void;
 }) {
   const [activeRequirements, setActiveRequirements] =
-    useState<ValidatedRegisterFieldKey | null>(null)
+    useState<ValidatedRegisterFieldKey | null>(null);
   const [mobileRegisterStep, setMobileRegisterStep] =
-    useState(activeRegisterStep)
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+    useState(activeRegisterStep);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const requirementsByField = {
     login: getLoginRequirements(registerForm.login),
     displayName: getDisplayNameRequirements(registerForm.displayName),
-    password: getPasswordRequirements(registerForm.password),
-  }
+    password: getPasswordRequirements(registerForm.password)
+  };
   const activeRequirementList = activeRequirements
     ? requirementsByField[activeRequirements]
-    : []
+    : [];
   const activeRequirementTitle = activeRequirements
     ? requirementTitles[activeRequirements]
-    : authCopy.labels.requirements
+    : authCopy.labels.requirements;
 
   function changeMobileRegisterStep(nextStep: number) {
     setMobileRegisterStep(
-      Math.min(Math.max(nextStep, 0), registerSteps.length - 1),
-    )
+      Math.min(Math.max(nextStep, 0), registerSteps.length - 1)
+    );
   }
 
   return (
@@ -82,5 +84,5 @@ export function AuthRegisterForm({
         onPasswordVisibilityChange={setIsPasswordVisible}
       />
     </form>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import { voiceCopy } from '../../../shared/copy/voice.ru'
+import { voiceCopy } from '../../../shared/copy/voice.ru';
 
-const codecSeparatorPattern = /\s*(?:\u00b7|\u0412\u00b7)\s*/
+const codecSeparatorPattern = /\s*(?:\u00b7|\u0412\u00b7)\s*/;
 
 /**
  * WebRTC exposes its codec metadata with English technical unit suffixes.
@@ -8,28 +8,28 @@ const codecSeparatorPattern = /\s*(?:\u00b7|\u0412\u00b7)\s*/
  * runtime collector can remain presentation-agnostic.
  */
 export function formatVoiceCodecLabel(value: string | null | undefined) {
-  const normalized = value?.trim()
+  const normalized = value?.trim();
   if (!normalized) {
-    return null
+    return null;
   }
 
   return normalized
     .split(codecSeparatorPattern)
     .map((part) => localizeCodecPart(part.trim()))
     .filter(Boolean)
-    .join(' · ')
+    .join(' · ');
 }
 
 function localizeCodecPart(part: string) {
-  const clockRateMatch = /^(\d+(?:[.,]\d+)?)\s*kHz$/i.exec(part)
+  const clockRateMatch = /^(\d+(?:[.,]\d+)?)\s*kHz$/i.exec(part);
   if (clockRateMatch) {
-    return `${clockRateMatch[1]} ${voiceCopy.dock.kilohertzShort}`
+    return `${clockRateMatch[1]} ${voiceCopy.dock.kilohertzShort}`;
   }
 
-  const channelCountMatch = /^(\d+)\s*ch$/i.exec(part)
+  const channelCountMatch = /^(\d+)\s*ch$/i.exec(part);
   if (channelCountMatch) {
-    return `${channelCountMatch[1]} ${voiceCopy.dock.channelsShort}`
+    return `${channelCountMatch[1]} ${voiceCopy.dock.channelsShort}`;
   }
 
-  return part
+  return part;
 }

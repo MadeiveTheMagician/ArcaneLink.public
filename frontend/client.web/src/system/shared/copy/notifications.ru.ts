@@ -17,7 +17,7 @@ export const notificationCopy = {
     openFriendRequests: 'Открыть заявки в друзья',
     enableNotifications: 'Включить уведомления',
     disableNotifications: 'Выключить уведомления',
-    retry: 'Повторить',
+    retry: 'Повторить'
   },
   center: {
     clearHistoryConfirmation:
@@ -33,7 +33,7 @@ export const notificationCopy = {
       unread: 'Непрочитанные',
       mention: 'Упоминания',
       invite: 'Приглашения',
-      system: 'Системные',
+      system: 'Системные'
     },
     loading: 'Загружаем уведомления…',
     loadError: 'Не удалось загрузить уведомления.',
@@ -46,21 +46,21 @@ export const notificationCopy = {
     yesterday: 'Вчера',
     now: 'сейчас',
     minutesAgo: (minutes: number) => `${minutes} мин. назад`,
-    hoursAgo: (hours: number) => `${hours} ч. назад`,
+    hoursAgo: (hours: number) => `${hours} ч. назад`
   },
   quickSettings: {
     title: 'Быстрые настройки',
     all: 'Все уведомления',
     mentions: 'Упоминания',
     invites: 'Приглашения',
-    system: 'Системные',
+    system: 'Системные'
   },
   invite: {
     title: 'Приглашение на сервер',
     eyebrow: 'Вас пригласили на сервер',
     noDescription: 'Владелец сервера пока не добавил описание.',
     online: 'онлайн',
-    members: 'участников',
+    members: 'участников'
   },
   popup: {
     notificationsLabel: 'Уведомления',
@@ -69,7 +69,7 @@ export const notificationCopy = {
     attachments: (count: number) => `Отправлено вложений: ${count}`,
     privateSpaceFallback: 'Новое сообщение в приватном спейсе',
     now: 'сейчас',
-    minutesAgo: (minutes: number) => `${minutes} мин. назад`,
+    minutesAgo: (minutes: number) => `${minutes} мин. назад`
   },
   settings: {
     masterDescription:
@@ -84,24 +84,24 @@ export const notificationCopy = {
     toggles: {
       privateMessages: {
         label: 'Личные сообщения',
-        description: 'Уведомления о новых ЛС',
+        description: 'Уведомления о новых ЛС'
       },
       mentions: {
         label: 'Упоминания',
-        description: 'Сообщения, в которых упомянули вас, вашу роль или всех',
+        description: 'Сообщения, в которых упомянули вас, вашу роль или всех'
       },
       serverInvites: {
         label: 'Приглашения на серверы',
-        description: 'Приглашения от других пользователей',
+        description: 'Приглашения от других пользователей'
       },
       privateSpaceInvites: {
         label: 'Приглашения в личные переписки',
-        description: 'Уведомления о новых и возобновлённых личных чатах',
+        description: 'Уведомления о новых и возобновлённых личных чатах'
       },
       system: {
         label: 'Системные',
-        description: 'Обновления, технические работы и др.',
-      },
-    },
-  },
-} as const
+        description: 'Обновления, технические работы и др.'
+      }
+    }
+  }
+} as const;

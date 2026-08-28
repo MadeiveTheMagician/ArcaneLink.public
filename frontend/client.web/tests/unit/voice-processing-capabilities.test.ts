@@ -1,8 +1,9 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
+
 import {
   getVoiceProcessingCapabilities,
-  refineVoiceProcessingCapabilities,
-} from '../../src/system/shared/voice/voiceProcessingCapabilities'
+  refineVoiceProcessingCapabilities
+} from '../../src/system/shared/voice/voiceProcessingCapabilities';
 
 test.describe('voice processing capabilities', () => {
   test('reads each processing constraint independently', () => {
@@ -11,23 +12,23 @@ test.describe('voice processing capabilities', () => {
         getSupportedConstraints: () => ({
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: false,
-        }),
-      }),
+          autoGainControl: false
+        })
+      })
     ).toEqual({
       echoCancellation: true,
       noiseSuppression: true,
-      autoGainControl: false,
-    })
-  })
+      autoGainControl: false
+    });
+  });
 
   test('does not claim unsupported processing when capability API is absent', () => {
     expect(getVoiceProcessingCapabilities(null)).toEqual({
       echoCancellation: false,
       noiseSuppression: false,
-      autoGainControl: false,
-    })
-  })
+      autoGainControl: false
+    });
+  });
 
   test('keeps only settings that the captured track actually reports', () => {
     expect(
@@ -35,17 +36,17 @@ test.describe('voice processing capabilities', () => {
         {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
+          autoGainControl: true
         },
         {
           echoCancellation: true,
-          noiseSuppression: false,
-        },
-      ),
+          noiseSuppression: false
+        }
+      )
     ).toEqual({
       echoCancellation: true,
       noiseSuppression: true,
-      autoGainControl: false,
-    })
-  })
-})
+      autoGainControl: false
+    });
+  });
+});

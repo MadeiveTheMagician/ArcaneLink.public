@@ -1,61 +1,61 @@
-import rnnoiseWorkletUrl from './worklets/rnnoiseNoiseSuppressionProcessor.worklet.ts?worker&url'
 import {
   createVoiceNoiseSuppressionBaseTelemetry,
   createVoiceNoiseSuppressionFallbackTelemetry,
   detectVoiceMlNoiseSuppressionSupport,
-  normalizeVoiceNoiseSuppressionProcessorTelemetry,
-} from './voiceNoiseSuppressionModel'
+  normalizeVoiceNoiseSuppressionProcessorTelemetry
+} from './voiceNoiseSuppressionModel';
 import type {
   VoiceNoiseSuppressionFallbackReason,
   VoiceNoiseSuppressionProcessorSample,
   VoiceNoiseSuppressionRequestedMode,
-  VoiceNoiseSuppressionTelemetry,
-} from './voiceNoiseSuppressionModel'
+  VoiceNoiseSuppressionTelemetry
+} from './voiceNoiseSuppressionModel';
+import rnnoiseWorkletUrl from './worklets/rnnoiseNoiseSuppressionProcessor.worklet.ts?worker&url';
 
 export type VoiceNoiseSuppressionRuntimeRequest = {
-  requestedMode: VoiceNoiseSuppressionRequestedMode
-  fallbackMode: 'native' | 'disabled'
-  nativeNoiseSuppressionActive: boolean
-  provider?: VoiceMlNoiseSuppressionProvider | null
-}
+  requestedMode: VoiceNoiseSuppressionRequestedMode;
+  fallbackMode: 'native' | 'disabled';
+  nativeNoiseSuppressionActive: boolean;
+  provider?: VoiceMlNoiseSuppressionProvider | null;
+};
 
 export type VoiceMlNoiseSuppressionSession = {
-  inputNode: AudioNode
-  outputNode: AudioNode
-  dispose: () => void
-}
+  inputNode: AudioNode;
+  outputNode: AudioNode;
+  dispose: () => void;
+};
 
 export type VoiceMlNoiseSuppressionProvider = {
-  id: string
+  id: string;
   detectSupport: (audioContext: AudioContext) => {
-    supported: boolean
-    reason: VoiceNoiseSuppressionFallbackReason | null
-  }
+    supported: boolean;
+    reason: VoiceNoiseSuppressionFallbackReason | null;
+  };
   createSession: (options: {
-    audioContext: AudioContext
-    onReady: () => void
-    onTelemetry: (sample: VoiceNoiseSuppressionProcessorSample) => void
-    onError: (reason: VoiceNoiseSuppressionFallbackReason) => void
-  }) => Promise<VoiceMlNoiseSuppressionSession>
-}
+    audioContext: AudioContext;
+    onReady: () => void;
+    onTelemetry: (sample: VoiceNoiseSuppressionProcessorSample) => void;
+    onError: (reason: VoiceNoiseSuppressionFallbackReason) => void;
+  }) => Promise<VoiceMlNoiseSuppressionSession>;
+};
 
 export type VoiceNoiseSuppressionRuntime = {
-  inputNode: AudioNode | null
-  outputNode: AudioNode | null
-  getTelemetry: () => VoiceNoiseSuppressionTelemetry
+  inputNode: AudioNode | null;
+  outputNode: AudioNode | null;
+  getTelemetry: () => VoiceNoiseSuppressionTelemetry;
   subscribeTelemetry: (
-    listener: (telemetry: VoiceNoiseSuppressionTelemetry) => void,
-  ) => () => void
-  dispose: () => void
-}
+    listener: (telemetry: VoiceNoiseSuppressionTelemetry) => void
+  ) => () => void;
+  dispose: () => void;
+};
 
-const providerId = '@shiguredo/rnnoise-wasm@2025.1.5'
-const processorName = 'arcanelink-rnnoise'
-const initializationTimeoutMs = 8_000
-const workletLoadByAudioContext = new WeakMap<AudioContext, Promise<void>>()
+const providerId = '@shiguredo/rnnoise-wasm@2025.1.5';
+const processorName = 'arcanelink-rnnoise';
+const initializationTimeoutMs = 8_000;
+const workletLoadByAudioContext = new WeakMap<AudioContext, Promise<void>>();
 
-export const rnnoiseVoiceNoiseSuppressionProvider:
-  VoiceMlNoiseSuppressionProvider = {
+export const rnnoiseVoiceNoiseSuppressionProvider: VoiceMlNoiseSuppressionProvider =
+  {
     id: providerId,
     detectSupport(audioContext) {
       return detectVoiceMlNoiseSuppressionSupport({
@@ -65,15 +65,15 @@ export const rnnoiseVoiceNoiseSuppressionProvider:
         audioWorkletNode: typeof AudioWorkletNode !== 'undefined',
         worker: typeof Worker !== 'undefined',
         messageChannel: typeof MessageChannel !== 'undefined',
-        sampleRate: audioContext.sampleRate,
-      })
+        sampleRate: audioContext.sampleRate
+      });
     },
     async createSession({ audioContext, onReady, onTelemetry, onError }) {
-      await loadRnnoiseAudioWorklet(audioContext)
+      await loadRnnoiseAudioWorklet(audioContext);
 
-      let node: AudioWorkletNode | null = null
-      let worker: Worker | null = null
-      let workerChannel: MessageChannel | null = null
+      let node: AudioWorkletNode | null = null;
+      let worker: Worker | null = null;
+      let workerChannel: MessageChannel | null = null;
       try {
         node = new AudioWorkletNode(audioContext, processorName, {
           numberOfInputs: 1,
@@ -81,141 +81,139 @@ export const rnnoiseVoiceNoiseSuppressionProvider:
           outputChannelCount: [1],
           channelCount: 1,
           channelCountMode: 'explicit',
-          channelInterpretation: 'speakers',
-        })
+          channelInterpretation: 'speakers'
+        });
         worker = new Worker(
           new URL(
             './worklets/rnnoiseNoiseSuppression.worker.ts',
-            import.meta.url,
+            import.meta.url
           ),
-          { type: 'module', name: 'arcanelink-rnnoise' },
-        )
-        workerChannel = new MessageChannel()
+          { type: 'module', name: 'arcanelink-rnnoise' }
+        );
+        workerChannel = new MessageChannel();
 
-        let isReady = false
+        let isReady = false;
         const readyPromise = waitForRnnoiseProcessorReady(
           node,
-          initializationTimeoutMs,
-        )
+          initializationTimeoutMs
+        );
         node.port.addEventListener('message', (event: MessageEvent) => {
-          const message = event.data as Record<string, unknown>
+          const message = event.data as Record<string, unknown>;
 
           if (message.type === 'telemetry') {
-            onTelemetry(message as VoiceNoiseSuppressionProcessorSample)
+            onTelemetry(message as VoiceNoiseSuppressionProcessorSample);
           } else if (message.type === 'error' && isReady) {
-            onError('processor-error')
-            node?.port.postMessage({ type: 'fallback' })
-            worker?.terminate()
+            onError('processor-error');
+            node?.port.postMessage({ type: 'fallback' });
+            worker?.terminate();
           }
-        })
-        node.port.start()
-        node.port.postMessage(
-          { type: 'connect', port: workerChannel.port1 },
-          [workerChannel.port1],
-        )
-        worker.postMessage(
-          { type: 'connect', port: workerChannel.port2 },
-          [workerChannel.port2],
-        )
+        });
+        node.port.start();
+        node.port.postMessage({ type: 'connect', port: workerChannel.port1 }, [
+          workerChannel.port1
+        ]);
+        worker.postMessage({ type: 'connect', port: workerChannel.port2 }, [
+          workerChannel.port2
+        ]);
 
         void readyPromise.then(
           () => {
-            isReady = true
-            onReady()
+            isReady = true;
+            onReady();
           },
           (error: unknown) => {
             onError(
               isInitializationTimeoutError(error)
                 ? 'initialization-timeout'
-                : 'processor-error',
-            )
-            node?.port.postMessage({ type: 'fallback' })
-            worker?.terminate()
-          },
-        )
+                : 'processor-error'
+            );
+            node?.port.postMessage({ type: 'fallback' });
+            worker?.terminate();
+          }
+        );
 
-        let isDisposed = false
+        let isDisposed = false;
         return {
           inputNode: node,
           outputNode: node,
           dispose() {
             if (isDisposed) {
-              return
+              return;
             }
 
-            isDisposed = true
-            node?.port.postMessage({ type: 'dispose' })
-            node?.port.close()
-            node?.disconnect()
-            worker?.postMessage({ type: 'dispose' })
-            worker?.terminate()
-            workerChannel?.port1.close()
-            workerChannel?.port2.close()
-          },
-        }
+            isDisposed = true;
+            node?.port.postMessage({ type: 'dispose' });
+            node?.port.close();
+            node?.disconnect();
+            worker?.postMessage({ type: 'dispose' });
+            worker?.terminate();
+            workerChannel?.port1.close();
+            workerChannel?.port2.close();
+          }
+        };
       } catch (error) {
-        node?.port.postMessage({ type: 'dispose' })
-        node?.port.close()
-        node?.disconnect()
-        worker?.terminate()
-        workerChannel?.port1.close()
-        workerChannel?.port2.close()
-        throw error
+        node?.port.postMessage({ type: 'dispose' });
+        node?.port.close();
+        node?.disconnect();
+        worker?.terminate();
+        workerChannel?.port1.close();
+        workerChannel?.port2.close();
+        throw error;
       }
-    },
-  }
+    }
+  };
 
 export async function createVoiceNoiseSuppressionRuntime(
   audioContext: AudioContext,
-  request: VoiceNoiseSuppressionRuntimeRequest,
+  request: VoiceNoiseSuppressionRuntimeRequest
 ): Promise<VoiceNoiseSuppressionRuntime> {
-  const provider = request.provider === undefined
-    ? rnnoiseVoiceNoiseSuppressionProvider
-    : request.provider
+  const provider =
+    request.provider === undefined
+      ? rnnoiseVoiceNoiseSuppressionProvider
+      : request.provider;
   const listeners = new Set<
     (telemetry: VoiceNoiseSuppressionTelemetry) => void
-  >()
-  let session: VoiceMlNoiseSuppressionSession | null = null
-  let isDisposed = false
+  >();
+  let session: VoiceMlNoiseSuppressionSession | null = null;
+  let isDisposed = false;
   let telemetry = createVoiceNoiseSuppressionBaseTelemetry({
     requestedMode: request.requestedMode,
     nativeNoiseSuppressionActive: request.nativeNoiseSuppressionActive,
-    providerId: request.requestedMode === 'ml' ? provider?.id ?? null : null,
-  })
+    providerId: request.requestedMode === 'ml' ? (provider?.id ?? null) : null
+  });
 
   function publish(nextTelemetry: VoiceNoiseSuppressionTelemetry) {
     if (isDisposed) {
-      return
+      return;
     }
 
-    telemetry = nextTelemetry
-    listeners.forEach((listener) => listener(nextTelemetry))
+    telemetry = nextTelemetry;
+    listeners.forEach((listener) => listener(nextTelemetry));
   }
 
   function publishFallback(
     reason: VoiceNoiseSuppressionFallbackReason,
-    didProviderFail = false,
+    didProviderFail = false
   ) {
     publish(
       createVoiceNoiseSuppressionFallbackTelemetry({
         requestedMode: request.requestedMode,
         fallbackMode: request.fallbackMode,
-        nativeNoiseSuppressionActive:
-          request.nativeNoiseSuppressionActive,
+        nativeNoiseSuppressionActive: request.nativeNoiseSuppressionActive,
         reason,
         providerId: provider?.id ?? null,
-        didProviderFail,
-      }),
-    )
+        didProviderFail
+      })
+    );
   }
 
   if (request.requestedMode === 'ml') {
     if (!provider) {
-      publishFallback('provider-unavailable')
+      publishFallback('provider-unavailable');
     } else {
-      const support = provider.detectSupport(audioContext)
+      const support = provider.detectSupport(audioContext);
       if (!support.supported) {
-        publishFallback(support.reason ?? 'provider-unavailable')
+        publishFallback(support.reason ?? 'provider-unavailable');
       } else {
         try {
           session = await provider.createSession({
@@ -227,28 +225,28 @@ export async function createVoiceNoiseSuppressionRuntime(
                 lifecycle: 'active',
                 health: 'healthy',
                 fallbackReason: null,
-                sampledAtMs: Date.now(),
-              })
+                sampledAtMs: Date.now()
+              });
             },
             onTelemetry(sample) {
               publish(
                 normalizeVoiceNoiseSuppressionProcessorTelemetry(
                   telemetry,
-                  sample,
-                ),
-              )
+                  sample
+                )
+              );
             },
             onError(reason) {
-              publishFallback(reason, true)
-            },
-          })
+              publishFallback(reason, true);
+            }
+          });
         } catch (error) {
           publishFallback(
             isInitializationTimeoutError(error)
               ? 'initialization-timeout'
               : 'provider-initialization-failed',
-            true,
-          )
+            true
+          );
         }
       }
     }
@@ -259,94 +257,94 @@ export async function createVoiceNoiseSuppressionRuntime(
     outputNode: session?.outputNode ?? null,
     getTelemetry: () => telemetry,
     subscribeTelemetry(listener) {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
     dispose() {
       if (isDisposed) {
-        return
+        return;
       }
 
-      session?.dispose()
-      session = null
+      session?.dispose();
+      session = null;
       telemetry = {
         ...telemetry,
         lifecycle: 'disposed',
-        sampledAtMs: Date.now(),
-      }
-      listeners.forEach((listener) => listener(telemetry))
-      listeners.clear()
-      isDisposed = true
-    },
-  }
+        sampledAtMs: Date.now()
+      };
+      listeners.forEach((listener) => listener(telemetry));
+      listeners.clear();
+      isDisposed = true;
+    }
+  };
 }
 
 async function loadRnnoiseAudioWorklet(audioContext: AudioContext) {
-  const existing = workletLoadByAudioContext.get(audioContext)
+  const existing = workletLoadByAudioContext.get(audioContext);
   if (existing) {
-    return await existing
+    return await existing;
   }
 
-  const pending = audioContext.audioWorklet.addModule(rnnoiseWorkletUrl)
-  workletLoadByAudioContext.set(audioContext, pending)
+  const pending = audioContext.audioWorklet.addModule(rnnoiseWorkletUrl);
+  workletLoadByAudioContext.set(audioContext, pending);
   try {
-    await pending
+    await pending;
   } catch (error) {
-    workletLoadByAudioContext.delete(audioContext)
-    throw error
+    workletLoadByAudioContext.delete(audioContext);
+    throw error;
   }
 }
 
 function waitForRnnoiseProcessorReady(
   node: AudioWorkletNode,
-  timeoutMs: number,
+  timeoutMs: number
 ) {
   return new Promise<void>((resolve, reject) => {
     const timeoutId = window.setTimeout(() => {
-      cleanup()
-      reject(new VoiceNoiseSuppressionInitializationTimeoutError())
-    }, timeoutMs)
+      cleanup();
+      reject(new VoiceNoiseSuppressionInitializationTimeoutError());
+    }, timeoutMs);
 
     function handleMessage(event: MessageEvent) {
-      const message = event.data as Record<string, unknown>
+      const message = event.data as Record<string, unknown>;
       if (message.type === 'ready') {
-        cleanup()
-        resolve()
+        cleanup();
+        resolve();
       } else if (message.type === 'error') {
-        cleanup()
+        cleanup();
         reject(
           new Error(
             typeof message.message === 'string'
               ? message.message
-              : 'RNNoise processor initialization failed.',
-          ),
-        )
+              : 'RNNoise processor initialization failed.'
+          )
+        );
       }
     }
 
     function cleanup() {
-      window.clearTimeout(timeoutId)
-      node.port.removeEventListener('message', handleMessage)
+      window.clearTimeout(timeoutId);
+      node.port.removeEventListener('message', handleMessage);
     }
 
-    node.port.addEventListener('message', handleMessage)
-    node.port.start()
-  })
+    node.port.addEventListener('message', handleMessage);
+    node.port.start();
+  });
 }
 
 class VoiceNoiseSuppressionInitializationTimeoutError extends Error {
   constructor() {
-    super('RNNoise processor initialization timed out.')
-    this.name = 'VoiceNoiseSuppressionInitializationTimeoutError'
+    super('RNNoise processor initialization timed out.');
+    this.name = 'VoiceNoiseSuppressionInitializationTimeoutError';
   }
 }
 
 function isInitializationTimeoutError(error: unknown) {
-  return error instanceof VoiceNoiseSuppressionInitializationTimeoutError
+  return error instanceof VoiceNoiseSuppressionInitializationTimeoutError;
 }
 
 export type {
   VoiceNoiseSuppressionFallbackReason,
   VoiceNoiseSuppressionRequestedMode,
-  VoiceNoiseSuppressionTelemetry,
-} from './voiceNoiseSuppressionModel'
+  VoiceNoiseSuppressionTelemetry
+} from './voiceNoiseSuppressionModel';

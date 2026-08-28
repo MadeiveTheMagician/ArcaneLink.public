@@ -18,17 +18,17 @@
     filter 140ms ease;
 }
 
-.arcane-detached-control-button[data-active="true"],
-.arcane-detached-control-button[data-danger="true"],
+.arcane-detached-control-button[data-active='true'],
+.arcane-detached-control-button[data-danger='true'],
 .arcane-detached-control-button:hover {
   opacity: 1;
 }
 
-.arcane-detached-control-button[data-active="true"] {
+.arcane-detached-control-button[data-active='true'] {
   opacity: 1;
 }
 
-.arcane-detached-control-button[data-danger="true"] {
+.arcane-detached-control-button[data-danger='true'] {
   color: #ffb1b1;
   opacity: 0.96;
 }
@@ -44,21 +44,24 @@
   height: 19px;
 }
 
-.arcane-detached-control-button[data-active="true"] .arcane-detached-control-glyph {
+.arcane-detached-control-button[data-active='true']
+  .arcane-detached-control-glyph {
   filter: drop-shadow(0 0 8px var(--theme-icon-glow-color));
 }
 
-.arcane-detached-control-button[data-danger="true"] .arcane-detached-control-glyph {
+.arcane-detached-control-button[data-danger='true']
+  .arcane-detached-control-glyph {
   filter: drop-shadow(0 0 8px rgba(255, 112, 112, 0.55));
 }
 
-.arcane-detached-control-button:not([data-danger="true"]):hover .arcane-detached-control-glyph {
-  filter:
-    drop-shadow(0 0 10px var(--theme-icon-glow-color))
+.arcane-detached-control-button:not([data-danger='true']):hover
+  .arcane-detached-control-glyph {
+  filter: drop-shadow(0 0 10px var(--theme-icon-glow-color))
     drop-shadow(0 0 18px var(--theme-glow-strong));
 }
 
-.arcane-detached-control-button[data-danger="true"]:hover .arcane-detached-control-glyph {
+.arcane-detached-control-button[data-danger='true']:hover
+  .arcane-detached-control-glyph {
   filter: drop-shadow(0 0 10px rgba(255, 112, 112, 0.72));
 }
 
@@ -81,7 +84,10 @@
   background: transparent;
   box-shadow: none;
   cursor: pointer;
-  transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .arcane-icon-button:hover {
@@ -91,8 +97,7 @@
 }
 
 .arcane-icon-button:hover span {
-  filter:
-    drop-shadow(0 0 10px var(--theme-icon-glow-color))
+  filter: drop-shadow(0 0 10px var(--theme-icon-glow-color))
     drop-shadow(0 0 18px var(--theme-glow-strong));
 }
 

@@ -1,7 +1,7 @@
 import type {
   ModerationCaseStatus,
-  ModerationReasonCode,
-} from './moderationTypes'
+  ModerationReasonCode
+} from './moderationTypes';
 
 export const moderationCopy = {
   report: {
@@ -22,7 +22,7 @@ export const moderationCopy = {
     successBody:
       'Модераторы сервера получили жалобу. Её состояние доступно в системных настройках.',
     close: 'Закрыть',
-    failed: 'Не удалось отправить жалобу.',
+    failed: 'Не удалось отправить жалобу.'
   },
   myReports: {
     tab: 'Мои жалобы',
@@ -36,7 +36,7 @@ export const moderationCopy = {
     reportForMessage: (messageId: string) =>
       `Сообщение ${shortIdentifier(messageId)}`,
     submitted: 'Отправлена',
-    updated: 'Обновлена',
+    updated: 'Обновлена'
   },
   cases: {
     tab: 'Модерация',
@@ -75,18 +75,16 @@ export const moderationCopy = {
     openAttachment: 'Открыть или скачать',
     loadingAttachment: 'Загружаем вложение…',
     attachmentTransferFailed: 'Не удалось загрузить вложение.',
-    invalidAttachmentUrl:
-      'Адрес вложения не прошёл проверку безопасности.',
+    invalidAttachmentUrl: 'Адрес вложения не прошёл проверку безопасности.',
     invalidAttachmentResponse:
       'Сервер вернул небезопасный или повреждённый файл.',
-    attachmentIntegrityFailed:
-      'Проверка целостности вложения не пройдена.',
-  },
-} as const
+    attachmentIntegrityFailed: 'Проверка целостности вложения не пройдена.'
+  }
+} as const;
 
 export const moderationReasonOptions: ReadonlyArray<{
-  code: ModerationReasonCode
-  label: string
+  code: ModerationReasonCode;
+  label: string;
 }> = [
   { code: 'spam', label: 'Спам' },
   { code: 'harassment', label: 'Травля или оскорбления' },
@@ -95,49 +93,49 @@ export const moderationReasonOptions: ReadonlyArray<{
   { code: 'violence', label: 'Насилие или угрозы' },
   { code: 'scam', label: 'Мошенничество' },
   { code: 'privacy', label: 'Нарушение приватности' },
-  { code: 'other', label: 'Другая причина' },
-]
+  { code: 'other', label: 'Другая причина' }
+];
 
 export const moderationCaseStatusOptions: ReadonlyArray<{
-  code: ModerationCaseStatus
-  label: string
+  code: ModerationCaseStatus;
+  label: string;
 }> = [
   { code: 'open', label: 'Открыта' },
   { code: 'in_review', label: 'На рассмотрении' },
   { code: 'resolved', label: 'Решена' },
-  { code: 'dismissed', label: 'Отклонена' },
-]
+  { code: 'dismissed', label: 'Отклонена' }
+];
 
 export function getModerationReasonLabel(code: string) {
   return (
     moderationReasonOptions.find((option) => option.code === code)?.label ??
     'Другая причина'
-  )
+  );
 }
 
 export function getModerationCaseStatusLabel(code: string) {
   return (
     moderationCaseStatusOptions.find((option) => option.code === code)?.label ??
     'Неизвестный статус'
-  )
+  );
 }
 
 export function getUserReportStatusLabel(code: string) {
   if (code === 'open' || code === 'received') {
-    return 'Получена'
+    return 'Получена';
   }
 
   if (code === 'in_review' || code === 'under_review') {
-    return 'На рассмотрении'
+    return 'На рассмотрении';
   }
 
   if (code === 'resolved' || code === 'dismissed' || code === 'closed') {
-    return 'Закрыта'
+    return 'Закрыта';
   }
 
-  return 'Статус обновляется'
+  return 'Статус обновляется';
 }
 
 function shortIdentifier(value: string) {
-  return value.length > 12 ? `${value.slice(0, 8)}…` : value
+  return value.length > 12 ? `${value.slice(0, 8)}…` : value;
 }

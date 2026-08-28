@@ -52,7 +52,9 @@
 
 .button.danger:not(:disabled):hover,
 .button.danger:focus-visible {
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-danger), transparent 46%));
+  filter: drop-shadow(
+    0 0 8px color-mix(in srgb, var(--color-danger), transparent 46%)
+  );
 }
 
 .icon {

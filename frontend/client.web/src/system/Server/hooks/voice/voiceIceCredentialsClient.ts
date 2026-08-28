@@ -1,188 +1,179 @@
-import { apiJson } from '../../../../shared/api/api'
+import { apiJson } from '../../../../shared/api/api';
 
-const defaultRefreshLeewayMs = 30_000
-const defaultMinimumValidityMs = 10_000
-const defaultRefreshRetryDelayMs = 10_000
-const refreshLifetimeRatio = 0.8
+const defaultRefreshLeewayMs = 30_000;
+const defaultMinimumValidityMs = 10_000;
+const defaultRefreshRetryDelayMs = 10_000;
+const refreshLifetimeRatio = 0.8;
 
 export type VoiceIceServerResponse = {
   iceServers: Array<{
-    urls: string[]
-    username: string
-    credential: string
-    credentialType: 'password'
-  }>
-  iceTransportPolicy: 'relay'
-  expiresAt: string
-}
+    urls: string[];
+    username: string;
+    credential: string;
+    credentialType: 'password';
+  }>;
+  iceTransportPolicy: 'relay';
+  expiresAt: string;
+};
 
 export type VoiceIceCredentials = {
-  iceServers: RTCIceServer[]
-  iceTransportPolicy: 'relay'
-  expiresAt: number
-}
+  iceServers: RTCIceServer[];
+  iceTransportPolicy: 'relay';
+  expiresAt: number;
+};
 
 type VoiceIceCredentialsRequest = {
-  accessToken: string
-  cacheScope: string
-}
+  accessToken: string;
+  cacheScope: string;
+};
 
 type VoiceIceCredentialsClientOptions = {
-  fetchCredentials?: (
-    accessToken: string,
-  ) => Promise<unknown>
-  now?: () => number
-  minimumValidityMs?: number
-  refreshLeewayMs?: number
-  refreshRetryDelayMs?: number
-}
+  fetchCredentials?: (accessToken: string) => Promise<unknown>;
+  now?: () => number;
+  minimumValidityMs?: number;
+  refreshLeewayMs?: number;
+  refreshRetryDelayMs?: number;
+};
 
 type CachedVoiceIceCredentials = VoiceIceCredentials & {
-  cacheScope: string
-  refreshAt: number
-}
+  cacheScope: string;
+  refreshAt: number;
+};
 
 export class VoiceIceCredentialsError extends Error {
-  readonly code:
-    | 'request_failed'
-    | 'invalid_response'
-    | 'credentials_expired'
+  readonly code: 'request_failed' | 'invalid_response' | 'credentials_expired';
 
   constructor(
     code: VoiceIceCredentialsError['code'],
     message: string,
-    options?: ErrorOptions,
+    options?: ErrorOptions
   ) {
-    super(message, options)
-    this.name = 'VoiceIceCredentialsError'
-    this.code = code
+    super(message, options);
+    this.name = 'VoiceIceCredentialsError';
+    this.code = code;
   }
 }
 
 export class VoiceIceCredentialsClient {
-  private readonly fetchCredentials: (accessToken: string) => Promise<unknown>
-  private readonly now: () => number
-  private readonly minimumValidityMs: number
-  private readonly refreshLeewayMs: number
-  private readonly refreshRetryDelayMs: number
-  private generation = 0
-  private cached: CachedVoiceIceCredentials | null = null
+  private readonly fetchCredentials: (accessToken: string) => Promise<unknown>;
+  private readonly now: () => number;
+  private readonly minimumValidityMs: number;
+  private readonly refreshLeewayMs: number;
+  private readonly refreshRetryDelayMs: number;
+  private generation = 0;
+  private cached: CachedVoiceIceCredentials | null = null;
   private pending: {
-    cacheScope: string
-    promise: Promise<VoiceIceCredentials>
-  } | null = null
+    cacheScope: string;
+    promise: Promise<VoiceIceCredentials>;
+  } | null = null;
 
   constructor(options: VoiceIceCredentialsClientOptions = {}) {
     this.fetchCredentials =
-      options.fetchCredentials ?? requestVoiceIceCredentials
-    this.now = options.now ?? Date.now
+      options.fetchCredentials ?? requestVoiceIceCredentials;
+    this.now = options.now ?? Date.now;
     this.minimumValidityMs =
-      options.minimumValidityMs ?? defaultMinimumValidityMs
-    this.refreshLeewayMs =
-      options.refreshLeewayMs ?? defaultRefreshLeewayMs
+      options.minimumValidityMs ?? defaultMinimumValidityMs;
+    this.refreshLeewayMs = options.refreshLeewayMs ?? defaultRefreshLeewayMs;
     this.refreshRetryDelayMs =
-      options.refreshRetryDelayMs ?? defaultRefreshRetryDelayMs
+      options.refreshRetryDelayMs ?? defaultRefreshRetryDelayMs;
   }
 
   async get({
     accessToken,
-    cacheScope,
+    cacheScope
   }: VoiceIceCredentialsRequest): Promise<VoiceIceCredentials> {
-    const normalizedCacheScope = cacheScope.trim()
+    const normalizedCacheScope = cacheScope.trim();
     if (!accessToken.trim() || !normalizedCacheScope) {
       throw new VoiceIceCredentialsError(
         'request_failed',
-        'An authenticated session is required to request TURN credentials.',
-      )
+        'An authenticated session is required to request TURN credentials.'
+      );
     }
 
-    const now = this.now()
-    const cached = this.cached
-    if (
-      cached?.cacheScope === normalizedCacheScope &&
-      now < cached.refreshAt
-    ) {
-      return toPublicCredentials(cached)
+    const now = this.now();
+    const cached = this.cached;
+    if (cached?.cacheScope === normalizedCacheScope && now < cached.refreshAt) {
+      return toPublicCredentials(cached);
     }
 
     if (this.pending?.cacheScope === normalizedCacheScope) {
-      return this.pending.promise
+      return this.pending.promise;
     }
 
     const promise = this.refresh(
       accessToken,
       normalizedCacheScope,
       cached?.cacheScope === normalizedCacheScope ? cached : null,
-      this.generation,
-    )
-    this.pending = { cacheScope: normalizedCacheScope, promise }
+      this.generation
+    );
+    this.pending = { cacheScope: normalizedCacheScope, promise };
 
     try {
-      return await promise
+      return await promise;
     } finally {
       if (this.pending?.promise === promise) {
-        this.pending = null
+        this.pending = null;
       }
     }
   }
 
   clear() {
-    this.generation += 1
-    this.cached = null
-    this.pending = null
+    this.generation += 1;
+    this.cached = null;
+    this.pending = null;
   }
 
   private async refresh(
     accessToken: string,
     cacheScope: string,
     previous: CachedVoiceIceCredentials | null,
-    generation: number,
+    generation: number
   ) {
     try {
-      const response = await this.fetchCredentials(accessToken)
-      const fetchedAt = this.now()
+      const response = await this.fetchCredentials(accessToken);
+      const fetchedAt = this.now();
       const credentials = parseVoiceIceCredentialsResponse(
         response,
         fetchedAt,
-        this.minimumValidityMs,
-      )
-      const lifetimeMs = credentials.expiresAt - fetchedAt
+        this.minimumValidityMs
+      );
+      const lifetimeMs = credentials.expiresAt - fetchedAt;
       const refreshAt = Math.min(
         credentials.expiresAt - this.refreshLeewayMs,
-        fetchedAt + lifetimeMs * refreshLifetimeRatio,
-      )
+        fetchedAt + lifetimeMs * refreshLifetimeRatio
+      );
 
       const nextCached = {
         ...credentials,
         cacheScope,
-        refreshAt: Math.max(fetchedAt, refreshAt),
-      }
+        refreshAt: Math.max(fetchedAt, refreshAt)
+      };
       if (this.generation === generation) {
-        this.cached = nextCached
+        this.cached = nextCached;
       }
 
-      return toPublicCredentials(nextCached)
+      return toPublicCredentials(nextCached);
     } catch (error) {
-      const now = this.now()
+      const now = this.now();
       if (previous && previous.expiresAt - now > this.minimumValidityMs) {
         if (this.generation === generation && this.cached === previous) {
           previous.refreshAt = Math.min(
             previous.expiresAt - this.minimumValidityMs,
-            now + this.refreshRetryDelayMs,
-          )
+            now + this.refreshRetryDelayMs
+          );
         }
-        return toPublicCredentials(previous)
+        return toPublicCredentials(previous);
       }
 
       if (error instanceof VoiceIceCredentialsError) {
-        throw error
+        throw error;
       }
 
       throw new VoiceIceCredentialsError(
         'request_failed',
         'TURN credentials are temporarily unavailable.',
-        { cause: error },
-      )
+        { cause: error }
+      );
     }
   }
 }
@@ -190,41 +181,37 @@ export class VoiceIceCredentialsClient {
 export function parseVoiceIceCredentialsResponse(
   value: unknown,
   now = Date.now(),
-  minimumValidityMs = defaultMinimumValidityMs,
+  minimumValidityMs = defaultMinimumValidityMs
 ): VoiceIceCredentials {
   if (!isRecord(value) || value.iceTransportPolicy !== 'relay') {
-    throw invalidResponse()
+    throw invalidResponse();
   }
 
   const expiresAt = Date.parse(
-    typeof value.expiresAt === 'string' ? value.expiresAt : '',
-  )
+    typeof value.expiresAt === 'string' ? value.expiresAt : ''
+  );
   if (!Number.isFinite(expiresAt)) {
-    throw invalidResponse()
+    throw invalidResponse();
   }
   if (expiresAt - now <= minimumValidityMs) {
     throw new VoiceIceCredentialsError(
       'credentials_expired',
-      'The TURN credentials are expired or too close to expiration.',
-    )
+      'The TURN credentials are expired or too close to expiration.'
+    );
   }
 
   if (!Array.isArray(value.iceServers) || value.iceServers.length === 0) {
-    throw invalidResponse()
+    throw invalidResponse();
   }
 
   const iceServers = value.iceServers.map((server) => {
     if (!isRecord(server)) {
-      throw invalidResponse()
+      throw invalidResponse();
     }
 
-    const urls = server.urls
-    if (
-      !Array.isArray(urls) ||
-      urls.length === 0 ||
-      !urls.every(isTurnUrl)
-    ) {
-      throw invalidResponse()
+    const urls = server.urls;
+    if (!Array.isArray(urls) || urls.length === 0 || !urls.every(isTurnUrl)) {
+      throw invalidResponse();
     }
 
     if (
@@ -234,60 +221,57 @@ export function parseVoiceIceCredentialsResponse(
       !server.credential ||
       server.credentialType !== 'password'
     ) {
-      throw invalidResponse()
+      throw invalidResponse();
     }
 
     return {
       urls: [...urls],
       username: server.username,
       credential: server.credential,
-      credentialType: 'password' as const,
-    }
-  })
+      credentialType: 'password' as const
+    };
+  });
 
   return {
     iceServers,
     iceTransportPolicy: 'relay',
-    expiresAt,
-  }
+    expiresAt
+  };
 }
 
 async function requestVoiceIceCredentials(accessToken: string) {
   return await apiJson<VoiceIceServerResponse>('/api/voice/ice-servers', {
     accessToken,
-    cache: 'no-store',
-  })
+    cache: 'no-store'
+  });
 }
 
 function isTurnUrl(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    /^(turn|turns):/i.test(value.trim())
-  )
+  return typeof value === 'string' && /^(turn|turns):/i.test(value.trim());
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object'
+  return Boolean(value) && typeof value === 'object';
 }
 
 function invalidResponse() {
   return new VoiceIceCredentialsError(
     'invalid_response',
-    'The server returned an invalid TURN credentials response.',
-  )
+    'The server returned an invalid TURN credentials response.'
+  );
 }
 
 function toPublicCredentials(
-  cached: CachedVoiceIceCredentials,
+  cached: CachedVoiceIceCredentials
 ): VoiceIceCredentials {
   return {
     iceServers: cached.iceServers.map((server) => ({
       ...server,
-      urls: Array.isArray(server.urls) ? [...server.urls] : server.urls,
+      urls: Array.isArray(server.urls) ? [...server.urls] : server.urls
     })),
     iceTransportPolicy: cached.iceTransportPolicy,
-    expiresAt: cached.expiresAt,
-  }
+    expiresAt: cached.expiresAt
+  };
 }
 
-export const voiceIceCredentialsClient = new VoiceIceCredentialsClient()
+export const voiceIceCredentialsClient = new VoiceIceCredentialsClient();

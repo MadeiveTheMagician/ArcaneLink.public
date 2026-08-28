@@ -1,149 +1,153 @@
-import type { CSSProperties, PointerEvent, RefObject } from 'react'
-import type { ImageCrop } from '../../../../shared/media/ImageCropEditor'
-import { ProfilePage } from '../../../Profile/components/page/ProfilePage'
-import type { HubWorkspace } from './useHubWorkspace'
-import type { FocusPrivateMessageRequest } from '../private-space/usePrivateSpaceMessages'
-import type {
-  GroupPrivateSpaceSettingsPatch,
-  PrivateSpacePersonalSettingsPatch,
-} from '../private-space/usePrivateSpaces'
-import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel'
-import type {
-  VoicePlaybackState,
-  VoiceUserAudioSettings,
-} from '../../../shared/types/voicePlayback'
+import type { CSSProperties, PointerEvent, RefObject } from 'react';
+
+import type { ImageCrop } from '../../../../shared/media/ImageCropEditor';
 import type {
   FriendRequestResponse,
   FriendUserResponse,
   MessageDisplayFormat,
-  PrivateSpaceResponse,
   OwnUserProfileResponse,
+  PrivateSpaceResponse,
   ServerInviteResponse,
   ServerMemberResponse,
   SpaceMessageResponse,
   UserFriendResponse,
-  UserResponse,
-} from '../../../../shared/types'
-import { DirectMessagesPanel } from '../direct-messages/DirectMessagesPanel'
-import { HubUtilityView } from '../utility/HubUtilityView'
-import type { NotificationTarget } from '../notifications/notificationNavigation'
-import type { CommunityNavigationRequest } from '../community/communityTypes'
-import { HubVoiceParticipantsPanel } from '../voice/HubVoiceParticipantsPanel'
-import { SystemErrorBoundary } from '../../../shared/errors/SystemErrorBoundary'
+  UserResponse
+} from '../../../../shared/types';
+import { ProfilePage } from '../../../Profile/components/page/ProfilePage';
+import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel';
 import type {
   MessageBubbleAlignment,
-  MessageBubbleWidth,
-} from '../../../shared'
-import styles from './HubPage.module.css'
+  MessageBubbleWidth
+} from '../../../shared';
+import { SystemErrorBoundary } from '../../../shared/errors/SystemErrorBoundary';
+import type {
+  VoicePlaybackState,
+  VoiceUserAudioSettings
+} from '../../../shared/types/voicePlayback';
+import type { CommunityNavigationRequest } from '../community/communityTypes';
+import { DirectMessagesPanel } from '../direct-messages/DirectMessagesPanel';
+import type { NotificationTarget } from '../notifications/notificationNavigation';
+import type { FocusPrivateMessageRequest } from '../private-space/usePrivateSpaceMessages';
+import type {
+  GroupPrivateSpaceSettingsPatch,
+  PrivateSpacePersonalSettingsPatch
+} from '../private-space/usePrivateSpaces';
+import { HubUtilityView } from '../utility/HubUtilityView';
+import { HubVoiceParticipantsPanel } from '../voice/HubVoiceParticipantsPanel';
+import type { HubWorkspace } from './useHubWorkspace';
+
+import styles from './HubPage.module.css';
 
 type HubWorkspacePaneProps = {
-  accessToken: string
-  activeWorkspace: HubWorkspace
-  activePrivateSpaceId: string | null
-  user: UserResponse
-  publicProfile: OwnUserProfileResponse
-  avatarSrc: string
-  avatarStyle: CSSProperties
-  isAvatarDraftActive: boolean
-  isAvatarMenuOpen: boolean
-  avatarFileInputRef: RefObject<HTMLInputElement | null>
-  privateSpaces: PrivateSpaceResponse[]
-  friends: UserFriendResponse[]
-  friendUserIds: Set<string>
-  directServerInvites: ServerInviteResponse[]
-  visibleServerMemberships: ServerMemberResponse[]
-  incomingFriendRequests: FriendRequestResponse[]
-  outgoingFriendRequests: FriendRequestResponse[]
-  friendSearchQuery: string
-  isLoadingPrivateSpaces: boolean
-  isMutatingPrivateSpaces: boolean
-  isLoadingFriends: boolean
-  isSearchingUsers: boolean
-  isMutatingFriends: boolean
-  friendNotice: string | null
-  pendingOutgoingUserIds: Set<string>
-  voice: VoiceChannelController
-  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>
-  isMemberPanelCompact: boolean
-  defaultAttachmentExpanded: boolean
-  loadExternalMediaPreviews: boolean
-  horizontalVideoCardSize: number
-  verticalVideoCardSize: number
-  privateMessageDisplayFormat: MessageDisplayFormat
-  privateMessageBubbleAlignment: MessageBubbleAlignment
-  privateMessageBubbleWidth: MessageBubbleWidth
-  showPrivateReadAllButton: boolean
+  accessToken: string;
+  activeWorkspace: HubWorkspace;
+  activePrivateSpaceId: string | null;
+  user: UserResponse;
+  publicProfile: OwnUserProfileResponse;
+  avatarSrc: string;
+  avatarStyle: CSSProperties;
+  isAvatarDraftActive: boolean;
+  isAvatarMenuOpen: boolean;
+  avatarFileInputRef: RefObject<HTMLInputElement | null>;
+  privateSpaces: PrivateSpaceResponse[];
+  friends: UserFriendResponse[];
+  friendUserIds: Set<string>;
+  directServerInvites: ServerInviteResponse[];
+  visibleServerMemberships: ServerMemberResponse[];
+  incomingFriendRequests: FriendRequestResponse[];
+  outgoingFriendRequests: FriendRequestResponse[];
+  friendSearchQuery: string;
+  isLoadingPrivateSpaces: boolean;
+  isMutatingPrivateSpaces: boolean;
+  isLoadingFriends: boolean;
+  isSearchingUsers: boolean;
+  isMutatingFriends: boolean;
+  friendNotice: string | null;
+  pendingOutgoingUserIds: Set<string>;
+  voice: VoiceChannelController;
+  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>;
+  isMemberPanelCompact: boolean;
+  defaultAttachmentExpanded: boolean;
+  loadExternalMediaPreviews: boolean;
+  horizontalVideoCardSize: number;
+  verticalVideoCardSize: number;
+  privateMessageDisplayFormat: MessageDisplayFormat;
+  privateMessageBubbleAlignment: MessageBubbleAlignment;
+  privateMessageBubbleWidth: MessageBubbleWidth;
+  showPrivateReadAllButton: boolean;
   pendingPrivateSpaceDroppedFiles: {
-    id: string
-    spaceId: string
-    files: File[]
-  } | null
-  focusedPrivateMessage: FocusPrivateMessageRequest | null
-  onToggleAvatarMenu: () => void
-  onCloseAvatarMenu: () => void
-  onOpenAvatarPicker: () => void
-  onShowAvatarLibrary: () => void
-  onSelectAvatarFile: (file: File | undefined) => void
-  onMarkBrokenAvatar: (url: string) => void
-  onOpenPrivateSpace: (spaceId: string) => void
-  onOpenPrivateSearchResult: (message: SpaceMessageResponse) => void
-  onDropFilesToPrivateSpace: (spaceId: string, files: File[]) => void
-  onPendingPrivateSpaceDroppedFilesConsumed: (id: string) => void
-  onOpenDirectSpace: (userId: string) => void
+    id: string;
+    spaceId: string;
+    files: File[];
+  } | null;
+  focusedPrivateMessage: FocusPrivateMessageRequest | null;
+  onToggleAvatarMenu: () => void;
+  onCloseAvatarMenu: () => void;
+  onOpenAvatarPicker: () => void;
+  onShowAvatarLibrary: () => void;
+  onSelectAvatarFile: (file: File | undefined) => void;
+  onMarkBrokenAvatar: (url: string) => void;
+  onOpenPrivateSpace: (spaceId: string) => void;
+  onOpenPrivateSearchResult: (message: SpaceMessageResponse) => void;
+  onDropFilesToPrivateSpace: (spaceId: string, files: File[]) => void;
+  onPendingPrivateSpaceDroppedFilesConsumed: (id: string) => void;
+  onOpenDirectSpace: (userId: string) => void;
   onCreatePrivateSpace: (
     memberUserIds: string[],
-    title?: string | null,
-  ) => Promise<PrivateSpaceResponse | null>
-  onStartDirectVoice: (user: FriendUserResponse) => void
-  onLoadInviteTargetServers: (targetUserId: string) => Promise<ServerMemberResponse[]>
-  onClosePrivateSpace: (spaceId: string) => Promise<void>
-  onClearPrivateSpaceHistory: (spaceId: string) => Promise<boolean>
+    title?: string | null
+  ) => Promise<PrivateSpaceResponse | null>;
+  onStartDirectVoice: (user: FriendUserResponse) => void;
+  onLoadInviteTargetServers: (
+    targetUserId: string
+  ) => Promise<ServerMemberResponse[]>;
+  onClosePrivateSpace: (spaceId: string) => Promise<void>;
+  onClearPrivateSpaceHistory: (spaceId: string) => Promise<boolean>;
   onAddPrivateSpaceMember: (
     spaceId: string,
-    userId: string,
-  ) => Promise<PrivateSpaceResponse | null>
+    userId: string
+  ) => Promise<PrivateSpaceResponse | null>;
   onUpdatePrivateSpacePersonalSettings: (
     spaceId: string,
-    request: PrivateSpacePersonalSettingsPatch,
-  ) => Promise<PrivateSpaceResponse>
+    request: PrivateSpacePersonalSettingsPatch
+  ) => Promise<PrivateSpaceResponse>;
   onUploadPrivateSpacePersonalAvatar: (
     spaceId: string,
     file: File,
-    crop: ImageCrop,
-  ) => Promise<PrivateSpaceResponse>
+    crop: ImageCrop
+  ) => Promise<PrivateSpaceResponse>;
   onUpdateGroupPrivateSpaceSettings: (
     spaceId: string,
-    request: GroupPrivateSpaceSettingsPatch,
-  ) => Promise<PrivateSpaceResponse>
-  onMarkPrivateSpaceRead: (spaceId: string) => Promise<void>
+    request: GroupPrivateSpaceSettingsPatch
+  ) => Promise<PrivateSpaceResponse>;
+  onMarkPrivateSpaceRead: (spaceId: string) => Promise<void>;
   onMarkAllPrivateSpacesRead: () => Promise<{
-    updatedSpaceCount: number
-  }>
+    updatedSpaceCount: number;
+  }>;
   onChangeVoiceAudioSettings: (
     participantId: string,
-    patch: Partial<VoiceUserAudioSettings>,
-  ) => void
-  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void
-  onRemoveFriend: (userId: string) => void
-  onCreateServer: () => void
-  onServerJoined: (membership: ServerMemberResponse) => void
-  onOpenServer: (membership: ServerMemberResponse) => void
-  onAcceptDirectServerInvite: (inviteId: string) => void
-  onDeclineDirectServerInvite: (inviteId: string) => void
-  onOpenNotificationTarget: (target: NotificationTarget) => void
-  communityNavigationRequest: CommunityNavigationRequest | null
-  onCommunityNavigationRequestConsumed: (requestId: number) => void
-  onFriendSearchQueryChange: (query: string) => void
-  onSendFriendRequest: (userId: string) => void
-  onAcceptFriendRequest: (requestId: string) => void
-  onDeclineFriendRequest: (requestId: string) => void
-  onCancelFriendRequest: (requestId: string) => void
-  onStartHubResize: (event: PointerEvent<HTMLButtonElement>) => void
-  onStartPrivateInfoResize: (event: PointerEvent<HTMLButtonElement>) => void
-  onReturnToDirectMessages: () => void
-  formatDate: (value: string) => string
-}
+    patch: Partial<VoiceUserAudioSettings>
+  ) => void;
+  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void;
+  onRemoveFriend: (userId: string) => void;
+  onCreateServer: () => void;
+  onServerJoined: (membership: ServerMemberResponse) => void;
+  onOpenServer: (membership: ServerMemberResponse) => void;
+  onAcceptDirectServerInvite: (inviteId: string) => void;
+  onDeclineDirectServerInvite: (inviteId: string) => void;
+  onOpenNotificationTarget: (target: NotificationTarget) => void;
+  communityNavigationRequest: CommunityNavigationRequest | null;
+  onCommunityNavigationRequestConsumed: (requestId: number) => void;
+  onFriendSearchQueryChange: (query: string) => void;
+  onSendFriendRequest: (userId: string) => void;
+  onAcceptFriendRequest: (requestId: string) => void;
+  onDeclineFriendRequest: (requestId: string) => void;
+  onCancelFriendRequest: (requestId: string) => void;
+  onStartHubResize: (event: PointerEvent<HTMLButtonElement>) => void;
+  onStartPrivateInfoResize: (event: PointerEvent<HTMLButtonElement>) => void;
+  onReturnToDirectMessages: () => void;
+  formatDate: (value: string) => string;
+};
 
 export function HubWorkspacePane({
   accessToken,
@@ -226,7 +230,7 @@ export function HubWorkspacePane({
   onStartHubResize,
   onStartPrivateInfoResize,
   onReturnToDirectMessages,
-  formatDate,
+  formatDate
 }: HubWorkspacePaneProps) {
   return (
     <section
@@ -236,7 +240,8 @@ export function HubWorkspacePane({
           : 'has-voice-participants'
       }`}
     >
-      {(activeWorkspace === 'profile' || activeWorkspace === 'private-space') && (
+      {(activeWorkspace === 'profile' ||
+        activeWorkspace === 'private-space') && (
         <DirectMessagesPanel
           accessToken={accessToken}
           className={styles.sidePanelSlot}
@@ -328,7 +333,9 @@ export function HubWorkspacePane({
               friendUserIds={friendUserIds}
               voice={voice}
               voiceAudioSettingsByUserId={voiceAudioSettingsByUserId}
-              voicePlaybackStatesByParticipantId={voicePlaybackStatesByParticipantId}
+              voicePlaybackStatesByParticipantId={
+                voicePlaybackStatesByParticipantId
+              }
               isMemberPanelCompact={isMemberPanelCompact}
               defaultAttachmentExpanded={defaultAttachmentExpanded}
               loadExternalMediaPreviews={loadExternalMediaPreviews}
@@ -372,5 +379,5 @@ export function HubWorkspacePane({
         )}
       </div>
     </section>
-  )
+  );
 }

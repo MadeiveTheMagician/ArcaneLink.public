@@ -41,7 +41,7 @@
   position: absolute;
   inset: 0 auto 0 50%;
   width: 1px;
-  content: "";
+  content: '';
   background: var(--theme-border-soft);
   box-shadow: none;
   opacity: 1;
@@ -80,8 +80,10 @@
   box-shadow: none;
 }
 
-:global([data-server-workspace][data-members-panel-collapsed="true"]) .memberPanelSlot,
-:global([data-server-workspace][data-members-panel-collapsed="true"]) .memberPanelSlot:global(.ui-panel) {
+:global([data-server-workspace][data-members-panel-collapsed='true'])
+  .memberPanelSlot,
+:global([data-server-workspace][data-members-panel-collapsed='true'])
+  .memberPanelSlot:global(.ui-panel) {
   border-left-color: transparent;
 }
 

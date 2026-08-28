@@ -1,106 +1,108 @@
 import {
   type CSSProperties,
-  useEffect,
-  useState,
   type PointerEvent as ReactPointerEvent,
-} from 'react'
+  useEffect,
+  useState
+} from 'react';
+
 import type {
   MessageDisplayFormat,
   PrivateDeletedMessageResponse,
   PrivateSpaceResponse,
   ServerMemberResponse,
   SpaceMessageResponse,
-  UserFriendResponse,
-} from '../../../../shared/types'
-import { ServerMessagePanel } from '../../../Server/components/messages/ServerMessagePanel'
-import type { MessageComposerMentionInsertionRequest } from '../../../Server/components/messages/MessageComposer'
+  UserFriendResponse
+} from '../../../../shared/types';
+import type { MessageComposerMentionInsertionRequest } from '../../../Server/components/messages/MessageComposer';
+import { ServerMessagePanel } from '../../../Server/components/messages/ServerMessagePanel';
+import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel';
 import {
+  PresenceDot,
+  SystemIcon,
   communityCopy,
   defaultMessageBubbleAlignment,
   defaultMessageBubbleWidth,
-  PresenceDot,
-  SystemIcon,
-  voiceCopy,
-} from '../../../shared'
+  voiceCopy
+} from '../../../shared';
 import type {
   MessageBubbleAlignment,
-  MessageBubbleWidth,
-} from '../../../shared'
-import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel'
+  MessageBubbleWidth
+} from '../../../shared';
+import { useMessageSearch } from '../../../shared/hooks/useMessageSearch';
 import type {
   VoicePlaybackState,
-  VoiceUserAudioSettings,
-} from '../../../shared/types/voicePlayback'
-import { usePrivateSpaceMessages } from './usePrivateSpaceMessages'
-import type { FocusPrivateMessageRequest } from './usePrivateSpaceMessages'
-import { useMessageSearch } from '../../../shared/hooks/useMessageSearch'
-import {
-  getPrivateSpaceOtherMember,
-  getPrivateSpaceTitle,
-} from '../direct-messages/directMessageModel'
-import { PrivateSpaceAvatar } from '../direct-messages/DirectMessageAvatar'
+  VoiceUserAudioSettings
+} from '../../../shared/types/voicePlayback';
+import { PrivateSpaceAvatar } from '../direct-messages/DirectMessageAvatar';
 import {
   DirectUserProfileDialog,
-  InvitePrivateSpaceMemberDialog,
-} from '../direct-messages/PrivateSpaceDialogs'
-import { PrivateSpaceInfoPanel } from './PrivateSpaceInfoPanel'
+  InvitePrivateSpaceMemberDialog
+} from '../direct-messages/PrivateSpaceDialogs';
+import {
+  getPrivateSpaceOtherMember,
+  getPrivateSpaceTitle
+} from '../direct-messages/directMessageModel';
+import { PrivateSpaceInfoPanel } from './PrivateSpaceInfoPanel';
 import {
   PrivateSpaceHeaderActions,
-  PrivateVoiceStrip,
-} from './PrivateSpaceVoiceParts'
-import privateStyles from './PrivateSpace.module.css'
-import privateVoiceStyles from './PrivateVoice.module.css'
-import { usePrivateVoicePanel } from './usePrivateVoicePanel'
+  PrivateVoiceStrip
+} from './PrivateSpaceVoiceParts';
+import { usePrivateSpaceMessages } from './usePrivateSpaceMessages';
+import type { FocusPrivateMessageRequest } from './usePrivateSpaceMessages';
+import { usePrivateVoicePanel } from './usePrivateVoicePanel';
+
+import privateStyles from './PrivateSpace.module.css';
+import privateVoiceStyles from './PrivateVoice.module.css';
 
 type PrivateSpaceWorkspaceProps = {
-  accessToken: string
-  activePrivateSpaceId: string | null
-  currentUserId: string
-  privateSpaces: PrivateSpaceResponse[]
-  friends: UserFriendResponse[]
-  friendUserIds: Set<string>
-  pendingOutgoingUserIds: Set<string>
-  isLoadingFriends: boolean
-  isMutatingFriends: boolean
-  isMutatingPrivateSpaces: boolean
-  voice: VoiceChannelController
-  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>
-  isMemberPanelCompact: boolean
-  defaultAttachmentExpanded: boolean
-  loadExternalMediaPreviews: boolean
-  horizontalVideoCardSize: number
-  verticalVideoCardSize: number
-  messageDisplayFormat?: MessageDisplayFormat
-  messageBubbleAlignment?: MessageBubbleAlignment
-  messageBubbleWidth?: MessageBubbleWidth
+  accessToken: string;
+  activePrivateSpaceId: string | null;
+  currentUserId: string;
+  privateSpaces: PrivateSpaceResponse[];
+  friends: UserFriendResponse[];
+  friendUserIds: Set<string>;
+  pendingOutgoingUserIds: Set<string>;
+  isLoadingFriends: boolean;
+  isMutatingFriends: boolean;
+  isMutatingPrivateSpaces: boolean;
+  voice: VoiceChannelController;
+  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>;
+  isMemberPanelCompact: boolean;
+  defaultAttachmentExpanded: boolean;
+  loadExternalMediaPreviews: boolean;
+  horizontalVideoCardSize: number;
+  verticalVideoCardSize: number;
+  messageDisplayFormat?: MessageDisplayFormat;
+  messageBubbleAlignment?: MessageBubbleAlignment;
+  messageBubbleWidth?: MessageBubbleWidth;
   pendingDroppedFiles: {
-    id: string
-    spaceId: string
-    files: File[]
-  } | null
-  focusedMessage?: FocusPrivateMessageRequest | null
+    id: string;
+    spaceId: string;
+    files: File[];
+  } | null;
+  focusedMessage?: FocusPrivateMessageRequest | null;
   onAddMember: (
     spaceId: string,
-    userId: string,
-  ) => Promise<PrivateSpaceResponse | null>
-  onOpenDirectSpace: (userId: string) => void
-  onStartDirectVoice: (user: UserFriendResponse['friend']) => void
+    userId: string
+  ) => Promise<PrivateSpaceResponse | null>;
+  onOpenDirectSpace: (userId: string) => void;
+  onStartDirectVoice: (user: UserFriendResponse['friend']) => void;
   onLoadInviteTargetServers: (
-    targetUserId: string,
-  ) => Promise<ServerMemberResponse[]>
-  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void
-  onSendFriendRequest: (userId: string) => void
-  onRemoveFriend: (userId: string) => void
+    targetUserId: string
+  ) => Promise<ServerMemberResponse[]>;
+  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void;
+  onSendFriendRequest: (userId: string) => void;
+  onRemoveFriend: (userId: string) => void;
   onChangeVoiceAudioSettings: (
     participantId: string,
-    patch: Partial<VoiceUserAudioSettings>,
-  ) => void
-  onPendingDroppedFilesConsumed: (id: string) => void
-  onStartInfoResize: (event: ReactPointerEvent<HTMLButtonElement>) => void
-  onReturnToDirectMessages: () => void
-  onOpenSearchResult: (message: SpaceMessageResponse) => void
-}
+    patch: Partial<VoiceUserAudioSettings>
+  ) => void;
+  onPendingDroppedFilesConsumed: (id: string) => void;
+  onStartInfoResize: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onReturnToDirectMessages: () => void;
+  onOpenSearchResult: (message: SpaceMessageResponse) => void;
+};
 
 export function PrivateSpaceWorkspace({
   accessToken,
@@ -137,26 +139,26 @@ export function PrivateSpaceWorkspace({
   onPendingDroppedFilesConsumed,
   onStartInfoResize,
   onReturnToDirectMessages,
-  onOpenSearchResult,
+  onOpenSearchResult
 }: PrivateSpaceWorkspaceProps) {
-  const [isInviteOpen, setIsInviteOpen] = useState(false)
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [profileMember, setProfileMember] = useState<
     PrivateSpaceResponse['members'][number] | null
-  >(null)
+  >(null);
   const [mentionInsertionRequest, setMentionInsertionRequest] =
-    useState<MessageComposerMentionInsertionRequest | null>(null)
+    useState<MessageComposerMentionInsertionRequest | null>(null);
   const messageSearch = useMessageSearch({
     accessToken,
     endpoint: activePrivateSpaceId
       ? `/api/private-spaces/${activePrivateSpaceId}/messages/search`
-      : null,
-  })
+      : null
+  });
 
   useEffect(() => {
-    setIsInviteOpen(false)
-    setProfileMember(null)
-    setMentionInsertionRequest(null)
-  }, [activePrivateSpaceId])
+    setIsInviteOpen(false);
+    setProfileMember(null);
+    setMentionInsertionRequest(null);
+  }, [activePrivateSpaceId]);
   const {
     messages,
     pinnedMessages,
@@ -184,83 +186,80 @@ export function PrivateSpaceWorkspace({
     pinMessage,
     unpinMessage,
     setMessageReaction,
-    markMessagesRead,
+    markMessagesRead
   } = usePrivateSpaceMessages(
     accessToken,
     activePrivateSpaceId,
-    focusedMessage ?? null,
-  )
+    focusedMessage ?? null
+  );
   const activeVoiceParticipants = activePrivateSpaceId
     ? (voice.participantsBySpaceId[activePrivateSpaceId] ?? [])
-    : []
+    : [];
   const isVoiceConnected =
     voice.connectedChannel?.channelScope === 'private' &&
-    voice.connectedChannel.spaceId === activePrivateSpaceId
+    voice.connectedChannel.spaceId === activePrivateSpaceId;
   const shouldShowVoicePanel =
     Boolean(activePrivateSpaceId) &&
-    (isVoiceConnected || activeVoiceParticipants.length > 0)
-  const voicePanel = usePrivateVoicePanel(shouldShowVoicePanel)
+    (isVoiceConnected || activeVoiceParticipants.length > 0);
+  const voicePanel = usePrivateVoicePanel(shouldShowVoicePanel);
 
   const privateSpace = privateSpaces.find(
-    (space) => space.spaceId === activePrivateSpaceId,
-  )
-  const title = getPrivateSpaceTitle(privateSpace, currentUserId)
+    (space) => space.spaceId === activePrivateSpaceId
+  );
+  const title = getPrivateSpaceTitle(privateSpace, currentUserId);
   const activeMembers =
-    privateSpace?.members.filter((member) => member.statusCode === 'active') ?? []
+    privateSpace?.members.filter((member) => member.statusCode === 'active') ??
+    [];
   const directPeer = privateSpace
     ? getPrivateSpaceOtherMember(privateSpace, currentUserId)
-    : null
+    : null;
   const effectiveActiveMembers =
     privateSpace?.kind === 'direct' && directPeer
       ? activeMembers.map((member) =>
           member.userId === directPeer.userId
             ? {
                 ...member,
-                user: applyDirectPeerUserIdentity(
-                  member.user,
-                  privateSpace,
-                ),
+                user: applyDirectPeerUserIdentity(member.user, privateSpace)
               }
-            : member,
+            : member
         )
-      : activeMembers
+      : activeMembers;
   const otherMember =
-    effectiveActiveMembers.find(
-      (member) => member.userId !== currentUserId,
-    ) ?? null
+    effectiveActiveMembers.find((member) => member.userId !== currentUserId) ??
+    null;
   const directPresenceStatus =
-    privateSpace?.kind === 'direct'
-      ? otherMember?.user.presenceStatus
-      : null
-  const participantUserIds = new Set(activeMembers.map((member) => member.userId))
+    privateSpace?.kind === 'direct' ? otherMember?.user.presenceStatus : null;
+  const participantUserIds = new Set(
+    activeMembers.map((member) => member.userId)
+  );
   const inviteCandidates = friends.filter(
-    (friend) => !participantUserIds.has(friend.friendUserId),
-  )
+    (friend) => !participantUserIds.has(friend.friendUserId)
+  );
   const effectiveMessages = privateSpace
     ? messages.map((message) =>
-        applyDirectPeerMessageIdentity(message, privateSpace, currentUserId),
+        applyDirectPeerMessageIdentity(message, privateSpace, currentUserId)
       )
-    : messages
+    : messages;
   const effectivePinnedMessages = privateSpace
     ? pinnedMessages.map((message) =>
-        applyDirectPeerMessageIdentity(message, privateSpace, currentUserId),
+        applyDirectPeerMessageIdentity(message, privateSpace, currentUserId)
       )
-    : pinnedMessages
+    : pinnedMessages;
   const effectiveDeletedMessages = privateSpace
     ? deletedMessages.map((deletedMessage) =>
         applyDirectPeerDeletedMessageIdentity(
           deletedMessage,
           privateSpace,
-          currentUserId,
-        ),
+          currentUserId
+        )
       )
-    : deletedMessages
+    : deletedMessages;
   const effectiveSearchResults = privateSpace
     ? messageSearch.results.map((message) =>
-        applyDirectPeerMessageIdentity(message, privateSpace, currentUserId),
+        applyDirectPeerMessageIdentity(message, privateSpace, currentUserId)
       )
-    : messageSearch.results
-  const canUseVoice = Boolean(activePrivateSpaceId && privateSpace)
+    : messageSearch.results;
+  const canUseVoice = Boolean(activePrivateSpaceId && privateSpace);
 
   return (
     <section className={privateStyles.privateSpaceLayout}>
@@ -272,7 +271,7 @@ export function PrivateSpaceWorkspace({
         }`}
         style={
           {
-            '--private-voice-panel-height': `${voicePanel.height}px`,
+            '--private-voice-panel-height': `${voicePanel.height}px`
           } as CSSProperties
         }
       >
@@ -303,9 +302,9 @@ export function PrivateSpaceWorkspace({
               onOpenProfile={setProfileMember}
               onMentionUser={(participant) => {
                 const member = effectiveActiveMembers.find(
-                  (candidate) => candidate.userId === participant.userId,
-                )
-                if (!member) return
+                  (candidate) => candidate.userId === participant.userId
+                );
+                if (!member) return;
 
                 setMentionInsertionRequest({
                   id: Date.now(),
@@ -316,9 +315,9 @@ export function PrivateSpaceWorkspace({
                     avatarAssetId: member.user.avatarAssetId,
                     avatarCropOffsetX: member.user.avatarCropOffsetX,
                     avatarCropOffsetY: member.user.avatarCropOffsetY,
-                    avatarCropZoom: member.user.avatarCropZoom,
-                  },
-                })
+                    avatarCropZoom: member.user.avatarCropZoom
+                  }
+                });
               }}
               onOpenDirectSpace={onOpenDirectSpace}
               onStartDirectVoice={onStartDirectVoice}
@@ -358,13 +357,13 @@ export function PrivateSpaceWorkspace({
               avatarAssetId: member.user.avatarAssetId,
               avatarCropOffsetX: member.user.avatarCropOffsetX,
               avatarCropOffsetY: member.user.avatarCropOffsetY,
-              avatarCropZoom: member.user.avatarCropZoom,
+              avatarCropZoom: member.user.avatarCropZoom
             }))}
           mentionRoles={[]}
           mentionInsertionRequest={mentionInsertionRequest}
           onMentionInsertionRequestHandled={(requestId) =>
             setMentionInsertionRequest((current) =>
-              current?.id === requestId ? null : current,
+              current?.id === requestId ? null : current
             )
           }
           canPinMessages={Boolean(privateSpace)}
@@ -417,19 +416,19 @@ export function PrivateSpaceWorkspace({
               canUseVoice={canUseVoice}
               isInviteOpen={isInviteOpen}
               onToggleCall={() => {
-                if (!activePrivateSpaceId || !privateSpace) return
+                if (!activePrivateSpaceId || !privateSpace) return;
 
                 if (isVoiceConnected) {
-                  void voice.leaveVoiceChannel()
-                  return
+                  void voice.leaveVoiceChannel();
+                  return;
                 }
 
                 void voice.joinVoiceChannel({
                   serverId: null,
                   spaceId: activePrivateSpaceId,
                   title,
-                  channelScope: 'private',
-                })
+                  channelScope: 'private'
+                });
               }}
               onToggleCamera={() => {
                 if (!isVoiceConnected && activePrivateSpaceId && privateSpace) {
@@ -438,13 +437,13 @@ export function PrivateSpaceWorkspace({
                       serverId: null,
                       spaceId: activePrivateSpaceId,
                       title,
-                      channelScope: 'private',
+                      channelScope: 'private'
                     })
-                    .then(() => voice.enableCamera())
-                  return
+                    .then(() => voice.enableCamera());
+                  return;
                 }
 
-                void voice.toggleCamera()
+                void voice.toggleCamera();
               }}
               onOpenInvite={() => setIsInviteOpen(true)}
             />
@@ -459,7 +458,7 @@ export function PrivateSpaceWorkspace({
             restoringMessageId,
             onRestoreMessage: restoreMessage,
             onLoadOlder: loadOlderDeletedMessages,
-            onClear: clearDeletedMessages,
+            onClear: clearDeletedMessages
           }}
           messages={effectiveMessages}
           pinnedMessages={effectivePinnedMessages}
@@ -500,7 +499,7 @@ export function PrivateSpaceWorkspace({
         otherMember={otherMember}
         messageSearch={{
           ...messageSearch,
-          results: effectiveSearchResults,
+          results: effectiveSearchResults
         }}
         onOpenSearchResult={onOpenSearchResult}
       />
@@ -524,12 +523,12 @@ export function PrivateSpaceWorkspace({
         />
       )}
     </section>
-  )
+  );
 }
 
 function applyDirectPeerUserIdentity(
   user: UserFriendResponse['friend'],
-  space: PrivateSpaceResponse,
+  space: PrivateSpaceResponse
 ) {
   return {
     ...user,
@@ -544,24 +543,24 @@ function applyDirectPeerUserIdentity(
       : user.avatarCropOffsetY,
     avatarCropZoom: space.viewerSettings.customAvatarAssetId
       ? space.viewerSettings.customAvatarCropZoom
-      : user.avatarCropZoom,
-  }
+      : user.avatarCropZoom
+  };
 }
 
 function applyDirectPeerMessageIdentity(
   message: SpaceMessageResponse,
   space: PrivateSpaceResponse,
-  currentUserId: string,
+  currentUserId: string
 ): SpaceMessageResponse {
-  if (space.kind !== 'direct') return message
-  const peer = getPrivateSpaceOtherMember(space, currentUserId)
-  if (!peer) return message
+  if (space.kind !== 'direct') return message;
+  const peer = getPrivateSpaceOtherMember(space, currentUserId);
+  if (!peer) return message;
 
-  const effectivePeer = applyDirectPeerUserIdentity(peer.user, space)
-  const isPeerMessage = message.senderUserId === peer.userId
-  const isPeerReply = message.replyTo?.senderUserId === peer.userId
+  const effectivePeer = applyDirectPeerUserIdentity(peer.user, space);
+  const isPeerMessage = message.senderUserId === peer.userId;
+  const isPeerReply = message.replyTo?.senderUserId === peer.userId;
 
-  if (!isPeerMessage && !isPeerReply) return message
+  if (!isPeerMessage && !isPeerReply) return message;
   return {
     ...message,
     ...(isPeerMessage
@@ -570,7 +569,7 @@ function applyDirectPeerMessageIdentity(
           senderAvatarAssetId: effectivePeer.avatarAssetId,
           senderAvatarCropOffsetX: effectivePeer.avatarCropOffsetX,
           senderAvatarCropOffsetY: effectivePeer.avatarCropOffsetY,
-          senderAvatarCropZoom: effectivePeer.avatarCropZoom,
+          senderAvatarCropZoom: effectivePeer.avatarCropZoom
         }
       : {}),
     replyTo:
@@ -581,23 +580,23 @@ function applyDirectPeerMessageIdentity(
             senderAvatarAssetId: effectivePeer.avatarAssetId,
             senderAvatarCropOffsetX: effectivePeer.avatarCropOffsetX,
             senderAvatarCropOffsetY: effectivePeer.avatarCropOffsetY,
-            senderAvatarCropZoom: effectivePeer.avatarCropZoom,
+            senderAvatarCropZoom: effectivePeer.avatarCropZoom
           }
-        : message.replyTo,
-  }
+        : message.replyTo
+  };
 }
 
 function applyDirectPeerDeletedMessageIdentity(
   deletedMessage: PrivateDeletedMessageResponse,
   space: PrivateSpaceResponse,
-  currentUserId: string,
+  currentUserId: string
 ): PrivateDeletedMessageResponse {
   return {
     ...deletedMessage,
     message: applyDirectPeerMessageIdentity(
       deletedMessage.message,
       space,
-      currentUserId,
-    ),
-  }
+      currentUserId
+    )
+  };
 }

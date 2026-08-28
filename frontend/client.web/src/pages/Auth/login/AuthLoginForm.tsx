@@ -1,22 +1,24 @@
-import type { FormEvent } from 'react'
-import { authCopy, SystemIcon } from '../../../system/shared/index'
-import type { LoginForm } from '../model/AuthPageModel'
-import { AuthPasswordField } from '../fields/AuthPasswordField'
-import formStyles from './AuthFormControls.module.css'
-import styles from './AuthLoginForm.module.css'
+import type { FormEvent } from 'react';
+
+import { SystemIcon, authCopy } from '../../../system/shared/index';
+import { AuthPasswordField } from '../fields/AuthPasswordField';
+import type { LoginForm } from '../model/AuthPageModel';
+
+import formStyles from './AuthFormControls.module.css';
+import styles from './AuthLoginForm.module.css';
 
 export function AuthLoginForm({
   loginForm,
   isLoading,
   onSubmit,
   onChange,
-  onForgotPassword,
+  onForgotPassword
 }: {
-  loginForm: LoginForm
-  isLoading: boolean
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
-  onChange: (form: LoginForm) => void
-  onForgotPassword: () => void
+  loginForm: LoginForm;
+  isLoading: boolean;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onChange: (form: LoginForm) => void;
+  onForgotPassword: () => void;
 }) {
   return (
     <form
@@ -37,7 +39,7 @@ export function AuthLoginForm({
             onChange={(event) =>
               onChange({
                 ...loginForm,
-                loginOrEmail: event.target.value,
+                loginOrEmail: event.target.value
               })
             }
           />
@@ -77,5 +79,5 @@ export function AuthLoginForm({
         <strong>{loginForm.deviceName}</strong>
       </div>
     </form>
-  )
+  );
 }

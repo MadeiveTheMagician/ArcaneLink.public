@@ -2,12 +2,17 @@
 .fullDialog {
   color: var(--color-text);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-bg), transparent 46%), color-mix(in srgb, var(--color-bg), transparent 18%)),
-    var(--server-member-profile-background, none),
-    var(--theme-frame-bg-strong);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-bg), transparent 46%),
+      color-mix(in srgb, var(--color-bg), transparent 18%)
+    ),
+    var(--server-member-profile-background, none), var(--theme-frame-bg-strong);
   background-position: center;
   background-size: cover;
-  box-shadow: 0 24px 76px rgb(0 0 0 / 48%), 0 0 42px var(--theme-glow);
+  box-shadow:
+    0 24px 76px rgb(0 0 0 / 48%),
+    0 0 42px var(--theme-glow);
 }
 
 .compactCard {
@@ -23,8 +28,19 @@
 
 .banner {
   min-height: 98px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--profile-accent-color, var(--theme-accent)), #fff 8%), color-mix(in srgb, var(--profile-accent-color, var(--theme-accent)), #000 30%));
+  background: linear-gradient(
+    135deg,
+    color-mix(
+      in srgb,
+      var(--profile-accent-color, var(--theme-accent)),
+      #fff 8%
+    ),
+    color-mix(
+      in srgb,
+      var(--profile-accent-color, var(--theme-accent)),
+      #000 30%
+    )
+  );
   background-position: center;
   background-size: cover;
 }
@@ -82,8 +98,7 @@
 
 .dialogCloseButton:hover > span,
 .dialogCloseButton:focus-visible > span {
-  filter:
-    drop-shadow(0 0 5px var(--theme-glow-strong))
+  filter: drop-shadow(0 0 5px var(--theme-glow-strong))
     drop-shadow(0 0 12px var(--theme-glow));
   transform: scale(1.06);
 }
@@ -207,11 +222,20 @@
 }
 
 .roles > span {
-  border: 1px solid color-mix(in srgb, var(--server-member-role-color), transparent 44%);
+  border: 1px solid
+    color-mix(in srgb, var(--server-member-role-color), transparent 44%);
   border-radius: 999px;
   padding: 5px 9px;
-  color: color-mix(in srgb, var(--server-member-role-color), var(--color-text) 32%);
-  background: color-mix(in srgb, var(--server-member-role-color), transparent 86%);
+  color: color-mix(
+    in srgb,
+    var(--server-member-role-color),
+    var(--color-text) 32%
+  );
+  background: color-mix(
+    in srgb,
+    var(--server-member-role-color),
+    transparent 86%
+  );
   font-size: 12px;
   font-weight: 800;
 }
@@ -333,8 +357,7 @@
       color-mix(in srgb, var(--color-bg), transparent 70%),
       color-mix(in srgb, var(--color-bg), transparent 48%)
     ),
-    var(--server-member-profile-background, none),
-    var(--theme-frame-bg);
+    var(--server-member-profile-background, none), var(--theme-frame-bg);
   background-position: center;
   background-size: cover;
 }
@@ -506,35 +529,83 @@
 }
 
 @keyframes compactProfileIn {
-  from { opacity: 0; transform: translateX(8px) scale(0.97); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateX(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
 
 @keyframes fullProfileBackdropIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fullProfileIn {
-  from { opacity: 0; transform: translateY(12px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (max-width: 760px) {
-  .fullBackdrop { padding: 0; }
-  .fullDialog { width: 100vw; height: 100dvh; border: 0; border-radius: 0; }
-  .fullLayout { grid-template-columns: 1fr; overflow: auto; }
-  .fullProfile { overflow: visible; border-right: 0; }
-  .mutualPanel { min-height: 320px; border-top: 1px solid var(--theme-border-soft); }
-  .fullProfileContent { grid-template-columns: 1fr; padding: 18px; }
-  .profileFacts { grid-template-columns: 1fr; }
-  .fullProfile > .identity { grid-template-columns: 82px minmax(0, 1fr); margin: -42px 18px 42px; }
-  .fullProfile > .identity .avatar { width: 82px; height: 82px; border-radius: 18px; }
-  .fullProfile > .identity > span:last-child { transform: translateY(42px); }
+  .fullBackdrop {
+    padding: 0;
+  }
+  .fullDialog {
+    width: 100vw;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+  .fullLayout {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+  .fullProfile {
+    overflow: visible;
+    border-right: 0;
+  }
+  .mutualPanel {
+    min-height: 320px;
+    border-top: 1px solid var(--theme-border-soft);
+  }
+  .fullProfileContent {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+  .profileFacts {
+    grid-template-columns: 1fr;
+  }
+  .fullProfile > .identity {
+    grid-template-columns: 82px minmax(0, 1fr);
+    margin: -42px 18px 42px;
+  }
+  .fullProfile > .identity .avatar {
+    width: 82px;
+    height: 82px;
+    border-radius: 18px;
+  }
+  .fullProfile > .identity > span:last-child {
+    transform: translateY(42px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .compactCard,
   .fullBackdrop,
-  .fullDialog { animation: none; }
+  .fullDialog {
+    animation: none;
+  }
 }

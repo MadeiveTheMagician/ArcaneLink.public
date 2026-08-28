@@ -107,9 +107,10 @@
 
 .heading button:hover,
 .heading button:focus-visible {
-  filter:
-    drop-shadow(0 0 6px var(--theme-glow-strong))
-    drop-shadow(0 0 16px color-mix(in srgb, var(--theme-accent), transparent 68%));
+  filter: drop-shadow(0 0 6px var(--theme-glow-strong))
+    drop-shadow(
+      0 0 16px color-mix(in srgb, var(--theme-accent), transparent 68%)
+    );
 }
 
 .shell {
@@ -126,7 +127,11 @@
   border-right: 1px solid var(--profile-border-soft, var(--theme-border-soft));
   padding: 14px;
   background:
-    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-accent), transparent 90%), transparent 42%),
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 90%),
+      transparent 42%
+    ),
     rgba(4, 9, 22, 0.34);
 }
 
@@ -229,7 +234,11 @@
   border-radius: 8px;
   padding: 12px;
   background:
-    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-accent), transparent 88%), transparent 38%),
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 88%),
+      transparent 38%
+    ),
     var(--theme-control-bg);
 }
 
@@ -286,7 +295,11 @@
 .defaultSpaceList button:not(:disabled):hover {
   border-color: var(--theme-border-accent);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 86%), transparent 76%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 86%),
+      transparent 76%
+    ),
     var(--theme-hover-bg);
   box-shadow: 0 0 18px var(--theme-glow);
 }
@@ -333,7 +346,11 @@
 .defaultSpaceList button.defaultSpaceActive {
   border-color: color-mix(in srgb, var(--color-success), transparent 50%);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-success), transparent 88%), transparent 72%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-success), transparent 88%),
+      transparent 72%
+    ),
     var(--theme-control-bg);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--color-success), transparent 88%),
@@ -360,7 +377,8 @@
     grid-auto-columns: minmax(116px, 1fr);
     overflow-x: auto;
     border-right: 0;
-    border-bottom: 1px solid var(--profile-border-soft, var(--theme-border-soft));
+    border-bottom: 1px solid
+      var(--profile-border-soft, var(--theme-border-soft));
     padding: 10px;
   }
 

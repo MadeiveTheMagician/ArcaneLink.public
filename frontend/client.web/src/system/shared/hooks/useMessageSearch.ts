@@ -1,84 +1,86 @@
-import { useEffect, useMemo, useState } from 'react'
-import { apiJson } from '../../../shared/api/api'
-import type { SpaceMessageResponse } from '../../../shared/types'
-import { messageSearchHookCopy } from './messageSearch.copy'
+import { useEffect, useMemo, useState } from 'react';
+
+import { apiJson } from '../../../shared/api/api';
+import type { SpaceMessageResponse } from '../../../shared/types';
+import { messageSearchHookCopy } from './messageSearch.copy';
 
 export type MessageSearchFilters = {
-  senderUserId: string
-  spaceId: string
-  attachmentType: string
-}
+  senderUserId: string;
+  spaceId: string;
+  attachmentType: string;
+};
 
 type SubmittedSearch = {
-  endpoint: string | null
-  query: string
-  filters: MessageSearchFilters
-}
+  endpoint: string | null;
+  query: string;
+  filters: MessageSearchFilters;
+};
 
 type UseMessageSearchOptions = {
-  accessToken: string
-  endpoint: string | null
-  limit?: number
-}
+  accessToken: string;
+  endpoint: string | null;
+  limit?: number;
+};
 
 const emptyFilters: MessageSearchFilters = {
   senderUserId: '',
   spaceId: '',
-  attachmentType: '',
-}
+  attachmentType: ''
+};
 
 export function useMessageSearch({
   accessToken,
   endpoint,
-  limit = 30,
+  limit = 30
 }: UseMessageSearchOptions) {
-  const [query, setQuery] = useState('')
-  const [filters, setFilters] = useState<MessageSearchFilters>(emptyFilters)
+  const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState<MessageSearchFilters>(emptyFilters);
   const [submittedSearch, setSubmittedSearch] =
-    useState<SubmittedSearch | null>(null)
-  const [results, setResults] = useState<SpaceMessageResponse[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const normalizedQuery = query.trim()
-  const submittedQuery = submittedSearch?.query ?? ''
+    useState<SubmittedSearch | null>(null);
+  const [results, setResults] = useState<SpaceMessageResponse[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const normalizedQuery = query.trim();
+  const submittedQuery = submittedSearch?.query ?? '';
   const hasSubmittedFilters = Boolean(
     submittedSearch?.filters.senderUserId ||
-      submittedSearch?.filters.spaceId ||
-      submittedSearch?.filters.attachmentType,
-  )
-  const isActive = Boolean(submittedSearch) &&
-    (submittedQuery.length > 0 || hasSubmittedFilters)
+    submittedSearch?.filters.spaceId ||
+    submittedSearch?.filters.attachmentType
+  );
+  const isActive =
+    Boolean(submittedSearch) &&
+    (submittedQuery.length > 0 || hasSubmittedFilters);
   const requestUrl = useMemo(() => {
     if (
       !endpoint ||
       !submittedSearch ||
       submittedSearch.endpoint !== endpoint
     ) {
-      return null
+      return null;
     }
 
     const params = new URLSearchParams({
       query: submittedSearch.query,
-      limit: String(limit),
-    })
+      limit: String(limit)
+    });
 
     if (submittedSearch.filters.senderUserId) {
-      params.set('senderUserId', submittedSearch.filters.senderUserId)
+      params.set('senderUserId', submittedSearch.filters.senderUserId);
     }
 
     if (submittedSearch.filters.spaceId) {
-      params.set('spaceId', submittedSearch.filters.spaceId)
+      params.set('spaceId', submittedSearch.filters.spaceId);
     }
 
     if (submittedSearch.filters.attachmentType) {
-      params.set('attachmentType', submittedSearch.filters.attachmentType)
+      params.set('attachmentType', submittedSearch.filters.attachmentType);
     }
 
-    return `${endpoint}?${params.toString()}`
-  }, [endpoint, limit, submittedSearch])
+    return `${endpoint}?${params.toString()}`;
+  }, [endpoint, limit, submittedSearch]);
 
   function submitSearch(filterOverride: MessageSearchFilters | null = null) {
-    const nextFilters = filterOverride ?? filters
+    const nextFilters = filterOverride ?? filters;
 
     if (
       !normalizedQuery &&
@@ -86,70 +88,70 @@ export function useMessageSearch({
       !nextFilters.spaceId &&
       !nextFilters.attachmentType
     ) {
-      clearSearch()
-      return
+      clearSearch();
+      return;
     }
 
     setSubmittedSearch({
       endpoint,
       query: normalizedQuery,
-      filters: nextFilters,
-    })
+      filters: nextFilters
+    });
   }
 
   function clearSearch() {
-    setQuery('')
-    setFilters(emptyFilters)
-    setSubmittedSearch(null)
-    setResults([])
-    setError(null)
+    setQuery('');
+    setFilters(emptyFilters);
+    setSubmittedSearch(null);
+    setResults([]);
+    setError(null);
   }
 
   useEffect(() => {
-    setQuery('')
-    setFilters(emptyFilters)
-    setSubmittedSearch(null)
-    setResults([])
-    setError(null)
-  }, [endpoint])
+    setQuery('');
+    setFilters(emptyFilters);
+    setSubmittedSearch(null);
+    setResults([]);
+    setError(null);
+  }, [endpoint]);
 
   useEffect(() => {
     if (!requestUrl) {
-      setResults([])
-      setIsSearching(false)
-      setError(null)
-      return undefined
+      setResults([]);
+      setIsSearching(false);
+      setError(null);
+      return undefined;
     }
 
-    const controller = new AbortController()
-    setIsSearching(true)
-    setError(null)
+    const controller = new AbortController();
+    setIsSearching(true);
+    setError(null);
 
     void apiJson<SpaceMessageResponse[]>(requestUrl, {
       accessToken,
-      signal: controller.signal,
+      signal: controller.signal
     })
       .then((items) => {
-        setResults(items)
+        setResults(items);
       })
       .catch(() => {
         if (controller.signal.aborted) {
-          return
+          return;
         }
 
-        setResults([])
-        setError(messageSearchHookCopy.errors.searchFailed)
+        setResults([]);
+        setError(messageSearchHookCopy.errors.searchFailed);
       })
       .finally(() => {
         if (!controller.signal.aborted) {
-          setIsSearching(false)
+          setIsSearching(false);
         }
-      })
+      });
 
     return () => {
-      controller.abort()
-    }
-  }, [accessToken, requestUrl])
+      controller.abort();
+    };
+  }, [accessToken, requestUrl]);
 
   return {
     query,
@@ -163,6 +165,6 @@ export function useMessageSearch({
     isSearching,
     error,
     submitSearch,
-    clearSearch,
-  }
+    clearSearch
+  };
 }

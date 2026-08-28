@@ -1,7 +1,7 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
 
-import type { VoiceParticipant } from '../../src/system/Server/hooks/voice/voiceChannelTypes'
-import { isLocalVoiceParticipant } from '../../src/system/Server/hooks/voice/voiceParticipantMembershipModel'
+import type { VoiceParticipant } from '../../src/system/Server/hooks/voice/voiceChannelTypes';
+import { isLocalVoiceParticipant } from '../../src/system/Server/hooks/voice/voiceParticipantMembershipModel';
 
 const participant: VoiceParticipant = {
   participantId: 'participant-tab-a',
@@ -11,8 +11,8 @@ const participant: VoiceParticipant = {
   isMuted: false,
   isDeafened: false,
   isCameraEnabled: false,
-  isScreenSharing: false,
-}
+  isScreenSharing: false
+};
 
 test.describe('voice participant membership', () => {
   test('keeps the same account visible in a passive browser tab', () => {
@@ -21,10 +21,10 @@ test.describe('voice participant membership', () => {
         participant,
         currentUserId: participant.userId,
         localParticipantId: null,
-        hasConnectedChannel: false,
-      }),
-    ).toBe(false)
-  })
+        hasConnectedChannel: false
+      })
+    ).toBe(false);
+  });
 
   test('uses the user id while the current tab is still joining', () => {
     expect(
@@ -32,10 +32,10 @@ test.describe('voice participant membership', () => {
         participant,
         currentUserId: participant.userId,
         localParticipantId: null,
-        hasConnectedChannel: true,
-      }),
-    ).toBe(true)
-  })
+        hasConnectedChannel: true
+      })
+    ).toBe(true);
+  });
 
   test('uses the connection participant id after joining', () => {
     expect(
@@ -43,17 +43,17 @@ test.describe('voice participant membership', () => {
         participant,
         currentUserId: participant.userId,
         localParticipantId: participant.participantId,
-        hasConnectedChannel: true,
-      }),
-    ).toBe(true)
+        hasConnectedChannel: true
+      })
+    ).toBe(true);
 
     expect(
       isLocalVoiceParticipant({
         participant,
         currentUserId: participant.userId,
         localParticipantId: 'participant-tab-b',
-        hasConnectedChannel: true,
-      }),
-    ).toBe(false)
-  })
-})
+        hasConnectedChannel: true
+      })
+    ).toBe(false);
+  });
+});

@@ -43,19 +43,35 @@
   :global(.profile-page.is-server-mode) .panel button {
     grid-template-columns: 44px minmax(0, 1fr);
     min-height: 62px;
-    border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 88%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent-light), transparent 88%);
     border-radius: 10px;
     padding: 9px 12px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
   }
 
   :global(.profile-page.is-server-mode) .panel button:hover,
   :global(.profile-page.is-server-mode) .panel .active {
-    border-color: color-mix(in srgb, var(--theme-accent-light), transparent 68%);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent-light),
+      transparent 68%
+    );
     background:
-      radial-gradient(circle at 12% 50%, color-mix(in srgb, var(--theme-accent), transparent 72%), transparent 42%),
-      linear-gradient(180deg, var(--theme-hover-bg), var(--theme-control-bg-strong));
+      radial-gradient(
+        circle at 12% 50%,
+        color-mix(in srgb, var(--theme-accent), transparent 72%),
+        transparent 42%
+      ),
+      linear-gradient(
+        180deg,
+        var(--theme-hover-bg),
+        var(--theme-control-bg-strong)
+      );
   }
 
   :global(.profile-page.is-server-mode) .avatar {
@@ -65,7 +81,8 @@
     height: 38px;
     place-items: center;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 72%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent-light), transparent 72%);
     border-radius: 11px;
     color: var(--theme-avatar-contrast);
     background: var(--theme-avatar-bg);

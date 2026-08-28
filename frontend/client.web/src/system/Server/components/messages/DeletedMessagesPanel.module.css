@@ -7,7 +7,11 @@
   overflow: hidden;
   border-left: 1px solid var(--theme-border-soft);
   background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--theme-accent), transparent 82%), transparent 38%),
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 82%),
+      transparent 38%
+    ),
     var(--theme-surface-raised);
   box-shadow: -18px 0 34px rgba(0, 0, 0, 0.26);
   opacity: 0;

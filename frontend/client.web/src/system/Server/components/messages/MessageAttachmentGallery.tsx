@@ -1,121 +1,124 @@
-import { useLayoutEffect, useRef, useState } from 'react'
-import type { SpaceMessageAssetResponse } from '../../../../shared/types'
-import { serverCopy, SystemIcon } from '../../../shared'
+import { useLayoutEffect, useRef, useState } from 'react';
+
+import type { SpaceMessageAssetResponse } from '../../../../shared/types';
+import { SystemIcon, serverCopy } from '../../../shared';
+import { resolveAttachmentLayoutTransition } from './messageAttachmentLayoutModel';
 import {
   formatFileSize,
   isArchiveAsset,
   isImageAsset,
-  isVideoAsset,
-} from './messageUtils'
-import { resolveAttachmentLayoutTransition } from './messageAttachmentLayoutModel'
-import styles from './MessageAttachmentGallery.module.css'
+  isVideoAsset
+} from './messageUtils';
 
-type AttachmentDensity = 'featured' | 'preview' | 'full'
+import styles from './MessageAttachmentGallery.module.css';
+
+type AttachmentDensity = 'featured' | 'preview' | 'full';
 
 type MessageAttachmentGalleryProps = {
-  assets: SpaceMessageAssetResponse[]
-  defaultExpanded: boolean
-  fillAvailableWidth?: boolean
-  onOpenPreview: (asset: SpaceMessageAssetResponse) => void
-  onRequestDownload: (asset: SpaceMessageAssetResponse) => void
-}
+  assets: SpaceMessageAssetResponse[];
+  defaultExpanded: boolean;
+  fillAvailableWidth?: boolean;
+  onOpenPreview: (asset: SpaceMessageAssetResponse) => void;
+  onRequestDownload: (asset: SpaceMessageAssetResponse) => void;
+};
 
 export function MessageAttachmentGallery({
   assets,
   defaultExpanded,
   fillAvailableWidth = false,
   onOpenPreview,
-  onRequestDownload,
+  onRequestDownload
 }: MessageAttachmentGalleryProps) {
-  const [layoutOverride, setLayoutOverride] = useState<boolean | null>(null)
-  const isExpanded = layoutOverride ?? defaultExpanded
-  const layoutViewportRef = useRef<HTMLDivElement | null>(null)
-  const layoutContentRef = useRef<HTMLDivElement | null>(null)
-  const previousLayoutHeightRef = useRef<number | null>(null)
-  const pendingLayoutHeightRef = useRef<number | null>(null)
-  const hasSeveralAssets = assets.length > 1
-  const onlyAsset = assets[0]
-  const isSingleFile = assets.length === 1
-    && onlyAsset
-    && !isImageAsset(onlyAsset)
-    && !isVideoAsset(onlyAsset)
+  const [layoutOverride, setLayoutOverride] = useState<boolean | null>(null);
+  const isExpanded = layoutOverride ?? defaultExpanded;
+  const layoutViewportRef = useRef<HTMLDivElement | null>(null);
+  const layoutContentRef = useRef<HTMLDivElement | null>(null);
+  const previousLayoutHeightRef = useRef<number | null>(null);
+  const pendingLayoutHeightRef = useRef<number | null>(null);
+  const hasSeveralAssets = assets.length > 1;
+  const onlyAsset = assets[0];
+  const isSingleFile =
+    assets.length === 1 &&
+    onlyAsset &&
+    !isImageAsset(onlyAsset) &&
+    !isVideoAsset(onlyAsset);
   const canFillAvailableWidth =
-    fillAvailableWidth && assets.every((asset) => !isVideoAsset(asset))
-  const previewAssets = assets.slice(1, 10)
-  const hiddenAssetCount = Math.max(0, assets.length - 10)
+    fillAvailableWidth && assets.every((asset) => !isVideoAsset(asset));
+  const previewAssets = assets.slice(1, 10);
+  const hiddenAssetCount = Math.max(0, assets.length - 10);
 
   useLayoutEffect(() => {
-    const viewport = layoutViewportRef.current
-    const content = layoutContentRef.current
-    if (!viewport || !content) return undefined
-    const activeViewport = viewport
-    const activeContent = content
+    const viewport = layoutViewportRef.current;
+    const content = layoutContentRef.current;
+    if (!viewport || !content) return undefined;
+    const activeViewport = viewport;
+    const activeContent = content;
 
-    const toHeight = activeContent.getBoundingClientRect().height
+    const toHeight = activeContent.getBoundingClientRect().height;
     const transition = resolveAttachmentLayoutTransition({
       fromHeight:
         pendingLayoutHeightRef.current ?? previousLayoutHeightRef.current,
       toHeight,
       prefersReducedMotion: window.matchMedia(
-        '(prefers-reduced-motion: reduce)',
-      ).matches,
-    })
+        '(prefers-reduced-motion: reduce)'
+      ).matches
+    });
 
-    pendingLayoutHeightRef.current = null
-    previousLayoutHeightRef.current = transition.toHeight
-    if (!transition.shouldAnimate) return undefined
+    pendingLayoutHeightRef.current = null;
+    previousLayoutHeightRef.current = transition.toHeight;
+    if (!transition.shouldAnimate) return undefined;
 
-    activeViewport.style.height = `${transition.fromHeight}px`
-    activeViewport.style.overflow = 'clip'
-    activeViewport.style.willChange = 'height'
-    activeContent.style.willChange = 'opacity, transform'
+    activeViewport.style.height = `${transition.fromHeight}px`;
+    activeViewport.style.overflow = 'clip';
+    activeViewport.style.willChange = 'height';
+    activeContent.style.willChange = 'opacity, transform';
 
     const heightAnimation = activeViewport.animate(
       [
         { height: `${transition.fromHeight}px` },
-        { height: `${transition.toHeight}px` },
+        { height: `${transition.toHeight}px` }
       ],
       {
         duration: 220,
-        easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-      },
-    )
+        easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
+      }
+    );
     const contentAnimation = activeContent.animate(
       [
         {
           opacity: 0.58,
-          transform: `translateY(${isExpanded ? '-6px' : '6px'})`,
+          transform: `translateY(${isExpanded ? '-6px' : '6px'})`
         },
-        { opacity: 1, transform: 'translateY(0)' },
+        { opacity: 1, transform: 'translateY(0)' }
       ],
       {
         duration: 180,
-        easing: 'ease-out',
-      },
-    )
+        easing: 'ease-out'
+      }
+    );
 
     function clearAnimationStyles() {
-      activeViewport.style.removeProperty('height')
-      activeViewport.style.removeProperty('overflow')
-      activeViewport.style.removeProperty('will-change')
-      activeContent.style.removeProperty('will-change')
+      activeViewport.style.removeProperty('height');
+      activeViewport.style.removeProperty('overflow');
+      activeViewport.style.removeProperty('will-change');
+      activeContent.style.removeProperty('will-change');
     }
 
     heightAnimation.addEventListener('finish', clearAnimationStyles, {
-      once: true,
-    })
+      once: true
+    });
 
     return () => {
-      heightAnimation.cancel()
-      contentAnimation.cancel()
-      clearAnimationStyles()
-    }
-  }, [isExpanded])
+      heightAnimation.cancel();
+      contentAnimation.cancel();
+      clearAnimationStyles();
+    };
+  }, [isExpanded]);
 
   function toggleAttachmentLayout() {
     pendingLayoutHeightRef.current =
-      layoutViewportRef.current?.getBoundingClientRect().height ?? null
-    setLayoutOverride(!isExpanded)
+      layoutViewportRef.current?.getBoundingClientRect().height ?? null;
+    setLayoutOverride(!isExpanded);
   }
 
   if (isSingleFile) {
@@ -130,7 +133,7 @@ export function MessageAttachmentGallery({
           onRequestDownload={onRequestDownload}
         />
       </section>
-    )
+    );
   }
 
   return (
@@ -198,8 +201,8 @@ export function MessageAttachmentGallery({
                           onClick={() => {
                             pendingLayoutHeightRef.current =
                               layoutViewportRef.current?.getBoundingClientRect()
-                                .height ?? null
-                            setLayoutOverride(true)
+                                .height ?? null;
+                            setLayoutOverride(true);
                           }}
                           aria-label={serverCopy.messages.expandAttachments}
                         >
@@ -214,36 +217,36 @@ export function MessageAttachmentGallery({
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 function AttachmentTile({
   asset,
   density,
   onOpenPreview,
-  onRequestDownload,
+  onRequestDownload
 }: {
-  asset: SpaceMessageAssetResponse
-  density: AttachmentDensity
-  onOpenPreview: (asset: SpaceMessageAssetResponse) => void
-  onRequestDownload: (asset: SpaceMessageAssetResponse) => void
+  asset: SpaceMessageAssetResponse;
+  density: AttachmentDensity;
+  onOpenPreview: (asset: SpaceMessageAssetResponse) => void;
+  onRequestDownload: (asset: SpaceMessageAssetResponse) => void;
 }) {
-  const [isRevealed, setIsRevealed] = useState(!asset.isSpoiler)
-  const assetUrl = `/api/assets/${asset.assetId}/content`
-  const isImage = isImageAsset(asset)
-  const isVideo = isVideoAsset(asset)
-  const isPreview = density === 'preview'
+  const [isRevealed, setIsRevealed] = useState(!asset.isSpoiler);
+  const assetUrl = `/api/assets/${asset.assetId}/content`;
+  const isImage = isImageAsset(asset);
+  const isVideo = isVideoAsset(asset);
+  const isPreview = density === 'preview';
   const tileClassName = `${styles.tile} ${styles[density]} ${
     asset.isSpoiler ? styles.spoiler : ''
-  } ${asset.isSpoiler && !isRevealed ? styles.concealed : ''}`
+  } ${asset.isSpoiler && !isRevealed ? styles.concealed : ''}`;
 
   function revealOr(action: () => void) {
     if (asset.isSpoiler && !isRevealed) {
-      setIsRevealed(true)
-      return
+      setIsRevealed(true);
+      return;
     }
 
-    action()
+    action();
   }
 
   if (isImage || isVideo) {
@@ -269,7 +272,7 @@ function AttachmentTile({
         )}
         <SpoilerLabel visible={asset.isSpoiler && !isRevealed} />
       </button>
-    )
+    );
   }
 
   return (
@@ -293,15 +296,15 @@ function AttachmentTile({
         )}
       </span>
     </button>
-  )
+  );
 }
 
 function SingleFileAttachment({
   asset,
-  onRequestDownload,
+  onRequestDownload
 }: {
-  asset: SpaceMessageAssetResponse
-  onRequestDownload: (asset: SpaceMessageAssetResponse) => void
+  asset: SpaceMessageAssetResponse;
+  onRequestDownload: (asset: SpaceMessageAssetResponse) => void;
 }) {
   return (
     <button
@@ -325,15 +328,15 @@ function SingleFileAttachment({
       </span>
       <SystemIcon name="download" size={17} />
     </button>
-  )
+  );
 }
 
 function SpoilerLabel({ visible }: { visible: boolean }) {
-  if (!visible) return null
+  if (!visible) return null;
 
   return (
     <span className={styles.spoilerLabel}>
       <SystemIcon name="eye" size={18} /> {serverCopy.messages.showSpoiler}
     </span>
-  )
+  );
 }

@@ -1,187 +1,193 @@
-import { useEffect, useMemo, useState } from 'react'
-import { apiJson, apiNoContent } from '../../../../shared/api/api'
+import { useEffect, useMemo, useState } from 'react';
+
+import { apiJson, apiNoContent } from '../../../../shared/api/api';
 import {
   readUserDataCache,
-  writeUserDataCache,
-} from '../../../../shared/cache/clientCache'
+  writeUserDataCache
+} from '../../../../shared/cache/clientCache';
 import type {
   FriendRequestResponse,
-  UserFriendResponse,
-} from '../../../../shared/types'
-import { useUserPresenceChanged } from '../../../shared/hooks/useUserPresenceChanged'
-import {
-  patchFriendRequestsPresence,
-  patchUserFriendsPresence,
-} from '../../../shared/presence/presenceModel'
+  UserFriendResponse
+} from '../../../../shared/types';
+import { useUserPresenceChanged } from '../../../shared/hooks/useUserPresenceChanged';
 import {
   captureUserPresenceEventBoundary,
   reconcileFriendRequestsWithLatestPresence,
-  reconcileUserFriendsWithLatestPresence,
-} from '../../../shared/presence/presenceEventStore'
+  reconcileUserFriendsWithLatestPresence
+} from '../../../shared/presence/presenceEventStore';
+import {
+  patchFriendRequestsPresence,
+  patchUserFriendsPresence
+} from '../../../shared/presence/presenceModel';
 
 export function useFriends(accessToken: string, userId: string) {
-  const [friends, setFriends] = useState<UserFriendResponse[]>([])
+  const [friends, setFriends] = useState<UserFriendResponse[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<
     FriendRequestResponse[]
-  >([])
+  >([]);
   const [outgoingRequests, setOutgoingRequests] = useState<
     FriendRequestResponse[]
-  >([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isLoadingFriends, setIsLoadingFriends] = useState(false)
-  const isSearchingUsers = false
-  const [isMutatingFriends, setIsMutatingFriends] = useState(false)
-  const [friendNotice, setFriendNotice] = useState<string | null>(null)
+  >([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
+  const isSearchingUsers = false;
+  const [isMutatingFriends, setIsMutatingFriends] = useState(false);
+  const [friendNotice, setFriendNotice] = useState<string | null>(null);
 
   const pendingOutgoingUserIds = useMemo(
     () => new Set(outgoingRequests.map((request) => request.toUserId)),
-    [outgoingRequests],
-  )
+    [outgoingRequests]
+  );
   const friendUserIds = useMemo(
     () => new Set(friends.map((friend) => friend.friendUserId)),
-    [friends],
-  )
+    [friends]
+  );
 
   useUserPresenceChanged((payload) => {
-    setFriends((current) => patchUserFriendsPresence(current, payload))
+    setFriends((current) => patchUserFriendsPresence(current, payload));
     setIncomingRequests((current) =>
-      patchFriendRequestsPresence(current, payload),
-    )
+      patchFriendRequestsPresence(current, payload)
+    );
     setOutgoingRequests((current) =>
-      patchFriendRequestsPresence(current, payload),
-    )
-  })
+      patchFriendRequestsPresence(current, payload)
+    );
+  });
 
   async function loadFriends(silent = false) {
     if (!silent) {
-      setIsLoadingFriends(true)
+      setIsLoadingFriends(true);
     }
 
     try {
-      const presenceBoundary = captureUserPresenceEventBoundary(userId)
+      const presenceBoundary = captureUserPresenceEventBoundary(userId);
       const [rawFriendsResponse, rawIncomingResponse, rawOutgoingResponse] =
         await Promise.all([
           apiJson<UserFriendResponse[]>('/api/friends', { accessToken }),
           apiJson<FriendRequestResponse[]>('/api/friends/requests/incoming', {
-            accessToken,
+            accessToken
           }),
           apiJson<FriendRequestResponse[]>('/api/friends/requests/outgoing', {
-            accessToken,
-          }),
-        ])
+            accessToken
+          })
+        ]);
       const friendsResponse = reconcileUserFriendsWithLatestPresence(
         rawFriendsResponse,
-        presenceBoundary,
-      )
+        presenceBoundary
+      );
       const incomingResponse = reconcileFriendRequestsWithLatestPresence(
         rawIncomingResponse,
-        presenceBoundary,
-      )
+        presenceBoundary
+      );
       const outgoingResponse = reconcileFriendRequestsWithLatestPresence(
         rawOutgoingResponse,
-        presenceBoundary,
-      )
+        presenceBoundary
+      );
 
-      setFriends(friendsResponse)
-      setIncomingRequests(incomingResponse)
-      setOutgoingRequests(outgoingResponse)
+      setFriends(friendsResponse);
+      setIncomingRequests(incomingResponse);
+      setOutgoingRequests(outgoingResponse);
       void writeUserDataCache(userId, 'friends', {
         friends: friendsResponse,
         incomingRequests: incomingResponse,
-        outgoingRequests: outgoingResponse,
-      })
+        outgoingRequests: outgoingResponse
+      });
     } finally {
       if (!silent) {
-        setIsLoadingFriends(false)
+        setIsLoadingFriends(false);
       }
     }
   }
 
   useEffect(() => {
-    let isDisposed = false
+    let isDisposed = false;
 
     void readUserDataCache(userId, 'friends').then((snapshot) => {
       if (!isDisposed && snapshot) {
-        setFriends(reconcileUserFriendsWithLatestPresence(snapshot.friends))
+        setFriends(reconcileUserFriendsWithLatestPresence(snapshot.friends));
         setIncomingRequests(
-          reconcileFriendRequestsWithLatestPresence(
-            snapshot.incomingRequests,
-          ),
-        )
+          reconcileFriendRequestsWithLatestPresence(snapshot.incomingRequests)
+        );
         setOutgoingRequests(
-          reconcileFriendRequestsWithLatestPresence(
-            snapshot.outgoingRequests,
-          ),
-        )
+          reconcileFriendRequestsWithLatestPresence(snapshot.outgoingRequests)
+        );
       }
-    })
+    });
 
-    void loadFriends()
+    void loadFriends();
     return () => {
-      isDisposed = true
-    }
+      isDisposed = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, userId])
+  }, [accessToken, userId]);
 
   async function sendFriendRequest(toUserId: string) {
-    setIsMutatingFriends(true)
-    setFriendNotice(null)
+    setIsMutatingFriends(true);
+    setFriendNotice(null);
 
     try {
       await apiJson<FriendRequestResponse>('/api/friends/requests', {
         method: 'POST',
         accessToken,
-        body: { toUserId },
-      })
-      setFriendNotice('Friend request sent.')
-      await loadFriends()
+        body: { toUserId }
+      });
+      setFriendNotice('Friend request sent.');
+      await loadFriends();
     } finally {
-      setIsMutatingFriends(false)
+      setIsMutatingFriends(false);
     }
   }
 
   async function acceptFriendRequest(requestId: string) {
-    await mutateRequest(`/api/friends/requests/${requestId}/accept`, 'accepted')
+    await mutateRequest(
+      `/api/friends/requests/${requestId}/accept`,
+      'accepted'
+    );
   }
 
   async function declineFriendRequest(requestId: string) {
-    await mutateRequest(`/api/friends/requests/${requestId}/decline`, 'declined')
+    await mutateRequest(
+      `/api/friends/requests/${requestId}/decline`,
+      'declined'
+    );
   }
 
   async function cancelFriendRequest(requestId: string) {
-    await mutateRequest(`/api/friends/requests/${requestId}/cancel`, 'canceled')
+    await mutateRequest(
+      `/api/friends/requests/${requestId}/cancel`,
+      'canceled'
+    );
   }
 
   async function removeFriend(friendUserId: string) {
-    setIsMutatingFriends(true)
-    setFriendNotice(null)
+    setIsMutatingFriends(true);
+    setFriendNotice(null);
 
     try {
       await apiNoContent(`/api/friends/${friendUserId}`, {
         method: 'DELETE',
-        accessToken,
-      })
+        accessToken
+      });
 
-      setFriendNotice('Friend removed.')
-      await loadFriends()
+      setFriendNotice('Friend removed.');
+      await loadFriends();
     } finally {
-      setIsMutatingFriends(false)
+      setIsMutatingFriends(false);
     }
   }
 
   async function mutateRequest(url: string, action: string) {
-    setIsMutatingFriends(true)
-    setFriendNotice(null)
+    setIsMutatingFriends(true);
+    setFriendNotice(null);
 
     try {
       await apiJson<FriendRequestResponse>(url, {
         method: 'POST',
-        accessToken,
-      })
-      setFriendNotice(`Request ${action}.`)
-      await loadFriends()
+        accessToken
+      });
+      setFriendNotice(`Request ${action}.`);
+      await loadFriends();
     } finally {
-      setIsMutatingFriends(false)
+      setIsMutatingFriends(false);
     }
   }
 
@@ -202,6 +208,6 @@ export function useFriends(accessToken: string, userId: string) {
     acceptFriendRequest,
     declineFriendRequest,
     cancelFriendRequest,
-    removeFriend,
-  }
+    removeFriend
+  };
 }

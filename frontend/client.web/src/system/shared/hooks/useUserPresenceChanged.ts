@@ -1,34 +1,35 @@
-import { useEffect, useRef } from 'react'
-import type { UserPresenceChangedPayload } from '../presence/presenceModel'
+import { useEffect, useRef } from 'react';
+
+import type { UserPresenceChangedPayload } from '../presence/presenceModel';
 
 export const userPresenceChangedWindowEvent =
-  'arcanelink:user-presence-changed'
+  'arcanelink:user-presence-changed';
 
 export function useUserPresenceChanged(
-  onPresenceChanged: (payload: UserPresenceChangedPayload) => void,
+  onPresenceChanged: (payload: UserPresenceChangedPayload) => void
 ) {
-  const callbackRef = useRef(onPresenceChanged)
+  const callbackRef = useRef(onPresenceChanged);
 
   useEffect(() => {
-    callbackRef.current = onPresenceChanged
-  }, [onPresenceChanged])
+    callbackRef.current = onPresenceChanged;
+  }, [onPresenceChanged]);
 
   useEffect(() => {
     function handlePresenceChanged(event: Event) {
       callbackRef.current(
-        (event as CustomEvent<UserPresenceChangedPayload>).detail,
-      )
+        (event as CustomEvent<UserPresenceChangedPayload>).detail
+      );
     }
 
     window.addEventListener(
       userPresenceChangedWindowEvent,
-      handlePresenceChanged,
-    )
+      handlePresenceChanged
+    );
 
     return () =>
       window.removeEventListener(
         userPresenceChangedWindowEvent,
-        handlePresenceChanged,
-      )
-  }, [])
+        handlePresenceChanged
+      );
+  }, []);
 }

@@ -7,8 +7,8 @@ export const settingsCopy = {
     currentSession: 'Текущий',
     currentSessionProtected: 'Текущий сеанс останется активным',
     otherSessionsCount: (count: number) => {
-      const remainder100 = count % 100
-      const remainder10 = count % 10
+      const remainder100 = count % 100;
+      const remainder10 = count % 10;
       const suffix =
         remainder100 >= 11 && remainder100 <= 14
           ? 'других устройств'
@@ -16,9 +16,9 @@ export const settingsCopy = {
             ? 'другое устройство'
             : remainder10 >= 2 && remainder10 <= 4
               ? 'других устройства'
-              : 'других устройств'
+              : 'других устройств';
 
-      return `${count} ${suffix}`
+      return `${count} ${suffix}`;
     },
     revokeSession: 'Прервать сеанс',
     revokingSession: 'Прерываем...',
@@ -75,13 +75,13 @@ export const settingsCopy = {
     revokingAllSessions: 'Прерываем все сеансы...',
     revokeAllSessionsWarning:
       'Прервать все активные сеансы, включая текущий? После этого потребуется войти заново.',
-    yesDelete: 'Да, удалить',
+    yesDelete: 'Да, удалить'
   },
   actions: {
     resetInterface: 'Сбросить настройки интерфейса',
     resetScale: 'Сбросить масштаб',
     resetStreaming: 'Сбросить настройки стриминга',
-    resetVoice: 'Сбросить настройки голоса и видео',
+    resetVoice: 'Сбросить настройки голоса и видео'
   },
   errors: {
     bannerLimit: 'Доступно не больше 10 сохранённых баннеров профиля.',
@@ -109,7 +109,7 @@ export const settingsCopy = {
       'Поддерживаются изображения JPEG, PNG, WebP, GIF и BMP.',
     serverProfileAssetTooLarge: 'Изображение не должно превышать 10 МБ.',
     uploadBackground: 'Не удалось загрузить фон профиля.',
-    uploadBanner: 'Не удалось загрузить баннер профиля.',
+    uploadBanner: 'Не удалось загрузить баннер профиля.'
   },
   interface: {
     advancedFeatures: 'Дополнительные функции',
@@ -166,7 +166,7 @@ export const settingsCopy = {
       'Когда включено, закладка открыта постоянно, а внешний переключатель скрыт.',
     showPrivateReadAllButton: 'Отображать кнопку «Прочитать всё»',
     showPrivateReadAllButtonDescription:
-      'Показывать кнопку над списком переписок, когда есть непрочитанные сообщения.',
+      'Показывать кнопку над списком переписок, когда есть непрочитанные сообщения.'
   },
   profile: {
     addBanner: 'Добавить баннер',
@@ -193,8 +193,7 @@ export const settingsCopy = {
       `${current} из ${max} символов`,
     displayNameRequired: 'Введите отображаемое имя.',
     displayNameSaved: 'Отображаемое имя сохранено.',
-    displayNameTooLong:
-      'Отображаемое имя не может быть длиннее 128 символов.',
+    displayNameTooLong: 'Отображаемое имя не может быть длиннее 128 символов.',
     identityDescription:
       'Публичные данные, которые видят другие пользователи ArcaneLink.',
     identityTitle: 'Основной профиль',
@@ -274,22 +273,20 @@ export const settingsCopy = {
     serverProfileUseGlobal: 'Вернуть к основному',
     uploadLimit: 'До 10 МБ',
     uploadingBackground: 'Загружаем...',
-    uploadingBanner: 'Загружаем баннер...',
+    uploadingBanner: 'Загружаем баннер...'
   },
   privacy: {
     directMessagesTitle: 'Личные сообщения',
     directMessagesDescription:
       'Разрешите личные сообщения всем, никому или отдельным категориям пользователей.',
     directMessagesLabel: 'Кто может писать мне',
-    directMessagesHint:
-      'Чёрный список имеет приоритет над этим разрешением.',
+    directMessagesHint: 'Чёрный список имеет приоритет над этим разрешением.',
     directMessagesEveryone: 'Все пользователи',
     directMessagesEveryoneDescription:
       'Любой пользователь сможет начать с вами личную переписку.',
     directMessagesCustomSeparator: 'Или выберите категории',
     directMessagesFriends: 'Друзья',
-    directMessagesFriendsDescription:
-      'Пользователи из вашего списка друзей.',
+    directMessagesFriendsDescription: 'Пользователи из вашего списка друзей.',
     directMessagesFriendsOfFriends: 'Друзья друзей',
     directMessagesFriendsOfFriendsDescription:
       'Пользователи, с которыми у вас есть хотя бы один общий друг.',
@@ -340,8 +337,7 @@ export const settingsCopy = {
       'Любой пользователь сможет видеть разрешённые данные о вашей активности.',
     visibilityCustomSeparator: 'Или выберите категории',
     visibilityFriends: 'Друзья',
-    visibilityFriendsDescription:
-      'Пользователи из вашего списка друзей.',
+    visibilityFriendsDescription: 'Пользователи из вашего списка друзей.',
     visibilityFriendsOfFriends: 'Друзья друзей',
     visibilityFriendsOfFriendsDescription:
       'Пользователи, с которыми у вас есть хотя бы один общий друг.',
@@ -354,7 +350,7 @@ export const settingsCopy = {
     visibilityNobody: 'Никто',
     visibilityNobodyDescription:
       'Данные о присутствии будут скрыты от всех, кроме вас.',
-    visibilityTitle: 'Приватность присутствия',
+    visibilityTitle: 'Приватность присутствия'
   },
   root: {
     close: 'Закрыть настройки',
@@ -363,14 +359,15 @@ export const settingsCopy = {
     eyebrow: 'Системные настройки',
     saving: 'Сохраняем...',
     tabs: 'Разделы настроек',
-    title: 'Настройки системы',
+    title: 'Настройки системы'
   },
   security: {
     systemWarningsTitle: 'Системные предупреждения',
-    systemWarningsDescription: 'Управление защитными сообщениями при работе с файлами.',
+    systemWarningsDescription:
+      'Управление защитными сообщениями при работе с файлами.',
     dangerousFilesWarning: 'Предупреждать о потенциально опасных файлах',
     dangerousFilesWarningDescription:
-      'Показывать подтверждение перед скачиванием архивов, исполняемых файлов и системных сценариев.',
+      'Показывать подтверждение перед скачиванием архивов, исполняемых файлов и системных сценариев.'
   },
   streaming: {
     frameRate: 'Кадров в секунду',
@@ -379,7 +376,7 @@ export const settingsCopy = {
     qualityNotice:
       '480p и 720p доступны всем. 1080p и 1440p зарезервированы для Plus, 4K и исходное качество — для Prime.',
     qualityTitle: 'Качество трансляции',
-    resolution: 'Разрешение',
+    resolution: 'Разрешение'
   },
   tabs: {
     account: 'Учётная запись',
@@ -388,10 +385,10 @@ export const settingsCopy = {
     privacy: 'Приватность',
     security: 'Безопасность',
     streaming: 'Стриминг',
-    voice: 'Звук и шумоподавление',
+    voice: 'Звук и шумоподавление'
   },
   units: {
-    megabytes: 'МБ',
+    megabytes: 'МБ'
   },
   voice: {
     activeProfile: 'Активный профиль',
@@ -511,8 +508,10 @@ export const settingsCopy = {
     mlNoiseRuntimeTitle: 'Состояние RNNoise',
     mlNoiseRuntimeIdle:
       'Подключитесь к голосовому спейсу, чтобы увидеть фактическую нагрузку и задержку обработки.',
-    mlNoiseRuntimeInitializing: 'Модель RNNoise загружается и готовит аудиотракт.',
-    mlNoiseRuntimeActive: 'RNNoise обрабатывает микрофон локально на этом устройстве.',
+    mlNoiseRuntimeInitializing:
+      'Модель RNNoise загружается и готовит аудиотракт.',
+    mlNoiseRuntimeActive:
+      'RNNoise обрабатывает микрофон локально на этом устройстве.',
     mlNoiseRuntimeFallback:
       'RNNoise недоступен. Используется встроенное шумоподавление браузера.',
     mlNoiseRuntimeFailed:
@@ -532,8 +531,7 @@ export const settingsCopy = {
     qualityBalancedDescription:
       'Стабильный профиль 48 кбит/с для большинства разговоров.',
     qualityDataSaver: 'Экономия трафика',
-    qualityDataSaverDescription:
-      'Ограничивает голосовой поток до 24 кбит/с.',
+    qualityDataSaverDescription: 'Ограничивает голосовой поток до 24 кбит/с.',
     qualityDescription:
       'Выберите верхний предел битрейта голоса. Изменение применяется к активному соединению без переподключения.',
     qualityHigh: 'Высокое качество',
@@ -607,6 +605,6 @@ export const settingsCopy = {
       'Показывать уведомление, если устройство отключено, занято или не передаёт сигнал.',
     warnSpeakingWhileMuted: 'Я говорю с выключенным микрофоном',
     warnSpeakingWhileMutedDescription:
-      'Предупреждать, когда речь обнаружена, но звук не передаётся из-за mute или режима рации. При включённой опции микрофон продолжает локальный анализ во время mute; звук не передаётся.',
-  },
-} as const
+      'Предупреждать, когда речь обнаружена, но звук не передаётся из-за mute или режима рации. При включённой опции микрофон продолжает локальный анализ во время mute; звук не передаётся.'
+  }
+} as const;

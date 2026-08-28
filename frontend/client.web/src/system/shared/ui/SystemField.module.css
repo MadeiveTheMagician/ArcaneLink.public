@@ -7,12 +7,11 @@
   border: 1px solid var(--theme-border-control);
   border-radius: 8px;
   color: var(--color-text);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--theme-control-bg), var(--theme-accent) 4%),
-      var(--theme-control-bg-strong)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-control-bg), var(--theme-accent) 4%),
+    var(--theme-control-bg-strong)
+  );
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--color-text), transparent 92%),
     0 10px 28px color-mix(in srgb, var(--theme-accent), transparent 92%);

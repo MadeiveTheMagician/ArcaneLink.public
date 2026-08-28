@@ -1,15 +1,16 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import styles from './SystemButton.module.css'
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
-type SystemButtonVariant = 'primary' | 'ghost' | 'danger' | 'asset'
-type SystemButtonSize = 'small' | 'medium' | 'large'
+import styles from './SystemButton.module.css';
+
+type SystemButtonVariant = 'primary' | 'ghost' | 'danger' | 'asset';
+type SystemButtonSize = 'small' | 'medium' | 'large';
 
 type SystemButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  children?: ReactNode
-  fullWidth?: boolean
-  size?: SystemButtonSize
-  variant?: SystemButtonVariant
-}
+  children?: ReactNode;
+  fullWidth?: boolean;
+  size?: SystemButtonSize;
+  variant?: SystemButtonVariant;
+};
 
 export function SystemButton({
   children,
@@ -29,10 +30,12 @@ export function SystemButton({
         styles[variant],
         styles[size],
         fullWidth ? styles.fullWidth : '',
-        className,
-      ].filter(Boolean).join(' ')}
+        className
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       {children}
     </button>
-  )
+  );
 }

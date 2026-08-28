@@ -28,7 +28,12 @@
 
 .displayColorSwatch[data-empty='true'] {
   background:
-    linear-gradient(45deg, transparent 44%, var(--theme-text-faint) 46% 54%, transparent 56%),
+    linear-gradient(
+      45deg,
+      transparent 44%,
+      var(--theme-text-faint) 46% 54%,
+      transparent 56%
+    ),
     var(--theme-control-bg-strong) !important;
 }
 
@@ -124,7 +129,11 @@
   border: 1px solid var(--theme-section-border);
   border-radius: 999px;
   padding: 5px 9px;
-  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 18%);
+  background: color-mix(
+    in srgb,
+    var(--theme-control-bg-strong),
+    transparent 18%
+  );
   font-weight: 800;
 }
 
@@ -151,12 +160,11 @@
   min-height: 0;
   border: 1px solid var(--theme-section-border);
   border-radius: 9px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--theme-control-bg-strong), transparent 8%),
-      color-mix(in srgb, var(--theme-surface-raised), transparent 4%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-control-bg-strong), transparent 8%),
+    color-mix(in srgb, var(--theme-surface-raised), transparent 4%)
+  );
   box-shadow: 0 14px 34px color-mix(in srgb, #000, transparent 76%);
 }
 

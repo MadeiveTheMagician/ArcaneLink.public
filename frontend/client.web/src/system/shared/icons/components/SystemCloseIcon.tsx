@@ -1,20 +1,24 @@
-import { SystemIcon } from '../SystemIcon'
-import styles from './SystemCloseIcon.module.css'
+import { SystemIcon } from '../SystemIcon';
+
+import styles from './SystemCloseIcon.module.css';
 
 type SystemCloseIconProps = {
-  className?: string
-  size?: 'small' | 'medium' | 'large'
-}
+  className?: string;
+  size?: 'small' | 'medium' | 'large';
+};
 
-const closeIconSizes: Record<NonNullable<SystemCloseIconProps['size']>, number> = {
+const closeIconSizes: Record<
+  NonNullable<SystemCloseIconProps['size']>,
+  number
+> = {
   small: 16,
   medium: 22,
-  large: 38,
-}
+  large: 38
+};
 
 export function SystemCloseIcon({
   className = '',
-  size = 'medium',
+  size = 'medium'
 }: SystemCloseIconProps) {
   return (
     <SystemIcon
@@ -23,5 +27,5 @@ export function SystemCloseIcon({
       size={closeIconSizes[size]}
       monochrome
     />
-  )
+  );
 }

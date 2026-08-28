@@ -1,5 +1,5 @@
-import type { SystemTheme } from '../systemThemes'
-import { themeCopy } from '../theme.copy'
+import type { SystemTheme } from '../systemThemes';
+import { themeCopy } from '../theme.copy';
 
 export const skyTheme: SystemTheme = {
   code: 'sky',
@@ -64,6 +64,6 @@ export const skyTheme: SystemTheme = {
     '--color-danger': '#ff7575',
     '--color-success': '#84f4c4',
     '--theme-accent-contrast': '#10202a',
-    '--shadow-sapphire': '0 26px 90px rgba(127, 174, 200, 0.2)',
-  },
-}
+    '--shadow-sapphire': '0 26px 90px rgba(127, 174, 200, 0.2)'
+  }
+};

@@ -1,26 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
-import type { SpaceResponse } from '../../../../shared/types'
-import {
-  getAncestorCategoryIds,
-  toChannelDetail,
-  type ServerDetail,
-} from '../../utils/serverWorkspaceModel'
+import { useEffect, useRef, useState } from 'react';
+
+import type { SpaceResponse } from '../../../../shared/types';
 import {
   getRecentServerDetail,
-  rememberRecentServerDetail,
-} from '../../utils/serverRecentSpace'
+  rememberRecentServerDetail
+} from '../../utils/serverRecentSpace';
+import {
+  type ServerDetail,
+  getAncestorCategoryIds,
+  toChannelDetail
+} from '../../utils/serverWorkspaceModel';
 
 type UseServerWorkspaceSelectionOptions = {
-  activeDetail: ServerDetail | null
-  autoSelectDefaultDetail?: boolean
-  isLoadingSpaces: boolean
-  serverId: string
-  serverDefaultTextSpaceId: string | null
-  serverSpaces: SpaceResponse[]
-  textSpaces: SpaceResponse[]
-  visibleDetail: ServerDetail | null
-  onSetActiveDetail: (detail: ServerDetail | null) => void
-}
+  activeDetail: ServerDetail | null;
+  autoSelectDefaultDetail?: boolean;
+  isLoadingSpaces: boolean;
+  serverId: string;
+  serverDefaultTextSpaceId: string | null;
+  serverSpaces: SpaceResponse[];
+  textSpaces: SpaceResponse[];
+  visibleDetail: ServerDetail | null;
+  onSetActiveDetail: (detail: ServerDetail | null) => void;
+};
 
 export function useServerWorkspaceSelection({
   activeDetail,
@@ -31,106 +32,106 @@ export function useServerWorkspaceSelection({
   serverSpaces,
   textSpaces,
   visibleDetail,
-  onSetActiveDetail,
+  onSetActiveDetail
 }: UseServerWorkspaceSelectionOptions) {
   const [collapsedCategoryIds, setCollapsedCategoryIds] = useState<Set<string>>(
-    () => new Set(),
-  )
-  const initializedServerIdRef = useRef<string | null>(null)
+    () => new Set()
+  );
+  const initializedServerIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     setCollapsedCategoryIds((current) => {
       const liveCategoryIds = new Set(
         serverSpaces
           .filter((space) => space.typeCode === 'category')
-          .map((space) => space.id),
-      )
+          .map((space) => space.id)
+      );
       const next = new Set(
-        [...current].filter((categoryId) => liveCategoryIds.has(categoryId)),
-      )
+        [...current].filter((categoryId) => liveCategoryIds.has(categoryId))
+      );
       const isSameSet =
         next.size === current.size &&
-        [...next].every((categoryId) => current.has(categoryId))
+        [...next].every((categoryId) => current.has(categoryId));
 
-      return isSameSet ? current : next
-    })
-  }, [serverSpaces])
+      return isSameSet ? current : next;
+    });
+  }, [serverSpaces]);
 
   useEffect(() => {
     if (visibleDetail?.type !== 'channel' || !visibleDetail.spaceId) {
-      return
+      return;
     }
 
     const selectedSpace = serverSpaces.find(
-      (space) => space.id === visibleDetail.spaceId,
-    )
-    const ancestorIds = getAncestorCategoryIds(selectedSpace, serverSpaces)
+      (space) => space.id === visibleDetail.spaceId
+    );
+    const ancestorIds = getAncestorCategoryIds(selectedSpace, serverSpaces);
 
     if (ancestorIds.length === 0) {
-      return
+      return;
     }
 
     setCollapsedCategoryIds((current) => {
       if (ancestorIds.every((categoryId) => !current.has(categoryId))) {
-        return current
+        return current;
       }
 
-      const next = new Set(current)
-      ancestorIds.forEach((categoryId) => next.delete(categoryId))
-      return next
-    })
-  }, [serverSpaces, visibleDetail])
+      const next = new Set(current);
+      ancestorIds.forEach((categoryId) => next.delete(categoryId));
+      return next;
+    });
+  }, [serverSpaces, visibleDetail]);
 
   useEffect(() => {
     if (isLoadingSpaces) {
-      return
+      return;
     }
 
-    const isEnteringServer = initializedServerIdRef.current !== serverId
+    const isEnteringServer = initializedServerIdRef.current !== serverId;
 
     const selectedChannelMissing =
       activeDetail?.type === 'channel' &&
       activeDetail.spaceId !== null &&
-      !serverSpaces.some((space) => space.id === activeDetail.spaceId)
+      !serverSpaces.some((space) => space.id === activeDetail.spaceId);
 
     if (!isEnteringServer && activeDetail && !selectedChannelMissing) {
-      return
+      return;
     }
 
     if (!isEnteringServer && !selectedChannelMissing) {
-      return
+      return;
     }
 
-    initializedServerIdRef.current = serverId
+    initializedServerIdRef.current = serverId;
 
     if (!autoSelectDefaultDetail) {
       if (selectedChannelMissing) {
-        onSetActiveDetail(null)
+        onSetActiveDetail(null);
       }
 
-      return
+      return;
     }
 
-    const recentDetail = getRecentServerDetail(serverId, serverSpaces)
+    const recentDetail = getRecentServerDetail(serverId, serverSpaces);
     if (recentDetail) {
-      onSetActiveDetail(recentDetail)
-      return
+      onSetActiveDetail(recentDetail);
+      return;
     }
 
     const defaultTextSpace = serverDefaultTextSpaceId
       ? textSpaces.find((space) => space.id === serverDefaultTextSpaceId)
-      : null
+      : null;
 
     if (defaultTextSpace) {
-      const defaultDetail = toChannelDetail(defaultTextSpace)
-      rememberRecentServerDetail(serverId, defaultDetail)
-      onSetActiveDetail(defaultDetail)
-      return
+      const defaultDetail = toChannelDetail(defaultTextSpace);
+      rememberRecentServerDetail(serverId, defaultDetail);
+      onSetActiveDetail(defaultDetail);
+      return;
     }
 
-    const overviewDetail = { type: 'overview' } as const
-    rememberRecentServerDetail(serverId, overviewDetail)
-    onSetActiveDetail(overviewDetail)
+    const overviewDetail = { type: 'overview' } as const;
+    rememberRecentServerDetail(serverId, overviewDetail);
+    onSetActiveDetail(overviewDetail);
   }, [
     activeDetail,
     autoSelectDefaultDetail,
@@ -139,25 +140,25 @@ export function useServerWorkspaceSelection({
     serverDefaultTextSpaceId,
     serverId,
     serverSpaces,
-    textSpaces,
-  ])
+    textSpaces
+  ]);
 
   function toggleCategory(spaceId: string) {
     setCollapsedCategoryIds((current) => {
-      const next = new Set(current)
+      const next = new Set(current);
 
       if (next.has(spaceId)) {
-        next.delete(spaceId)
+        next.delete(spaceId);
       } else {
-        next.add(spaceId)
+        next.add(spaceId);
       }
 
-      return next
-    })
+      return next;
+    });
   }
 
   return {
     collapsedCategoryIds,
-    toggleCategory,
-  }
+    toggleCategory
+  };
 }

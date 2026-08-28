@@ -1,6 +1,7 @@
-import { expect, test } from '@playwright/test'
-import type { ProfileSettingsDraft } from '../../src/system/Profile/hooks/useProfileSettings'
-import { buildHubProfileStyle } from '../../src/system/Hub/utils/hubProfileStyle'
+import { expect, test } from '@playwright/test';
+
+import { buildHubProfileStyle } from '../../src/system/Hub/utils/hubProfileStyle';
+import type { ProfileSettingsDraft } from '../../src/system/Profile/hooks/useProfileSettings';
 
 const defaultSettings: ProfileSettingsDraft = {
   interfaceScale: 1,
@@ -25,8 +26,8 @@ const defaultSettings: ProfileSettingsDraft = {
   directMessagePermission: 'everyone',
   presenceVisibility: 'everyone',
   showLastSeen: true,
-  presenceMode: 'automatic',
-}
+  presenceMode: 'automatic'
+};
 
 test.describe('hub profile style', () => {
   test('maps interface scales and panel widths to CSS variables', () => {
@@ -35,12 +36,12 @@ test.describe('hub profile style', () => {
         ...defaultSettings,
         interfaceScale: 1.1,
         fontScale: 0.9,
-        serverInterfaceScale: 1.2,
+        serverInterfaceScale: 1.2
       },
       hubPanelWidth: 280,
       spacePanelWidth: 310,
-      memberPanelWidth: 260,
-    })
+      memberPanelWidth: 260
+    });
 
     expect(style).toMatchObject({
       '--profile-interface-scale': 1.1,
@@ -48,24 +49,24 @@ test.describe('hub profile style', () => {
       '--profile-server-scale': 1.2,
       '--profile-side-panel-width': '280px',
       '--profile-space-panel-width': '310px',
-      '--profile-member-panel-width': '260px',
-    })
-    expect(style).not.toHaveProperty('--theme-profile-bg-image')
-  })
+      '--profile-member-panel-width': '260px'
+    });
+    expect(style).not.toHaveProperty('--theme-profile-bg-image');
+  });
 
   test('adds the profile background asset only when it is selected', () => {
     const style = buildHubProfileStyle({
       profileSettings: {
         ...defaultSettings,
-        profileBackgroundAssetId: 'asset-1',
+        profileBackgroundAssetId: 'asset-1'
       },
       hubPanelWidth: 300,
       spacePanelWidth: 300,
-      memberPanelWidth: 300,
-    })
+      memberPanelWidth: 300
+    });
 
     expect(style).toMatchObject({
-      '--theme-profile-bg-image': 'url("/api/assets/asset-1/content")',
-    })
-  })
-})
+      '--theme-profile-bg-image': 'url("/api/assets/asset-1/content")'
+    });
+  });
+});

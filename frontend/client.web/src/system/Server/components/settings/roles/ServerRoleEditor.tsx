@@ -1,37 +1,39 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react';
+
 import type {
   PermissionResponse,
-  ServerRoleDeletionImpactResponse,
-} from '../../../../../shared/types'
+  ServerRoleDeletionImpactResponse
+} from '../../../../../shared/types';
 import {
   SystemButton,
   SystemCheckbox,
   SystemIcon,
   SystemSearchInput,
   SystemTabPanel,
-  SystemTabs,
-} from '../../../../shared'
+  SystemTabs
+} from '../../../../shared';
 import {
+  type ServerRoleEditorTab,
   groupServerRolePermissions,
   hasAdministratorPermission,
   isAdministratorPermissionCode,
   isAdministratorServerRole,
-  serverPermissionCodesEqual,
-  type ServerRoleEditorTab,
-} from './serverRoleSettingsModel'
-import type { ServerRoleSettingsController } from './useServerRoleSettings'
-import styles from './ServerRolesSettings.module.css'
+  serverPermissionCodesEqual
+} from './serverRoleSettingsModel';
+import type { ServerRoleSettingsController } from './useServerRoleSettings';
+
+import styles from './ServerRolesSettings.module.css';
 
 type ServerRoleEditorProps = {
-  controller: ServerRoleSettingsController
-  permissions: readonly PermissionResponse[]
-}
+  controller: ServerRoleSettingsController;
+  permissions: readonly PermissionResponse[];
+};
 
 const editorTabs = [
   { value: 'appearance', label: 'Отображение' },
   { value: 'permissions', label: 'Права' },
-  { value: 'members', label: 'Участники' },
-] as const
+  { value: 'members', label: 'Участники' }
+] as const;
 
 const roleColorPresets = [
   '#8f7cff',
@@ -39,14 +41,14 @@ const roleColorPresets = [
   '#42d4a7',
   '#f0c55e',
   '#ff8f9a',
-  '#d08cff',
-] as const
+  '#d08cff'
+] as const;
 
 export function ServerRoleEditor({
   controller,
-  permissions,
+  permissions
 }: ServerRoleEditorProps) {
-  const [permissionQuery, setPermissionQuery] = useState('')
+  const [permissionQuery, setPermissionQuery] = useState('');
   const {
     selectedRole,
     isCreating,
@@ -77,25 +79,25 @@ export function ServerRoleEditor({
     resetDraft,
     togglePermission,
     saveRole,
-    toggleMemberRole,
-  } = controller
+    toggleMemberRole
+  } = controller;
 
   const permissionGroups = useMemo(() => {
-    const normalizedQuery = permissionQuery.trim().toLocaleLowerCase('ru-RU')
+    const normalizedQuery = permissionQuery.trim().toLocaleLowerCase('ru-RU');
     const visiblePermissions = normalizedQuery
       ? permissions.filter((permission) =>
           [
             permission.title,
             permission.code,
-            permission.description ?? '',
+            permission.description ?? ''
           ].some((value) =>
-            value.toLocaleLowerCase('ru-RU').includes(normalizedQuery),
-          ),
+            value.toLocaleLowerCase('ru-RU').includes(normalizedQuery)
+          )
         )
-      : permissions
+      : permissions;
 
-    return groupServerRolePermissions(visiblePermissions)
-  }, [permissionQuery, permissions])
+    return groupServerRolePermissions(visiblePermissions);
+  }, [permissionQuery, permissions]);
 
   if (!selectedRole && !isCreating) {
     return (
@@ -104,24 +106,29 @@ export function ServerRoleEditor({
         <h3>Выберите роль</h3>
         <p>Настройки выбранной роли появятся здесь.</p>
       </section>
-    )
+    );
   }
 
-  const isDefaultRole = selectedRole?.kind === 'everyone'
-  const isSystemRole = Boolean(selectedRole?.isSystem && !isDefaultRole)
+  const isDefaultRole = selectedRole?.kind === 'everyone';
+  const isSystemRole = Boolean(selectedRole?.isSystem && !isDefaultRole);
   const isAdministrator = selectedRole
     ? isAdministratorServerRole(selectedRole)
-    : hasAdministratorPermission(draft.permissionCodes)
-  const editorTitle = isCreating ? 'Новая роль' : selectedRole?.title ?? 'Роль'
+    : hasAdministratorPermission(draft.permissionCodes);
+  const editorTitle = isCreating
+    ? 'Новая роль'
+    : (selectedRole?.title ?? 'Роль');
   const tabs = editorTabs.map((tab) => ({
     ...tab,
     disabled:
       (tab.value === 'appearance' && isDefaultRole) ||
-      (tab.value === 'members' && (isCreating || isSystemRole || isDefaultRole)),
-  }))
+      (tab.value === 'members' && (isCreating || isSystemRole || isDefaultRole))
+  }));
 
   return (
-    <section className={styles.roleEditor} aria-labelledby="server-role-editor-title">
+    <section
+      className={styles.roleEditor}
+      aria-labelledby="server-role-editor-title"
+    >
       <header className={styles.roleEditorHeader}>
         <div>
           <span className={styles.roleEditorEyebrow}>
@@ -130,10 +137,10 @@ export function ServerRoleEditor({
               : isDefaultRole
                 ? 'Права по умолчанию для всех участников'
                 : isSystemRole
-                ? 'Системная роль · только чтение'
-                : isAdministrator
-                  ? 'Административная роль'
-                  : 'Пользовательская роль'}
+                  ? 'Системная роль · только чтение'
+                  : isAdministrator
+                    ? 'Административная роль'
+                    : 'Пользовательская роль'}
           </span>
           <h3 id="server-role-editor-title">{editorTitle}</h3>
         </div>
@@ -142,9 +149,7 @@ export function ServerRoleEditor({
             variant="ghost"
             size="small"
             disabled={
-              (!isDirty && !isCreating) ||
-              isMutating ||
-              isResolvingConflict
+              (!isDirty && !isCreating) || isMutating || isResolvingConflict
             }
             onClick={resetDraft}
           >
@@ -170,9 +175,7 @@ export function ServerRoleEditor({
       {error ? (
         <div
           className={`${styles.roleStatusError} ${
-            roleConflict || isResolvingConflict
-              ? styles.roleConflictStatus
-              : ''
+            roleConflict || isResolvingConflict ? styles.roleConflictStatus : ''
           }`}
           role="alert"
         >
@@ -210,9 +213,7 @@ export function ServerRoleEditor({
           {getManagementReason(management.reason)}
         </p>
       ) : null}
-      {deletionImpact ? (
-        <RoleDeletionImpact impact={deletionImpact} />
-      ) : null}
+      {deletionImpact ? <RoleDeletionImpact impact={deletionImpact} /> : null}
 
       <SystemTabs
         className={styles.roleEditorTabs}
@@ -260,8 +261,8 @@ export function ServerRoleEditor({
           {hasAdministratorPermission(draft.permissionCodes) ? (
             <p className={styles.administratorWarning} role="note">
               <SystemIcon name="flag" size={16} />
-              ADMINISTRATOR динамически предоставляет все текущие и будущие права.
-              Остальные переключатели отключены.
+              ADMINISTRATOR динамически предоставляет все текущие и будущие
+              права. Остальные переключатели отключены.
               {selectedRole?.directAssignmentCount
                 ? ` Изменение затронет ${selectedRole.directAssignmentCount} участника(ов).`
                 : ''}
@@ -274,14 +275,14 @@ export function ServerRoleEditor({
                 <div>
                   {group.permissions.map((permission) => {
                     const checked = draft.permissionCodes.some((code) =>
-                      serverPermissionCodesEqual(code, permission.code),
-                    )
+                      serverPermissionCodesEqual(code, permission.code)
+                    );
                     const disabled =
                       !canEditSelected ||
                       isMutating ||
                       !availablePermissionCodes.has(permission.code) ||
                       (hasAdministratorPermission(draft.permissionCodes) &&
-                        !isAdministratorPermissionCode(permission.code))
+                        !isAdministratorPermissionCode(permission.code));
 
                     return (
                       <button
@@ -308,7 +309,7 @@ export function ServerRoleEditor({
                           <span className={styles.permissionSwitchThumb} />
                         </span>
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </section>
@@ -352,9 +353,8 @@ export function ServerRoleEditor({
               {members.map((member) => {
                 const assignment = member.roleAssignments.find(
                   (candidate) =>
-                    candidate.roleId === selectedRole.id &&
-                    !candidate.revokedAt,
-                )
+                    candidate.roleId === selectedRole.id && !candidate.revokedAt
+                );
 
                 return (
                   <article className={styles.memberRow} key={member.id}>
@@ -391,14 +391,14 @@ export function ServerRoleEditor({
                       {assignment ? 'Снять' : 'Назначить'}
                     </SystemButton>
                   </article>
-                )
+                );
               })}
             </div>
           )}
         </SystemTabPanel>
       ) : null}
     </section>
-  )
+  );
 }
 
 function AppearanceEditor({
@@ -407,23 +407,23 @@ function AppearanceEditor({
   color,
   mentionable,
   disabled,
-  onChange,
+  onChange
 }: {
-  title: string
-  description: string
-  color: string
-  mentionable: boolean
-  disabled: boolean
+  title: string;
+  description: string;
+  color: string;
+  mentionable: boolean;
+  disabled: boolean;
   onChange: (patch: {
-    title?: string
-    description?: string
-    color?: string
-    mentionable?: boolean
-  }) => void
+    title?: string;
+    description?: string;
+    color?: string;
+    mentionable?: boolean;
+  }) => void;
 }) {
   const previewColor = /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(color)
     ? color
-    : undefined
+    : undefined;
 
   return (
     <div className={styles.appearanceEditor}>
@@ -513,13 +513,13 @@ function AppearanceEditor({
         </div>
       </section>
     </div>
-  )
+  );
 }
 
 function RoleDeletionImpact({
-  impact,
+  impact
 }: {
-  impact: ServerRoleDeletionImpactResponse
+  impact: ServerRoleDeletionImpactResponse;
 }) {
   const dependencies = [
     ['Назначения', impact.directAssignmentCount],
@@ -527,8 +527,8 @@ function RoleDeletionImpact({
     ['Защищённые ACL', impact.protectedAclCount],
     ['Обязательные спейсы', impact.requiredSpaceCount],
     ['Защищённые спейсы', impact.protectedSpaceCount],
-    ['Настройки цвета', impact.displayColorMemberCount],
-  ] as const
+    ['Настройки цвета', impact.displayColorMemberCount]
+  ] as const;
 
   return (
     <aside className={styles.deletionImpact} role="status">
@@ -544,24 +544,24 @@ function RoleDeletionImpact({
           .join(' · ') || 'Блокирующих зависимостей нет.'}
       </span>
     </aside>
-  )
+  );
 }
 
 function getManagementReason(
-  reason: NonNullable<ServerRoleSettingsController['management']>['reason'],
+  reason: NonNullable<ServerRoleSettingsController['management']>['reason']
 ) {
   switch (reason) {
     case 'system':
-      return 'Системная роль доступна только для просмотра.'
+      return 'Системная роль доступна только для просмотра.';
     case 'administrator':
-      return 'Административную роль может изменять только владелец сервера.'
+      return 'Административную роль может изменять только владелец сервера.';
     case 'hierarchy':
-      return 'Эта роль находится на вашем уровне или выше.'
+      return 'Эта роль находится на вашем уровне или выше.';
     case 'permission-subset':
-      return 'Роль содержит права, которых нет у вас.'
+      return 'Роль содержит права, которых нет у вас.';
     case 'missing-permission':
-      return 'У вас нет права управлять ролями.'
+      return 'У вас нет права управлять ролями.';
     default:
-      return 'Роль доступна для изменения.'
+      return 'Роль доступна для изменения.';
   }
 }

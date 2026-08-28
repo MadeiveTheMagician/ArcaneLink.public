@@ -155,7 +155,8 @@
 }
 
 @media (max-width: 760px) {
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateInfoPanel {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    .privateInfoPanel {
     display: none;
   }
 }

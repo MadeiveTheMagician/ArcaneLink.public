@@ -1,38 +1,41 @@
-import { useRef } from 'react'
-import { normalizeUserId } from './voiceChannelUtils'
-import type { VoiceVideoTrackKind } from './voiceVideoTrackKinds'
+import { useRef } from 'react';
 
-export type VoiceVideoSenderKind = VoiceVideoTrackKind
+import { normalizeUserId } from './voiceChannelUtils';
+import type { VoiceVideoTrackKind } from './voiceVideoTrackKinds';
+
+export type VoiceVideoSenderKind = VoiceVideoTrackKind;
 
 export function useVoiceVideoSenders() {
   const videoSendersRef = useRef<
     Record<string, Partial<Record<VoiceVideoSenderKind, RTCRtpSender>>>
-  >({})
+  >({});
 
   function setVideoSender(
     participantId: string,
     kind: VoiceVideoSenderKind,
-    sender: RTCRtpSender,
+    sender: RTCRtpSender
   ) {
-    const normalizedParticipantId = normalizeUserId(participantId)
+    const normalizedParticipantId = normalizeUserId(participantId);
 
     videoSendersRef.current[normalizedParticipantId] = {
       ...videoSendersRef.current[normalizedParticipantId],
-      [kind]: sender,
-    }
+      [kind]: sender
+    };
   }
 
   function getVideoSender(participantId: string, kind: VoiceVideoSenderKind) {
-    return videoSendersRef.current[normalizeUserId(participantId)]?.[kind] ?? null
+    return (
+      videoSendersRef.current[normalizeUserId(participantId)]?.[kind] ?? null
+    );
   }
 
   function removeVideoSender(participantId: string) {
-    delete videoSendersRef.current[normalizeUserId(participantId)]
+    delete videoSendersRef.current[normalizeUserId(participantId)];
   }
 
   return {
     setVideoSender,
     getVideoSender,
-    removeVideoSender,
-  }
+    removeVideoSender
+  };
 }

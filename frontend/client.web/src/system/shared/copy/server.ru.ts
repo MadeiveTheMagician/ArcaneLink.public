@@ -2,12 +2,13 @@ export const serverCopy = {
   actions: {
     createServer: 'Создать сервер',
     inviteMembers: 'Пригласить участников',
-    joinVoiceSpace: 'Войти в голосовой спейс',
+    joinVoiceSpace: 'Войти в голосовой спейс'
   },
   assets: {
     iconSaveFailed: 'Не удалось сохранить сервер.',
     iconTooLarge: 'Иконка сервера должна быть не больше 10 MB.',
-    iconUnsupportedType: 'Поддерживаются только JPG, PNG, WebP, GIF и BMP изображения.',
+    iconUnsupportedType:
+      'Поддерживаются только JPG, PNG, WebP, GIF и BMP изображения.',
     iconCropDescription:
       'Картинка сохранится как server icon, а сервер запомнит выбранные параметры кадрирования.',
     iconCropTitle: 'Настроить аватар сервера',
@@ -15,7 +16,7 @@ export const serverCopy = {
       'Выберите asset, чтобы настроить его кадрирование для сервера.',
     iconLibraryEmpty: 'Сохранённых иконок пока нет.',
     iconLibraryLoading: 'Загружаем сохранённые иконки...',
-    iconLibraryTitle: 'Сохранённые иконки серверов',
+    iconLibraryTitle: 'Сохранённые иконки серверов'
   },
   browser: {
     access: 'Доступ',
@@ -57,7 +58,7 @@ export const serverCopy = {
     tabsLabel: 'Разделы серверов',
     textSpaceCount: 'Текстовые спейсы',
     title: 'Серверы',
-    voiceSpaceCount: 'Голосовые спейсы',
+    voiceSpaceCount: 'Голосовые спейсы'
   },
   dialog: {
     accessModeDescription:
@@ -67,18 +68,18 @@ export const serverCopy = {
       private: {
         description:
           'Скрыт из поиска. Вступить можно только по ссылке или прямому приглашению пользователя с правом.',
-        label: 'Приватный',
+        label: 'Приватный'
       },
       public: {
         description:
           'Отображается в поиске, и любой пользователь может вступить сразу.',
-        label: 'Публичный',
+        label: 'Публичный'
       },
       restricted: {
         description:
           'Отображается в поиске. Для вступления нужна ссылка или одобренная заявка.',
-        label: 'Частный',
-      },
+        label: 'Частный'
+      }
     },
     avatar: 'Аватар сервера',
     avatarDescription: 'PNG, JPEG или WebP до 10 MB.',
@@ -98,12 +99,12 @@ export const serverCopy = {
     save: 'Сохранить',
     savedAssets: 'Сохранённые файлы',
     saving: 'Сохраняем...',
-    updated: 'Настройки сервера сохранены.',
+    updated: 'Настройки сервера сохранены.'
   },
   context: {
     copyId: 'Копировать ID',
     leaveServer: 'Покинуть сервер',
-    serverSettings: 'Настройки сервера',
+    serverSettings: 'Настройки сервера'
   },
   contextMenu: {
     addFriend: 'Добавить в друзья',
@@ -135,7 +136,7 @@ export const serverCopy = {
     removeFriend: 'Удалить из друзей',
     settings: 'Настроить',
     space: 'спейс',
-    transferOwnership: 'Сделать владельцем',
+    transferOwnership: 'Сделать владельцем'
   },
   labels: {
     addFriend: 'Добавить в друзья',
@@ -172,7 +173,7 @@ export const serverCopy = {
       'Если на сервере нет спейсов, откройте меню правой кнопкой мыши в списке слева и создайте первый.',
     voiceSpace: 'Голосовой',
     voiceChannel: 'Голосовой канал',
-    member: 'Участник сервера',
+    member: 'Участник сервера'
   },
   invites: {
     close: 'Закрыть',
@@ -196,7 +197,7 @@ export const serverCopy = {
       hours1: '1 час',
       hours6: '6 часов',
       minutes30: '30 минут',
-      never: 'Без срока',
+      never: 'Без срока'
     },
     friendsTab: 'Друзья',
     friendsListAria: 'Список друзей для приглашения',
@@ -226,10 +227,9 @@ export const serverCopy = {
       uses10: '10 использований',
       uses25: '25 использований',
       uses50: '50 использований',
-      uses100: '100 использований',
+      uses100: '100 использований'
     },
-    notAllowed:
-      'У вас нет права создавать приглашения для этого сервера.',
+    notAllowed: 'У вас нет права создавать приглашения для этого сервера.',
     privateServerDescription:
       'Сервер скрыт из поиска. Создавать ссылки и прямые приглашения могут только участники с правом управления приглашениями.',
     publicServerDescription:
@@ -243,10 +243,10 @@ export const serverCopy = {
     submitNewLink: 'Сгенерировать новую ссылку',
     useCount: (usedCount: number, maxUses: number) =>
       ` · ${usedCount}/${maxUses} использований`,
-    tabsAria: 'Способ приглашения',
+    tabsAria: 'Способ приглашения'
   },
   moderation: {
-    banReasonPrompt: 'Укажите причину бана (до 500 символов):',
+    banReasonPrompt: 'Укажите причину бана (до 500 символов):'
   },
   messages: {
     expandAttachments: 'Отобразить полный размер',
@@ -254,7 +254,8 @@ export const serverCopy = {
     attachmentName: 'Имя вложения',
     editAttachment: 'Настройки вложения',
     hideAsSpoiler: 'Скрыть как спойлер',
-    hideAsSpoilerDescription: 'Предпросмотр будет размыт до нажатия пользователя.',
+    hideAsSpoilerDescription:
+      'Предпросмотр будет размыт до нажатия пользователя.',
     showSpoiler: 'Показать спойлер',
     downloadWarningSettingsHintBefore:
       'Вы можете отключить эти предупреждения в ',
@@ -329,18 +330,18 @@ export const serverCopy = {
     loadPinnedFailed: 'Не удалось загрузить закреплённые сообщения',
     pinFailed: 'Не удалось закрепить сообщение',
     unpinFailed: 'Не удалось открепить сообщение',
-    sendFailed: 'Не удалось отправить сообщение',
+    sendFailed: 'Не удалось отправить сообщение'
   },
   serverList: {
     emptyMessage: 'Пока нет сообщений',
     lastMessageEmpty: 'Новое сообщение без текста',
     privateServer: 'Приватный сервер',
     publicServer: 'Публичный сервер',
-    restrictedServer: 'Частный сервер',
+    restrictedServer: 'Частный сервер'
   },
   navigation: {
     backToServerSpaces: 'Вернуться к спейсам сервера',
-    backToSpaces: 'Вернуться к спейсам',
+    backToSpaces: 'Вернуться к спейсам'
   },
   overview: {
     browserDescription:
@@ -371,13 +372,14 @@ export const serverCopy = {
     voiceSpaceDescription: 'Голосовой спейс сервера',
     voiceSpacesCount: (count: number) => `${count} голосовых`,
     nestedCount: (count: number, description: string) =>
-      `${count} вложенных · ${description}`,
+      `${count} вложенных · ${description}`
   },
   state: {
-    emptySpaces: 'Спейсов пока нет. Откройте меню правой кнопкой мыши, чтобы создать первый.',
+    emptySpaces:
+      'Спейсов пока нет. Откройте меню правой кнопкой мыши, чтобы создать первый.',
     loadingSpaces: 'Загружаем спейсы...',
     loadingMembers: 'Загружаем участников...',
-    selectSpace: 'Спейс не выбран.',
+    selectSpace: 'Спейс не выбран.'
   },
   settings: {
     active: 'active',
@@ -397,7 +399,8 @@ export const serverCopy = {
     defaultTextSpaceActive: 'Стартовый спейс сервера',
     defaultTextSpaceEmpty:
       'На сервере пока нет текстовых спейсов. Создайте текстовый спейс, чтобы назначить его стартовым.',
-    defaultTextSpaceFallback: 'Сейчас выбирается первый доступный текстовый спейс',
+    defaultTextSpaceFallback:
+      'Сейчас выбирается первый доступный текстовый спейс',
     defaultTextSpaceUsed: 'Используется при входе на сервер',
     inactive: 'inactive',
     invites: 'Инвайты',
@@ -433,13 +436,13 @@ export const serverCopy = {
     title: 'Настройки сервера',
     unsavedRoleChanges:
       'Есть несохранённые изменения роли. Отменить их и продолжить?',
-    unban: 'Разбанить',
+    unban: 'Разбанить'
   },
   text: {
     chooseSpaceInServer: (serverTitle: string) =>
       `Выберите текстовый или голосовой спейс сервера ${serverTitle}.`,
     spaceInServer: (kind: string, serverTitle: string) =>
-      `${kind} спейс сервера ${serverTitle}.`,
+      `${kind} спейс сервера ${serverTitle}.`
   },
   workspaceDialogs: {
     category: 'категорию',
@@ -491,6 +494,6 @@ export const serverCopy = {
     transferOwnership: 'Передать владение',
     transferOwnershipQuestion: 'Передать владение сервером?',
     transferOwnershipWarning: (serverTitle: string, userName: string) =>
-      `Вы уверены, что хотите передать владение сервером "${serverTitle}" пользователю "${userName}"?`,
-  },
-} as const
+      `Вы уверены, что хотите передать владение сервером "${serverTitle}" пользователю "${userName}"?`
+  }
+} as const;

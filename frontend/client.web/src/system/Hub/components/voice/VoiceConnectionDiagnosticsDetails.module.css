@@ -15,7 +15,8 @@
 
 .metric {
   min-width: 0;
-  border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 46%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-border-control), transparent 46%);
   border-radius: 6px;
   padding: 6px 7px;
   background: color-mix(in srgb, var(--theme-control-bg), transparent 20%);

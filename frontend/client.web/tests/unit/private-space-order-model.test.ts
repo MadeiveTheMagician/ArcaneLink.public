@@ -1,16 +1,17 @@
-import { expect, test } from '@playwright/test'
-import type { PrivateSpaceResponse } from '../../src/shared/types'
+import { expect, test } from '@playwright/test';
+
+import type { PrivateSpaceResponse } from '../../src/shared/types';
 import {
   getPrivateSpaceListActivityMs,
   orderPrivateSpaces,
   orderPrivateSpacesPinnedFirst,
   reconcilePrivateSpaceFolderOrder,
-  reorderPrivateSpaceIds,
-} from '../../src/system/Hub/components/private-space/folders/privateSpaceOrderModel'
+  reorderPrivateSpaceIds
+} from '../../src/system/Hub/components/private-space/folders/privateSpaceOrderModel';
 
 function privateSpace(
   spaceId: string,
-  updatedAt = '2026-07-29T10:00:00.000Z',
+  updatedAt = '2026-07-29T10:00:00.000Z'
 ): PrivateSpaceResponse {
   return {
     spaceId,
@@ -36,137 +37,109 @@ function privateSpace(
       customAvatarCropZoom: 1,
       mutedUntil: null,
       isMutedIndefinitely: false,
-      isPeerBlocked: false,
+      isPeerBlocked: false
     },
     members: [],
-    lastMessage: null,
-  }
+    lastMessage: null
+  };
 }
 
 test.describe('private-space list order model', () => {
   test('moves a conversation before or after another conversation', () => {
-    expect(reorderPrivateSpaceIds(['a', 'b', 'c'], 'c', 'a', 'before')).toEqual([
-      'c',
-      'a',
-      'b',
-    ])
+    expect(reorderPrivateSpaceIds(['a', 'b', 'c'], 'c', 'a', 'before')).toEqual(
+      ['c', 'a', 'b']
+    );
     expect(reorderPrivateSpaceIds(['a', 'b', 'c'], 'a', 'b', 'after')).toEqual([
       'b',
       'a',
-      'c',
-    ])
-  })
+      'c'
+    ]);
+  });
 
   test('orders a custom folder strictly by its saved ids', () => {
     expect(
       orderPrivateSpaces(
         [privateSpace('a'), privateSpace('b'), privateSpace('c')],
         ['c', 'a'],
-        false,
-      ).map((space) => space.spaceId),
-    ).toEqual(['c', 'a'])
-  })
+        false
+      ).map((space) => space.spaceId)
+    ).toEqual(['c', 'a']);
+  });
 
   test('keeps new unlisted conversations visible in the all folder', () => {
     expect(
       orderPrivateSpaces(
         [privateSpace('new'), privateSpace('a'), privateSpace('b')],
         ['b', 'a'],
-        true,
-      ).map((space) => space.spaceId),
-    ).toEqual(['b', 'a', 'new'])
-  })
+        true
+      ).map((space) => space.spaceId)
+    ).toEqual(['b', 'a', 'new']);
+  });
 
   test('places pinned conversations first without changing saved space ids', () => {
     const spaces = [
       privateSpace('a'),
       privateSpace('b'),
       privateSpace('c'),
-      privateSpace('d'),
-    ]
-    const pinnedSpaceIds = ['c', 'a']
+      privateSpace('d')
+    ];
+    const pinnedSpaceIds = ['c', 'a'];
 
     expect(
       orderPrivateSpacesPinnedFirst(spaces, pinnedSpaceIds).map(
-        (space) => space.spaceId,
-      ),
-    ).toEqual(['a', 'c', 'b', 'd'])
-    expect(spaces.map((space) => space.spaceId)).toEqual(['a', 'b', 'c', 'd'])
-    expect(pinnedSpaceIds).toEqual(['c', 'a'])
-  })
+        (space) => space.spaceId
+      )
+    ).toEqual(['a', 'c', 'b', 'd']);
+    expect(spaces.map((space) => space.spaceId)).toEqual(['a', 'b', 'c', 'd']);
+    expect(pinnedSpaceIds).toEqual(['c', 'a']);
+  });
 
   test('uses independent pinned ids for each folder view', () => {
-    const spaces = [
-      privateSpace('a'),
-      privateSpace('b'),
-      privateSpace('c'),
-    ]
+    const spaces = [privateSpace('a'), privateSpace('b'), privateSpace('c')];
 
     expect(
-      orderPrivateSpacesPinnedFirst(spaces, ['a']).map(
-        (space) => space.spaceId,
-      ),
-    ).toEqual(['a', 'b', 'c'])
+      orderPrivateSpacesPinnedFirst(spaces, ['a']).map((space) => space.spaceId)
+    ).toEqual(['a', 'b', 'c']);
     expect(
-      orderPrivateSpacesPinnedFirst(spaces, ['c']).map(
-        (space) => space.spaceId,
-      ),
-    ).toEqual(['c', 'a', 'b'])
-  })
+      orderPrivateSpacesPinnedFirst(spaces, ['c']).map((space) => space.spaceId)
+    ).toEqual(['c', 'a', 'b']);
+  });
 
   test('does not reorder a pinned item or across the pinned boundary', () => {
-    const spaceIds = ['pinned', 'a', 'b']
-    const pinnedSpaceIds = ['pinned']
+    const spaceIds = ['pinned', 'a', 'b'];
+    const pinnedSpaceIds = ['pinned'];
 
     expect(
-      reorderPrivateSpaceIds(
-        spaceIds,
-        'pinned',
-        'b',
-        'after',
-        pinnedSpaceIds,
-      ),
-    ).toEqual(spaceIds)
+      reorderPrivateSpaceIds(spaceIds, 'pinned', 'b', 'after', pinnedSpaceIds)
+    ).toEqual(spaceIds);
     expect(
-      reorderPrivateSpaceIds(
-        spaceIds,
-        'b',
-        'pinned',
-        'before',
-        pinnedSpaceIds,
-      ),
-    ).toEqual(spaceIds)
+      reorderPrivateSpaceIds(spaceIds, 'b', 'pinned', 'before', pinnedSpaceIds)
+    ).toEqual(spaceIds);
     expect(
-      reorderPrivateSpaceIds(
-        spaceIds,
-        'b',
-        'a',
-        'before',
-        pinnedSpaceIds,
-      ),
-    ).toEqual(['pinned', 'b', 'a'])
-  })
+      reorderPrivateSpaceIds(spaceIds, 'b', 'a', 'before', pinnedSpaceIds)
+    ).toEqual(['pinned', 'b', 'a']);
+  });
 
   test('raises recently active conversations in an unlocked folder', () => {
     const spaces = [
       privateSpace('old', '2026-07-29T10:00:00.000Z'),
       privateSpace('fresh', '2026-07-29T12:00:00.000Z'),
-      privateSpace('middle', '2026-07-29T11:00:00.000Z'),
-    ]
+      privateSpace('middle', '2026-07-29T11:00:00.000Z')
+    ];
     const folder = {
       isSystem: true,
       isOrderLocked: false,
       spaceIds: ['old', 'fresh'],
-      pinnedSpaceIds: [],
-    }
+      pinnedSpaceIds: []
+    };
 
     expect(reconcilePrivateSpaceFolderOrder(folder, spaces)).toEqual([
       'fresh',
       'middle',
-      'old',
-    ])
-    expect(folder.spaceIds).toEqual(['old', 'fresh'])
-  })
+      'old'
+    ]);
+    expect(folder.spaceIds).toEqual(['old', 'fresh']);
+  });
 
   test('preserves a locked order but places a new conversation after pins', () => {
     expect(
@@ -175,17 +148,17 @@ test.describe('private-space list order model', () => {
           isSystem: true,
           isOrderLocked: true,
           spaceIds: ['old', 'pinned', 'fresh'],
-          pinnedSpaceIds: ['pinned'],
+          pinnedSpaceIds: ['pinned']
         },
         [
           privateSpace('fresh', '2026-07-29T12:00:00.000Z'),
           privateSpace('new', '2026-07-29T13:00:00.000Z'),
           privateSpace('pinned', '2026-07-29T09:00:00.000Z'),
-          privateSpace('old', '2026-07-29T10:00:00.000Z'),
-        ],
-      ),
-    ).toEqual(['pinned', 'new', 'old', 'fresh'])
-  })
+          privateSpace('old', '2026-07-29T10:00:00.000Z')
+        ]
+      )
+    ).toEqual(['pinned', 'new', 'old', 'fresh']);
+  });
 
   test('keeps pins first and does not add unrelated spaces to a custom folder', () => {
     expect(
@@ -194,26 +167,26 @@ test.describe('private-space list order model', () => {
           isSystem: false,
           isOrderLocked: false,
           spaceIds: ['old', 'pinned', 'fresh'],
-          pinnedSpaceIds: ['pinned'],
+          pinnedSpaceIds: ['pinned']
         },
         [
           privateSpace('unrelated', '2026-07-29T14:00:00.000Z'),
           privateSpace('fresh', '2026-07-29T13:00:00.000Z'),
           privateSpace('pinned', '2026-07-29T09:00:00.000Z'),
-          privateSpace('old', '2026-07-29T10:00:00.000Z'),
-        ],
-      ),
-    ).toEqual(['pinned', 'fresh', 'old'])
-  })
+          privateSpace('old', '2026-07-29T10:00:00.000Z')
+        ]
+      )
+    ).toEqual(['pinned', 'fresh', 'old']);
+  });
 
   test('prefers an explicit list activity timestamp when the API provides it', () => {
     const space = {
       ...privateSpace('activity', '2026-07-29T10:00:00.000Z'),
-      listActivityAt: '2026-07-29T15:00:00.000Z',
-    }
+      listActivityAt: '2026-07-29T15:00:00.000Z'
+    };
 
     expect(getPrivateSpaceListActivityMs(space)).toBe(
-      Date.parse('2026-07-29T15:00:00.000Z'),
-    )
-  })
-})
+      Date.parse('2026-07-29T15:00:00.000Z')
+    );
+  });
+});

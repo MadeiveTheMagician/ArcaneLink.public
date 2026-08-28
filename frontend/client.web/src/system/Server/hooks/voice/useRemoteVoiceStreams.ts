@@ -1,50 +1,50 @@
-import { useRef, useState } from 'react'
-import { normalizeUserId } from './voiceChannelUtils'
+import { useRef, useState } from 'react';
+
+import { normalizeUserId } from './voiceChannelUtils';
 
 export function useRemoteVoiceStreams() {
-  const remoteStreamsRef = useRef<Record<string, MediaStream>>({})
-  const [remoteStreamsByParticipantId, setRemoteStreamsByParticipantId] = useState<
-    Record<string, MediaStream>
-  >({})
+  const remoteStreamsRef = useRef<Record<string, MediaStream>>({});
+  const [remoteStreamsByParticipantId, setRemoteStreamsByParticipantId] =
+    useState<Record<string, MediaStream>>({});
 
   function getRemoteStream(participantId: string) {
-    return remoteStreamsRef.current[normalizeUserId(participantId)] ?? null
+    return remoteStreamsRef.current[normalizeUserId(participantId)] ?? null;
   }
 
   function hasRemoteStream(participantId: string) {
-    return Boolean(getRemoteStream(participantId))
+    return Boolean(getRemoteStream(participantId));
   }
 
   function setRemoteStream(participantId: string, stream: MediaStream) {
-    const normalizedParticipantId = normalizeUserId(participantId)
-    const nextStream = new MediaStream(stream.getTracks())
+    const normalizedParticipantId = normalizeUserId(participantId);
+    const nextStream = new MediaStream(stream.getTracks());
 
     remoteStreamsRef.current = {
       ...remoteStreamsRef.current,
-      [normalizedParticipantId]: nextStream,
-    }
+      [normalizedParticipantId]: nextStream
+    };
     setRemoteStreamsByParticipantId((current) => ({
       ...current,
-      [normalizedParticipantId]: nextStream,
-    }))
+      [normalizedParticipantId]: nextStream
+    }));
   }
 
   function removeRemoteStream(participantId: string) {
-    const normalizedParticipantId = normalizeUserId(participantId)
-    const nextRemoteStreams = { ...remoteStreamsRef.current }
-    delete nextRemoteStreams[normalizedParticipantId]
-    remoteStreamsRef.current = nextRemoteStreams
+    const normalizedParticipantId = normalizeUserId(participantId);
+    const nextRemoteStreams = { ...remoteStreamsRef.current };
+    delete nextRemoteStreams[normalizedParticipantId];
+    remoteStreamsRef.current = nextRemoteStreams;
 
     setRemoteStreamsByParticipantId((current) => {
-      const next = { ...current }
-      delete next[normalizedParticipantId]
-      return next
-    })
+      const next = { ...current };
+      delete next[normalizedParticipantId];
+      return next;
+    });
   }
 
   function clearRemoteStreams() {
-    remoteStreamsRef.current = {}
-    setRemoteStreamsByParticipantId({})
+    remoteStreamsRef.current = {};
+    setRemoteStreamsByParticipantId({});
   }
 
   return {
@@ -53,6 +53,6 @@ export function useRemoteVoiceStreams() {
     hasRemoteStream,
     setRemoteStream,
     removeRemoteStream,
-    clearRemoteStreams,
-  }
+    clearRemoteStreams
+  };
 }

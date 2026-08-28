@@ -1,32 +1,29 @@
-import {
-  type CSSProperties,
-  useCallback,
-  useEffect,
-  useRef,
-} from 'react'
-import { createPortal } from 'react-dom'
-import type { PermissionResponse } from '../../../../../shared/types'
-import { useAnimatedOverlayClose } from '../../../../shared/hooks/useAnimatedOverlayClose'
-import { useDismissableLayer } from '../../../../shared/hooks/useDismissableLayer'
-import { SystemCloseIcon } from '../../../../shared/icons/components/SystemCloseIcon'
-import dialogStyles from '../../../../shared/styles/Dialog.module.css'
-import { ServerRoleEditor } from './ServerRoleEditor'
-import styles from './ServerRoleEditorDialog.module.css'
-import type { ServerRoleSettingsController } from './useServerRoleSettings'
+import { type CSSProperties, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+
+import type { PermissionResponse } from '../../../../../shared/types';
+import { useAnimatedOverlayClose } from '../../../../shared/hooks/useAnimatedOverlayClose';
+import { useDismissableLayer } from '../../../../shared/hooks/useDismissableLayer';
+import { SystemCloseIcon } from '../../../../shared/icons/components/SystemCloseIcon';
+import { ServerRoleEditor } from './ServerRoleEditor';
+import type { ServerRoleSettingsController } from './useServerRoleSettings';
+
+import dialogStyles from '../../../../shared/styles/Dialog.module.css';
+import styles from './ServerRoleEditorDialog.module.css';
 
 type ServerRoleEditorDialogProps = {
-  controller: ServerRoleSettingsController
-  permissions: readonly PermissionResponse[]
-}
+  controller: ServerRoleSettingsController;
+  permissions: readonly PermissionResponse[];
+};
 
 type ServerRoleEditorDialogStyle = CSSProperties & {
-  '--server-role-editor-close-duration': string
-}
+  '--server-role-editor-close-duration': string;
+};
 
-const serverRoleEditorCloseDurationMs = 200
+const serverRoleEditorCloseDurationMs = 200;
 const serverRoleEditorDialogStyle: ServerRoleEditorDialogStyle = {
-  '--server-role-editor-close-duration': `${serverRoleEditorCloseDurationMs}ms`,
-}
+  '--server-role-editor-close-duration': `${serverRoleEditorCloseDurationMs}ms`
+};
 
 const modalFocusableSelector = [
   'a[href]:not([tabindex="-1"])',
@@ -34,105 +31,105 @@ const modalFocusableSelector = [
   'input:not(:disabled)',
   'select:not(:disabled)',
   'textarea:not(:disabled)',
-  '[tabindex]:not([tabindex="-1"])',
-].join(',')
+  '[tabindex]:not([tabindex="-1"])'
+].join(',');
 
 export function ServerRoleEditorDialog({
   controller,
-  permissions,
+  permissions
 }: ServerRoleEditorDialogProps) {
-  const dialogRef = useRef<HTMLElement | null>(null)
-  const backButtonRef = useRef<HTMLButtonElement | null>(null)
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const backButtonRef = useRef<HTMLButtonElement | null>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(
     document.activeElement instanceof HTMLElement
       ? document.activeElement
-      : null,
-  )
+      : null
+  );
   const { isClosing, requestClose } = useAnimatedOverlayClose(
-    serverRoleEditorCloseDurationMs,
-  )
+    serverRoleEditorCloseDurationMs
+  );
   const closeDialog = useCallback(() => {
     if (!controller.canCloseEditor()) {
-      return
+      return;
     }
 
-    requestClose(controller.closeEditor)
-  }, [controller, requestClose])
+    requestClose(controller.closeEditor);
+  }, [controller, requestClose]);
 
   useDismissableLayer({
     isOpen: controller.isEditorOpen && !isClosing,
     layerRef: dialogRef,
-    onDismiss: closeDialog,
-  })
+    onDismiss: closeDialog
+  });
 
   useEffect(() => {
     if (!controller.isEditorOpen) {
-      return undefined
+      return undefined;
     }
 
-    const restoreFocusElement = restoreFocusRef.current
+    const restoreFocusElement = restoreFocusRef.current;
     const focusFrame = window.requestAnimationFrame(() => {
-      backButtonRef.current?.focus()
-    })
+      backButtonRef.current?.focus();
+    });
 
     function keepFocusInsideDialog(event: KeyboardEvent) {
       if (event.key !== 'Tab') {
-        return
+        return;
       }
 
-      const dialog = dialogRef.current
+      const dialog = dialogRef.current;
       if (!dialog) {
-        return
+        return;
       }
 
       const focusableElements = Array.from(
-        dialog.querySelectorAll<HTMLElement>(modalFocusableSelector),
-      ).filter((element) => element.getClientRects().length > 0)
-      const firstElement = focusableElements[0]
-      const lastElement = focusableElements[focusableElements.length - 1]
+        dialog.querySelectorAll<HTMLElement>(modalFocusableSelector)
+      ).filter((element) => element.getClientRects().length > 0);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
 
       if (!firstElement || !lastElement) {
-        event.preventDefault()
-        dialog.focus()
-        return
+        event.preventDefault();
+        dialog.focus();
+        return;
       }
 
-      const activeElement = document.activeElement
+      const activeElement = document.activeElement;
       if (
         event.shiftKey &&
         (activeElement === firstElement || !dialog.contains(activeElement))
       ) {
-        event.preventDefault()
-        lastElement.focus()
-        return
+        event.preventDefault();
+        lastElement.focus();
+        return;
       }
 
       if (
         !event.shiftKey &&
         (activeElement === lastElement || !dialog.contains(activeElement))
       ) {
-        event.preventDefault()
-        firstElement.focus()
+        event.preventDefault();
+        firstElement.focus();
       }
     }
 
-    document.addEventListener('keydown', keepFocusInsideDialog)
+    document.addEventListener('keydown', keepFocusInsideDialog);
 
     return () => {
-      window.cancelAnimationFrame(focusFrame)
-      document.removeEventListener('keydown', keepFocusInsideDialog)
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', keepFocusInsideDialog);
 
       window.requestAnimationFrame(() => {
         if (restoreFocusElement?.isConnected) {
-          restoreFocusElement.focus()
+          restoreFocusElement.focus();
         }
-      })
-    }
-  }, [controller.isEditorOpen])
+      });
+    };
+  }, [controller.isEditorOpen]);
 
   const dialogTitle = controller.isCreating
     ? 'Создание роли'
-    : 'Редактирование роли'
+    : 'Редактирование роли';
 
   return createPortal(
     <div
@@ -184,13 +181,10 @@ export function ServerRoleEditorDialog({
         </header>
 
         <div className={styles.editorBody}>
-          <ServerRoleEditor
-            controller={controller}
-            permissions={permissions}
-          />
+          <ServerRoleEditor controller={controller} permissions={permissions} />
         </div>
       </section>
     </div>,
-    document.body,
-  )
+    document.body
+  );
 }

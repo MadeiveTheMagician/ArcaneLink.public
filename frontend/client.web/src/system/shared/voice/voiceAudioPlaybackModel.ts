@@ -1,28 +1,23 @@
 export type VoiceAudioTrackSnapshot = {
-  readyState: MediaStreamTrackState
-  muted: boolean
-}
+  readyState: MediaStreamTrackState;
+  muted: boolean;
+};
 
-export type VoiceAudioTrackPlaybackState =
-  | 'missing'
-  | 'pending'
-  | 'available'
+export type VoiceAudioTrackPlaybackState = 'missing' | 'pending' | 'available';
 
 export function resolveVoiceAudioTrackPlaybackState(
-  tracks: readonly VoiceAudioTrackSnapshot[],
+  tracks: readonly VoiceAudioTrackSnapshot[]
 ): VoiceAudioTrackPlaybackState {
-  const liveTracks = tracks.filter((track) => track.readyState === 'live')
+  const liveTracks = tracks.filter((track) => track.readyState === 'live');
   if (liveTracks.length === 0) {
-    return 'missing'
+    return 'missing';
   }
 
-  return liveTracks.some((track) => !track.muted)
-    ? 'available'
-    : 'pending'
+  return liveTracks.some((track) => !track.muted) ? 'available' : 'pending';
 }
 
 export function canStartVoiceAudioPlayback(
-  state: VoiceAudioTrackPlaybackState,
+  state: VoiceAudioTrackPlaybackState
 ) {
-  return state !== 'missing'
+  return state !== 'missing';
 }

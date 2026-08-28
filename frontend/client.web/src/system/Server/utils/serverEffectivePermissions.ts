@@ -1,4 +1,4 @@
-import type { ServerEffectivePermissionsResponse } from '../../../shared/types'
+import type { ServerEffectivePermissionsResponse } from '../../../shared/types';
 
 export type ServerPermissionCode =
   | 'ADMINISTRATOR'
@@ -19,62 +19,62 @@ export type ServerPermissionCode =
   | 'MOVE_VOICE_MEMBERS'
   | 'MUTE_VOICE_MEMBERS'
   | 'VIEW_AUDIT_LOG'
-  | 'VIEW_INVITE_LOG'
+  | 'VIEW_INVITE_LOG';
 
 export type ServerWorkspacePermissionCapabilities = {
-  canAdministerServer: boolean
-  canApproveJoinRequests: boolean
-  canAssignRoles: boolean
-  canBanMembers: boolean
-  canCreateInvites: boolean
-  canDeafenVoiceMembers: boolean
-  canDisconnectVoiceMembers: boolean
-  canKickMembers: boolean
-  canManageBans: boolean
-  canManageDefaultPermissions: boolean
-  canManageInvites: boolean
-  canManageReports: boolean
-  canManageRoles: boolean
-  canManageServerProfile: boolean
-  canManageServerSettings: boolean
-  canMoveVoiceMembers: boolean
-  canMuteVoiceMembers: boolean
-  canViewAuditLog: boolean
-  canViewInviteLog: boolean
-  canViewInvites: boolean
-}
+  canAdministerServer: boolean;
+  canApproveJoinRequests: boolean;
+  canAssignRoles: boolean;
+  canBanMembers: boolean;
+  canCreateInvites: boolean;
+  canDeafenVoiceMembers: boolean;
+  canDisconnectVoiceMembers: boolean;
+  canKickMembers: boolean;
+  canManageBans: boolean;
+  canManageDefaultPermissions: boolean;
+  canManageInvites: boolean;
+  canManageReports: boolean;
+  canManageRoles: boolean;
+  canManageServerProfile: boolean;
+  canManageServerSettings: boolean;
+  canMoveVoiceMembers: boolean;
+  canMuteVoiceMembers: boolean;
+  canViewAuditLog: boolean;
+  canViewInviteLog: boolean;
+  canViewInvites: boolean;
+};
 
 export function normalizeServerPermissionCode(code: string) {
-  return code.trim().toUpperCase()
+  return code.trim().toUpperCase();
 }
 
 export function resolveServerWorkspacePermissionCapabilities(
   effectivePermissions: ServerEffectivePermissionsResponse | null,
   isOwner: boolean,
-  expectedServerId?: string | null,
+  expectedServerId?: string | null
 ): ServerWorkspacePermissionCapabilities {
   const currentEffectivePermissions =
     expectedServerId && effectivePermissions?.serverId !== expectedServerId
       ? null
-      : effectivePermissions
+      : effectivePermissions;
   const permissionCodes = new Set(
     (currentEffectivePermissions?.permissionCodes ?? []).map(
-      normalizeServerPermissionCode,
-    ),
-  )
+      normalizeServerPermissionCode
+    )
+  );
   const canAdministerServer =
     isOwner ||
     currentEffectivePermissions?.isOwner === true ||
     currentEffectivePermissions?.isAdministrator === true ||
-    permissionCodes.has('ADMINISTRATOR')
+    permissionCodes.has('ADMINISTRATOR');
   const has = (code: ServerPermissionCode) =>
-    canAdministerServer || permissionCodes.has(code)
-  const canCreateInvites = has('CREATE_INVITES')
-  const canManageInvites = has('MANAGE_INVITES')
-  const canManageRoles = has('MANAGE_ROLES')
-  const canAssignRoles = has('ASSIGN_ROLES')
-  const canManageDefaultPermissions = has('MANAGE_DEFAULT_PERMISSIONS')
-  const canViewInviteLog = has('VIEW_INVITE_LOG')
+    canAdministerServer || permissionCodes.has(code);
+  const canCreateInvites = has('CREATE_INVITES');
+  const canManageInvites = has('MANAGE_INVITES');
+  const canManageRoles = has('MANAGE_ROLES');
+  const canAssignRoles = has('ASSIGN_ROLES');
+  const canManageDefaultPermissions = has('MANAGE_DEFAULT_PERMISSIONS');
+  const canViewInviteLog = has('VIEW_INVITE_LOG');
 
   return {
     canAdministerServer,
@@ -96,23 +96,22 @@ export function resolveServerWorkspacePermissionCapabilities(
     canMuteVoiceMembers: has('MUTE_VOICE_MEMBERS'),
     canViewAuditLog: has('VIEW_AUDIT_LOG'),
     canViewInviteLog,
-    canViewInvites:
-      canCreateInvites || canManageInvites || canViewInviteLog,
-  }
+    canViewInvites: canCreateInvites || canManageInvites || canViewInviteLog
+  };
 }
 
 export function canAccessServerRoleSettings(
-  capabilities: ServerWorkspacePermissionCapabilities,
+  capabilities: ServerWorkspacePermissionCapabilities
 ) {
   return (
     capabilities.canManageRoles ||
     capabilities.canAssignRoles ||
     capabilities.canManageDefaultPermissions
-  )
+  );
 }
 
 export function canAccessServerSettings(
-  capabilities: ServerWorkspacePermissionCapabilities,
+  capabilities: ServerWorkspacePermissionCapabilities
 ) {
   return (
     capabilities.canManageServerProfile ||
@@ -123,5 +122,5 @@ export function canAccessServerSettings(
     capabilities.canManageBans ||
     capabilities.canViewAuditLog ||
     capabilities.canManageReports
-  )
+  );
 }

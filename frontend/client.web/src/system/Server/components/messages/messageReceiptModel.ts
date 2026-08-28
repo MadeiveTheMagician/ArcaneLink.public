@@ -1,19 +1,19 @@
-import type { SpaceMessageResponse } from '../../../../shared/types'
+import type { SpaceMessageResponse } from '../../../../shared/types';
 
 export type PrivateMessageReceiptIndicator = {
-  status: 'delivered' | 'read'
-  marks: '✓' | '✓✓'
-  label: 'Доставлено' | 'Прочитано'
-}
+  status: 'delivered' | 'read';
+  marks: '✓' | '✓✓';
+  label: 'Доставлено' | 'Прочитано';
+};
 
 type ReceiptMessage = Pick<
   SpaceMessageResponse,
   'deletedAt' | 'receipt' | 'senderUserId'
->
+>;
 
 export function resolvePrivateMessageReceiptIndicator(
   message: ReceiptMessage,
-  viewerUserId?: string | null,
+  viewerUserId?: string | null
 ): PrivateMessageReceiptIndicator | null {
   if (
     !viewerUserId ||
@@ -21,20 +21,20 @@ export function resolvePrivateMessageReceiptIndicator(
     message.deletedAt ||
     !message.receipt
   ) {
-    return null
+    return null;
   }
 
   if (message.receipt.statusCode === 'read') {
     return {
       status: 'read',
       marks: '✓✓',
-      label: 'Прочитано',
-    }
+      label: 'Прочитано'
+    };
   }
 
   return {
     status: 'delivered',
     marks: '✓',
-    label: 'Доставлено',
-  }
+    label: 'Доставлено'
+  };
 }

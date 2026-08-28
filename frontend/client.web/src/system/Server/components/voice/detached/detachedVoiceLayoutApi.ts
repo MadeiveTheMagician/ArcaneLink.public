@@ -1,24 +1,24 @@
-import { apiJson, apiNoContent } from '../../../../../shared/api/api'
+import { apiJson, apiNoContent } from '../../../../../shared/api/api';
 import {
   normalizeDetachedVoicePreset,
-  normalizeDetachedVoiceSlotAspectRatio,
-} from './detachedVoiceLayoutModel'
+  normalizeDetachedVoiceSlotAspectRatio
+} from './detachedVoiceLayoutModel';
 import type {
   DetachedVoiceLayoutPreset,
-  DetachedVoiceLayoutSlot,
-} from './detachedVoiceLayoutTypes'
+  DetachedVoiceLayoutSlot
+} from './detachedVoiceLayoutTypes';
 
 type DetachedVoiceLayoutPresetApiResponse = Omit<
   DetachedVoiceLayoutPreset,
   'slots'
 > & {
-  createdAt: string
-  updatedAt: string
-  slots: Array<DetachedVoiceLayoutSlot & { id: string }>
-}
+  createdAt: string;
+  updatedAt: string;
+  slots: Array<DetachedVoiceLayoutSlot & { id: string }>;
+};
 
 function mapDetachedVoiceLayoutPresetFromApi(
-  preset: DetachedVoiceLayoutPresetApiResponse,
+  preset: DetachedVoiceLayoutPresetApiResponse
 ): DetachedVoiceLayoutPreset {
   return normalizeDetachedVoicePreset({
     id: preset.id,
@@ -35,7 +35,7 @@ function mapDetachedVoiceLayoutPresetFromApi(
       preserveAspectRatio: slot.preserveAspectRatio,
       aspectRatio: normalizeDetachedVoiceSlotAspectRatio(
         slot.aspectRatio,
-        slot.preserveAspectRatio,
+        slot.preserveAspectRatio
       ),
       x: slot.x,
       y: slot.y,
@@ -43,22 +43,24 @@ function mapDetachedVoiceLayoutPresetFromApi(
       height: slot.height,
       borderRadius: slot.borderRadius,
       zIndex: slot.zIndex,
-      mode: slot.mode,
-    })),
-  })
+      mode: slot.mode
+    }))
+  });
 }
 
-export async function loadDetachedVoiceLayoutPresetsFromApi(accessToken: string) {
+export async function loadDetachedVoiceLayoutPresetsFromApi(
+  accessToken: string
+) {
   const presets = await apiJson<DetachedVoiceLayoutPresetApiResponse[]>(
     '/api/users/me/voice-layout-presets',
-    { accessToken },
-  )
+    { accessToken }
+  );
 
-  return presets.map(mapDetachedVoiceLayoutPresetFromApi)
+  return presets.map(mapDetachedVoiceLayoutPresetFromApi);
 }
 
 function createDetachedVoiceLayoutPresetRequest(
-  preset: DetachedVoiceLayoutPreset,
+  preset: DetachedVoiceLayoutPreset
 ) {
   return {
     id: isGuidLike(preset.id) ? preset.id : undefined,
@@ -74,7 +76,7 @@ function createDetachedVoiceLayoutPresetRequest(
       preserveAspectRatio: slot.preserveAspectRatio,
       aspectRatio: normalizeDetachedVoiceSlotAspectRatio(
         slot.aspectRatio,
-        slot.preserveAspectRatio,
+        slot.preserveAspectRatio
       ),
       x: slot.x,
       y: slot.y,
@@ -82,18 +84,18 @@ function createDetachedVoiceLayoutPresetRequest(
       height: slot.height,
       borderRadius: slot.borderRadius,
       zIndex: slot.zIndex,
-      mode: slot.mode,
-    })),
-  }
+      mode: slot.mode
+    }))
+  };
 }
 
 export async function saveDetachedVoiceLayoutPresetToApi(
   accessToken: string,
   preset: DetachedVoiceLayoutPreset,
-  forceCreate = false,
+  forceCreate = false
 ) {
-  const request = createDetachedVoiceLayoutPresetRequest(preset)
-  const shouldUpdate = isGuidLike(preset.id) && !forceCreate
+  const request = createDetachedVoiceLayoutPresetRequest(preset);
+  const shouldUpdate = isGuidLike(preset.id) && !forceCreate;
   const response = await apiJson<DetachedVoiceLayoutPresetApiResponse>(
     shouldUpdate
       ? `/api/users/me/voice-layout-presets/${preset.id}`
@@ -101,28 +103,29 @@ export async function saveDetachedVoiceLayoutPresetToApi(
     {
       method: shouldUpdate ? 'PUT' : 'POST',
       accessToken,
-      body: request,
-    },
-  )
+      body: request
+    }
+  );
 
-  return mapDetachedVoiceLayoutPresetFromApi(response)
+  return mapDetachedVoiceLayoutPresetFromApi(response);
 }
 
 export async function deleteDetachedVoiceLayoutPresetFromApi(
   accessToken: string,
-  presetId: string,
+  presetId: string
 ) {
   if (!isGuidLike(presetId)) {
-    return
+    return;
   }
 
   await apiNoContent(`/api/users/me/voice-layout-presets/${presetId}`, {
     method: 'DELETE',
-    accessToken,
-  })
+    accessToken
+  });
 }
 
 function isGuidLike(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value
+  );
 }
-

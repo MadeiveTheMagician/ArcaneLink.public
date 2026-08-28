@@ -20,10 +20,11 @@
   border-radius: 4px;
   color: transparent;
   background: color-mix(in srgb, var(--theme-accent), transparent 68%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 76%);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--theme-accent-light), transparent 76%);
 }
 
-.mention[data-mention-kind="everyone"] {
+.mention[data-mention-kind='everyone'] {
   color: transparent;
   background: rgba(180, 111, 24, 0.32);
   box-shadow: inset 0 0 0 1px rgba(255, 202, 114, 0.32);
@@ -38,7 +39,8 @@
   }
 }
 
-.mention[data-mention-kind="role"] {
-  text-decoration: underline dotted color-mix(in srgb, var(--theme-accent-light), transparent 38%);
+.mention[data-mention-kind='role'] {
+  text-decoration: underline dotted
+    color-mix(in srgb, var(--theme-accent-light), transparent 38%);
   text-underline-offset: 2px;
 }

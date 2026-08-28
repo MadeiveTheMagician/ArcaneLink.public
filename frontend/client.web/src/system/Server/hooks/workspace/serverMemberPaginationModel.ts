@@ -1,35 +1,35 @@
-import type { ServerMemberDetailsResponse } from '../../../../shared/types'
+import type { ServerMemberDetailsResponse } from '../../../../shared/types';
 
-export const serverMemberPageSize = 100
-export const serverMemberLoadThreshold = 0.85
+export const serverMemberPageSize = 100;
+export const serverMemberLoadThreshold = 0.85;
 
 export function mergeServerMemberPages(
   primary: ServerMemberDetailsResponse[],
-  secondary: ServerMemberDetailsResponse[],
+  secondary: ServerMemberDetailsResponse[]
 ) {
-  const seenMemberIds = new Set<string>()
+  const seenMemberIds = new Set<string>();
 
   return [...primary, ...secondary].filter((member) => {
     if (seenMemberIds.has(member.id)) {
-      return false
+      return false;
     }
 
-    seenMemberIds.add(member.id)
-    return true
-  })
+    seenMemberIds.add(member.id);
+    return true;
+  });
 }
 
 export function shouldLoadMoreServerMembers({
   scrollTop,
   clientHeight,
-  scrollHeight,
+  scrollHeight
 }: {
-  scrollTop: number
-  clientHeight: number
-  scrollHeight: number
+  scrollTop: number;
+  clientHeight: number;
+  scrollHeight: number;
 }) {
   return (
     scrollHeight > 0 &&
     scrollTop + clientHeight >= scrollHeight * serverMemberLoadThreshold
-  )
+  );
 }

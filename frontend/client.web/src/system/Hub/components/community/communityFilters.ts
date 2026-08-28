@@ -1,91 +1,88 @@
-import type { FriendUserResponse } from '../../../../shared/types'
-import { communityCopy } from '../../../shared/copy/community.ru'
-import type { CommunityFriendStatusFilter } from './communityTypes'
+import type { FriendUserResponse } from '../../../../shared/types';
+import { communityCopy } from '../../../shared/copy/community.ru';
+import type { CommunityFriendStatusFilter } from './communityTypes';
 
-export function matchesCommunityQuery(
-  user: FriendUserResponse,
-  query: string,
-) {
-  const normalizedQuery = query.trim().toLocaleLowerCase('ru-RU')
+export function matchesCommunityQuery(user: FriendUserResponse, query: string) {
+  const normalizedQuery = query.trim().toLocaleLowerCase('ru-RU');
 
   if (!normalizedQuery) {
-    return true
+    return true;
   }
 
   return `${user.displayName} ${user.login}`
     .toLocaleLowerCase('ru-RU')
-    .includes(normalizedQuery)
+    .includes(normalizedQuery);
 }
 
 export function matchesFriendStatusFilter(
   user: FriendUserResponse,
-  filter: CommunityFriendStatusFilter,
+  filter: CommunityFriendStatusFilter
 ) {
   if (filter === 'all') {
-    return true
+    return true;
   }
 
-  const isOnline = user.presenceStatus === 'online'
+  const isOnline = user.presenceStatus === 'online';
 
-  return filter === 'online' ? isOnline : !isOnline
+  return filter === 'online' ? isOnline : !isOnline;
 }
 
 export function matchesSelectedTags(
   user: FriendUserResponse,
-  selectedTagIds: string[],
+  selectedTagIds: string[]
 ) {
   if (selectedTagIds.length === 0) {
-    return true
+    return true;
   }
 
-  const userTagIds = new Set((user.tags ?? []).map((tag) => tag.id))
-  return selectedTagIds.every((tagId) => userTagIds.has(tagId))
+  const userTagIds = new Set((user.tags ?? []).map((tag) => tag.id));
+  return selectedTagIds.every((tagId) => userTagIds.has(tagId));
 }
 
 export function toggleStringInList(values: string[], value: string) {
   return values.includes(value)
     ? values.filter((item) => item !== value)
-    : [...values, value]
+    : [...values, value];
 }
 
 export function uniqueCommunityUsers(users: FriendUserResponse[]) {
-  const seen = new Set<string>()
+  const seen = new Set<string>();
 
   return users.filter((user) => {
     if (seen.has(user.id)) {
-      return false
+      return false;
     }
 
-    seen.add(user.id)
-    return true
-  })
+    seen.add(user.id);
+    return true;
+  });
 }
 
 export function formatCommunityDate(value: string | null) {
   if (!value) {
-    return communityCopy.states.offline
+    return communityCopy.states.offline;
   }
 
-  const date = new Date(value)
+  const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return communityCopy.states.offline
+    return communityCopy.states.offline;
   }
 
   return new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+    minute: '2-digit'
+  }).format(date);
 }
 
 export function formatCommunityPresence(user: FriendUserResponse) {
   if (user.presenceStatus === 'online') {
-    return communityCopy.states.online
+    return communityCopy.states.online;
   }
 
   return user.lastSeenAt
     ? formatCommunityDate(user.lastSeenAt)
-    : communityCopy.states.offline
+    : communityCopy.states.offline;
 }

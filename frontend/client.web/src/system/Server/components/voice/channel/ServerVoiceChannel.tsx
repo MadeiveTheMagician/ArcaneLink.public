@@ -1,95 +1,97 @@
 import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
-} from 'react'
-import { createPortal } from 'react-dom'
-import type { ServerMemberDetailsResponse } from '../../../../../shared/types'
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
+import { createPortal } from 'react-dom';
+
+import type { ServerMemberDetailsResponse } from '../../../../../shared/types';
+import { SystemIcon, voiceCopy } from '../../../../shared/index';
 import type {
   VoicePlaybackState,
-  VoiceUserAudioSettings,
-} from '../../../../shared/types/voicePlayback'
-import { SystemIcon, voiceCopy } from '../../../../shared/index'
+  VoiceUserAudioSettings
+} from '../../../../shared/types/voicePlayback';
 import type {
   VoiceParticipant,
-  VoicePeerStatus,
-} from '../../../hooks/voice/useVoiceChannel'
-import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes'
-import { normalizeVoiceParticipantUserId as normalizeUserId } from '../participants/VoiceParticipantIdentity'
-import { VoiceParticipantsGrid } from '../participants/VoiceParticipantsGrid'
+  VoicePeerStatus
+} from '../../../hooks/voice/useVoiceChannel';
 import {
-  loadVoiceWorkspaceViewPreferences,
-  saveVoiceWorkspaceViewPreferences,
-  type VoiceWorkspaceViewPreferences,
-} from '../participants/voiceWorkspaceViewPreferences'
+  type VoiceSpaceChatContentProps,
+  VoiceSpaceChatPanel
+} from '../chat/VoiceSpaceChatPanel';
+import { VoiceWorkspaceControls } from '../controls/VoiceWorkspaceControls';
+import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes';
+import { useDetachedVoiceWorkspace } from '../detached/useDetachedVoiceWorkspace';
+import { normalizeVoiceParticipantUserId as normalizeUserId } from '../participants/VoiceParticipantIdentity';
+import { VoiceParticipantsGrid } from '../participants/VoiceParticipantsGrid';
+import { useVoiceMediaTrackVersion } from '../participants/useVoiceMediaTrackVersion';
 import {
   createEffectiveVoiceParticipants,
-  createVoiceParticipantCards,
-} from '../participants/voiceParticipantCards'
-import { useDetachedVoiceWorkspace } from '../detached/useDetachedVoiceWorkspace'
-import { useVoiceMediaTrackVersion } from '../participants/useVoiceMediaTrackVersion'
-import { VoiceWorkspaceControls } from '../controls/VoiceWorkspaceControls'
+  createVoiceParticipantCards
+} from '../participants/voiceParticipantCards';
 import {
-  VoiceSpaceChatPanel,
-  type VoiceSpaceChatContentProps,
-} from '../chat/VoiceSpaceChatPanel'
-import styles from './ServerVoiceChannel.module.css'
+  type VoiceWorkspaceViewPreferences,
+  loadVoiceWorkspaceViewPreferences,
+  saveVoiceWorkspaceViewPreferences
+} from '../participants/voiceWorkspaceViewPreferences';
 
-const DEFAULT_VOICE_CHAT_WIDTH = 430
-const MIN_VOICE_CHAT_WIDTH = 280
-const MAX_VOICE_CHAT_WIDTH = 640
-const VOICE_CHAT_WIDTH_STEP = 24
+import styles from './ServerVoiceChannel.module.css';
+
+const DEFAULT_VOICE_CHAT_WIDTH = 430;
+const MIN_VOICE_CHAT_WIDTH = 280;
+const MAX_VOICE_CHAT_WIDTH = 640;
+const VOICE_CHAT_WIDTH_STEP = 24;
 
 type ServerVoiceChannelProps = {
-  accessToken: string
-  workspaceKey: string
-  currentUserId: string
-  localParticipantId: string | null
-  leadingAction?: ReactNode
-  title: string
-  isVoiceChatOpen: boolean
-  headerActions?: ReactNode
-  voiceChat: VoiceSpaceChatContentProps
-  participants: VoiceParticipant[]
-  serverMembers: ServerMemberDetailsResponse[]
-  localCameraPreviewStream: MediaStream | null
-  localScreenPreviewStream: MediaStream | null
-  remoteStreamsByParticipantId: Record<string, MediaStream>
-  peerStatusesByParticipantId: Record<string, VoicePeerStatus>
-  speakingParticipantIds: Record<string, boolean>
-  error: string | null
-  isMuted: boolean
-  isDeafened: boolean
-  isConnectedToVoiceChannel: boolean
-  canConnectVoice: boolean
-  isCameraEnabled: boolean
-  isScreenSharing: boolean
-  playbackStatesByParticipantId: Record<string, VoicePlaybackState>
-  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>
+  accessToken: string;
+  workspaceKey: string;
+  currentUserId: string;
+  localParticipantId: string | null;
+  leadingAction?: ReactNode;
+  title: string;
+  isVoiceChatOpen: boolean;
+  headerActions?: ReactNode;
+  voiceChat: VoiceSpaceChatContentProps;
+  participants: VoiceParticipant[];
+  serverMembers: ServerMemberDetailsResponse[];
+  localCameraPreviewStream: MediaStream | null;
+  localScreenPreviewStream: MediaStream | null;
+  remoteStreamsByParticipantId: Record<string, MediaStream>;
+  peerStatusesByParticipantId: Record<string, VoicePeerStatus>;
+  speakingParticipantIds: Record<string, boolean>;
+  error: string | null;
+  isMuted: boolean;
+  isDeafened: boolean;
+  isConnectedToVoiceChannel: boolean;
+  canConnectVoice: boolean;
+  isCameraEnabled: boolean;
+  isScreenSharing: boolean;
+  playbackStatesByParticipantId: Record<string, VoicePlaybackState>;
+  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
   onOpenParticipantContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
     participant: VoiceParticipant,
     workspaceActions?: {
-      onOpenDetachedParticipant?: () => void
-      showParticipantsWithoutVideo?: boolean
-      onToggleParticipantsWithoutVideo?: () => void
-    },
-  ) => void
-  onToggleMuted: () => void
-  onToggleDeafened: () => void
-  onToggleCamera: () => void
-  onToggleScreenShare: () => void
-  onLeaveVoiceChannel: () => void
-  onJoinVoiceChannel: () => void
-  onOpenSettings: () => void
-  onToggleVoiceChat: () => void
-}
+      onOpenDetachedParticipant?: () => void;
+      showParticipantsWithoutVideo?: boolean;
+      onToggleParticipantsWithoutVideo?: () => void;
+    }
+  ) => void;
+  onToggleMuted: () => void;
+  onToggleDeafened: () => void;
+  onToggleCamera: () => void;
+  onToggleScreenShare: () => void;
+  onLeaveVoiceChannel: () => void;
+  onJoinVoiceChannel: () => void;
+  onOpenSettings: () => void;
+  onToggleVoiceChat: () => void;
+};
 
 export function ServerVoiceChannel({
   accessToken,
@@ -125,100 +127,106 @@ export function ServerVoiceChannel({
   onLeaveVoiceChannel,
   onJoinVoiceChannel,
   onOpenSettings,
-  onToggleVoiceChat,
+  onToggleVoiceChat
 }: ServerVoiceChannelProps) {
-  const [expandedParticipantId, setExpandedParticipantId] = useState<string | null>(
-    null,
-  )
+  const [expandedParticipantId, setExpandedParticipantId] = useState<
+    string | null
+  >(null);
   const [isMobileVoiceChromeVisible, setIsMobileVoiceChromeVisible] =
-    useState(true)
+    useState(true);
   const [voiceChatWidth, setVoiceChatWidth] = useState(
-    DEFAULT_VOICE_CHAT_WIDTH,
-  )
-  const voiceWorkspaceContentRef = useRef<HTMLDivElement | null>(null)
+    DEFAULT_VOICE_CHAT_WIDTH
+  );
+  const voiceWorkspaceContentRef = useRef<HTMLDivElement | null>(null);
   const voiceChatResizeStateRef = useRef<{
-    pointerId: number
-    containerRight: number
-  } | null>(null)
+    pointerId: number;
+    containerRight: number;
+  } | null>(null);
   const [viewPreferences, setViewPreferences] = useState(() =>
-    loadVoiceWorkspaceViewPreferences(currentUserId),
-  )
-  const { showParticipantsWithoutVideo, showSelfCamera } = viewPreferences
+    loadVoiceWorkspaceViewPreferences(currentUserId)
+  );
+  const { showParticipantsWithoutVideo, showSelfCamera } = viewPreferences;
   const mediaTrackVersion = useVoiceMediaTrackVersion({
     localCameraPreviewStream,
     localScreenPreviewStream,
-    remoteStreamsByParticipantId,
-  })
+    remoteStreamsByParticipantId
+  });
   const [avatarAccentsByParticipantId, setAvatarAccentsByParticipantId] =
-    useState<Record<string, string>>({})
+    useState<Record<string, string>>({});
 
   useEffect(() => {
-    setViewPreferences(loadVoiceWorkspaceViewPreferences(currentUserId))
-  }, [currentUserId])
+    setViewPreferences(loadVoiceWorkspaceViewPreferences(currentUserId));
+  }, [currentUserId]);
 
   function updateViewPreferences(
-    patch: Partial<VoiceWorkspaceViewPreferences>,
+    patch: Partial<VoiceWorkspaceViewPreferences>
   ) {
     setViewPreferences((current) => {
-      const next = { ...current, ...patch }
-      saveVoiceWorkspaceViewPreferences(currentUserId, next)
-      return next
-    })
+      const next = { ...current, ...patch };
+      saveVoiceWorkspaceViewPreferences(currentUserId, next);
+      return next;
+    });
   }
-  const effectiveParticipants = useMemo(() => createEffectiveVoiceParticipants({
-    participants,
-    serverMembers,
-    isConnected: isConnectedToVoiceChannel,
-    currentUserId,
-    isCameraEnabled,
-    isDeafened,
-    isMuted,
-    isScreenSharing,
-    localParticipantId,
-  }), [
-    currentUserId,
-    isCameraEnabled,
-    isConnectedToVoiceChannel,
-    isDeafened,
-    isMuted,
-    isScreenSharing,
-    localParticipantId,
-    participants,
-    serverMembers,
-  ])
-  const participantCards: VoiceParticipantCard[] = useMemo(
-    () => createVoiceParticipantCards({
-      participants: effectiveParticipants,
-      serverMembers,
+  const effectiveParticipants = useMemo(
+    () =>
+      createEffectiveVoiceParticipants({
+        participants,
+        serverMembers,
+        isConnected: isConnectedToVoiceChannel,
+        currentUserId,
+        isCameraEnabled,
+        isDeafened,
+        isMuted,
+        isScreenSharing,
+        localParticipantId
+      }),
+    [
       currentUserId,
+      isCameraEnabled,
+      isConnectedToVoiceChannel,
+      isDeafened,
+      isMuted,
+      isScreenSharing,
       localParticipantId,
+      participants,
+      serverMembers
+    ]
+  );
+  const participantCards: VoiceParticipantCard[] = useMemo(
+    () =>
+      createVoiceParticipantCards({
+        participants: effectiveParticipants,
+        serverMembers,
+        currentUserId,
+        localParticipantId,
+        localCameraPreviewStream,
+        localScreenPreviewStream,
+        remoteStreamsByParticipantId,
+        peerStatusesByParticipantId,
+        playbackStatesByParticipantId,
+        speakingParticipantIds,
+        avatarAccentsByParticipantId,
+        mediaTrackVersion
+      }),
+    [
+      avatarAccentsByParticipantId,
+      currentUserId,
       localCameraPreviewStream,
+      localParticipantId,
       localScreenPreviewStream,
-      remoteStreamsByParticipantId,
+      mediaTrackVersion,
+      effectiveParticipants,
       peerStatusesByParticipantId,
       playbackStatesByParticipantId,
-      speakingParticipantIds,
-      avatarAccentsByParticipantId,
-      mediaTrackVersion,
-    }),
-  [
-    avatarAccentsByParticipantId,
-    currentUserId,
-    localCameraPreviewStream,
-    localParticipantId,
-    localScreenPreviewStream,
-    mediaTrackVersion,
-    effectiveParticipants,
-    peerStatusesByParticipantId,
-    playbackStatesByParticipantId,
-    remoteStreamsByParticipantId,
-    serverMembers,
-    speakingParticipantIds,
-  ])
+      remoteStreamsByParticipantId,
+      serverMembers,
+      speakingParticipantIds
+    ]
+  );
   const joinStateParticipantSummary = useMemo(
     () => createVoiceParticipantSummary(participants),
-    [participants],
-  )
+    [participants]
+  );
   const detachedActions = useMemo(
     () => ({
       onToggleMuted,
@@ -226,7 +234,7 @@ export function ServerVoiceChannel({
       onToggleCamera,
       onToggleScreenShare,
       onLeaveVoiceChannel,
-      onOpenSettings,
+      onOpenSettings
     }),
     [
       onLeaveVoiceChannel,
@@ -234,9 +242,9 @@ export function ServerVoiceChannel({
       onToggleCamera,
       onToggleDeafened,
       onToggleMuted,
-      onToggleScreenShare,
-    ],
-  )
+      onToggleScreenShare
+    ]
+  );
   const {
     surfaceRef: voiceSurfaceRef,
     isFullscreen: isWorkspaceFullscreen,
@@ -245,7 +253,7 @@ export function ServerVoiceChannel({
     detachedVoiceChatHost,
     isDetachedVoiceChatOpen,
     closeDetachedVoiceChat,
-    toggleFullscreen: toggleWorkspaceFullscreen,
+    toggleFullscreen: toggleWorkspaceFullscreen
   } = useDetachedVoiceWorkspace({
     accessToken,
     workspaceKey,
@@ -255,88 +263,88 @@ export function ServerVoiceChannel({
     isDeafened,
     isCameraEnabled,
     isScreenSharing,
-    actions: detachedActions,
-  })
+    actions: detachedActions
+  });
   function setParticipantAvatarAccent(participantId: string, accent: string) {
-    const normalizedParticipantId = normalizeUserId(participantId)
+    const normalizedParticipantId = normalizeUserId(participantId);
 
     setAvatarAccentsByParticipantId((current) => {
       if (current[normalizedParticipantId] === accent) {
-        return current
+        return current;
       }
 
       return {
         ...current,
-        [normalizedParticipantId]: accent,
-      }
-    })
+        [normalizedParticipantId]: accent
+      };
+    });
   }
 
   function getVoiceChatWidthBounds() {
     const containerWidth =
       voiceWorkspaceContentRef.current?.getBoundingClientRect().width ??
-      MAX_VOICE_CHAT_WIDTH / 0.68
+      MAX_VOICE_CHAT_WIDTH / 0.68;
     const max = Math.max(
       MIN_VOICE_CHAT_WIDTH,
-      Math.min(MAX_VOICE_CHAT_WIDTH, containerWidth * 0.68),
-    )
+      Math.min(MAX_VOICE_CHAT_WIDTH, containerWidth * 0.68)
+    );
 
     return {
       min: Math.min(MIN_VOICE_CHAT_WIDTH, max),
-      max,
-    }
+      max
+    };
   }
 
   function clampVoiceChatWidth(width: number) {
-    const bounds = getVoiceChatWidthBounds()
-    return Math.min(bounds.max, Math.max(bounds.min, width))
+    const bounds = getVoiceChatWidthBounds();
+    return Math.min(bounds.max, Math.max(bounds.min, width));
   }
 
   function startVoiceChatResize(event: ReactPointerEvent<HTMLDivElement>) {
-    const container = voiceWorkspaceContentRef.current
-    if (!container) return
+    const container = voiceWorkspaceContentRef.current;
+    if (!container) return;
 
     voiceChatResizeStateRef.current = {
       pointerId: event.pointerId,
-      containerRight: container.getBoundingClientRect().right,
-    }
-    event.currentTarget.setPointerCapture(event.pointerId)
-    event.preventDefault()
+      containerRight: container.getBoundingClientRect().right
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    event.preventDefault();
   }
 
   function resizeVoiceChat(event: ReactPointerEvent<HTMLDivElement>) {
-    const state = voiceChatResizeStateRef.current
-    if (!state || state.pointerId !== event.pointerId) return
+    const state = voiceChatResizeStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
 
     setVoiceChatWidth(
-      clampVoiceChatWidth(state.containerRight - event.clientX),
-    )
+      clampVoiceChatWidth(state.containerRight - event.clientX)
+    );
   }
 
   function finishVoiceChatResize(event: ReactPointerEvent<HTMLDivElement>) {
-    const state = voiceChatResizeStateRef.current
-    if (!state || state.pointerId !== event.pointerId) return
+    const state = voiceChatResizeStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
 
-    voiceChatResizeStateRef.current = null
+    voiceChatResizeStateRef.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId)
+      event.currentTarget.releasePointerCapture(event.pointerId);
     }
   }
 
   function handleVoiceChatResizeKeyDown(
-    event: ReactKeyboardEvent<HTMLDivElement>,
+    event: ReactKeyboardEvent<HTMLDivElement>
   ) {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
 
-    event.preventDefault()
+    event.preventDefault();
     setVoiceChatWidth((current) =>
       clampVoiceChatWidth(
         current +
           (event.key === 'ArrowLeft'
             ? VOICE_CHAT_WIDTH_STEP
-            : -VOICE_CHAT_WIDTH_STEP),
-      ),
-    )
+            : -VOICE_CHAT_WIDTH_STEP)
+      )
+    );
   }
 
   return (
@@ -351,10 +359,10 @@ export function ServerVoiceChannel({
       data-voice-chat-open={isVoiceChatOpen ? 'true' : 'false'}
       onClick={() => {
         if (!isConnectedToVoiceChannel) {
-          return
+          return;
         }
 
-        setIsMobileVoiceChromeVisible((isVisible) => !isVisible)
+        setIsMobileVoiceChromeVisible((isVisible) => !isVisible);
       }}
     >
       <header onClick={(event) => event.stopPropagation()}>
@@ -391,7 +399,7 @@ export function ServerVoiceChannel({
         className={styles.voiceWorkspaceContent}
         style={
           {
-            '--voice-chat-width': `${voiceChatWidth}px`,
+            '--voice-chat-width': `${voiceChatWidth}px`
           } as CSSProperties
         }
       >
@@ -428,8 +436,9 @@ export function ServerVoiceChannel({
                   showParticipantsWithoutVideo,
                   onToggleParticipantsWithoutVideo: () =>
                     updateViewPreferences({
-                      showParticipantsWithoutVideo: !showParticipantsWithoutVideo,
-                    }),
+                      showParticipantsWithoutVideo:
+                        !showParticipantsWithoutVideo
+                    })
                 })
               }
               onJoin={onJoinVoiceChannel}
@@ -454,7 +463,7 @@ export function ServerVoiceChannel({
             onOpenDetachedWorkspace={openDetachedWorkspace}
             onToggleParticipantsWithoutVideo={() =>
               updateViewPreferences({
-                showParticipantsWithoutVideo: !showParticipantsWithoutVideo,
+                showParticipantsWithoutVideo: !showParticipantsWithoutVideo
               })
             }
             onToggleSelfCamera={() =>
@@ -504,38 +513,38 @@ export function ServerVoiceChannel({
               placement="detached"
               onClose={closeDetachedVoiceChat}
             />,
-            detachedVoiceChatHost,
+            detachedVoiceChatHost
           )
         : null}
-
     </section>
-  )
+  );
 }
 
 function createVoiceParticipantSummary(participants: VoiceParticipant[]) {
   const names = participants
     .map((participant) => participant.displayName.trim())
-    .filter(Boolean)
+    .filter(Boolean);
 
   if (names.length === 0) {
-    return voiceCopy.state.noParticipants
+    return voiceCopy.state.noParticipants;
   }
 
   const visibleNames = names
     .slice(0, 2)
     .map((name) => `"${name}"`)
-    .join('\n')
-  const hiddenCount = names.length - 2
+    .join('\n');
+  const hiddenCount = names.length - 2;
 
-  const summary = hiddenCount > 0
-    ? voiceCopy.state.participantSummaryMore(visibleNames, hiddenCount)
-    : visibleNames
+  const summary =
+    hiddenCount > 0
+      ? voiceCopy.state.participantSummaryMore(visibleNames, hiddenCount)
+      : visibleNames;
 
-  return voiceCopy.state.participantSummary(summary)
+  return voiceCopy.state.participantSummary(summary);
 }
 
 function VolumeIcon() {
   return (
     <SystemIcon className={styles.voiceSpaceIcon} name="speaker" size={20} />
-  )
+  );
 }

@@ -180,7 +180,9 @@
 }
 
 @keyframes attachmentWarningBackdropIn {
-  from { opacity: 0; }
+  from {
+    opacity: 0;
+  }
 }
 
 @keyframes attachmentWarningBackdropOut {
@@ -191,7 +193,10 @@
 }
 
 @keyframes attachmentWarningDialogIn {
-  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
 }
 
 @keyframes attachmentWarningDialogOut {

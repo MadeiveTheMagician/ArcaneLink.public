@@ -5,16 +5,16 @@
   align-items: center;
   min-height: 20px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 54%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-accent-light), transparent 54%);
   border-radius: 999px;
   padding: 2px 8px;
   color: color-mix(in srgb, var(--theme-accent-light), white 14%);
-  background:
-    linear-gradient(
-      110deg,
-      color-mix(in srgb, var(--theme-accent), transparent 76%),
-      color-mix(in srgb, var(--theme-control-bg-strong), transparent 4%)
-    );
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--theme-accent), transparent 76%),
+    color-mix(in srgb, var(--theme-control-bg-strong), transparent 4%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 0 10px color-mix(in srgb, var(--theme-accent), transparent 84%);
@@ -25,17 +25,16 @@
   white-space: nowrap;
 }
 
-.tag[data-mention-kind="everyone"] {
+.tag[data-mention-kind='everyone'] {
   border-color: color-mix(in srgb, #ffca72, transparent 48%);
   color: #ffe1a6;
-  background:
-    linear-gradient(
-      110deg,
-      rgba(180, 111, 24, 0.24),
-      var(--theme-control-bg-strong)
-    );
+  background: linear-gradient(
+    110deg,
+    rgba(180, 111, 24, 0.24),
+    var(--theme-control-bg-strong)
+  );
 }
 
-.tag[data-mention-kind="role"] {
+.tag[data-mention-kind='role'] {
   border-style: dashed;
 }

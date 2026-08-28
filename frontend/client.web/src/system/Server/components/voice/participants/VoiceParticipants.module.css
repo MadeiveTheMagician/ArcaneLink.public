@@ -43,31 +43,29 @@
   width: min(98vw, 980px);
   height: min(98vw, 980px);
   border-radius: 999px;
-  content: "";
-  background:
-    radial-gradient(
-      circle,
-      color-mix(in srgb, var(--theme-accent-light), transparent 72%) 0%,
-      color-mix(in srgb, var(--theme-accent), transparent 88%) 38%,
-      transparent 74%
-    );
+  content: '';
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--theme-accent-light), transparent 72%) 0%,
+    color-mix(in srgb, var(--theme-accent), transparent 88%) 38%,
+    transparent 74%
+  );
   filter: blur(8px);
   opacity: 0.62;
   pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.70);
+  transform: translate(-50%, -50%) scale(0.7);
   animation: voiceEmptyPulse 3.8s ease-in-out infinite;
 }
 
 .voiceParticipantsJoinMode::after {
   width: min(64vw, 660px);
   height: min(64vw, 660px);
-  background:
-    radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.10) 0%,
-      color-mix(in srgb, var(--theme-accent), transparent 90%) 44%,
-      transparent 76%
-    );
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    color-mix(in srgb, var(--theme-accent), transparent 90%) 44%,
+    transparent 76%
+  );
   opacity: 0.46;
   animation-delay: -1.35s;
 }
@@ -234,9 +232,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  content: "";
-  background:
-    linear-gradient(180deg, transparent 56%, rgba(0, 0, 0, 0.22) 100%);
+  content: '';
+  background: linear-gradient(
+    180deg,
+    transparent 56%,
+    rgba(0, 0, 0, 0.22) 100%
+  );
 }
 
 .voiceParticipants article:hover {
@@ -271,12 +272,11 @@
     rgb(var(--voice-card-accent)),
     var(--color-success) 32%
   );
-  background:
-    color-mix(
-      in srgb,
-      var(--voice-card-fill),
-      var(--color-success) 12%
-    );
+  background: color-mix(
+    in srgb,
+    var(--voice-card-fill),
+    var(--color-success) 12%
+  );
   box-shadow:
     0 0 0 1px rgba(var(--voice-card-accent), 0.22),
     0 0 16px color-mix(in srgb, var(--color-success), transparent 72%),
@@ -331,7 +331,7 @@
   position: absolute;
   width: 7px;
   height: 7px;
-  content: "";
+  content: '';
 }
 
 .voiceParticipantFocusButton span::before {
@@ -466,7 +466,6 @@
 }
 
 @media (max-width: 760px) {
-
   [data-voice-workspace] .voiceParticipantFocusButton {
     display: grid;
   }
@@ -476,7 +475,9 @@
     align-content: center;
   }
 
-  [data-voice-workspace] .singleVoiceParticipant article:not(.voiceParticipantExpandedTile) {
+  [data-voice-workspace]
+    .singleVoiceParticipant
+    article:not(.voiceParticipantExpandedTile) {
     flex: 0 0 min(calc(100% - 36px), 560px);
     width: min(calc(100% - 36px), 560px);
     min-width: min(320px, calc(100% - 36px));
@@ -511,12 +512,17 @@
     flex: none;
   }
 
-  [data-voice-workspace] .manyVoiceParticipants article.voiceParticipantScreenTile {
+  [data-voice-workspace]
+    .manyVoiceParticipants
+    article.voiceParticipantScreenTile {
     grid-column: 1 / -1;
     aspect-ratio: 16 / 9;
   }
 
-  [data-voice-workspace] .manyVoiceParticipants article.voiceParticipantScreenTile .voiceParticipantVideo {
+  [data-voice-workspace]
+    .manyVoiceParticipants
+    article.voiceParticipantScreenTile
+    .voiceParticipantVideo {
     object-fit: contain;
     background: #000;
   }
@@ -540,7 +546,9 @@
     display: none;
   }
 
-  [data-voice-workspace] .voiceParticipantsExpanded article.voiceParticipantExpandedTile {
+  [data-voice-workspace]
+    .voiceParticipantsExpanded
+    article.voiceParticipantExpandedTile {
     width: 100%;
     height: 100%;
     max-width: none;
@@ -552,12 +560,18 @@
     box-shadow: none;
   }
 
-  [data-voice-workspace] .voiceParticipantsExpanded article.voiceParticipantExpandedTile .voiceParticipantVideo {
+  [data-voice-workspace]
+    .voiceParticipantsExpanded
+    article.voiceParticipantExpandedTile
+    .voiceParticipantVideo {
     object-fit: contain;
     background: #000;
   }
 
-  [data-voice-workspace] .voiceParticipantsExpanded article.voiceParticipantExpandedTile > div {
+  [data-voice-workspace]
+    .voiceParticipantsExpanded
+    article.voiceParticipantExpandedTile
+    > div {
     position: absolute;
     right: 18px;
     bottom: 16px;
@@ -565,7 +579,9 @@
     z-index: 2;
   }
 
-  [data-voice-workspace] .voiceParticipantsExpanded .voiceParticipantFocusExitButton {
+  [data-voice-workspace]
+    .voiceParticipantsExpanded
+    .voiceParticipantFocusExitButton {
     top: 14px;
     right: 14px;
     display: grid;

@@ -1,91 +1,92 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
+
 import {
   defaultNotificationPreferences,
   getNotificationPreferencesStorageKey,
   loadNotificationPreferences,
   parseNotificationPreferences,
-  saveNotificationPreferences,
-} from '../../src/system/Hub/components/notifications/notificationPreferences'
+  saveNotificationPreferences
+} from '../../src/system/Hub/components/notifications/notificationPreferences';
 
 function createStorage() {
-  const values = new Map<string, string>()
+  const values = new Map<string, string>();
   return {
     getItem(key: string) {
-      return values.get(key) ?? null
+      return values.get(key) ?? null;
     },
     setItem(key: string, value: string) {
-      values.set(key, value)
+      values.set(key, value);
     },
     removeItem(key: string) {
-      values.delete(key)
+      values.delete(key);
     },
-    values,
-  }
+    values
+  };
 }
 
 test.describe('notification preferences', () => {
   test('stores preferences separately for each user', () => {
-    const storage = createStorage()
+    const storage = createStorage();
     saveNotificationPreferences(
       'USER-A',
       {
         ...defaultNotificationPreferences,
         privateMessages: false,
-        placement: 'bottom-left',
+        placement: 'bottom-left'
       },
-      storage,
-    )
+      storage
+    );
     saveNotificationPreferences(
       'user-b',
       {
         ...defaultNotificationPreferences,
-        system: false,
+        system: false
       },
-      storage,
-    )
+      storage
+    );
 
     expect(loadNotificationPreferences('user-a', storage)).toMatchObject({
       privateMessages: false,
       placement: 'bottom-left',
-      system: true,
-    })
+      system: true
+    });
     expect(loadNotificationPreferences('USER-B', storage)).toMatchObject({
       privateMessages: true,
       placement: 'bottom-right',
-      system: false,
-    })
-    expect(storage.values.size).toBe(2)
-  })
+      system: false
+    });
+    expect(storage.values.size).toBe(2);
+  });
 
   test('migrates supported values from the legacy browser-wide record', () => {
-    const storage = createStorage()
+    const storage = createStorage();
     storage.setItem(
       'arcanelink:notification-preferences:v1',
       JSON.stringify({
         enabled: false,
         privateMessages: false,
         mentions: false,
-        placement: 'bottom-left',
-      }),
-    )
+        placement: 'bottom-left'
+      })
+    );
 
     expect(loadNotificationPreferences('user-a', storage)).toEqual({
       ...defaultNotificationPreferences,
       enabled: false,
       privateMessages: false,
       mentions: false,
-      placement: 'bottom-left',
-    })
+      placement: 'bottom-left'
+    });
     expect(
-      storage.values.has(getNotificationPreferencesStorageKey('user-a')),
-    ).toBe(true)
+      storage.values.has(getNotificationPreferencesStorageKey('user-a'))
+    ).toBe(true);
     expect(storage.values.has('arcanelink:notification-preferences:v1')).toBe(
-      false,
-    )
+      false
+    );
     expect(loadNotificationPreferences('user-b', storage)).toEqual(
-      defaultNotificationPreferences,
-    )
-  })
+      defaultNotificationPreferences
+    );
+  });
 
   test('rejects invalid persisted field values', () => {
     expect(
@@ -95,15 +96,15 @@ test.describe('notification preferences', () => {
           privateMessages: 0,
           serverInvites: false,
           system: null,
-          placement: 'top-right',
-        }),
-      ),
+          placement: 'top-right'
+        })
+      )
     ).toEqual({
       ...defaultNotificationPreferences,
-      serverInvites: false,
-    })
+      serverInvites: false
+    });
     expect(parseNotificationPreferences('{broken')).toEqual(
-      defaultNotificationPreferences,
-    )
-  })
-})
+      defaultNotificationPreferences
+    );
+  });
+});

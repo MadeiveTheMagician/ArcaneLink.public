@@ -1,262 +1,266 @@
+import { settingsCopy } from '../copy/settings.ru';
 import {
+  type VoiceSettings,
   defaultVoiceSettings,
   getVoiceSettings,
   normalizeVoiceSettings,
   saveVoiceSettings,
-  subscribeVoiceSettings,
-  type VoiceSettings,
-} from './voiceSettings'
-import { settingsCopy } from '../copy/settings.ru'
+  subscribeVoiceSettings
+} from './voiceSettings';
 
-export const VOICE_PROFILES_VERSION = 1 as const
-export const voiceProfilesStorageKey = 'arcanelink:voice-profiles:v1'
-export const defaultVoiceProfileId = 'default'
-export const voiceProfileLimit = 10
-export const voiceProfileNameMaxLength = 40
+export const VOICE_PROFILES_VERSION = 1 as const;
+export const voiceProfilesStorageKey = 'arcanelink:voice-profiles:v1';
+export const defaultVoiceProfileId = 'default';
+export const voiceProfileLimit = 10;
+export const voiceProfileNameMaxLength = 40;
 
 export type VoiceProfile = {
-  id: string
-  name: string
-  isBuiltIn: boolean
-  settings: VoiceSettings
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  name: string;
+  isBuiltIn: boolean;
+  settings: VoiceSettings;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type VoiceProfilesSnapshot = {
-  activeProfileId: string
-  profiles: VoiceProfile[]
-}
+  activeProfileId: string;
+  profiles: VoiceProfile[];
+};
 
-export type VoiceProfilesStorage = Pick<Storage, 'getItem' | 'setItem'>
+export type VoiceProfilesStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 type StoredVoiceProfiles = VoiceProfilesSnapshot & {
-  version: typeof VOICE_PROFILES_VERSION
-}
+  version: typeof VOICE_PROFILES_VERSION;
+};
 
-type VoiceProfilesListener = (snapshot: VoiceProfilesSnapshot) => void
+type VoiceProfilesListener = (snapshot: VoiceProfilesSnapshot) => void;
 
-const listeners = new Set<VoiceProfilesListener>()
-let currentSnapshot: VoiceProfilesSnapshot | null = null
-let isStorageListenerAttached = false
-let isVoiceSettingsListenerAttached = false
-let isApplyingProfile = false
-let isProfilesInitialized = false
-let hasUnpersistedProfileChanges = false
+const listeners = new Set<VoiceProfilesListener>();
+let currentSnapshot: VoiceProfilesSnapshot | null = null;
+let isStorageListenerAttached = false;
+let isVoiceSettingsListenerAttached = false;
+let isApplyingProfile = false;
+let isProfilesInitialized = false;
+let hasUnpersistedProfileChanges = false;
 
 export function normalizeVoiceProfileName(value: unknown) {
   return typeof value === 'string'
     ? value.trim().replace(/\s+/g, ' ').slice(0, voiceProfileNameMaxLength)
-    : ''
+    : '';
 }
 
 export function parseVoiceProfiles(
   raw: string | null,
-  fallbackSettings: VoiceSettings = getVoiceSettings(),
+  fallbackSettings: VoiceSettings = getVoiceSettings()
 ): VoiceProfilesSnapshot {
   if (!raw) {
-    return createInitialVoiceProfiles(fallbackSettings)
+    return createInitialVoiceProfiles(fallbackSettings);
   }
 
   try {
-    const parsed = JSON.parse(raw) as Partial<StoredVoiceProfiles> | null
+    const parsed = JSON.parse(raw) as Partial<StoredVoiceProfiles> | null;
     if (parsed?.version !== VOICE_PROFILES_VERSION) {
-      return createInitialVoiceProfiles(fallbackSettings)
+      return createInitialVoiceProfiles(fallbackSettings);
     }
 
-    return normalizeVoiceProfilesSnapshot(parsed, fallbackSettings)
+    return normalizeVoiceProfilesSnapshot(parsed, fallbackSettings);
   } catch {
-    return createInitialVoiceProfiles(fallbackSettings)
+    return createInitialVoiceProfiles(fallbackSettings);
   }
 }
 
 export function loadVoiceProfiles(
   storage: VoiceProfilesStorage | null = getBrowserStorage(),
-  fallbackSettings: VoiceSettings = getVoiceSettings(),
+  fallbackSettings: VoiceSettings = getVoiceSettings()
 ) {
   if (!storage) {
-    return createInitialVoiceProfiles(fallbackSettings)
+    return createInitialVoiceProfiles(fallbackSettings);
   }
 
   try {
     return parseVoiceProfiles(
       storage.getItem(voiceProfilesStorageKey),
-      fallbackSettings,
-    )
+      fallbackSettings
+    );
   } catch {
-    return createInitialVoiceProfiles(fallbackSettings)
+    return createInitialVoiceProfiles(fallbackSettings);
   }
 }
 
 export function getVoiceProfilesSnapshot() {
   if (!currentSnapshot) {
-    currentSnapshot = loadVoiceProfiles()
+    currentSnapshot = loadVoiceProfiles();
   }
-  return currentSnapshot
+  return currentSnapshot;
 }
 
 export function subscribeVoiceProfiles(listener: VoiceProfilesListener) {
-  attachStorageListener()
-  const storage = getBrowserStorage()
+  attachStorageListener();
+  const storage = getBrowserStorage();
   if (storage && !hasUnpersistedProfileChanges) {
-    currentSnapshot = loadVoiceProfiles(storage)
+    currentSnapshot = loadVoiceProfiles(storage);
   }
-  initializeVoiceProfilesStore()
-  reconcileActiveVoiceProfile(getVoiceProfilesSnapshot())
-  listeners.add(listener)
-  attachVoiceSettingsListener()
+  initializeVoiceProfilesStore();
+  reconcileActiveVoiceProfile(getVoiceProfilesSnapshot());
+  listeners.add(listener);
+  attachVoiceSettingsListener();
 
   return () => {
-    listeners.delete(listener)
-  }
+    listeners.delete(listener);
+  };
 }
 
 export function activateVoiceProfile(profileId: string) {
-  const current = getVoiceProfilesSnapshot()
-  const profile = current.profiles.find((item) => item.id === profileId)
+  const current = getVoiceProfilesSnapshot();
+  const profile = current.profiles.find((item) => item.id === profileId);
   if (!profile) {
-    return false
+    return false;
   }
 
   if (current.activeProfileId !== profile.id) {
     persistVoiceProfiles({
       ...current,
-      activeProfileId: profile.id,
-    })
+      activeProfileId: profile.id
+    });
   }
 
-  applyProfileSettings(profile.settings)
-  return true
+  applyProfileSettings(profile.settings);
+  return true;
 }
 
 export function createVoiceProfile(
   name: string,
-  sourceSettings: VoiceSettings = getVoiceSettings(),
+  sourceSettings: VoiceSettings = getVoiceSettings()
 ) {
-  const current = getVoiceProfilesSnapshot()
-  const normalizedName = normalizeVoiceProfileName(name)
+  const current = getVoiceProfilesSnapshot();
+  const normalizedName = normalizeVoiceProfileName(name);
   if (!normalizedName || current.profiles.length >= voiceProfileLimit) {
-    return null
+    return null;
   }
 
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
   const profile: VoiceProfile = {
     id: createVoiceProfileId(),
     name: normalizedName,
     isBuiltIn: false,
     settings: normalizeVoiceSettings(sourceSettings),
     createdAt: now,
-    updatedAt: now,
-  }
+    updatedAt: now
+  };
 
   persistVoiceProfiles({
     activeProfileId: profile.id,
-    profiles: [...current.profiles, profile],
-  })
-  applyProfileSettings(profile.settings)
-  return profile
+    profiles: [...current.profiles, profile]
+  });
+  applyProfileSettings(profile.settings);
+  return profile;
 }
 
 export function duplicateVoiceProfile(profileId: string) {
-  const current = getVoiceProfilesSnapshot()
-  const source = current.profiles.find((profile) => profile.id === profileId)
+  const current = getVoiceProfilesSnapshot();
+  const source = current.profiles.find((profile) => profile.id === profileId);
   if (!source) {
-    return null
+    return null;
   }
 
-  const copySuffix = settingsCopy.voice.profileCopySuffix
-  const availableNameLength = voiceProfileNameMaxLength - copySuffix.length
+  const copySuffix = settingsCopy.voice.profileCopySuffix;
+  const availableNameLength = voiceProfileNameMaxLength - copySuffix.length;
   return createVoiceProfile(
     `${source.name.slice(0, availableNameLength)}${copySuffix}`,
-    source.settings,
-  )
+    source.settings
+  );
 }
 
 export function renameVoiceProfile(profileId: string, name: string) {
-  const current = getVoiceProfilesSnapshot()
-  const normalizedName = normalizeVoiceProfileName(name)
+  const current = getVoiceProfilesSnapshot();
+  const normalizedName = normalizeVoiceProfileName(name);
   if (!normalizedName) {
-    return false
+    return false;
   }
 
-  let didRename = false
+  let didRename = false;
   const profiles = current.profiles.map((profile) => {
     if (profile.id !== profileId || profile.isBuiltIn) {
-      return profile
+      return profile;
     }
 
-    didRename = true
+    didRename = true;
     return {
       ...profile,
       name: normalizedName,
-      updatedAt: new Date().toISOString(),
-    }
-  })
+      updatedAt: new Date().toISOString()
+    };
+  });
 
   if (didRename) {
-    persistVoiceProfiles({ ...current, profiles })
+    persistVoiceProfiles({ ...current, profiles });
   }
-  return didRename
+  return didRename;
 }
 
 export function deleteVoiceProfile(profileId: string) {
-  const current = getVoiceProfilesSnapshot()
-  const profile = current.profiles.find((item) => item.id === profileId)
+  const current = getVoiceProfilesSnapshot();
+  const profile = current.profiles.find((item) => item.id === profileId);
   if (!profile || profile.isBuiltIn) {
-    return false
+    return false;
   }
 
-  const profiles = current.profiles.filter((item) => item.id !== profileId)
+  const profiles = current.profiles.filter((item) => item.id !== profileId);
   const activeProfileId =
     current.activeProfileId === profileId
       ? defaultVoiceProfileId
-      : current.activeProfileId
+      : current.activeProfileId;
 
-  persistVoiceProfiles({ activeProfileId, profiles })
+  persistVoiceProfiles({ activeProfileId, profiles });
   if (current.activeProfileId === profileId) {
-    const fallback = profiles.find((item) => item.id === defaultVoiceProfileId)
+    const fallback = profiles.find((item) => item.id === defaultVoiceProfileId);
     if (fallback) {
-      applyProfileSettings(fallback.settings)
+      applyProfileSettings(fallback.settings);
     }
   }
-  return true
+  return true;
 }
 
 export function resetActiveVoiceProfile() {
-  const current = getVoiceProfilesSnapshot()
-  const settings = { ...defaultVoiceSettings }
-  const next = updateProfileSettings(current, current.activeProfileId, settings)
-  persistVoiceProfiles(next)
-  applyProfileSettings(settings)
-  return settings
+  const current = getVoiceProfilesSnapshot();
+  const settings = { ...defaultVoiceSettings };
+  const next = updateProfileSettings(
+    current,
+    current.activeProfileId,
+    settings
+  );
+  persistVoiceProfiles(next);
+  applyProfileSettings(settings);
+  return settings;
 }
 
 export function syncActiveVoiceProfileSettings(settings: VoiceSettings) {
-  const current = getVoiceProfilesSnapshot()
-  const normalizedSettings = normalizeVoiceSettings(settings)
+  const current = getVoiceProfilesSnapshot();
+  const normalizedSettings = normalizeVoiceSettings(settings);
   const activeProfile = current.profiles.find(
-    (profile) => profile.id === current.activeProfileId,
-  )
+    (profile) => profile.id === current.activeProfileId
+  );
   if (
     !activeProfile ||
     areVoiceSettingsEqual(activeProfile.settings, normalizedSettings)
   ) {
-    return current
+    return current;
   }
 
   const next = updateProfileSettings(
     current,
     activeProfile.id,
-    normalizedSettings,
-  )
-  persistVoiceProfiles(next)
-  return next
+    normalizedSettings
+  );
+  persistVoiceProfiles(next);
+  return next;
 }
 
 function createInitialVoiceProfiles(
-  settings: VoiceSettings,
+  settings: VoiceSettings
 ): VoiceProfilesSnapshot {
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
   return {
     activeProfileId: defaultVoiceProfileId,
     profiles: [
@@ -266,33 +270,34 @@ function createInitialVoiceProfiles(
         isBuiltIn: true,
         settings: normalizeVoiceSettings(settings),
         createdAt: now,
-        updatedAt: now,
-      },
-    ],
-  }
+        updatedAt: now
+      }
+    ]
+  };
 }
 
 function normalizeVoiceProfilesSnapshot(
   value: Partial<StoredVoiceProfiles>,
-  fallbackSettings: VoiceSettings,
+  fallbackSettings: VoiceSettings
 ) {
-  const now = new Date().toISOString()
-  const candidates = Array.isArray(value.profiles) ? value.profiles : []
-  let builtInProfile: VoiceProfile | null = null
-  const customProfiles: VoiceProfile[] = []
-  const seenIds = new Set<string>()
+  const now = new Date().toISOString();
+  const candidates = Array.isArray(value.profiles) ? value.profiles : [];
+  let builtInProfile: VoiceProfile | null = null;
+  const customProfiles: VoiceProfile[] = [];
+  const seenIds = new Set<string>();
 
   for (const candidate of candidates) {
     if (!candidate || typeof candidate !== 'object') {
-      continue
+      continue;
     }
 
-    const id = normalizeVoiceProfileId((candidate as VoiceProfile).id)
-    const name = id === defaultVoiceProfileId
-      ? settingsCopy.voice.profileDefaultName
-      : normalizeVoiceProfileName((candidate as VoiceProfile).name)
+    const id = normalizeVoiceProfileId((candidate as VoiceProfile).id);
+    const name =
+      id === defaultVoiceProfileId
+        ? settingsCopy.voice.profileDefaultName
+        : normalizeVoiceProfileName((candidate as VoiceProfile).name);
     if (!id || !name || seenIds.has(id)) {
-      continue
+      continue;
     }
 
     const profile: VoiceProfile = {
@@ -301,39 +306,39 @@ function normalizeVoiceProfilesSnapshot(
       isBuiltIn: id === defaultVoiceProfileId,
       settings: normalizeVoiceSettings((candidate as VoiceProfile).settings),
       createdAt: readIsoTimestamp((candidate as VoiceProfile).createdAt, now),
-      updatedAt: readIsoTimestamp((candidate as VoiceProfile).updatedAt, now),
-    }
-    seenIds.add(id)
+      updatedAt: readIsoTimestamp((candidate as VoiceProfile).updatedAt, now)
+    };
+    seenIds.add(id);
     if (id === defaultVoiceProfileId) {
-      builtInProfile = profile
+      builtInProfile = profile;
     } else if (customProfiles.length < voiceProfileLimit - 1) {
-      customProfiles.push(profile)
+      customProfiles.push(profile);
     }
   }
 
   const profiles = [
     builtInProfile ?? createInitialVoiceProfiles(fallbackSettings).profiles[0],
-    ...customProfiles,
-  ]
+    ...customProfiles
+  ];
 
   const requestedActiveProfileId = normalizeVoiceProfileId(
-    value.activeProfileId,
-  )
+    value.activeProfileId
+  );
   const activeProfileId = profiles.some(
-    (profile) => profile.id === requestedActiveProfileId,
+    (profile) => profile.id === requestedActiveProfileId
   )
     ? requestedActiveProfileId
-    : defaultVoiceProfileId
+    : defaultVoiceProfileId;
 
-  return { activeProfileId, profiles }
+  return { activeProfileId, profiles };
 }
 
 function updateProfileSettings(
   current: VoiceProfilesSnapshot,
   profileId: string,
-  settings: VoiceSettings,
+  settings: VoiceSettings
 ): VoiceProfilesSnapshot {
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
   return {
     ...current,
     profiles: current.profiles.map((profile) =>
@@ -341,86 +346,86 @@ function updateProfileSettings(
         ? {
             ...profile,
             settings: normalizeVoiceSettings(settings),
-            updatedAt: now,
+            updatedAt: now
           }
-        : profile,
-    ),
-  }
+        : profile
+    )
+  };
 }
 
 function persistVoiceProfiles(
   snapshot: VoiceProfilesSnapshot,
-  storage: VoiceProfilesStorage | null = getBrowserStorage(),
+  storage: VoiceProfilesStorage | null = getBrowserStorage()
 ) {
   const normalized = normalizeVoiceProfilesSnapshot(
     {
       version: VOICE_PROFILES_VERSION,
-      ...snapshot,
+      ...snapshot
     },
-    getVoiceSettings(),
-  )
+    getVoiceSettings()
+  );
   const stored: StoredVoiceProfiles = {
     version: VOICE_PROFILES_VERSION,
-    ...normalized,
-  }
+    ...normalized
+  };
 
   if (storage) {
     try {
-      storage.setItem(voiceProfilesStorageKey, JSON.stringify(stored))
-      hasUnpersistedProfileChanges = false
+      storage.setItem(voiceProfilesStorageKey, JSON.stringify(stored));
+      hasUnpersistedProfileChanges = false;
     } catch {
       // The in-memory profiles remain active when browser storage is blocked.
-      hasUnpersistedProfileChanges = true
+      hasUnpersistedProfileChanges = true;
     }
   } else {
-    hasUnpersistedProfileChanges = true
+    hasUnpersistedProfileChanges = true;
   }
 
-  currentSnapshot = normalized
-  listeners.forEach((listener) => listener(normalized))
-  return normalized
+  currentSnapshot = normalized;
+  listeners.forEach((listener) => listener(normalized));
+  return normalized;
 }
 
 function applyProfileSettings(settings: VoiceSettings) {
-  isApplyingProfile = true
+  isApplyingProfile = true;
   try {
-    saveVoiceSettings(settings)
+    saveVoiceSettings(settings);
   } finally {
-    isApplyingProfile = false
+    isApplyingProfile = false;
   }
 }
 
 function attachVoiceSettingsListener() {
   if (isVoiceSettingsListenerAttached) {
-    return
+    return;
   }
 
-  isVoiceSettingsListenerAttached = true
+  isVoiceSettingsListenerAttached = true;
   subscribeVoiceSettings((settings) => {
     if (!isApplyingProfile) {
-      syncActiveVoiceProfileSettings(settings)
+      syncActiveVoiceProfileSettings(settings);
     }
-  })
+  });
 }
 
 function initializeVoiceProfilesStore() {
   if (isProfilesInitialized) {
-    return
+    return;
   }
 
-  isProfilesInitialized = true
-  reconcileActiveVoiceProfile(getVoiceProfilesSnapshot())
+  isProfilesInitialized = true;
+  reconcileActiveVoiceProfile(getVoiceProfilesSnapshot());
 }
 
 function reconcileActiveVoiceProfile(snapshot: VoiceProfilesSnapshot) {
   const activeProfile = snapshot.profiles.find(
-    (profile) => profile.id === snapshot.activeProfileId,
-  )
+    (profile) => profile.id === snapshot.activeProfileId
+  );
   if (
     activeProfile &&
     !areVoiceSettingsEqual(activeProfile.settings, getVoiceSettings())
   ) {
-    applyProfileSettings(activeProfile.settings)
+    applyProfileSettings(activeProfile.settings);
   }
 }
 
@@ -430,69 +435,71 @@ function attachStorageListener() {
     typeof window.addEventListener !== 'function' ||
     isStorageListenerAttached
   ) {
-    return
+    return;
   }
 
-  isStorageListenerAttached = true
+  isStorageListenerAttached = true;
   window.addEventListener('storage', (event) => {
     if (event.key !== voiceProfilesStorageKey) {
-      return
+      return;
     }
 
-    const next = parseVoiceProfiles(event.newValue, getVoiceSettings())
-    hasUnpersistedProfileChanges = false
-    currentSnapshot = next
-    listeners.forEach((listener) => listener(next))
+    const next = parseVoiceProfiles(event.newValue, getVoiceSettings());
+    hasUnpersistedProfileChanges = false;
+    currentSnapshot = next;
+    listeners.forEach((listener) => listener(next));
     const activeProfile = next.profiles.find(
-      (profile) => profile.id === next.activeProfileId,
-    )
+      (profile) => profile.id === next.activeProfileId
+    );
     if (activeProfile) {
-      applyProfileSettings(activeProfile.settings)
+      applyProfileSettings(activeProfile.settings);
     }
-  })
+  });
 }
 
 function areVoiceSettingsEqual(left: VoiceSettings, right: VoiceSettings) {
-  return JSON.stringify(left) === JSON.stringify(right)
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function createVoiceProfileId() {
   const randomId =
     typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
-      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
-  return `voice-${randomId}`.slice(0, 64)
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return `voice-${randomId}`.slice(0, 64);
 }
 
 function normalizeVoiceProfileId(value: unknown) {
   if (typeof value !== 'string') {
-    return ''
+    return '';
   }
 
-  const normalized = value.trim().slice(0, 64)
-  return /^[a-zA-Z0-9_-]+$/.test(normalized) ? normalized : ''
+  const normalized = value.trim().slice(0, 64);
+  return /^[a-zA-Z0-9_-]+$/.test(normalized) ? normalized : '';
 }
 
 function readIsoTimestamp(value: unknown, fallback: string) {
   if (typeof value !== 'string') {
-    return fallback
+    return fallback;
   }
 
-  const timestamp = Date.parse(value)
-  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : fallback
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp)
+    ? new Date(timestamp).toISOString()
+    : fallback;
 }
 
 function getBrowserStorage(): VoiceProfilesStorage | null {
   if (typeof window === 'undefined') {
-    return null
+    return null;
   }
 
   try {
     return typeof window.localStorage?.getItem === 'function' &&
       typeof window.localStorage?.setItem === 'function'
       ? window.localStorage
-      : null
+      : null;
   } catch {
-    return null
+    return null;
   }
 }

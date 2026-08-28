@@ -1,104 +1,103 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { apiRequest, readJsonResponse } from '../../../shared/api/api'
+import { type FormEvent, useEffect, useRef, useState } from 'react';
+
+import { apiRequest, readJsonResponse } from '../../../shared/api/api';
+import { SystemSelect } from '../../shared/ui/SystemSelect';
+import { useServerModeration } from '../hooks/useServerModeration';
+import type { ModerationCaseFilter } from '../models/moderationCaseModel';
 import {
-  getModerationCaseStatusLabel,
-  getModerationReasonLabel,
-  moderationCaseStatusOptions,
-  moderationCopy,
-} from '../moderationCopy.ru'
-import type {
-  ModerationCaseStatus,
-  ModerationEvidenceAssetResponse,
-} from '../moderationTypes'
-import type { ModerationCaseFilter } from '../models/moderationCaseModel'
-import {
+  type ModerationEvidenceTransferMode,
   isExpectedModerationEvidenceResponseUrl,
   isMatchingModerationEvidenceSha256,
   resolveModerationEvidenceContentUrl,
   sanitizeModerationEvidenceFileName,
-  validateModerationEvidenceResponse,
-  type ModerationEvidenceTransferMode,
-} from '../models/moderationEvidenceAssetModel'
-import { useServerModeration } from '../hooks/useServerModeration'
-import { SystemSelect } from '../../shared/ui/SystemSelect'
-import styles from './ServerModerationPanel.module.css'
+  validateModerationEvidenceResponse
+} from '../models/moderationEvidenceAssetModel';
+import {
+  getModerationCaseStatusLabel,
+  getModerationReasonLabel,
+  moderationCaseStatusOptions,
+  moderationCopy
+} from '../moderationCopy.ru';
+import type {
+  ModerationCaseStatus,
+  ModerationEvidenceAssetResponse
+} from '../moderationTypes';
+
+import styles from './ServerModerationPanel.module.css';
 
 export function ServerModerationPanel({
   accessToken,
-  serverId,
+  serverId
 }: {
-  accessToken: string
-  serverId: string
+  accessToken: string;
+  serverId: string;
 }) {
-  const moderation = useServerModeration({ accessToken, serverId })
-  const [statusDraft, setStatusDraft] =
-    useState<ModerationCaseStatus>('open')
-  const [noteDraft, setNoteDraft] = useState('')
+  const moderation = useServerModeration({ accessToken, serverId });
+  const [statusDraft, setStatusDraft] = useState<ModerationCaseStatus>('open');
+  const [noteDraft, setNoteDraft] = useState('');
   const [loadingEvidenceAssetId, setLoadingEvidenceAssetId] = useState<
     string | null
-  >(null)
+  >(null);
   const [evidenceAssetError, setEvidenceAssetError] = useState<{
-    evidenceAssetId: string
-    message: string
-  } | null>(null)
-  const evidenceTransferSequenceRef = useRef(0)
-  const evidenceObjectUrlsRef = useRef(new Set<string>())
-  const evidenceObjectUrlTimeoutsRef = useRef(new Map<string, number>())
-  const selectedCaseId = moderation.selectedCase?.caseId ?? null
+    evidenceAssetId: string;
+    message: string;
+  } | null>(null);
+  const evidenceTransferSequenceRef = useRef(0);
+  const evidenceObjectUrlsRef = useRef(new Set<string>());
+  const evidenceObjectUrlTimeoutsRef = useRef(new Map<string, number>());
+  const selectedCaseId = moderation.selectedCase?.caseId ?? null;
 
   useEffect(() => {
     if (moderation.selectedCase) {
-      setStatusDraft(moderation.selectedCase.status)
-      setNoteDraft('')
+      setStatusDraft(moderation.selectedCase.status);
+      setNoteDraft('');
     }
-  }, [moderation.selectedCase])
+  }, [moderation.selectedCase]);
 
   useEffect(() => {
-    evidenceTransferSequenceRef.current += 1
-    setLoadingEvidenceAssetId(null)
-    setEvidenceAssetError(null)
-  }, [selectedCaseId])
+    evidenceTransferSequenceRef.current += 1;
+    setLoadingEvidenceAssetId(null);
+    setEvidenceAssetError(null);
+  }, [selectedCaseId]);
 
   useEffect(() => {
-    const evidenceObjectUrls = evidenceObjectUrlsRef.current
-    const evidenceObjectUrlTimeouts = evidenceObjectUrlTimeoutsRef.current
+    const evidenceObjectUrls = evidenceObjectUrlsRef.current;
+    const evidenceObjectUrlTimeouts = evidenceObjectUrlTimeoutsRef.current;
 
     return () => {
-      evidenceTransferSequenceRef.current += 1
+      evidenceTransferSequenceRef.current += 1;
 
       for (const timeoutId of evidenceObjectUrlTimeouts.values()) {
-        window.clearTimeout(timeoutId)
+        window.clearTimeout(timeoutId);
       }
 
       for (const objectUrl of evidenceObjectUrls) {
-        URL.revokeObjectURL(objectUrl)
+        URL.revokeObjectURL(objectUrl);
       }
 
-      evidenceObjectUrlTimeouts.clear()
-      evidenceObjectUrls.clear()
-    }
-  }, [])
+      evidenceObjectUrlTimeouts.clear();
+      evidenceObjectUrls.clear();
+    };
+  }, []);
 
   async function submitStatus(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (await moderation.updateCase(statusDraft, noteDraft)) {
-      setNoteDraft('')
+      setNoteDraft('');
     }
   }
 
-  async function transferEvidenceAsset(
-    asset: ModerationEvidenceAssetResponse,
-  ) {
-    const selectedCase = moderation.selectedCase
+  async function transferEvidenceAsset(asset: ModerationEvidenceAssetResponse) {
+    const selectedCase = moderation.selectedCase;
     if (!selectedCase || loadingEvidenceAssetId) {
-      return
+      return;
     }
 
-    const transferSequence = ++evidenceTransferSequenceRef.current
-    setLoadingEvidenceAssetId(asset.evidenceAssetId)
-    setEvidenceAssetError(null)
-    let objectUrl: string | null = null
+    const transferSequence = ++evidenceTransferSequenceRef.current;
+    setLoadingEvidenceAssetId(asset.evidenceAssetId);
+    setEvidenceAssetError(null);
+    let objectUrl: string | null = null;
 
     try {
       const contentUrl = resolveModerationEvidenceContentUrl({
@@ -106,29 +105,29 @@ export function ServerModerationPanel({
         origin: window.location.origin,
         serverId,
         caseId: selectedCase.caseId,
-        evidenceAssetId: asset.evidenceAssetId,
-      })
+        evidenceAssetId: asset.evidenceAssetId
+      });
 
       if (!contentUrl) {
-        throw new Error(moderationCopy.cases.invalidAttachmentUrl)
+        throw new Error(moderationCopy.cases.invalidAttachmentUrl);
       }
 
       const response = await apiRequest(contentUrl, {
         accessToken,
         cache: 'no-store',
         headers: {
-          Accept: `${asset.mimeType}, application/octet-stream`,
+          Accept: `${asset.mimeType}, application/octet-stream`
         },
-        redirect: 'error',
-      })
+        redirect: 'error'
+      });
 
       if (evidenceTransferSequenceRef.current !== transferSequence) {
-        return
+        return;
       }
 
       if (!response.ok) {
-        await readJsonResponse<unknown>(response)
-        throw new Error(moderationCopy.cases.attachmentTransferFailed)
+        await readJsonResponse<unknown>(response);
+        throw new Error(moderationCopy.cases.attachmentTransferFailed);
       }
 
       if (
@@ -136,54 +135,48 @@ export function ServerModerationPanel({
         !isExpectedModerationEvidenceResponseUrl({
           responseUrl: response.url,
           requestPath: contentUrl,
-          origin: window.location.origin,
+          origin: window.location.origin
         })
       ) {
-        throw new Error(moderationCopy.cases.invalidAttachmentResponse)
+        throw new Error(moderationCopy.cases.invalidAttachmentResponse);
       }
 
-      const blob = await response.blob()
+      const blob = await response.blob();
 
       if (evidenceTransferSequenceRef.current !== transferSequence) {
-        return
+        return;
       }
 
       const validation = validateModerationEvidenceResponse({
         recordedMimeType: asset.mimeType,
         recordedSizeBytes: asset.sizeBytes,
         responseContentType: response.headers.get('Content-Type'),
-        responseContentDisposition: response.headers.get(
-          'Content-Disposition',
-        ),
-        responseSizeBytes: blob.size,
-      })
+        responseContentDisposition: response.headers.get('Content-Disposition'),
+        responseSizeBytes: blob.size
+      });
 
       if (!validation.ok) {
-        throw new Error(moderationCopy.cases.invalidAttachmentResponse)
+        throw new Error(moderationCopy.cases.invalidAttachmentResponse);
       }
 
-      const actualSha256 = await calculateBlobSha256(blob)
+      const actualSha256 = await calculateBlobSha256(blob);
 
       if (evidenceTransferSequenceRef.current !== transferSequence) {
-        return
+        return;
       }
 
       if (!isMatchingModerationEvidenceSha256(asset.sha256, actualSha256)) {
-        throw new Error(moderationCopy.cases.attachmentIntegrityFailed)
+        throw new Error(moderationCopy.cases.attachmentIntegrityFailed);
       }
 
-      objectUrl = URL.createObjectURL(blob)
-      evidenceObjectUrlsRef.current.add(objectUrl)
-      triggerEvidenceAssetTransfer(
-        objectUrl,
-        validation.mode,
-        asset.fileName,
-      )
-      scheduleEvidenceObjectUrlRevocation(objectUrl, validation.mode)
-      objectUrl = null
+      objectUrl = URL.createObjectURL(blob);
+      evidenceObjectUrlsRef.current.add(objectUrl);
+      triggerEvidenceAssetTransfer(objectUrl, validation.mode, asset.fileName);
+      scheduleEvidenceObjectUrlRevocation(objectUrl, validation.mode);
+      objectUrl = null;
     } catch (error) {
       if (objectUrl) {
-        revokeEvidenceObjectUrl(objectUrl)
+        revokeEvidenceObjectUrl(objectUrl);
       }
 
       if (evidenceTransferSequenceRef.current === transferSequence) {
@@ -192,44 +185,41 @@ export function ServerModerationPanel({
           message:
             error instanceof Error && error.message
               ? error.message
-              : moderationCopy.cases.attachmentTransferFailed,
-        })
+              : moderationCopy.cases.attachmentTransferFailed
+        });
       }
     } finally {
       if (evidenceTransferSequenceRef.current === transferSequence) {
-        setLoadingEvidenceAssetId(null)
+        setLoadingEvidenceAssetId(null);
       }
     }
   }
 
   function scheduleEvidenceObjectUrlRevocation(
     objectUrl: string,
-    mode: ModerationEvidenceTransferMode,
+    mode: ModerationEvidenceTransferMode
   ) {
     const timeoutId = window.setTimeout(
       () => revokeEvidenceObjectUrl(objectUrl),
-      mode === 'open' ? 60_000 : 5_000,
-    )
-    evidenceObjectUrlTimeoutsRef.current.set(objectUrl, timeoutId)
+      mode === 'open' ? 60_000 : 5_000
+    );
+    evidenceObjectUrlTimeoutsRef.current.set(objectUrl, timeoutId);
   }
 
   function revokeEvidenceObjectUrl(objectUrl: string) {
-    const timeoutId = evidenceObjectUrlTimeoutsRef.current.get(objectUrl)
+    const timeoutId = evidenceObjectUrlTimeoutsRef.current.get(objectUrl);
     if (timeoutId !== undefined) {
-      window.clearTimeout(timeoutId)
-      evidenceObjectUrlTimeoutsRef.current.delete(objectUrl)
+      window.clearTimeout(timeoutId);
+      evidenceObjectUrlTimeoutsRef.current.delete(objectUrl);
     }
 
     if (evidenceObjectUrlsRef.current.delete(objectUrl)) {
-      URL.revokeObjectURL(objectUrl)
+      URL.revokeObjectURL(objectUrl);
     }
   }
 
   return (
-    <section
-      className={styles.panel}
-      aria-labelledby="server-moderation-title"
-    >
+    <section className={styles.panel} aria-labelledby="server-moderation-title">
       <header className={styles.heading}>
         <div>
           <h3 id="server-moderation-title">{moderationCopy.cases.title}</h3>
@@ -241,9 +231,7 @@ export function ServerModerationPanel({
             aria-label={moderationCopy.cases.filter}
             value={moderation.statusFilter}
             onValueChange={(value) =>
-              moderation.setStatusFilter(
-                value as ModerationCaseFilter,
-              )
+              moderation.setStatusFilter(value as ModerationCaseFilter)
             }
           >
             <option value="all">{moderationCopy.cases.allStatuses}</option>
@@ -288,7 +276,7 @@ export function ServerModerationPanel({
               {moderation.cases.map((item) => {
                 const isSelected =
                   moderation.selectedCaseId?.toLowerCase() ===
-                  item.caseId.toLowerCase()
+                  item.caseId.toLowerCase();
 
                 return (
                   <button
@@ -297,9 +285,7 @@ export function ServerModerationPanel({
                     type="button"
                     aria-current={isSelected ? 'true' : undefined}
                     aria-label={`${moderationCopy.cases.openCase}: ${item.reportedUserDisplayName}, ${getModerationCaseStatusLabel(item.status)}, ${moderationCopy.cases.submissions(item.submissionCount)}`}
-                    onClick={() =>
-                      void moderation.loadCaseDetail(item.caseId)
-                    }
+                    onClick={() => void moderation.loadCaseDetail(item.caseId)}
                   >
                     <span className={styles.caseTitle}>
                       <strong>{item.reportedUserDisplayName}</strong>
@@ -318,7 +304,7 @@ export function ServerModerationPanel({
                         .join(', ')}
                     </span>
                   </button>
-                )
+                );
               })}
             </div>
           )}
@@ -328,9 +314,7 @@ export function ServerModerationPanel({
               className={styles.loadMore}
               type="button"
               disabled={moderation.isLoadingMore}
-              onClick={() =>
-                void moderation.loadCases({ append: true })
-              }
+              onClick={() => void moderation.loadCases({ append: true })}
             >
               {moderation.isLoadingMore
                 ? moderationCopy.cases.loading
@@ -353,9 +337,7 @@ export function ServerModerationPanel({
                 <button
                   type="button"
                   onClick={() =>
-                    void moderation.loadCaseDetail(
-                      moderation.selectedCaseId!,
-                    )
+                    void moderation.loadCaseDetail(moderation.selectedCaseId!)
                   }
                 >
                   {moderationCopy.cases.retry}
@@ -376,7 +358,7 @@ export function ServerModerationPanel({
                   </h4>
                   <span>
                     {getModerationCaseStatusLabel(
-                      moderation.selectedCase.status,
+                      moderation.selectedCase.status
                     )}
                     {' · '}
                     {formatDateTime(moderation.selectedCase.updatedAt)}
@@ -406,9 +388,7 @@ export function ServerModerationPanel({
                     value={statusDraft}
                     disabled={moderation.isUpdatingCase}
                     onValueChange={(value) =>
-                      setStatusDraft(
-                        value as ModerationCaseStatus,
-                      )
+                      setStatusDraft(value as ModerationCaseStatus)
                     }
                   >
                     {moderationCaseStatusOptions.map((option) => (
@@ -485,12 +465,11 @@ export function ServerModerationPanel({
                         {[...evidence.assets]
                           .sort(
                             (first, second) =>
-                              first.displayOrder - second.displayOrder,
+                              first.displayOrder - second.displayOrder
                           )
                           .map((asset) => {
                             const isLoading =
-                              loadingEvidenceAssetId ===
-                              asset.evidenceAssetId
+                              loadingEvidenceAssetId === asset.evidenceAssetId;
 
                             return (
                               <button
@@ -505,7 +484,7 @@ export function ServerModerationPanel({
                               >
                                 <span>
                                   {moderationCopy.cases.attachment(
-                                    asset.fileName,
+                                    asset.fileName
                                   )}
                                 </span>
                                 <small>
@@ -516,13 +495,13 @@ export function ServerModerationPanel({
                                     : moderationCopy.cases.openAttachment}
                                 </small>
                               </button>
-                            )
+                            );
                           })}
                         {evidenceAssetError &&
                           evidence.assets.some(
                             (asset) =>
                               asset.evidenceAssetId ===
-                              evidenceAssetError.evidenceAssetId,
+                              evidenceAssetError.evidenceAssetId
                           ) && (
                             <p className={styles.assetError} role="alert">
                               {evidenceAssetError.message}
@@ -566,60 +545,60 @@ export function ServerModerationPanel({
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
     dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
+    timeStyle: 'short'
+  }).format(new Date(value));
 }
 
 function formatFileSize(sizeBytes: number) {
   if (sizeBytes < 1024) {
-    return `${sizeBytes} B`
+    return `${sizeBytes} B`;
   }
 
   if (sizeBytes < 1024 * 1024) {
-    return `${Math.round(sizeBytes / 1024)} KB`
+    return `${Math.round(sizeBytes / 1024)} KB`;
   }
 
-  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 async function calculateBlobSha256(blob: Blob) {
   const digest = await window.crypto.subtle.digest(
     'SHA-256',
-    await blob.arrayBuffer(),
-  )
+    await blob.arrayBuffer()
+  );
 
   return Array.from(new Uint8Array(digest), (value) =>
-    value.toString(16).padStart(2, '0'),
-  ).join('')
+    value.toString(16).padStart(2, '0')
+  ).join('');
 }
 
 function triggerEvidenceAssetTransfer(
   objectUrl: string,
   mode: ModerationEvidenceTransferMode,
-  fileName: string,
+  fileName: string
 ) {
-  const anchor = document.createElement('a')
-  anchor.href = objectUrl
-  anchor.hidden = true
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.hidden = true;
 
   if (mode === 'open') {
-    anchor.target = '_blank'
-    anchor.rel = 'noopener noreferrer'
+    anchor.target = '_blank';
+    anchor.rel = 'noopener noreferrer';
   } else {
-    anchor.download = sanitizeModerationEvidenceFileName(fileName)
+    anchor.download = sanitizeModerationEvidenceFileName(fileName);
   }
 
-  document.body.append(anchor)
+  document.body.append(anchor);
 
   try {
-    anchor.click()
+    anchor.click();
   } finally {
-    anchor.remove()
+    anchor.remove();
   }
 }

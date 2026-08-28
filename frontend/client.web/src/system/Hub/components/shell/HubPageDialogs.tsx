@@ -1,71 +1,78 @@
-import { lazy, Suspense } from 'react'
-import type { Dispatch, SetStateAction } from 'react'
-import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings'
-import type { useProfileAvatar } from '../../../Profile/hooks/useProfileAvatar'
-import type { useServerDialog } from '../../../Server/hooks/workspace/useServerDialog'
+import { Suspense, lazy } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+
 import type {
   AssetResponse,
   ServerMemberResponse,
-  UserResponse,
-} from '../../../../shared/types'
-import { profileCopy, serverCopy } from '../../../shared'
-import type { SystemSettingsNavigationRequest } from '../../../shared/navigation/systemSettingsNavigation'
-import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes'
-import type { VoiceNoiseSuppressionTelemetry } from '../../../Server/hooks/voice/useVoiceChannel'
+  UserResponse
+} from '../../../../shared/types';
+import type { useProfileAvatar } from '../../../Profile/hooks/useProfileAvatar';
+import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings';
+import type { VoiceNoiseSuppressionTelemetry } from '../../../Server/hooks/voice/useVoiceChannel';
+import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes';
+import type { useServerDialog } from '../../../Server/hooks/workspace/useServerDialog';
+import { profileCopy, serverCopy } from '../../../shared';
+import type { SystemSettingsNavigationRequest } from '../../../shared/navigation/systemSettingsNavigation';
 
 const AssetCropDialog = lazy(() =>
-  import('../../../Profile/components/assets/AssetCropDialog').then((module) => ({
-    default: module.AssetCropDialog,
-  })),
-)
+  import('../../../Profile/components/assets/AssetCropDialog').then(
+    (module) => ({
+      default: module.AssetCropDialog
+    })
+  )
+);
 const AssetLibraryDialog = lazy(() =>
-  import('../../../Profile/components/assets/AssetLibraryDialog').then((module) => ({
-    default: module.AssetLibraryDialog,
-  })),
-)
+  import('../../../Profile/components/assets/AssetLibraryDialog').then(
+    (module) => ({
+      default: module.AssetLibraryDialog
+    })
+  )
+);
 const DeleteAssetDialog = lazy(() =>
-  import('../../../Profile/components/assets/DeleteAssetDialog').then((module) => ({
-    default: module.DeleteAssetDialog,
-  })),
-)
+  import('../../../Profile/components/assets/DeleteAssetDialog').then(
+    (module) => ({
+      default: module.DeleteAssetDialog
+    })
+  )
+);
 const SystemSettingsDialog = lazy(() =>
   import('../settings/SystemSettingsDialog').then((module) => ({
-    default: module.SystemSettingsDialog,
-  })),
-)
+    default: module.SystemSettingsDialog
+  }))
+);
 const ServerDialog = lazy(() =>
   import('../../../Server/components/dialogs/ServerDialog').then((module) => ({
-    default: module.ServerDialog,
-  })),
-)
+    default: module.ServerDialog
+  }))
+);
 
-type AvatarSort = 'newest' | 'oldest'
-type ProfileAvatarState = ReturnType<typeof useProfileAvatar>
-type ServerDialogState = ReturnType<typeof useServerDialog>
+type AvatarSort = 'newest' | 'oldest';
+type ProfileAvatarState = ReturnType<typeof useProfileAvatar>;
+type ServerDialogState = ReturnType<typeof useServerDialog>;
 
 type HubPageDialogsProps = {
-  accessToken: string
-  currentDeviceSessionId?: string | null
-  user: UserResponse
-  serverMemberships: ServerMemberResponse[]
-  avatarSort: AvatarSort
-  defaultProfileSettings: ProfileSettingsDraft
-  settingsDraft: ProfileSettingsDraft
-  settingsNavigationRequest: SystemSettingsNavigationRequest | null
-  voiceDiagnostics: VoiceConnectionDiagnostics | null
-  voiceNoiseSuppressionTelemetry: VoiceNoiseSuppressionTelemetry | null
-  isProfileSettingsOpen: boolean
-  isSavingProfileSettings: boolean
-  onProfileSettingsChange: Dispatch<SetStateAction<ProfileSettingsDraft>>
-  onProfileSettingsCommit: (nextDraft: ProfileSettingsDraft) => Promise<void>
-  onProfileIdentityChanged: () => Promise<void> | void
-  onProfileSettingsClose: () => void
-  onLogout: () => void
-  avatarState: ProfileAvatarState
-  serverDialogState: ServerDialogState
-  onAvatarSortChange: Dispatch<SetStateAction<AvatarSort>>
-  formatDate: (value: string) => string
-}
+  accessToken: string;
+  currentDeviceSessionId?: string | null;
+  user: UserResponse;
+  serverMemberships: ServerMemberResponse[];
+  avatarSort: AvatarSort;
+  defaultProfileSettings: ProfileSettingsDraft;
+  settingsDraft: ProfileSettingsDraft;
+  settingsNavigationRequest: SystemSettingsNavigationRequest | null;
+  voiceDiagnostics: VoiceConnectionDiagnostics | null;
+  voiceNoiseSuppressionTelemetry: VoiceNoiseSuppressionTelemetry | null;
+  isProfileSettingsOpen: boolean;
+  isSavingProfileSettings: boolean;
+  onProfileSettingsChange: Dispatch<SetStateAction<ProfileSettingsDraft>>;
+  onProfileSettingsCommit: (nextDraft: ProfileSettingsDraft) => Promise<void>;
+  onProfileIdentityChanged: () => Promise<void> | void;
+  onProfileSettingsClose: () => void;
+  onLogout: () => void;
+  avatarState: ProfileAvatarState;
+  serverDialogState: ServerDialogState;
+  onAvatarSortChange: Dispatch<SetStateAction<AvatarSort>>;
+  formatDate: (value: string) => string;
+};
 
 export function HubPageDialogs({
   accessToken,
@@ -88,7 +95,7 @@ export function HubPageDialogs({
   avatarState,
   serverDialogState,
   onAvatarSortChange,
-  formatDate,
+  formatDate
 }: HubPageDialogsProps) {
   const {
     publicProfile,
@@ -103,8 +110,8 @@ export function HubPageDialogs({
     selectAvatarAsset,
     deleteAvatarAsset,
     cancelAvatarChange,
-    confirmAvatarChange,
-  } = avatarState
+    confirmAvatarChange
+  } = avatarState;
   const {
     serverIconInputRef,
     serverIconDraft,
@@ -125,8 +132,8 @@ export function HubPageDialogs({
     selectServerIconAsset,
     cancelServerIconChange,
     confirmServerIconChange,
-    submitServerForm,
-  } = serverDialogState
+    submitServerForm
+  } = serverDialogState;
 
   return (
     <Suspense fallback={null}>
@@ -178,7 +185,7 @@ export function HubPageDialogs({
               ? {
                   offsetX: publicProfile.avatarCropOffsetX,
                   offsetY: publicProfile.avatarCropOffsetY,
-                  zoom: publicProfile.avatarCropZoom,
+                  zoom: publicProfile.avatarCropZoom
                 }
               : undefined
           }
@@ -187,7 +194,8 @@ export function HubPageDialogs({
           onCancel={cancelAvatarChange}
           onConfirm={(crop) => void confirmAvatarChange(crop)}
           onImageError={() =>
-            avatarPicker.draft && markBrokenAvatar(avatarPicker.draft.previewUrl)
+            avatarPicker.draft &&
+            markBrokenAvatar(avatarPicker.draft.previewUrl)
           }
         />
       )}
@@ -206,7 +214,7 @@ export function HubPageDialogs({
               ? {
                   offsetX: serverForm.iconCropOffsetX,
                   offsetY: serverForm.iconCropOffsetY,
-                  zoom: serverForm.iconCropZoom,
+                  zoom: serverForm.iconCropZoom
                 }
               : undefined
           }
@@ -263,5 +271,5 @@ export function HubPageDialogs({
         />
       )}
     </Suspense>
-  )
+  );
 }

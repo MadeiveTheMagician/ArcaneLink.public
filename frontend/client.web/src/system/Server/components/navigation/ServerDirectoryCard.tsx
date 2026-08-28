@@ -1,37 +1,39 @@
-import { useId, useRef } from 'react'
+import { useId, useRef } from 'react';
+
 import type {
   ServerDiscoveryResponse,
-  ServerMemberResponse,
-} from '../../../../shared/types'
+  ServerMemberResponse
+} from '../../../../shared/types';
 import {
-  serverCopy,
   SystemButton,
   SystemCloseIcon,
   SystemIcon,
   UnreadBadge,
-} from '../../../shared'
-import { resolveServerDirectoryAccessAction } from './serverDirectoryModel'
-import styles from './ServerDirectoryCard.module.css'
+  serverCopy
+} from '../../../shared';
+import { resolveServerDirectoryAccessAction } from './serverDirectoryModel';
+
+import styles from './ServerDirectoryCard.module.css';
 
 type ServerDirectoryCardProps = {
-  discovery: ServerDiscoveryResponse
-  isExpanded: boolean
-  membership: ServerMemberResponse | null
-  accessError: string | null
-  isAccessMutationPending: boolean
-  onCancelJoinRequest: () => void
-  onCollapse: () => void
-  onJoin: () => void
-  onOpen: (membership: ServerMemberResponse) => void
-  onRequestJoin: () => void
-  onToggle: () => void
-}
+  discovery: ServerDiscoveryResponse;
+  isExpanded: boolean;
+  membership: ServerMemberResponse | null;
+  accessError: string | null;
+  isAccessMutationPending: boolean;
+  onCancelJoinRequest: () => void;
+  onCollapse: () => void;
+  onJoin: () => void;
+  onOpen: (membership: ServerMemberResponse) => void;
+  onRequestJoin: () => void;
+  onToggle: () => void;
+};
 
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
   day: 'numeric',
   month: 'short',
-  year: 'numeric',
-})
+  year: 'numeric'
+});
 
 export function ServerDirectoryCard({
   discovery,
@@ -44,16 +46,16 @@ export function ServerDirectoryCard({
   onJoin,
   onOpen,
   onRequestJoin,
-  onToggle,
+  onToggle
 }: ServerDirectoryCardProps) {
-  const server = discovery.server
-  const accessAction = resolveServerDirectoryAccessAction(discovery)
-  const detailsId = useId()
-  const summaryRef = useRef<HTMLButtonElement>(null)
+  const server = discovery.server;
+  const accessAction = resolveServerDirectoryAccessAction(discovery);
+  const detailsId = useId();
+  const summaryRef = useRef<HTMLButtonElement>(null);
 
   function handleCollapse() {
-    summaryRef.current?.focus()
-    onCollapse()
+    summaryRef.current?.focus();
+    onCollapse();
   }
 
   return (
@@ -227,15 +229,15 @@ export function ServerDirectoryCard({
         </div>
       </div>
     </article>
-  )
+  );
 }
 
 function ServerDirectoryIcon({
-  discovery,
+  discovery
 }: {
-  discovery: ServerDiscoveryResponse
+  discovery: ServerDiscoveryResponse;
 }) {
-  const server = discovery.server
+  const server = discovery.server;
 
   return (
     <span className={styles.icon} aria-hidden="true">
@@ -247,24 +249,24 @@ function ServerDirectoryIcon({
           style={{
             transform: `translate(${server.iconCropOffsetX * 100}%, ${
               server.iconCropOffsetY * 100
-            }%) scale(${server.iconCropZoom})`,
+            }%) scale(${server.iconCropZoom})`
           }}
         />
       ) : (
         server.title.slice(0, 1).toUpperCase()
       )}
     </span>
-  )
+  );
 }
 
 function Metric({
   icon,
   label,
-  value,
+  value
 }: {
-  icon: 'friends' | 'message' | 'speaker'
-  label: string
-  value: number
+  icon: 'friends' | 'message' | 'speaker';
+  label: string;
+  value: number;
 }) {
   return (
     <span className={styles.metric} title={label}>
@@ -272,7 +274,7 @@ function Metric({
       <span>{value}</span>
       <span className={styles.metricLabel}>{label}</span>
     </span>
-  )
+  );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
@@ -281,25 +283,25 @@ function Detail({ label, value }: { label: string; value: string }) {
       <dt>{label}</dt>
       <dd>{value}</dd>
     </div>
-  )
+  );
 }
 
 function formatDate(value: string) {
-  const date = new Date(value)
+  const date = new Date(value);
 
-  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date)
+  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date);
 }
 
 function getServerAccessModeLabel(
-  accessMode: ServerDiscoveryResponse['server']['accessMode'],
+  accessMode: ServerDiscoveryResponse['server']['accessMode']
 ) {
   if (accessMode === 'public') {
-    return serverCopy.browser.publicServer
+    return serverCopy.browser.publicServer;
   }
 
   if (accessMode === 'restricted') {
-    return serverCopy.browser.restrictedServer
+    return serverCopy.browser.restrictedServer;
   }
 
-  return serverCopy.browser.privateServer
+  return serverCopy.browser.privateServer;
 }

@@ -14,14 +14,8 @@
   border: 1px solid var(--profile-border-soft, var(--theme-border-soft));
   border-radius: 8px;
   color: var(--color-text);
-  background: var(
-    --profile-surface-raised,
-    var(--theme-surface-raised)
-  );
-  box-shadow: var(
-    --profile-shadow-raised,
-    0 22px 72px rgba(0, 0, 0, 0.44)
-  );
+  background: var(--profile-surface-raised, var(--theme-surface-raised));
+  box-shadow: var(--profile-shadow-raised, 0 22px 72px rgba(0, 0, 0, 0.44));
 }
 
 .actions {

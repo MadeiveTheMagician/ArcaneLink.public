@@ -1,5 +1,6 @@
-import { expect, test } from '@playwright/test'
-import { getMessagePinnedEvent } from '../../src/system/shared/messages/messageEventModel'
+import { expect, test } from '@playwright/test';
+
+import { getMessagePinnedEvent } from '../../src/system/shared/messages/messageEventModel';
 
 test.describe('message event model', () => {
   test('parses a persisted message pin event', () => {
@@ -8,14 +9,14 @@ test.describe('message event model', () => {
         messageTypeCode: 'event',
         payload: JSON.stringify({
           kind: 'message_pinned',
-          messageId: 'message-42',
-        }),
-      }),
+          messageId: 'message-42'
+        })
+      })
     ).toEqual({
       kind: 'message_pinned',
-      messageId: 'message-42',
-    })
-  })
+      messageId: 'message-42'
+    });
+  });
 
   test('ignores text messages and malformed event payloads', () => {
     expect(
@@ -23,21 +24,21 @@ test.describe('message event model', () => {
         messageTypeCode: 'text',
         payload: JSON.stringify({
           kind: 'message_pinned',
-          messageId: 'message-42',
-        }),
-      }),
-    ).toBeNull()
+          messageId: 'message-42'
+        })
+      })
+    ).toBeNull();
     expect(
       getMessagePinnedEvent({
         messageTypeCode: 'event',
-        payload: '{not-json',
-      }),
-    ).toBeNull()
+        payload: '{not-json'
+      })
+    ).toBeNull();
     expect(
       getMessagePinnedEvent({
         messageTypeCode: 'event',
-        payload: JSON.stringify({ kind: 'message_pinned' }),
-      }),
-    ).toBeNull()
-  })
-})
+        payload: JSON.stringify({ kind: 'message_pinned' })
+      })
+    ).toBeNull();
+  });
+});

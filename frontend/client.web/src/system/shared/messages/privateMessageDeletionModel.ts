@@ -1,38 +1,36 @@
 import type {
   PrivateDeletedMessageResponse,
   PrivateMessageDeletionScope,
-  SpaceMessageResponse,
-} from '../../../shared/types'
+  SpaceMessageResponse
+} from '../../../shared/types';
 
 type PrivateMessageDeletionTarget = Pick<
   SpaceMessageResponse,
   'deletedAt' | 'senderUserId'
->
+>;
 
 export function getPrivateMessageDeletionScopes(
   message: PrivateMessageDeletionTarget,
-  currentUserId: string,
+  currentUserId: string
 ): PrivateMessageDeletionScope[] {
   if (message.deletedAt) {
-    return []
+    return [];
   }
 
-  return message.senderUserId === currentUserId
-    ? ['me', 'everyone']
-    : ['me']
+  return message.senderUserId === currentUserId ? ['me', 'everyone'] : ['me'];
 }
 
 export function isVisiblePrivateMessage(
-  message: Pick<SpaceMessageResponse, 'deletedAt'>,
+  message: Pick<SpaceMessageResponse, 'deletedAt'>
 ) {
-  return !message.deletedAt
+  return !message.deletedAt;
 }
 
 export function isPrivateMessageRestorable(
   deletion: Pick<PrivateDeletedMessageResponse, 'restoreUntil'>,
-  now = Date.now(),
+  now = Date.now()
 ) {
-  const restoreUntil = Date.parse(deletion.restoreUntil)
+  const restoreUntil = Date.parse(deletion.restoreUntil);
 
-  return Number.isFinite(restoreUntil) && restoreUntil > now
+  return Number.isFinite(restoreUntil) && restoreUntil > now;
 }

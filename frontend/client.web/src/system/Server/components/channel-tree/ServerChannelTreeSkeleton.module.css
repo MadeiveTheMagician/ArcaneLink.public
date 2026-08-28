@@ -25,7 +25,8 @@
   display: grid;
   gap: 2px;
   margin-left: 9px;
-  border-left: 2px solid color-mix(in srgb, var(--theme-accent-light), transparent 76%);
+  border-left: 2px solid
+    color-mix(in srgb, var(--theme-accent-light), transparent 76%);
   padding-left: 8px;
 }
 
@@ -59,11 +60,15 @@
 
   .categorySkeleton {
     gap: 8px;
-    border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 86%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent-light), transparent 86%);
     border-radius: 12px;
     padding: 8px 8px 10px 14px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
   }
 
   .categoryHeaderSkeleton {
@@ -82,11 +87,15 @@
     grid-template-columns: 44px minmax(0, 1fr);
     min-height: 68px;
     gap: 10px;
-    border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 88%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent-light), transparent 88%);
     border-radius: 10px;
     padding: 10px 12px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
   }
 
   .channelIconSkeleton {

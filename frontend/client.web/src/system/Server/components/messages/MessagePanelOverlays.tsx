@@ -1,132 +1,137 @@
 import {
+  type CSSProperties,
   useCallback,
   useEffect,
   useRef,
-  useState,
-  type CSSProperties,
-} from 'react'
+  useState
+} from 'react';
+import { createPortal } from 'react-dom';
+
 import type {
   SpaceMessageAssetResponse,
-  SpaceMessageResponse,
-} from '../../../../shared/types'
-import { createPortal } from 'react-dom'
-import { MessageReportDialog } from '../../../Moderation/components/MessageReportDialog'
-import type { ServerMessageReportContext } from '../../../Moderation/models/messageReportModel'
-import { commonCopy, serverCopy } from '../../../shared'
-import { AssetPreviewOverlay } from '../../../shared/components/asset-preview/AssetPreviewOverlay'
-import { ContextMenu, type ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu'
-import { useAnimatedOverlayClose } from '../../../shared/hooks/useAnimatedOverlayClose'
-import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer'
-import { requestSystemSettingsNavigation } from '../../../shared/navigation/systemSettingsNavigation'
-import { downloadWarningCloseDurationMs } from '../../../shared/overlays/animatedOverlayPhaseModel'
-import styles from './MessagePanelOverlays.module.css'
+  SpaceMessageResponse
+} from '../../../../shared/types';
+import { MessageReportDialog } from '../../../Moderation/components/MessageReportDialog';
+import type { ServerMessageReportContext } from '../../../Moderation/models/messageReportModel';
+import { commonCopy, serverCopy } from '../../../shared';
+import { AssetPreviewOverlay } from '../../../shared/components/asset-preview/AssetPreviewOverlay';
+import {
+  ContextMenu,
+  type ContextMenuItem
+} from '../../../shared/components/context-menu/ContextMenu';
+import { useAnimatedOverlayClose } from '../../../shared/hooks/useAnimatedOverlayClose';
+import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer';
+import { requestSystemSettingsNavigation } from '../../../shared/navigation/systemSettingsNavigation';
+import { downloadWarningCloseDurationMs } from '../../../shared/overlays/animatedOverlayPhaseModel';
 import {
   getAttachmentDownloadWarningCountdownSeconds,
   getAttachmentDownloadWarningProgress,
-  getAttachmentDownloadWarningRemainingMs,
-} from './downloadWarningDelayModel'
+  getAttachmentDownloadWarningRemainingMs
+} from './downloadWarningDelayModel';
 import {
-  formatFileSize,
-  isVideoAsset,
-  type DownloadWarningState,
-} from './messageUtils'
-import {
-  isPreviewableMessageAsset,
   type MessageAssetPreviewDirection,
-} from './messageAssetPreviewModel'
+  isPreviewableMessageAsset
+} from './messageAssetPreviewModel';
+import {
+  type DownloadWarningState,
+  formatFileSize,
+  isVideoAsset
+} from './messageUtils';
+
+import styles from './MessagePanelOverlays.module.css';
 
 export type MessageAssetPreviewState = {
-  asset: SpaceMessageAssetResponse
-  message: SpaceMessageResponse
-}
+  asset: SpaceMessageAssetResponse;
+  message: SpaceMessageResponse;
+};
 
 export type MessageContextMenuState = {
-  message: SpaceMessageResponse
-  x: number
-  y: number
-  focusOnOpen: boolean
-}
+  message: SpaceMessageResponse;
+  x: number;
+  y: number;
+  focusOnOpen: boolean;
+};
 
 type MessagePanelOverlaysProps = {
-  downloadWarning: DownloadWarningState | null
-  messageContextMenu: MessageContextMenuState | null
-  messageContextItems: ContextMenuItem[]
-  previewAsset: MessageAssetPreviewState | null
-  reportContext: ServerMessageReportContext | null
-  reportMessage: SpaceMessageResponse | null
-  onCloseDownloadWarning: () => void
-  onCloseMessageContextMenu: () => void
-  onClosePreview: () => void
-  onNavigatePreview: (direction: MessageAssetPreviewDirection) => void
-  onCloseReport: () => void
-  onConfirmAssetDownload: () => void
-}
+  downloadWarning: DownloadWarningState | null;
+  messageContextMenu: MessageContextMenuState | null;
+  messageContextItems: ContextMenuItem[];
+  previewAsset: MessageAssetPreviewState | null;
+  reportContext: ServerMessageReportContext | null;
+  reportMessage: SpaceMessageResponse | null;
+  onCloseDownloadWarning: () => void;
+  onCloseMessageContextMenu: () => void;
+  onClosePreview: () => void;
+  onNavigatePreview: (direction: MessageAssetPreviewDirection) => void;
+  onCloseReport: () => void;
+  onConfirmAssetDownload: () => void;
+};
 
 type AttachmentDownloadWarningDialogProps = {
-  downloadWarning: DownloadWarningState
-  onClose: () => void
-  onConfirm: () => void
-}
+  downloadWarning: DownloadWarningState;
+  onClose: () => void;
+  onConfirm: () => void;
+};
 
 function AttachmentDownloadWarningDialog({
   downloadWarning,
   onClose,
-  onConfirm,
+  onConfirm
 }: AttachmentDownloadWarningDialogProps) {
-  const dialogRef = useRef<HTMLDivElement | null>(null)
-  const [clockMs, setClockMs] = useState(() => performance.now())
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const [clockMs, setClockMs] = useState(() => performance.now());
   const { isClosing, requestClose } = useAnimatedOverlayClose(
-    downloadWarningCloseDurationMs,
-  )
+    downloadWarningCloseDurationMs
+  );
 
   useEffect(() => {
     function updateClock() {
-      setClockMs(performance.now())
+      setClockMs(performance.now());
     }
 
-    updateClock()
+    updateClock();
     const remainingMs = getAttachmentDownloadWarningRemainingMs(
       downloadWarning.openedAtMs,
-      performance.now(),
-    )
-    const unlockTimer = window.setTimeout(updateClock, remainingMs)
-    const countdownTimer = window.setInterval(updateClock, 100)
+      performance.now()
+    );
+    const unlockTimer = window.setTimeout(updateClock, remainingMs);
+    const countdownTimer = window.setInterval(updateClock, 100);
 
     return () => {
-      window.clearTimeout(unlockTimer)
-      window.clearInterval(countdownTimer)
-    }
-  }, [downloadWarning.openedAtMs])
+      window.clearTimeout(unlockTimer);
+      window.clearInterval(countdownTimer);
+    };
+  }, [downloadWarning.openedAtMs]);
 
   const closeWarning = useCallback(() => {
-    requestClose(onClose)
-  }, [onClose, requestClose])
+    requestClose(onClose);
+  }, [onClose, requestClose]);
 
   useDismissableLayer({
     isOpen: !isClosing,
     layerRef: dialogRef,
-    onDismiss: closeWarning,
-  })
+    onDismiss: closeWarning
+  });
 
   const remainingMs = getAttachmentDownloadWarningRemainingMs(
     downloadWarning.openedAtMs,
-    clockMs,
-  )
-  const isLocked = remainingMs > 0
+    clockMs
+  );
+  const isLocked = remainingMs > 0;
   const countdownSeconds = getAttachmentDownloadWarningCountdownSeconds(
     downloadWarning.openedAtMs,
-    clockMs,
-  )
+    clockMs
+  );
   const progress = getAttachmentDownloadWarningProgress(
     downloadWarning.openedAtMs,
-    clockMs,
-  )
+    clockMs
+  );
   const overlayStyle = {
-    '--attachment-warning-close-duration': `${downloadWarningCloseDurationMs}ms`,
-  } as CSSProperties
+    '--attachment-warning-close-duration': `${downloadWarningCloseDurationMs}ms`
+  } as CSSProperties;
   const downloadButtonStyle = {
-    '--attachment-warning-progress': progress,
-  } as CSSProperties
+    '--attachment-warning-progress': progress
+  } as CSSProperties;
 
   return createPortal(
     <div
@@ -150,8 +155,7 @@ function AttachmentDownloadWarningDialog({
           <div>
             <dt>{serverCopy.messages.file}</dt>
             <dd>
-              {downloadWarning.asset.fileName ||
-                serverCopy.messages.attachment}
+              {downloadWarning.asset.fileName || serverCopy.messages.attachment}
             </dd>
           </div>
           <div>
@@ -160,11 +164,7 @@ function AttachmentDownloadWarningDialog({
           </div>
         </dl>
         <div className={styles.attachmentWarningActions}>
-          <button
-            type="button"
-            disabled={isClosing}
-            onClick={closeWarning}
-          >
+          <button type="button" disabled={isClosing} onClick={closeWarning}>
             {commonCopy.actions.cancel}
           </button>
           <button
@@ -174,7 +174,7 @@ function AttachmentDownloadWarningDialog({
             aria-label={
               isLocked
                 ? serverCopy.messages.downloadAttachmentWaiting(
-                    countdownSeconds,
+                    countdownSeconds
                   )
                 : serverCopy.messages.downloadAttachment
             }
@@ -182,7 +182,7 @@ function AttachmentDownloadWarningDialog({
             style={downloadButtonStyle}
             onClick={() => {
               if (!isLocked) {
-                requestClose(onConfirm)
+                requestClose(onConfirm);
               }
             }}
           >
@@ -198,8 +198,8 @@ function AttachmentDownloadWarningDialog({
             disabled={isClosing}
             onClick={() => {
               requestClose(onClose, () => {
-                requestSystemSettingsNavigation('dangerous-files-warning')
-              })
+                requestSystemSettingsNavigation('dangerous-files-warning');
+              });
             }}
           >
             {serverCopy.messages.downloadWarningSettingsLink}
@@ -208,8 +208,8 @@ function AttachmentDownloadWarningDialog({
         </small>
       </div>
     </div>,
-    document.body,
-  )
+    document.body
+  );
 }
 
 export function MessagePanelOverlays({
@@ -224,7 +224,7 @@ export function MessagePanelOverlays({
   onClosePreview,
   onNavigatePreview,
   onCloseReport,
-  onConfirmAssetDownload,
+  onConfirmAssetDownload
 }: MessagePanelOverlaysProps) {
   return (
     <>
@@ -244,7 +244,7 @@ export function MessagePanelOverlays({
             title: previewAsset.asset.fileName || serverCopy.messages.image,
             createdAt: previewAsset.asset.createdAt,
             sizeBytes: previewAsset.asset.sizeBytes,
-            mediaType: isVideoAsset(previewAsset.asset) ? 'video' : 'image',
+            mediaType: isVideoAsset(previewAsset.asset) ? 'video' : 'image'
           }}
           author={{
             displayName: previewAsset.message.senderDisplayName,
@@ -253,7 +253,7 @@ export function MessagePanelOverlays({
               : null,
             avatarCropOffsetX: previewAsset.message.senderAvatarCropOffsetX,
             avatarCropOffsetY: previewAsset.message.senderAvatarCropOffsetY,
-            avatarCropZoom: previewAsset.message.senderAvatarCropZoom,
+            avatarCropZoom: previewAsset.message.senderAvatarCropZoom
           }}
           onNavigate={
             previewAsset.message.assets.filter(isPreviewableMessageAsset)
@@ -280,5 +280,5 @@ export function MessagePanelOverlays({
         />
       )}
     </>
-  )
+  );
 }

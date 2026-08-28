@@ -1,24 +1,26 @@
-const storageKey = 'arcanelink.attachment-security.v1'
+const storageKey = 'arcanelink.attachment-security.v1';
 
 export type AttachmentSecuritySettings = {
-  warnAboutPotentiallyDangerousFiles: boolean
-}
+  warnAboutPotentiallyDangerousFiles: boolean;
+};
 
 export const defaultAttachmentSecuritySettings: AttachmentSecuritySettings = {
-  warnAboutPotentiallyDangerousFiles: true,
-}
+  warnAboutPotentiallyDangerousFiles: true
+};
 
 export function loadAttachmentSecuritySettings(): AttachmentSecuritySettings {
   try {
-    const stored = localStorage.getItem(storageKey)
+    const stored = localStorage.getItem(storageKey);
     return stored
       ? { ...defaultAttachmentSecuritySettings, ...JSON.parse(stored) }
-      : defaultAttachmentSecuritySettings
+      : defaultAttachmentSecuritySettings;
   } catch {
-    return defaultAttachmentSecuritySettings
+    return defaultAttachmentSecuritySettings;
   }
 }
 
-export function saveAttachmentSecuritySettings(settings: AttachmentSecuritySettings) {
-  localStorage.setItem(storageKey, JSON.stringify(settings))
+export function saveAttachmentSecuritySettings(
+  settings: AttachmentSecuritySettings
+) {
+  localStorage.setItem(storageKey, JSON.stringify(settings));
 }

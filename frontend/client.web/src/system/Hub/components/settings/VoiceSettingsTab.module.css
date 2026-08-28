@@ -85,13 +85,23 @@
   gap: 12px;
   border-radius: 7px;
   padding: 13px;
-  background: color-mix(in srgb, var(--color-success, #6ee7a7), transparent 92%);
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-success, #6ee7a7), transparent 42%);
+  background: color-mix(
+    in srgb,
+    var(--color-success, #6ee7a7),
+    transparent 92%
+  );
+  box-shadow: inset 3px 0 0
+    color-mix(in srgb, var(--color-success, #6ee7a7), transparent 42%);
 }
 
 .noiseRuntimePanelDegraded {
-  background: color-mix(in srgb, var(--color-warning, #f6b85f), transparent 92%);
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-warning, #f6b85f), transparent 36%);
+  background: color-mix(
+    in srgb,
+    var(--color-warning, #f6b85f),
+    transparent 92%
+  );
+  box-shadow: inset 3px 0 0
+    color-mix(in srgb, var(--color-warning, #f6b85f), transparent 36%);
 }
 
 .noiseRuntimePanel header {
@@ -117,7 +127,11 @@
   min-width: 0;
   border-radius: 6px;
   padding: 8px 9px;
-  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 10%);
+  background: color-mix(
+    in srgb,
+    var(--theme-control-bg-strong),
+    transparent 10%
+  );
 }
 
 .noiseRuntimePanel dt,

@@ -1,7 +1,7 @@
-import { defineConfig } from '@playwright/test'
-import { env } from 'node:process'
+import { defineConfig } from '@playwright/test';
+import { env } from 'node:process';
 
-const baseURL = env.ARCANELINK_REAL_BASE_URL?.trim() || 'http://127.0.0.1:5173'
+const baseURL = env.ARCANELINK_REAL_BASE_URL?.trim() || 'http://127.0.0.1:5173';
 
 export default defineConfig({
   testDir: './e2e/real',
@@ -11,15 +11,15 @@ export default defineConfig({
   retries: 0,
   timeout: 90_000,
   expect: {
-    timeout: 10_000,
+    timeout: 10_000
   },
   outputDir: 'test-results/real',
   reporter: [
     ['list'],
-    ['html', { open: 'never', outputFolder: 'playwright-report/real' }],
+    ['html', { open: 'never', outputFolder: 'playwright-report/real' }]
   ],
   use: {
     baseURL,
-    trace: 'retain-on-failure',
-  },
-})
+    trace: 'retain-on-failure'
+  }
+});

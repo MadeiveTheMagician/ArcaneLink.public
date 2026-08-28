@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect } from 'react';
+
 import type {
   CreateServerInviteRequest,
   PermissionResponse,
@@ -9,63 +10,64 @@ import type {
   SpacePermissionOverrideResponse,
   SpaceResponse,
   UpsertSpacePermissionOverrideRequest,
-  UserFriendResponse,
-} from '../../../../shared/types'
-import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon'
-import { commonCopy, serverCopy } from '../../../shared/copy'
-import buttonStyles from '../../../shared/styles/Button.module.css'
-import dialogStyles from '../../../shared/styles/Dialog.module.css'
-import { ServerInviteDialog } from './ServerInviteDialog'
-import { SpacePermissionEditor } from './space-permissions/SpacePermissionEditor'
-import dialogModuleStyles from './ServerWorkspaceDialogs.module.css'
+  UserFriendResponse
+} from '../../../../shared/types';
+import { commonCopy, serverCopy } from '../../../shared/copy';
+import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon';
 import type {
   CreateSpaceDialogState,
-  EditSpaceDialogState,
-} from '../../hooks/workspace/useServerSpaceDialogs'
+  EditSpaceDialogState
+} from '../../hooks/workspace/useServerSpaceDialogs';
+import { ServerInviteDialog } from './ServerInviteDialog';
+import { SpacePermissionEditor } from './space-permissions/SpacePermissionEditor';
+
+import buttonStyles from '../../../shared/styles/Button.module.css';
+import dialogStyles from '../../../shared/styles/Dialog.module.css';
+import dialogModuleStyles from './ServerWorkspaceDialogs.module.css';
 
 type ServerWorkspaceDialogsProps = {
-  server: ServerMemberResponse['server']
-  serverMembers: ServerMemberDetailsResponse[]
-  serverRoles: ServerRoleResponse[]
-  serverSpaces: SpaceResponse[]
-  spacePermissions: PermissionResponse[]
-  serverInvites: ServerInviteResponse[]
-  friends: UserFriendResponse[]
-  canInviteMembers: boolean
-  isInviteDialogOpen: boolean
-  isLoadingInviteDialog: boolean
-  inviteDialogLoadError: string | null
-  isMutatingGovernance: boolean
-  isMutatingSpaces: boolean
-  pendingOwnershipTransfer: ServerMemberDetailsResponse | null
-  createSpaceDialog: CreateSpaceDialogState | null
-  editSpaceDialog: EditSpaceDialogState | null
-  pendingDeleteSpace: SpaceResponse | null
-  spaceTitleDraft: string
-  spaceDescriptionDraft: string
+  server: ServerMemberResponse['server'];
+  serverMembers: ServerMemberDetailsResponse[];
+  serverRoles: ServerRoleResponse[];
+  serverSpaces: SpaceResponse[];
+  spacePermissions: PermissionResponse[];
+  serverInvites: ServerInviteResponse[];
+  friends: UserFriendResponse[];
+  canInviteMembers: boolean;
+  isInviteDialogOpen: boolean;
+  isLoadingInviteDialog: boolean;
+  inviteDialogLoadError: string | null;
+  isMutatingGovernance: boolean;
+  isMutatingSpaces: boolean;
+  pendingOwnershipTransfer: ServerMemberDetailsResponse | null;
+  createSpaceDialog: CreateSpaceDialogState | null;
+  editSpaceDialog: EditSpaceDialogState | null;
+  pendingDeleteSpace: SpaceResponse | null;
+  spaceTitleDraft: string;
+  spaceDescriptionDraft: string;
   onCreateServerInvite: (
-    request?: CreateServerInviteRequest,
-  ) => Promise<ServerInviteResponse | null>
-  onCloseInviteDialog: () => void
-  onCloseOwnershipTransfer: () => void
-  onConfirmOwnershipTransfer: (member: ServerMemberDetailsResponse) => void
-  onCloseCreateSpaceDialog: () => void
-  onCloseEditSpaceDialog: () => void
-  onCloseDeleteSpaceDialog: () => void
-  onSetSpaceTitleDraft: (title: string) => void
-  onSetSpaceDescriptionDraft: (description: string) => void
-  onSubmitCreateSpace: () => void
-  onSubmitEditSpace: () => void
-  onDeleteSpace: (space: SpaceResponse, action: 'delete' | 'promote') => void
+    request?: CreateServerInviteRequest
+  ) => Promise<ServerInviteResponse | null>;
+  onCloseInviteDialog: () => void;
+  onCloseOwnershipTransfer: () => void;
+  onConfirmOwnershipTransfer: (member: ServerMemberDetailsResponse) => void;
+  onCloseCreateSpaceDialog: () => void;
+  onCloseEditSpaceDialog: () => void;
+  onCloseDeleteSpaceDialog: () => void;
+  onSetSpaceTitleDraft: (title: string) => void;
+  onSetSpaceDescriptionDraft: (description: string) => void;
+  onSubmitCreateSpace: () => void;
+  onSubmitEditSpace: () => void;
+  onDeleteSpace: (space: SpaceResponse, action: 'delete' | 'promote') => void;
   onUpsertSpacePermissionOverride: (
     spaceId: string,
-    request: UpsertSpacePermissionOverrideRequest,
-  ) => Promise<SpacePermissionOverrideResponse | null>
+    request: UpsertSpacePermissionOverrideRequest
+  ) => Promise<SpacePermissionOverrideResponse | null>;
   onDeleteSpacePermissionOverride: (
     spaceId: string,
-    overrideId: string,
-  ) => Promise<boolean>
-}
+    overrideId: string
+  ) => Promise<boolean>;
+};
 
 export function ServerWorkspaceDialogs({
   server,
@@ -100,11 +102,12 @@ export function ServerWorkspaceDialogs({
   onSubmitEditSpace,
   onDeleteSpace,
   onUpsertSpacePermissionOverride,
-  onDeleteSpacePermissionOverride,
+  onDeleteSpacePermissionOverride
 }: ServerWorkspaceDialogsProps) {
   const editableSpace = editSpaceDialog
-    ? serverSpaces.find((space) => space.id === editSpaceDialog.space.id) ?? null
-    : null
+    ? (serverSpaces.find((space) => space.id === editSpaceDialog.space.id) ??
+      null)
+    : null;
 
   useEffect(() => {
     if (
@@ -112,14 +115,14 @@ export function ServerWorkspaceDialogs({
       !isMutatingSpaces &&
       (!editableSpace || !editableSpace.effectiveCapabilities.canManageSpace)
     ) {
-      onCloseEditSpaceDialog()
+      onCloseEditSpaceDialog();
     }
   }, [
     editSpaceDialog,
     editableSpace,
     isMutatingSpaces,
-    onCloseEditSpaceDialog,
-  ])
+    onCloseEditSpaceDialog
+  ]);
 
   return (
     <>
@@ -152,7 +155,7 @@ export function ServerWorkspaceDialogs({
             <p>
               {serverCopy.workspaceDialogs.transferOwnershipWarning(
                 server.title,
-                pendingOwnershipTransfer.user.displayName,
+                pendingOwnershipTransfer.user.displayName
               )}
             </p>
             <div className={dialogModuleStyles.actions}>
@@ -167,7 +170,9 @@ export function ServerWorkspaceDialogs({
                 className={`${buttonStyles.button} ${buttonStyles.primary} ${dialogModuleStyles.actionButton}`}
                 type="button"
                 disabled={isMutatingGovernance}
-                onClick={() => onConfirmOwnershipTransfer(pendingOwnershipTransfer)}
+                onClick={() =>
+                  onConfirmOwnershipTransfer(pendingOwnershipTransfer)
+                }
               >
                 {serverCopy.workspaceDialogs.transferOwnership}
               </button>
@@ -216,8 +221,12 @@ export function ServerWorkspaceDialogs({
                 className="ui-field-control"
                 name="spaceDescription"
                 value={spaceDescriptionDraft}
-                onChange={(event) => onSetSpaceDescriptionDraft(event.target.value)}
-                placeholder={serverCopy.workspaceDialogs.spaceDescriptionPlaceholder}
+                onChange={(event) =>
+                  onSetSpaceDescriptionDraft(event.target.value)
+                }
+                placeholder={
+                  serverCopy.workspaceDialogs.spaceDescriptionPlaceholder
+                }
                 maxLength={512}
               />
               <button
@@ -236,68 +245,72 @@ export function ServerWorkspaceDialogs({
 
       {editSpaceDialog &&
         editableSpace?.effectiveCapabilities.canManageSpace && (
-        <div className={dialogStyles.backdrop} role="presentation">
-          <section
-            className={`${dialogStyles.dialog} ${dialogModuleStyles.editDialog}`}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="edit-space-title"
-          >
-            <header className={dialogModuleStyles.dialogHeader}>
-              <div>
-                <h2 id="edit-space-title">
-                  {editableSpace.typeCode === 'category'
-                    ? serverCopy.workspaceDialogs.editCategory
-                    : serverCopy.workspaceDialogs.editSpace}
-                </h2>
-                <p>{editableSpace.title}</p>
+          <div className={dialogStyles.backdrop} role="presentation">
+            <section
+              className={`${dialogStyles.dialog} ${dialogModuleStyles.editDialog}`}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-space-title"
+            >
+              <header className={dialogModuleStyles.dialogHeader}>
+                <div>
+                  <h2 id="edit-space-title">
+                    {editableSpace.typeCode === 'category'
+                      ? serverCopy.workspaceDialogs.editCategory
+                      : serverCopy.workspaceDialogs.editSpace}
+                  </h2>
+                  <p>{editableSpace.title}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onCloseEditSpaceDialog}
+                  aria-label={serverCopy.workspaceDialogs.closeEditSpace}
+                >
+                  <SystemCloseIcon size="medium" />
+                </button>
+              </header>
+              <div className={dialogModuleStyles.createSpaceForm}>
+                <input
+                  className="ui-field-control"
+                  name="spaceTitle"
+                  value={spaceTitleDraft}
+                  onChange={(event) => onSetSpaceTitleDraft(event.target.value)}
+                  placeholder={serverCopy.workspaceDialogs.titlePlaceholder}
+                  maxLength={128}
+                />
+                <input
+                  className="ui-field-control"
+                  name="spaceDescription"
+                  value={spaceDescriptionDraft}
+                  onChange={(event) =>
+                    onSetSpaceDescriptionDraft(event.target.value)
+                  }
+                  placeholder={
+                    serverCopy.workspaceDialogs.descriptionPlaceholder
+                  }
+                  maxLength={512}
+                />
+                <button
+                  type="button"
+                  disabled={isMutatingSpaces || !spaceTitleDraft.trim()}
+                  onClick={onSubmitEditSpace}
+                >
+                  {isMutatingSpaces
+                    ? serverCopy.workspaceDialogs.savingSpace
+                    : serverCopy.workspaceDialogs.saveSpace}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={onCloseEditSpaceDialog}
-                aria-label={serverCopy.workspaceDialogs.closeEditSpace}
-              >
-                <SystemCloseIcon size="medium" />
-              </button>
-            </header>
-            <div className={dialogModuleStyles.createSpaceForm}>
-              <input
-                className="ui-field-control"
-                name="spaceTitle"
-                value={spaceTitleDraft}
-                onChange={(event) => onSetSpaceTitleDraft(event.target.value)}
-                placeholder={serverCopy.workspaceDialogs.titlePlaceholder}
-                maxLength={128}
+              <SpacePermissionEditor
+                space={editableSpace}
+                permissions={spacePermissions}
+                roles={serverRoles}
+                members={serverMembers}
+                isMutating={isMutatingSpaces}
+                onUpsert={onUpsertSpacePermissionOverride}
+                onDelete={onDeleteSpacePermissionOverride}
               />
-              <input
-                className="ui-field-control"
-                name="spaceDescription"
-                value={spaceDescriptionDraft}
-                onChange={(event) => onSetSpaceDescriptionDraft(event.target.value)}
-                placeholder={serverCopy.workspaceDialogs.descriptionPlaceholder}
-                maxLength={512}
-              />
-              <button
-                type="button"
-                disabled={isMutatingSpaces || !spaceTitleDraft.trim()}
-                onClick={onSubmitEditSpace}
-              >
-                {isMutatingSpaces
-                  ? serverCopy.workspaceDialogs.savingSpace
-                  : serverCopy.workspaceDialogs.saveSpace}
-              </button>
-            </div>
-            <SpacePermissionEditor
-              space={editableSpace}
-              permissions={spacePermissions}
-              roles={serverRoles}
-              members={serverMembers}
-              isMutating={isMutatingSpaces}
-              onUpsert={onUpsertSpacePermissionOverride}
-              onDelete={onDeleteSpacePermissionOverride}
-            />
-          </section>
-        </div>
+            </section>
+          </div>
         )}
 
       {pendingDeleteSpace && (
@@ -314,7 +327,7 @@ export function ServerWorkspaceDialogs({
                   {serverCopy.workspaceDialogs.deleteSpaceTitle(
                     pendingDeleteSpace.typeCode === 'category'
                       ? serverCopy.workspaceDialogs.category
-                      : serverCopy.workspaceDialogs.space,
+                      : serverCopy.workspaceDialogs.space
                   )}
                 </h2>
                 <p>{pendingDeleteSpace.title}</p>
@@ -329,11 +342,11 @@ export function ServerWorkspaceDialogs({
             </header>
             <div className={dialogModuleStyles.createSpaceForm}>
               {pendingDeleteSpace.typeCode === 'category' &&
-              serverSpaces.some((space) => space.parentSpaceId === pendingDeleteSpace.id) ? (
+              serverSpaces.some(
+                (space) => space.parentSpaceId === pendingDeleteSpace.id
+              ) ? (
                 <>
-                  <p>
-                    {serverCopy.workspaceDialogs.deleteNestedCategoryBody}
-                  </p>
+                  <p>{serverCopy.workspaceDialogs.deleteNestedCategoryBody}</p>
                   <button
                     type="button"
                     disabled={isMutatingSpaces}
@@ -366,5 +379,5 @@ export function ServerWorkspaceDialogs({
         </div>
       )}
     </>
-  )
+  );
 }

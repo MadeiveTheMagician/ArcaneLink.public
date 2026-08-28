@@ -1,17 +1,17 @@
-export type VoiceVideoTrackKind = 'camera' | 'screen'
+export type VoiceVideoTrackKind = 'camera' | 'screen';
 
 const receiverKindByTrack = new WeakMap<
   MediaStreamTrack,
   VoiceVideoTrackKind
->()
+>();
 
 export function registerVoiceVideoReceiverTrack(
   track: MediaStreamTrack,
-  kind: VoiceVideoTrackKind,
+  kind: VoiceVideoTrackKind
 ) {
-  receiverKindByTrack.set(track, kind)
+  receiverKindByTrack.set(track, kind);
 }
 
 export function getVoiceVideoReceiverTrackKind(track: MediaStreamTrack) {
-  return receiverKindByTrack.get(track) ?? null
+  return receiverKindByTrack.get(track) ?? null;
 }

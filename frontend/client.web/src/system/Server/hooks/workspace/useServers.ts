@@ -1,48 +1,49 @@
-import { useEffect, useRef, useState } from 'react'
-import { apiJson, apiNoContent } from '../../../../shared/api/api'
+import { useEffect, useRef, useState } from 'react';
+
+import { apiJson, apiNoContent } from '../../../../shared/api/api';
 import {
   readUserDataCache,
-  writeUserDataCache,
-} from '../../../../shared/cache/clientCache'
+  writeUserDataCache
+} from '../../../../shared/cache/clientCache';
 import type {
-  ServerMemberDetailsResponse,
   ServerMemberCursorResponse,
+  ServerMemberDetailsResponse,
   ServerMemberPageResponse,
   ServerMemberResponse,
-  ServerResponse,
-} from '../../../../shared/types'
-import { useUserPresenceChanged } from '../../../shared/hooks/useUserPresenceChanged'
-import { patchServerMembersPresence } from '../../../shared/presence/presenceModel'
+  ServerResponse
+} from '../../../../shared/types';
+import { useUserPresenceChanged } from '../../../shared/hooks/useUserPresenceChanged';
 import {
   captureUserPresenceEventBoundary,
-  reconcileServerMembersWithLatestPresence,
-} from '../../../shared/presence/presenceEventStore'
+  reconcileServerMembersWithLatestPresence
+} from '../../../shared/presence/presenceEventStore';
+import { patchServerMembersPresence } from '../../../shared/presence/presenceModel';
 import {
   mergeServerMemberPages,
-  serverMemberPageSize,
-} from './serverMemberPaginationModel'
+  serverMemberPageSize
+} from './serverMemberPaginationModel';
 
-const serverOrderCacheVersion = 1
+const serverOrderCacheVersion = 1;
 
 function getServerOrderCacheKey(userId: string) {
-  return `arcanelink.serverOrder.v${serverOrderCacheVersion}.${userId}`
+  return `arcanelink.serverOrder.v${serverOrderCacheVersion}.${userId}`;
 }
 
 function readServerOrder(userId: string) {
   try {
-    const raw = window.localStorage.getItem(getServerOrderCacheKey(userId))
+    const raw = window.localStorage.getItem(getServerOrderCacheKey(userId));
 
     if (!raw) {
-      return []
+      return [];
     }
 
-    const parsed = JSON.parse(raw) as unknown
+    const parsed = JSON.parse(raw) as unknown;
 
     return Array.isArray(parsed)
       ? parsed.filter((value): value is string => typeof value === 'string')
-      : []
+      : [];
   } catch {
-    return []
+    return [];
   }
 }
 
@@ -50,8 +51,8 @@ function writeServerOrder(userId: string, memberships: ServerMemberResponse[]) {
   try {
     window.localStorage.setItem(
       getServerOrderCacheKey(userId),
-      JSON.stringify(memberships.map((membership) => membership.serverId)),
-    )
+      JSON.stringify(memberships.map((membership) => membership.serverId))
+    );
   } catch {
     // Optional local preference; storage errors must not block server loading.
   }
@@ -59,339 +60,334 @@ function writeServerOrder(userId: string, memberships: ServerMemberResponse[]) {
 
 function applyServerOrder(
   memberships: ServerMemberResponse[],
-  serverOrder: string[],
+  serverOrder: string[]
 ) {
   if (serverOrder.length === 0) {
-    return memberships
+    return memberships;
   }
 
   const membershipByServerId = new Map(
-    memberships.map((membership) => [membership.serverId, membership]),
-  )
+    memberships.map((membership) => [membership.serverId, membership])
+  );
   const orderedMemberships = serverOrder
     .map((serverId) => membershipByServerId.get(serverId))
     .filter((membership): membership is ServerMemberResponse =>
-      Boolean(membership),
-    )
-  const orderedServerIds = new Set(serverOrder)
+      Boolean(membership)
+    );
+  const orderedServerIds = new Set(serverOrder);
   const newMemberships = memberships.filter(
-    (membership) => !orderedServerIds.has(membership.serverId),
-  )
+    (membership) => !orderedServerIds.has(membership.serverId)
+  );
 
-  return [...orderedMemberships, ...newMemberships]
+  return [...orderedMemberships, ...newMemberships];
 }
 
 function moveServerMembership(
   memberships: ServerMemberResponse[],
   activeServerId: string,
-  overServerId: string,
+  overServerId: string
 ) {
   const activeIndex = memberships.findIndex(
-    (membership) => membership.serverId === activeServerId,
-  )
+    (membership) => membership.serverId === activeServerId
+  );
   const overIndex = memberships.findIndex(
-    (membership) => membership.serverId === overServerId,
-  )
+    (membership) => membership.serverId === overServerId
+  );
 
   if (activeIndex < 0 || overIndex < 0 || activeIndex === overIndex) {
-    return memberships
+    return memberships;
   }
 
-  const nextMemberships = [...memberships]
-  const [movedMembership] = nextMemberships.splice(activeIndex, 1)
+  const nextMemberships = [...memberships];
+  const [movedMembership] = nextMemberships.splice(activeIndex, 1);
 
-  nextMemberships.splice(overIndex, 0, movedMembership)
+  nextMemberships.splice(overIndex, 0, movedMembership);
 
-  return nextMemberships
+  return nextMemberships;
 }
 
 export function useServers(accessToken: string, userId: string) {
   const [serverMemberships, setServerMemberships] = useState<
     ServerMemberResponse[]
-  >([])
-  const [isLoadingServers, setIsLoadingServers] = useState(true)
-  const [loadedServersUserId, setLoadedServersUserId] =
-    useState<string | null>(null)
+  >([]);
+  const [isLoadingServers, setIsLoadingServers] = useState(true);
+  const [loadedServersUserId, setLoadedServersUserId] = useState<string | null>(
+    null
+  );
   const [selectedServerMembership, setSelectedServerMembership] =
-    useState<ServerMemberResponse | null>(null)
+    useState<ServerMemberResponse | null>(null);
   const [serverMembers, setServerMembers] = useState<
     ServerMemberDetailsResponse[]
-  >([])
-  const [isLoadingServerMembers, setIsLoadingServerMembers] = useState(false)
+  >([]);
+  const [isLoadingServerMembers, setIsLoadingServerMembers] = useState(false);
   const [isLoadingMoreServerMembers, setIsLoadingMoreServerMembers] =
-    useState(false)
-  const [hasMoreServerMembers, setHasMoreServerMembers] = useState(false)
-  const [serverMemberCount, setServerMemberCount] = useState(0)
-  const [isMutatingServerMember, setIsMutatingServerMember] = useState(false)
-  const serverMemberCursorRef = useRef<ServerMemberCursorResponse | null>(null)
-  const serverMembersServerIdRef = useRef<string | null>(null)
-  const serverMemberRequestVersionRef = useRef(0)
-  const isLoadingMoreServerMembersRef = useRef(false)
+    useState(false);
+  const [hasMoreServerMembers, setHasMoreServerMembers] = useState(false);
+  const [serverMemberCount, setServerMemberCount] = useState(0);
+  const [isMutatingServerMember, setIsMutatingServerMember] = useState(false);
+  const serverMemberCursorRef = useRef<ServerMemberCursorResponse | null>(null);
+  const serverMembersServerIdRef = useRef<string | null>(null);
+  const serverMemberRequestVersionRef = useRef(0);
+  const isLoadingMoreServerMembersRef = useRef(false);
 
   useUserPresenceChanged((payload) => {
-    setServerMembers((current) =>
-      patchServerMembersPresence(current, payload),
-    )
-  })
+    setServerMembers((current) => patchServerMembersPresence(current, payload));
+  });
 
   async function loadServers(silent = false) {
     if (!silent) {
-      setIsLoadingServers(true)
+      setIsLoadingServers(true);
     }
 
     try {
       const memberships = await apiJson<ServerMemberResponse[]>(
         '/api/servers/me',
-        { accessToken },
-      )
+        { accessToken }
+      );
       const orderedMemberships = applyServerOrder(
         memberships,
-        readServerOrder(userId),
-      )
+        readServerOrder(userId)
+      );
 
-      setServerMemberships(orderedMemberships)
-      setLoadedServersUserId(userId)
-      void writeUserDataCache(userId, 'serverMemberships', orderedMemberships)
+      setServerMemberships(orderedMemberships);
+      setLoadedServersUserId(userId);
+      void writeUserDataCache(userId, 'serverMemberships', orderedMemberships);
       setSelectedServerMembership((current) =>
         current
-          ? orderedMemberships.find((membership) => membership.id === current.id) ??
-            null
-          : current,
-      )
+          ? (orderedMemberships.find(
+              (membership) => membership.id === current.id
+            ) ?? null)
+          : current
+      );
 
-      return orderedMemberships
+      return orderedMemberships;
     } finally {
       if (!silent) {
-        setIsLoadingServers(false)
+        setIsLoadingServers(false);
       }
     }
   }
 
   useEffect(() => {
-    let isDisposed = false
+    let isDisposed = false;
 
     void readUserDataCache(userId, 'serverMemberships').then((memberships) => {
       if (!isDisposed && memberships && memberships.length > 0) {
-        setServerMemberships(applyServerOrder(memberships, readServerOrder(userId)))
+        setServerMemberships(
+          applyServerOrder(memberships, readServerOrder(userId))
+        );
       }
-    })
+    });
 
-    void loadServers()
+    void loadServers();
     return () => {
-      isDisposed = true
-    }
+      isDisposed = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, userId])
+  }, [accessToken, userId]);
 
   async function loadServerMembers(
     membership: ServerMemberResponse,
-    silent = false,
+    silent = false
   ) {
-    const requestVersion = serverMemberRequestVersionRef.current + 1
+    const requestVersion = serverMemberRequestVersionRef.current + 1;
 
-    serverMemberRequestVersionRef.current = requestVersion
-    serverMembersServerIdRef.current = membership.serverId
-    serverMemberCursorRef.current = null
-    isLoadingMoreServerMembersRef.current = false
-    setIsLoadingMoreServerMembers(false)
-    setHasMoreServerMembers(false)
-    setSelectedServerMembership(membership)
+    serverMemberRequestVersionRef.current = requestVersion;
+    serverMembersServerIdRef.current = membership.serverId;
+    serverMemberCursorRef.current = null;
+    isLoadingMoreServerMembersRef.current = false;
+    setIsLoadingMoreServerMembers(false);
+    setHasMoreServerMembers(false);
+    setSelectedServerMembership(membership);
     if (!silent) {
-      setIsLoadingServerMembers(true)
+      setIsLoadingServerMembers(true);
     }
 
     try {
-      const presenceBoundary = captureUserPresenceEventBoundary()
+      const presenceBoundary = captureUserPresenceEventBoundary();
       const page = await apiJson<ServerMemberPageResponse>(
         `/api/servers/${membership.serverId}/members?limit=${serverMemberPageSize}`,
-        { accessToken },
-      )
+        { accessToken }
+      );
 
       if (
         requestVersion !== serverMemberRequestVersionRef.current ||
         serverMembersServerIdRef.current !== membership.serverId
       ) {
-        return
+        return;
       }
 
       const members = reconcileServerMembersWithLatestPresence(
         page.items,
-        presenceBoundary,
-      )
+        presenceBoundary
+      );
 
       setServerMembers((current) =>
         silent &&
         current.some((member) => member.serverId === membership.serverId)
           ? mergeServerMemberPages(members, current)
-          : members,
-      )
-      serverMemberCursorRef.current = page.nextCursor
-      setHasMoreServerMembers(page.nextCursor !== null)
-      setServerMemberCount(page.totalCount)
+          : members
+      );
+      serverMemberCursorRef.current = page.nextCursor;
+      setHasMoreServerMembers(page.nextCursor !== null);
+      setServerMemberCount(page.totalCount);
     } finally {
       if (requestVersion === serverMemberRequestVersionRef.current) {
-        setIsLoadingServerMembers(false)
+        setIsLoadingServerMembers(false);
       }
     }
   }
 
   async function loadMoreServerMembers() {
-    const serverId = serverMembersServerIdRef.current
-    const cursor = serverMemberCursorRef.current
+    const serverId = serverMembersServerIdRef.current;
+    const cursor = serverMemberCursorRef.current;
 
-    if (
-      !serverId ||
-      !cursor ||
-      isLoadingMoreServerMembersRef.current
-    ) {
-      return false
+    if (!serverId || !cursor || isLoadingMoreServerMembersRef.current) {
+      return false;
     }
 
-    const requestVersion = serverMemberRequestVersionRef.current
+    const requestVersion = serverMemberRequestVersionRef.current;
     const params = new URLSearchParams({
       limit: String(serverMemberPageSize),
       afterPriority: String(cursor.priority),
       afterJoinedAt: cursor.joinedAt,
-      afterId: cursor.id,
-    })
+      afterId: cursor.id
+    });
 
-    isLoadingMoreServerMembersRef.current = true
-    setIsLoadingMoreServerMembers(true)
+    isLoadingMoreServerMembersRef.current = true;
+    setIsLoadingMoreServerMembers(true);
 
     try {
-      const presenceBoundary = captureUserPresenceEventBoundary()
+      const presenceBoundary = captureUserPresenceEventBoundary();
       const page = await apiJson<ServerMemberPageResponse>(
         `/api/servers/${serverId}/members?${params.toString()}`,
-        { accessToken },
-      )
+        { accessToken }
+      );
 
       if (
         requestVersion !== serverMemberRequestVersionRef.current ||
         serverMembersServerIdRef.current !== serverId
       ) {
-        return false
+        return false;
       }
 
       const members = reconcileServerMembersWithLatestPresence(
         page.items,
-        presenceBoundary,
-      )
-      setServerMembers((current) => mergeServerMemberPages(current, members))
-      serverMemberCursorRef.current = page.nextCursor
-      setHasMoreServerMembers(page.nextCursor !== null)
-      setServerMemberCount(page.totalCount)
+        presenceBoundary
+      );
+      setServerMembers((current) => mergeServerMemberPages(current, members));
+      serverMemberCursorRef.current = page.nextCursor;
+      setHasMoreServerMembers(page.nextCursor !== null);
+      setServerMemberCount(page.totalCount);
 
-      return members.length > 0
+      return members.length > 0;
     } catch {
-      return false
+      return false;
     } finally {
       if (
         requestVersion === serverMemberRequestVersionRef.current &&
         serverMembersServerIdRef.current === serverId
       ) {
-        isLoadingMoreServerMembersRef.current = false
-        setIsLoadingMoreServerMembers(false)
+        isLoadingMoreServerMembersRef.current = false;
+        setIsLoadingMoreServerMembers(false);
       }
     }
   }
 
   async function leaveServer(membership: ServerMemberResponse) {
-    setIsMutatingServerMember(true)
+    setIsMutatingServerMember(true);
 
     try {
-      await apiNoContent(
-        `/api/servers/${membership.serverId}/members/me`,
-        {
-          method: 'DELETE',
-          accessToken,
-        },
-      )
+      await apiNoContent(`/api/servers/${membership.serverId}/members/me`, {
+        method: 'DELETE',
+        accessToken
+      });
 
       setServerMemberships((current) => {
         const nextMemberships = current.filter(
-          (item) => item.serverId !== membership.serverId,
-        )
+          (item) => item.serverId !== membership.serverId
+        );
 
-        writeServerOrder(userId, nextMemberships)
-        void writeUserDataCache(userId, 'serverMemberships', nextMemberships)
+        writeServerOrder(userId, nextMemberships);
+        void writeUserDataCache(userId, 'serverMemberships', nextMemberships);
 
-        return nextMemberships
-      })
+        return nextMemberships;
+      });
 
       if (selectedServerMembership?.serverId === membership.serverId) {
-        serverMemberRequestVersionRef.current += 1
-        serverMembersServerIdRef.current = null
-        serverMemberCursorRef.current = null
-        isLoadingMoreServerMembersRef.current = false
-        setSelectedServerMembership(null)
-        setServerMembers([])
-        setServerMemberCount(0)
-        setHasMoreServerMembers(false)
-        setIsLoadingMoreServerMembers(false)
+        serverMemberRequestVersionRef.current += 1;
+        serverMembersServerIdRef.current = null;
+        serverMemberCursorRef.current = null;
+        isLoadingMoreServerMembersRef.current = false;
+        setSelectedServerMembership(null);
+        setServerMembers([]);
+        setServerMemberCount(0);
+        setHasMoreServerMembers(false);
+        setIsLoadingMoreServerMembers(false);
       }
     } finally {
-      setIsMutatingServerMember(false)
+      setIsMutatingServerMember(false);
     }
   }
 
   async function deleteServer(membership: ServerMemberResponse) {
-    setIsMutatingServerMember(true)
+    setIsMutatingServerMember(true);
 
     try {
       await apiNoContent(`/api/servers/${membership.serverId}`, {
         method: 'DELETE',
-        accessToken,
-      })
+        accessToken
+      });
 
       setServerMemberships((current) => {
         const nextMemberships = current.filter(
-          (item) => item.serverId !== membership.serverId,
-        )
+          (item) => item.serverId !== membership.serverId
+        );
 
-        writeServerOrder(userId, nextMemberships)
-        void writeUserDataCache(userId, 'serverMemberships', nextMemberships)
+        writeServerOrder(userId, nextMemberships);
+        void writeUserDataCache(userId, 'serverMemberships', nextMemberships);
 
-        return nextMemberships
-      })
+        return nextMemberships;
+      });
 
       if (selectedServerMembership?.serverId === membership.serverId) {
-        serverMemberRequestVersionRef.current += 1
-        serverMembersServerIdRef.current = null
-        serverMemberCursorRef.current = null
-        isLoadingMoreServerMembersRef.current = false
-        setSelectedServerMembership(null)
-        setServerMembers([])
-        setServerMemberCount(0)
-        setHasMoreServerMembers(false)
-        setIsLoadingMoreServerMembers(false)
+        serverMemberRequestVersionRef.current += 1;
+        serverMembersServerIdRef.current = null;
+        serverMemberCursorRef.current = null;
+        isLoadingMoreServerMembersRef.current = false;
+        setSelectedServerMembership(null);
+        setServerMembers([]);
+        setServerMemberCount(0);
+        setHasMoreServerMembers(false);
+        setIsLoadingMoreServerMembers(false);
       }
     } finally {
-      setIsMutatingServerMember(false)
+      setIsMutatingServerMember(false);
     }
   }
 
   async function removeServerMember(member: ServerMemberDetailsResponse) {
     if (!selectedServerMembership) {
-      return
+      return;
     }
 
-    setIsMutatingServerMember(true)
+    setIsMutatingServerMember(true);
 
     try {
       await apiNoContent(
         `/api/servers/${selectedServerMembership.serverId}/members/${member.id}`,
         {
           method: 'DELETE',
-          accessToken,
-        },
-      )
+          accessToken
+        }
+      );
 
       setServerMembers((current) =>
-        current.filter((item) => item.id !== member.id),
-      )
-      setServerMemberCount((current) => Math.max(0, current - 1))
+        current.filter((item) => item.id !== member.id)
+      );
+      setServerMemberCount((current) => Math.max(0, current - 1));
     } finally {
-      setIsMutatingServerMember(false)
+      setIsMutatingServerMember(false);
     }
   }
 
@@ -402,40 +398,43 @@ export function useServers(accessToken: string, userId: string) {
           ? {
               ...membership,
               server,
-              updatedAt: server.updatedAt,
+              updatedAt: server.updatedAt
             }
-          : membership,
-      ),
-    )
+          : membership
+      )
+    );
 
     setSelectedServerMembership((current) =>
       current?.serverId === server.id
         ? {
             ...current,
             server,
-            updatedAt: server.updatedAt,
+            updatedAt: server.updatedAt
           }
-        : current,
-    )
+        : current
+    );
   }
 
-  function reorderServerMemberships(activeServerId: string, overServerId: string) {
+  function reorderServerMemberships(
+    activeServerId: string,
+    overServerId: string
+  ) {
     setServerMemberships((current) => {
       const nextMemberships = moveServerMembership(
         current,
         activeServerId,
-        overServerId,
-      )
+        overServerId
+      );
 
       if (nextMemberships === current) {
-        return current
+        return current;
       }
 
-      writeServerOrder(userId, nextMemberships)
-      void writeUserDataCache(userId, 'serverMemberships', nextMemberships)
+      writeServerOrder(userId, nextMemberships);
+      void writeUserDataCache(userId, 'serverMemberships', nextMemberships);
 
-      return nextMemberships
-    })
+      return nextMemberships;
+    });
   }
 
   return {
@@ -459,6 +458,6 @@ export function useServers(accessToken: string, userId: string) {
     deleteServer,
     removeServerMember,
     updateServerMembership,
-    reorderServerMemberships,
-  }
+    reorderServerMemberships
+  };
 }

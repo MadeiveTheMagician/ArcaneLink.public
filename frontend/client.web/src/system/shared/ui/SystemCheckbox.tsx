@@ -1,10 +1,15 @@
-import type { InputHTMLAttributes, ReactNode } from 'react'
-import { SystemIcon } from '../icons/SystemIcon'
-import styles from './SystemCheckbox.module.css'
+import type { InputHTMLAttributes, ReactNode } from 'react';
 
-type SystemCheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
-  children?: ReactNode
-}
+import { SystemIcon } from '../icons/SystemIcon';
+
+import styles from './SystemCheckbox.module.css';
+
+type SystemCheckboxProps = Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type'
+> & {
+  children?: ReactNode;
+};
 
 export function SystemCheckbox({
   children,
@@ -19,5 +24,5 @@ export function SystemCheckbox({
       </span>
       {children ? <span className={styles.text}>{children}</span> : null}
     </label>
-  )
+  );
 }

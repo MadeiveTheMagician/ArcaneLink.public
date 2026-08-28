@@ -1,18 +1,19 @@
 import {
   SystemSkeleton,
-  SystemSkeletonRegion,
   type SystemSkeletonPresencePhase,
-} from '../../../shared'
-import styles from './NotificationListSkeleton.module.css'
+  SystemSkeletonRegion
+} from '../../../shared';
+
+import styles from './NotificationListSkeleton.module.css';
 
 export function NotificationListSkeleton({
   count = 6,
   label,
-  presencePhase,
+  presencePhase
 }: {
-  count?: number
-  label: string
-  presencePhase?: SystemSkeletonPresencePhase
+  count?: number;
+  label: string;
+  presencePhase?: SystemSkeletonPresencePhase;
 }) {
   return (
     <SystemSkeletonRegion
@@ -21,10 +22,13 @@ export function NotificationListSkeleton({
       presencePhase={presencePhase}
     >
       {Array.from({ length: count }, (_, index) => {
-        const delayMs = 90 + index * 34
+        const delayMs = 90 + index * 34;
 
         return (
-          <article className={styles.row} key={`notification-skeleton-${index}`}>
+          <article
+            className={styles.row}
+            key={`notification-skeleton-${index}`}
+          >
             <SystemSkeleton
               className={styles.kind}
               delayMs={delayMs}
@@ -51,17 +55,13 @@ export function NotificationListSkeleton({
                 width={`${66 + (index % 2) * 14}%`}
               />
               {index % 2 === 0 ? (
-                <SystemSkeleton
-                  delayMs={delayMs}
-                  height={9}
-                  width="52%"
-                />
+                <SystemSkeleton delayMs={delayMs} height={9} width="52%" />
               ) : null}
             </div>
             <SystemSkeleton delayMs={delayMs} height={9} width={48} />
           </article>
-        )
+        );
       })}
     </SystemSkeletonRegion>
-  )
+  );
 }

@@ -1,21 +1,23 @@
-import { useId, useState, type ReactNode } from 'react'
-import { commonCopy } from '../../../shared'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import styles from './SystemSettingsControls.module.css'
+import { type ReactNode, useId, useState } from 'react';
+
+import { commonCopy } from '../../../shared';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
+
+import styles from './SystemSettingsControls.module.css';
 
 export function SettingsSection({
   title,
   description,
   children,
-  disabled = false,
+  disabled = false
 }: {
-  title: string
-  description?: string
-  children: ReactNode
-  disabled?: boolean
+  title: string;
+  description?: string;
+  children: ReactNode;
+  disabled?: boolean;
 }) {
-  const contentId = useId()
-  const [isExpanded, setIsExpanded] = useState(() => !disabled)
+  const contentId = useId();
+  const [isExpanded, setIsExpanded] = useState(() => !disabled);
 
   return (
     <section className={styles.section}>
@@ -34,7 +36,7 @@ export function SettingsSection({
                     isExpanded
                       ? commonCopy.actions.collapse
                       : commonCopy.actions.expand,
-                    title,
+                    title
                   ].join(': ')
             }
             data-settings-section-toggle
@@ -44,7 +46,7 @@ export function SettingsSection({
             <SystemIcon
               className={[
                 styles.sectionChevron,
-                isExpanded ? styles.sectionChevronExpanded : '',
+                isExpanded ? styles.sectionChevronExpanded : ''
               ].join(' ')}
               name="chevron-down"
               size={16}
@@ -71,17 +73,17 @@ export function SettingsSection({
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 export function ReadOnlyField({
   label,
   value,
-  actionLabel = commonCopy.actions.edit,
+  actionLabel = commonCopy.actions.edit
 }: {
-  label: string
-  value: string
-  actionLabel?: string
+  label: string;
+  value: string;
+  actionLabel?: string;
 }) {
   return (
     <div className={styles.fieldRow}>
@@ -91,7 +93,7 @@ export function ReadOnlyField({
         {actionLabel}
       </button>
     </div>
-  )
+  );
 }
 
 export function ScaleControl({
@@ -102,19 +104,19 @@ export function ScaleControl({
   step,
   onChange,
   onCommit,
-  formatValue = (currentValue) => `${Math.round(currentValue * 100)}%`,
+  formatValue = (currentValue) => `${Math.round(currentValue * 100)}%`
 }: {
-  label: string
-  value: number
-  min: number
-  max: number
-  step: number
-  onChange: (value: number) => void
-  onCommit: (value: number) => void
-  formatValue?: (value: number) => string
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+  onCommit: (value: number) => void;
+  formatValue?: (value: number) => string;
 }) {
   function commitValue(target: EventTarget & HTMLInputElement) {
-    onCommit(Number(target.value))
+    onCommit(Number(target.value));
   }
 
   return (
@@ -136,7 +138,7 @@ export function ScaleControl({
         onPointerUp={(event) => commitValue(event.currentTarget)}
       />
     </label>
-  )
+  );
 }
 
 export function ToggleField({
@@ -145,14 +147,14 @@ export function ToggleField({
   description,
   checked,
   disabled = false,
-  onChange,
+  onChange
 }: {
-  id?: string
-  label: string
-  description: string
-  checked: boolean
-  disabled?: boolean
-  onChange: (checked: boolean) => void
+  id?: string;
+  label: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
 }) {
   return (
     <label
@@ -175,5 +177,5 @@ export function ToggleField({
         <span aria-hidden="true" />
       </span>
     </label>
-  )
+  );
 }

@@ -1,41 +1,43 @@
 import {
-  useId,
-  useLayoutEffect,
-  useEffect,
-  useRef,
-  useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
-} from 'react'
-import { createPortal } from 'react-dom'
-import {
-  resolveContextMenuHeight,
-  resolveContextMenuPlacement,
-} from '../../services/contextMenuPositioning'
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react';
+import { createPortal } from 'react-dom';
+
+import { SystemIcon, type SystemIconName } from '../../icons/SystemIcon';
 import {
   contextMenuBoundaryAttributes,
-  isEventInsideContextMenuBoundary,
-} from '../../services/contextMenuEventBoundary'
-import { SystemIcon, type SystemIconName } from '../../icons/SystemIcon'
+  isEventInsideContextMenuBoundary
+} from '../../services/contextMenuEventBoundary';
 import {
-  getContextMenuItemKey,
+  resolveContextMenuHeight,
+  resolveContextMenuPlacement
+} from '../../services/contextMenuPositioning';
+import {
   type ContextMenuIcon,
   type ContextMenuItem,
-} from './contextMenuTypes'
-import styles from './ContextMenu.module.css'
+  getContextMenuItemKey
+} from './contextMenuTypes';
 
-export type { ContextMenuIcon, ContextMenuItem } from './contextMenuTypes'
+import styles from './ContextMenu.module.css';
+
+export type { ContextMenuIcon, ContextMenuItem } from './contextMenuTypes';
 
 type ContextMenuProps = {
-  x: number
-  y: number
-  items: ContextMenuItem[]
-  autoFocus?: boolean
-  onClose: () => void
-}
+  x: number;
+  y: number;
+  items: ContextMenuItem[];
+  autoFocus?: boolean;
+  onClose: () => void;
+};
 
 export function ContextMenuPositioningLayer() {
-  return <div className={styles.positioningLayer} aria-hidden="true" />
+  return <div className={styles.positioningLayer} aria-hidden="true" />;
 }
 
 const menuIconNames: Record<ContextMenuIcon, SystemIconName> = {
@@ -55,13 +57,13 @@ const menuIconNames: Record<ContextMenuIcon, SystemIconName> = {
   settings: 'settings',
   space: 'pin',
   trash: 'trash',
-  video: 'video',
-}
+  video: 'video'
+};
 
 function ContextMenuRangeRow({
-  item,
+  item
 }: {
-  item: Extract<ContextMenuItem, { type: 'range' }>
+  item: Extract<ContextMenuItem, { type: 'range' }>;
 }) {
   return (
     <label className={styles.rangeRow}>
@@ -81,7 +83,7 @@ function ContextMenuRangeRow({
         onChange={(event) => item.onChange(Number(event.currentTarget.value))}
       />
     </label>
-  )
+  );
 }
 
 function ContextMenuRow({
@@ -89,113 +91,110 @@ function ContextMenuRow({
   onClose,
   buttonTabIndex,
   onButtonRef,
-  onButtonKeyDown,
+  onButtonKeyDown
 }: {
-  item: Extract<ContextMenuItem, { type: 'item' }>
-  onClose: () => void
-  buttonTabIndex?: number
-  onButtonRef?: (button: HTMLButtonElement | null) => void
-  onButtonKeyDown?: (event: ReactKeyboardEvent<HTMLButtonElement>) => void
+  item: Extract<ContextMenuItem, { type: 'item' }>;
+  onClose: () => void;
+  buttonTabIndex?: number;
+  onButtonRef?: (button: HTMLButtonElement | null) => void;
+  onButtonKeyDown?: (event: ReactKeyboardEvent<HTMLButtonElement>) => void;
 }) {
-  const [isSubmenuOpen, setIsSubmenuOpen] = useState(false)
+  const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   const [submenuPlacement, setSubmenuPlacement] = useState<{
-    left: number
-    top: number
-    openLeft: boolean
-  } | null>(null)
-  const submenuId = useId()
-  const hintId = useId()
-  const rowWrapRef = useRef<HTMLDivElement | null>(null)
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-  const submenuRef = useRef<HTMLDivElement | null>(null)
-  const closeTimeoutRef = useRef<number | null>(null)
-  const hasVisualLabel = item.visualLabel != null
+    left: number;
+    top: number;
+    openLeft: boolean;
+  } | null>(null);
+  const submenuId = useId();
+  const hintId = useId();
+  const rowWrapRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const submenuRef = useRef<HTMLDivElement | null>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
+  const hasVisualLabel = item.visualLabel != null;
 
   function clearCloseTimeout() {
     if (closeTimeoutRef.current != null) {
-      window.clearTimeout(closeTimeoutRef.current)
-      closeTimeoutRef.current = null
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
     }
   }
 
   function openSubmenu() {
     if (!item.submenu || item.disabled) {
-      return
+      return;
     }
 
-    clearCloseTimeout()
-    setIsSubmenuOpen(true)
+    clearCloseTimeout();
+    setIsSubmenuOpen(true);
   }
 
   function focusFirstSubmenuItem() {
     window.requestAnimationFrame(() => {
       submenuRef.current
         ?.querySelector<HTMLButtonElement>(
-          '[data-context-menu-item]:not(:disabled)',
+          '[data-context-menu-item]:not(:disabled)'
         )
-        ?.focus()
-    })
+        ?.focus();
+    });
   }
 
   function openAndFocusSubmenu() {
-    openSubmenu()
-    focusFirstSubmenuItem()
+    openSubmenu();
+    focusFirstSubmenuItem();
   }
 
   function scheduleSubmenuClose() {
-    clearCloseTimeout()
+    clearCloseTimeout();
     closeTimeoutRef.current = window.setTimeout(() => {
-      setIsSubmenuOpen(false)
-      closeTimeoutRef.current = null
-    }, 180)
+      setIsSubmenuOpen(false);
+      closeTimeoutRef.current = null;
+    }, 180);
   }
 
   useEffect(
     () => () => {
-      clearCloseTimeout()
+      clearCloseTimeout();
     },
-    [],
-  )
+    []
+  );
 
   useLayoutEffect(() => {
     if (!isSubmenuOpen) {
-      return
+      return;
     }
 
     function updateSubmenuPosition() {
-      const row = rowWrapRef.current
-      const submenu = submenuRef.current
+      const row = rowWrapRef.current;
+      const submenu = submenuRef.current;
       if (!row || !submenu) {
-        return
+        return;
       }
 
-      const gutter = 8
-      const rowBounds = row.getBoundingClientRect()
-      const submenuBounds = submenu.getBoundingClientRect()
+      const gutter = 8;
+      const rowBounds = row.getBoundingClientRect();
+      const submenuBounds = submenu.getBoundingClientRect();
       const openLeft =
         rowBounds.right + gutter + submenuBounds.width + gutter >
-        window.innerWidth
+        window.innerWidth;
       const maxLeft = Math.max(
         gutter,
-        window.innerWidth - submenuBounds.width - gutter,
-      )
+        window.innerWidth - submenuBounds.width - gutter
+      );
       const left = Math.min(
         Math.max(
           openLeft
             ? rowBounds.left - submenuBounds.width - gutter
             : rowBounds.right + gutter,
-          gutter,
+          gutter
         ),
-        maxLeft,
-      )
+        maxLeft
+      );
       const maxTop = Math.max(
         gutter,
-        window.innerHeight - submenuBounds.height - gutter,
-      )
-      const top = Math.min(
-        Math.max(rowBounds.top - 10, gutter),
-        maxTop,
-      )
+        window.innerHeight - submenuBounds.height - gutter
+      );
+      const top = Math.min(Math.max(rowBounds.top - 10, gutter), maxTop);
 
       setSubmenuPlacement((current) =>
         current &&
@@ -203,32 +202,32 @@ function ContextMenuRow({
         Math.abs(current.top - top) < 0.5 &&
         current.openLeft === openLeft
           ? current
-          : { left, top, openLeft },
-      )
+          : { left, top, openLeft }
+      );
     }
 
-    updateSubmenuPosition()
-    window.addEventListener('resize', updateSubmenuPosition)
-    window.addEventListener('scroll', updateSubmenuPosition, true)
+    updateSubmenuPosition();
+    window.addEventListener('resize', updateSubmenuPosition);
+    window.addEventListener('scroll', updateSubmenuPosition, true);
 
     return () => {
-      window.removeEventListener('resize', updateSubmenuPosition)
-      window.removeEventListener('scroll', updateSubmenuPosition, true)
-    }
-  }, [isSubmenuOpen])
+      window.removeEventListener('resize', updateSubmenuPosition);
+      window.removeEventListener('scroll', updateSubmenuPosition, true);
+    };
+  }, [isSubmenuOpen]);
 
   function handleSelect() {
     if (item.disabled) {
-      return
+      return;
     }
 
     if (item.submenu) {
-      openAndFocusSubmenu()
-      return
+      openAndFocusSubmenu();
+      return;
     }
 
-    item.onSelect?.()
-    onClose()
+    item.onSelect?.();
+    onClose();
   }
 
   return (
@@ -242,8 +241,8 @@ function ContextMenuRow({
     >
       <button
         ref={(button) => {
-          buttonRef.current = button
-          onButtonRef?.(button)
+          buttonRef.current = button;
+          onButtonRef?.(button);
         }}
         className={`${styles.row} profile-context-menu-row ${
           item.danger ? styles.danger : ''
@@ -254,12 +253,12 @@ function ContextMenuRow({
         onClick={handleSelect}
         onKeyDown={(event) => {
           if (item.submenu && event.key === 'ArrowRight') {
-            event.preventDefault()
-            openAndFocusSubmenu()
-            return
+            event.preventDefault();
+            openAndFocusSubmenu();
+            return;
           }
 
-          onButtonKeyDown?.(event)
+          onButtonKeyDown?.(event);
         }}
         disabled={item.disabled}
         aria-label={hasVisualLabel ? item.label : undefined}
@@ -293,114 +292,112 @@ function ContextMenuRow({
       </button>
 
       {item.hint && !item.submenu && (
-        <span
-          className={styles.hint}
-          id={hintId}
-          role="tooltip"
-        >
+        <span className={styles.hint} id={hintId} role="tooltip">
           {item.hint}
         </span>
       )}
 
-      {item.submenu && isSubmenuOpen && createPortal(
-        <div
-          ref={submenuRef}
-          id={submenuId}
-          role="group"
-          aria-label={item.label}
-          {...contextMenuBoundaryAttributes}
-          data-context-menu-submenu-root="true"
-          className={`${styles.submenu} ${
-            item.submenuLayout === 'grid' ? styles.submenuGrid : ''
-          } ${submenuPlacement?.openLeft ? styles.submenuOpenLeft : ''}`}
-          style={
-            submenuPlacement
-              ? { left: submenuPlacement.left, top: submenuPlacement.top }
-              : { left: 0, top: 0, visibility: 'hidden' }
-          }
-          onMouseEnter={clearCloseTimeout}
-          onMouseLeave={scheduleSubmenuClose}
-          onFocusCapture={clearCloseTimeout}
-          onBlurCapture={scheduleSubmenuClose}
-        >
-          <ContextMenuList
-            items={item.submenu}
-            layout={item.submenuLayout}
-            onExit={() => buttonRef.current?.focus()}
-            onClose={onClose}
-          />
-        </div>,
-        document.body,
-      )}
+      {item.submenu &&
+        isSubmenuOpen &&
+        createPortal(
+          <div
+            ref={submenuRef}
+            id={submenuId}
+            role="group"
+            aria-label={item.label}
+            {...contextMenuBoundaryAttributes}
+            data-context-menu-submenu-root="true"
+            className={`${styles.submenu} ${
+              item.submenuLayout === 'grid' ? styles.submenuGrid : ''
+            } ${submenuPlacement?.openLeft ? styles.submenuOpenLeft : ''}`}
+            style={
+              submenuPlacement
+                ? { left: submenuPlacement.left, top: submenuPlacement.top }
+                : { left: 0, top: 0, visibility: 'hidden' }
+            }
+            onMouseEnter={clearCloseTimeout}
+            onMouseLeave={scheduleSubmenuClose}
+            onFocusCapture={clearCloseTimeout}
+            onBlurCapture={scheduleSubmenuClose}
+          >
+            <ContextMenuList
+              items={item.submenu}
+              layout={item.submenuLayout}
+              onExit={() => buttonRef.current?.focus()}
+              onClose={onClose}
+            />
+          </div>,
+          document.body
+        )}
     </div>
-  )
+  );
 }
 
 function ContextMenuList({
   items,
   onClose,
   layout = 'list',
-  onExit,
+  onExit
 }: {
-  items: ContextMenuItem[]
-  onClose: () => void
-  layout?: 'list' | 'grid'
-  onExit?: () => void
+  items: ContextMenuItem[];
+  onClose: () => void;
+  layout?: 'list' | 'grid';
+  onExit?: () => void;
 }) {
-  const [activeGridIndex, setActiveGridIndex] = useState(0)
-  const buttonRefs = useRef<Array<HTMLButtonElement | null>>([])
-  const gridItemCount = items.filter((item) => item.type === 'item').length
+  const [activeGridIndex, setActiveGridIndex] = useState(0);
+  const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const gridItemCount = items.filter((item) => item.type === 'item').length;
 
   function focusGridItem(index: number) {
-    const nextIndex = Math.min(Math.max(index, 0), gridItemCount - 1)
-    setActiveGridIndex(nextIndex)
-    const button = buttonRefs.current[nextIndex]
-    button?.focus()
-    button?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    const nextIndex = Math.min(Math.max(index, 0), gridItemCount - 1);
+    setActiveGridIndex(nextIndex);
+    const button = buttonRefs.current[nextIndex];
+    button?.focus();
+    button?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   function handleGridKeyDown(
     event: ReactKeyboardEvent<HTMLButtonElement>,
-    index: number,
+    index: number
   ) {
-    const columns = 6
-    let nextIndex: number
+    const columns = 6;
+    let nextIndex: number;
 
     switch (event.key) {
       case 'ArrowRight':
-        nextIndex = Math.min(index + 1, gridItemCount - 1)
-        break
+        nextIndex = Math.min(index + 1, gridItemCount - 1);
+        break;
       case 'ArrowLeft':
         if (index % columns === 0) {
-          event.preventDefault()
-          onExit?.()
-          return
+          event.preventDefault();
+          onExit?.();
+          return;
         }
-        nextIndex = index - 1
-        break
+        nextIndex = index - 1;
+        break;
       case 'ArrowDown':
-        nextIndex = Math.min(index + columns, gridItemCount - 1)
-        break
+        nextIndex = Math.min(index + columns, gridItemCount - 1);
+        break;
       case 'ArrowUp':
         if (index < columns) {
-          event.preventDefault()
-          onExit?.()
-          return
+          event.preventDefault();
+          onExit?.();
+          return;
         }
-        nextIndex = index - columns
-        break
+        nextIndex = index - columns;
+        break;
       case 'Home':
-        nextIndex = 0
-        break
+        nextIndex = 0;
+        break;
       case 'End':
-        nextIndex = gridItemCount - 1
-        break
+        nextIndex = gridItemCount - 1;
+        break;
       default:
-        return
+        return;
     }
 
-    event.preventDefault()
-    focusGridItem(nextIndex)
+    event.preventDefault();
+    focusGridItem(nextIndex);
   }
 
   return (
@@ -408,11 +405,11 @@ function ContextMenuList({
       {items.map((item, index) => {
         if (item.type === 'separator') {
           return (
-          <div
-            key={getContextMenuItemKey(item, index)}
-            className={styles.separator}
-          />
-          )
+            <div
+              key={getContextMenuItemKey(item, index)}
+              className={styles.separator}
+            />
+          );
         }
 
         if (item.type === 'range') {
@@ -421,12 +418,12 @@ function ContextMenuList({
               key={getContextMenuItemKey(item, index)}
               item={item}
             />
-          )
+          );
         }
 
         const currentGridIndex = items
           .slice(0, index)
-          .filter((candidate) => candidate.type === 'item').length
+          .filter((candidate) => candidate.type === 'item').length;
         return (
           <ContextMenuRow
             key={getContextMenuItemKey(item, index)}
@@ -439,28 +436,28 @@ function ContextMenuList({
                 : undefined
             }
             onButtonRef={(button) => {
-              buttonRefs.current[currentGridIndex] = button
+              buttonRefs.current[currentGridIndex] = button;
             }}
             onButtonKeyDown={
               layout === 'grid'
-                ? (event) =>
-                    handleGridKeyDown(event, currentGridIndex)
+                ? (event) => handleGridKeyDown(event, currentGridIndex)
                 : undefined
             }
             onClose={onClose}
           />
-        )
+        );
       })}
     </>
-  )
+  );
 }
 
 function countVisibleRows(items: ContextMenuItem[]) {
   return items.reduce(
     (count, item) =>
-      count + (item.type === 'separator' ? 0.4 : item.type === 'range' ? 1.5 : 1),
-    0,
-  )
+      count +
+      (item.type === 'separator' ? 0.4 : item.type === 'range' ? 1.5 : 1),
+    0
+  );
 }
 
 export function ContextMenu({
@@ -468,81 +465,78 @@ export function ContextMenu({
   y,
   items,
   autoFocus = false,
-  onClose,
+  onClose
 }: ContextMenuProps) {
-  const menuRef = useRef<HTMLDivElement | null>(null)
-  const estimatedRowsRef = useRef(countVisibleRows(items))
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const estimatedRowsRef = useRef(countVisibleRows(items));
   const [position, setPosition] = useState({
     left: x,
     top: y,
     maxHeight: 180,
     row: 1,
     column: 4,
-    openSubmenuLeft: false,
-  })
+    openSubmenuLeft: false
+  });
 
   useEffect(() => {
     function closeFromOutside(event: PointerEvent | MouseEvent) {
       if (isEventInsideContextMenuBoundary(event)) {
-        return
+        return;
       }
 
-      onClose()
+      onClose();
     }
 
     function closeFromKeyboard(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        onClose()
+        onClose();
       }
     }
 
-    document.addEventListener('pointerdown', closeFromOutside, true)
-    document.addEventListener('contextmenu', closeFromOutside, true)
-    window.addEventListener('keydown', closeFromKeyboard)
+    document.addEventListener('pointerdown', closeFromOutside, true);
+    document.addEventListener('contextmenu', closeFromOutside, true);
+    window.addEventListener('keydown', closeFromKeyboard);
 
     return () => {
-      document.removeEventListener('pointerdown', closeFromOutside, true)
-      document.removeEventListener('contextmenu', closeFromOutside, true)
-      window.removeEventListener('keydown', closeFromKeyboard)
-    }
-  }, [onClose])
+      document.removeEventListener('pointerdown', closeFromOutside, true);
+      document.removeEventListener('contextmenu', closeFromOutside, true);
+      window.removeEventListener('keydown', closeFromKeyboard);
+    };
+  }, [onClose]);
 
   useLayoutEffect(() => {
     if (!autoFocus) {
-      return
+      return;
     }
 
     const previouslyFocused =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
-        : null
+        : null;
     menuRef.current
       ?.querySelector<HTMLButtonElement>(
-        '[data-context-menu-item]:not(:disabled)',
+        '[data-context-menu-item]:not(:disabled)'
       )
-      ?.focus()
+      ?.focus();
 
     return () => {
       if (previouslyFocused?.isConnected) {
-        previouslyFocused.focus()
+        previouslyFocused.focus();
       }
-    }
-  }, [autoFocus])
+    };
+  }, [autoFocus]);
 
   useLayoutEffect(() => {
     function updatePosition() {
-      const menu = menuRef.current
-      const width = menu?.offsetWidth ?? 290
+      const menu = menuRef.current;
+      const width = menu?.offsetWidth ?? 290;
       const height = resolveContextMenuHeight({
         renderedHeight: menu?.offsetHeight,
         contentHeight: menu?.scrollHeight,
-        estimatedHeight: Math.min(
-          520,
-          estimatedRowsRef.current * 48 + 24,
-        ),
-        viewportHeight: window.innerHeight,
-      })
-      const submenuWidth = 274
+        estimatedHeight: Math.min(520, estimatedRowsRef.current * 48 + 24),
+        viewportHeight: window.innerHeight
+      });
+      const submenuWidth = 274;
       const nextPosition = resolveContextMenuPlacement({
         x,
         y,
@@ -550,8 +544,8 @@ export function ContextMenu({
         menuHeight: height,
         submenuWidth,
         viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-      })
+        viewportHeight: window.innerHeight
+      });
 
       setPosition((current) =>
         current.left === nextPosition.left &&
@@ -561,23 +555,23 @@ export function ContextMenu({
         current.column === nextPosition.column &&
         current.openSubmenuLeft === nextPosition.openSubmenuLeft
           ? current
-          : nextPosition,
-      )
+          : nextPosition
+      );
     }
 
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
 
-    return () => window.removeEventListener('resize', updatePosition)
-  }, [x, y])
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [x, y]);
 
   const style = {
     left: position.left,
     top: position.top,
-    '--profile-context-max-height': `${position.maxHeight}px`,
-  } as CSSProperties
+    '--profile-context-max-height': `${position.maxHeight}px`
+  } as CSSProperties;
 
-  return createPortal((
+  return createPortal(
     <div
       ref={menuRef}
       className={`${styles.menu} ${
@@ -590,11 +584,12 @@ export function ContextMenu({
       style={style}
       onClick={(event) => event.stopPropagation()}
       onContextMenu={(event) => {
-        event.preventDefault()
-        event.stopPropagation()
+        event.preventDefault();
+        event.stopPropagation();
       }}
     >
       <ContextMenuList items={items} onClose={onClose} />
-    </div>
-  ), document.body)
+    </div>,
+    document.body
+  );
 }

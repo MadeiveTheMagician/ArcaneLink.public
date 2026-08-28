@@ -1,30 +1,37 @@
-import { cloneElement, type PointerEvent, type ReactElement, type ReactNode } from 'react'
-import { serverCopy, SystemIcon } from '../../../shared'
-import type { ServerDetail } from '../../utils/serverWorkspaceModel'
-import styles from '../shell/ServerWorkspace.module.css'
-import chromeStyles from './ServerWorkspaceChrome.module.css'
-import mobileToolbarStyles from './ServerWorkspaceMobileToolbar.module.css'
-import viewportStyles from './ServerWorkspaceViewport.module.css'
+import {
+  type PointerEvent,
+  type ReactElement,
+  type ReactNode,
+  cloneElement
+} from 'react';
+
+import { SystemIcon, serverCopy } from '../../../shared';
+import type { ServerDetail } from '../../utils/serverWorkspaceModel';
+
+import styles from '../shell/ServerWorkspace.module.css';
+import chromeStyles from './ServerWorkspaceChrome.module.css';
+import mobileToolbarStyles from './ServerWorkspaceMobileToolbar.module.css';
+import viewportStyles from './ServerWorkspaceViewport.module.css';
 
 type ServerWorkspaceLayoutProps = {
-  channelTree: ReactNode
-  detail: ReactNode
-  hasSelectedDetail: boolean
-  isMembersPanelCollapsed: boolean
+  channelTree: ReactNode;
+  detail: ReactNode;
+  hasSelectedDetail: boolean;
+  isMembersPanelCollapsed: boolean;
   membersPanel: ReactElement<{
-    className?: string
-    id: string
-    isCollapsed?: boolean
-  }>
-  pinnedSpaceMessagePreview: string | null
-  visibleChannel: Extract<ServerDetail, { type: 'channel' }> | null
-  visibleDetail: ServerDetail | null
-  onCloseDetail: () => void
+    className?: string;
+    id: string;
+    isCollapsed?: boolean;
+  }>;
+  pinnedSpaceMessagePreview: string | null;
+  visibleChannel: Extract<ServerDetail, { type: 'channel' }> | null;
+  visibleDetail: ServerDetail | null;
+  onCloseDetail: () => void;
   onStartPaneResize: (
     pane: 'spaces' | 'members',
-    event: PointerEvent<HTMLButtonElement>,
-  ) => void
-}
+    event: PointerEvent<HTMLButtonElement>
+  ) => void;
+};
 
 export function ServerWorkspaceLayout({
   channelTree,
@@ -36,27 +43,27 @@ export function ServerWorkspaceLayout({
   visibleChannel,
   visibleDetail,
   onCloseDetail,
-  onStartPaneResize,
+  onStartPaneResize
 }: ServerWorkspaceLayoutProps) {
   function handleStartPaneResize(
     pane: 'spaces' | 'members',
-    event: PointerEvent<HTMLButtonElement>,
+    event: PointerEvent<HTMLButtonElement>
   ) {
     const workspace = event.currentTarget.closest<HTMLElement>(
-      '[data-server-workspace]',
-    )
+      '[data-server-workspace]'
+    );
 
-    workspace?.setAttribute('data-pane-resizing', 'true')
+    workspace?.setAttribute('data-pane-resizing', 'true');
 
     const finishResize = () => {
-      workspace?.removeAttribute('data-pane-resizing')
-      window.removeEventListener('pointerup', finishResize)
-      window.removeEventListener('pointercancel', finishResize)
-    }
+      workspace?.removeAttribute('data-pane-resizing');
+      window.removeEventListener('pointerup', finishResize);
+      window.removeEventListener('pointercancel', finishResize);
+    };
 
-    window.addEventListener('pointerup', finishResize)
-    window.addEventListener('pointercancel', finishResize)
-    onStartPaneResize(pane, event)
+    window.addEventListener('pointerup', finishResize);
+    window.addEventListener('pointercancel', finishResize);
+    onStartPaneResize(pane, event);
   }
 
   return (
@@ -94,9 +101,7 @@ export function ServerWorkspaceLayout({
           visibleChannel?.kind === 'voice'
             ? `${styles.voiceChannel} ${viewportStyles.voiceChannel}`
             : ''
-        } ${
-          hasSelectedDetail ? `${styles.open} ${viewportStyles.open}` : ''
-        }`}
+        } ${hasSelectedDetail ? `${styles.open} ${viewportStyles.open}` : ''}`}
         data-space-kind={visibleChannel?.kind ?? visibleDetail?.type ?? 'none'}
         data-space-open={hasSelectedDetail ? 'true' : 'false'}
         data-workspace-transition-content="true"
@@ -124,7 +129,10 @@ export function ServerWorkspaceLayout({
               serverCopy.labels.spaces
             )}
           </span>
-          <button className={mobileToolbarStyles.mobileSpacePinned} type="button">
+          <button
+            className={mobileToolbarStyles.mobileSpacePinned}
+            type="button"
+          >
             {pinnedSpaceMessagePreview ?? ''}
           </button>
           <button
@@ -153,8 +161,8 @@ export function ServerWorkspaceLayout({
         isCollapsed: isMembersPanelCollapsed,
         className: [membersPanel.props.className, chromeStyles.memberPanelSlot]
           .filter(Boolean)
-          .join(' '),
+          .join(' ')
       })}
     </section>
-  )
+  );
 }

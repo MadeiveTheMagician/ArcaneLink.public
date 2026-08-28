@@ -1,25 +1,26 @@
-import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes'
-import { voiceCopy } from '../../../shared/copy/voice.ru'
-import styles from './VoiceConnectionDiagnosticsDetails.module.css'
-import { formatVoiceCodecLabel } from './voiceConnectionDiagnosticsDisplay'
+import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes';
+import { voiceCopy } from '../../../shared/copy/voice.ru';
+import { formatVoiceCodecLabel } from './voiceConnectionDiagnosticsDisplay';
 
-export type VoiceConnectionDiagnosticsDisplay = VoiceConnectionDiagnostics
+import styles from './VoiceConnectionDiagnosticsDetails.module.css';
+
+export type VoiceConnectionDiagnosticsDisplay = VoiceConnectionDiagnostics;
 
 type VoiceConnectionDiagnosticsDetailsProps = {
-  diagnostics: VoiceConnectionDiagnosticsDisplay | null | undefined
-  mode?: 'compact' | 'full'
-}
+  diagnostics: VoiceConnectionDiagnosticsDisplay | null | undefined;
+  mode?: 'compact' | 'full';
+};
 
 const compactNumberFormatter = new Intl.NumberFormat('ru-RU', {
-  maximumFractionDigits: 1,
-})
+  maximumFractionDigits: 1
+});
 
 export function VoiceConnectionDiagnosticsDetails({
   diagnostics,
-  mode = 'compact',
+  mode = 'compact'
 }: VoiceConnectionDiagnosticsDetailsProps) {
-  const codec = formatVoiceCodecLabel(diagnostics?.codec)
-  const route = formatRouteLabel(diagnostics?.route)
+  const codec = formatVoiceCodecLabel(diagnostics?.codec);
+  const route = formatRouteLabel(diagnostics?.route);
 
   return (
     <dl
@@ -51,7 +52,7 @@ export function VoiceConnectionDiagnosticsDetails({
       {codec && <DiagnosticValue label={voiceCopy.dock.codec} value={codec} />}
       {route && <DiagnosticValue label={voiceCopy.dock.route} value={route} />}
     </dl>
-  )
+  );
 }
 
 function DiagnosticValue({ label, value }: { label: string; value: string }) {
@@ -60,62 +61,62 @@ function DiagnosticValue({ label, value }: { label: string; value: string }) {
       <dt>{label}</dt>
       <dd title={value}>{value}</dd>
     </div>
-  )
+  );
 }
 
 function formatMilliseconds(value: number | null | undefined) {
   return isDiagnosticNumber(value)
     ? `${compactNumberFormatter.format(value)} ${voiceCopy.dock.millisecondsShort}`
-    : voiceCopy.dock.metricUnavailable
+    : voiceCopy.dock.metricUnavailable;
 }
 
 function formatPercent(value: number | null | undefined) {
   return isDiagnosticNumber(value)
     ? `${compactNumberFormatter.format(value)}%`
-    : voiceCopy.dock.metricUnavailable
+    : voiceCopy.dock.metricUnavailable;
 }
 
 function formatBitrate(value: number | null | undefined) {
   if (!isDiagnosticNumber(value)) {
-    return voiceCopy.dock.metricUnavailable
+    return voiceCopy.dock.metricUnavailable;
   }
 
   if (value >= 1_000_000) {
-    return `${compactNumberFormatter.format(value / 1_000_000)} ${voiceCopy.dock.megabitsPerSecondShort}`
+    return `${compactNumberFormatter.format(value / 1_000_000)} ${voiceCopy.dock.megabitsPerSecondShort}`;
   }
 
   if (value >= 1_000) {
-    return `${compactNumberFormatter.format(value / 1_000)} ${voiceCopy.dock.kilobitsPerSecondShort}`
+    return `${compactNumberFormatter.format(value / 1_000)} ${voiceCopy.dock.kilobitsPerSecondShort}`;
   }
 
-  return `${compactNumberFormatter.format(value)} ${voiceCopy.dock.bitsPerSecondShort}`
+  return `${compactNumberFormatter.format(value)} ${voiceCopy.dock.bitsPerSecondShort}`;
 }
 
 function normalizeDiagnosticLabel(value: string | null | undefined) {
-  const normalized = value?.trim()
-  return normalized ? normalized : null
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
 }
 
 function formatRouteLabel(value: string | null | undefined) {
-  const normalized = normalizeDiagnosticLabel(value)
+  const normalized = normalizeDiagnosticLabel(value);
   if (!normalized) {
-    return null
+    return null;
   }
 
   return normalized
     .split(/\s*\+\s*/)
     .map(formatSingleRoute)
-    .join(' + ')
+    .join(' + ');
 }
 
 function formatSingleRoute(value: string) {
   const [path = 'unknown', protocol = 'unknown'] = value
     .trim()
     .toLowerCase()
-    .split('/')
+    .split('/');
 
   if (path === 'unknown') {
-    return voiceCopy.dock.routeUnknown
+    return voiceCopy.dock.routeUnknown;
   }
 
   const pathLabel =
@@ -123,20 +124,20 @@ function formatSingleRoute(value: string) {
       ? voiceCopy.dock.routeDirect
       : path === 'relay'
         ? voiceCopy.dock.routeRelay
-        : voiceCopy.dock.routeUnknown
+        : voiceCopy.dock.routeUnknown;
 
   if (pathLabel === voiceCopy.dock.routeUnknown) {
-    return pathLabel
+    return pathLabel;
   }
 
   const protocolLabel =
     protocol === 'unknown'
       ? voiceCopy.dock.routeUnknown
-      : protocol.toLocaleUpperCase('ru-RU')
+      : protocol.toLocaleUpperCase('ru-RU');
 
-  return `${pathLabel} · ${protocolLabel}`
+  return `${pathLabel} · ${protocolLabel}`;
 }
 
 function isDiagnosticNumber(value: number | null | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }

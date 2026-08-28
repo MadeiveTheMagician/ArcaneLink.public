@@ -1,43 +1,42 @@
-import { useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
-import { readJsonResponse } from '../../shared/api/api'
+import { useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
+
+import { readJsonResponse } from '../../shared/api/api';
 import type {
   LoginResponse,
   PublicUserProfileResponse,
   UserDeviceSessionResponse,
-  UserResponse,
-} from '../../shared/types'
-import styles from './ApiTestPage.module.css'
+  UserResponse
+} from '../../shared/types';
+
+import styles from './ApiTestPage.module.css';
 
 type ApiLogEntry = {
-  id: number
-  title: string
-  status: 'ok' | 'error'
-  detail: string
-}
+  id: number;
+  title: string;
+  status: 'ok' | 'error';
+  detail: string;
+};
 
 type TestUserForm = {
-  login: string
-  displayName: string
-  email: string
-  password: string
-  loginOrEmail: string
-  deviceName: string
-}
+  login: string;
+  displayName: string;
+  email: string;
+  password: string;
+  loginOrEmail: string;
+  deviceName: string;
+};
 
 type ProfileForm = {
-  displayName: string
-  bio: string
-  websiteUrl: string
-}
+  displayName: string;
+  bio: string;
+  websiteUrl: string;
+};
 
-const defaultPassword = 'TestPass123!'
+const defaultPassword = 'TestPass123!';
 
 function createDefaultUser(): TestUserForm {
-  const suffix = new Date()
-    .toISOString()
-    .replace(/\D/g, '')
-    .slice(4, 14)
+  const suffix = new Date().toISOString().replace(/\D/g, '').slice(4, 14);
 
   return {
     login: `api_test_${suffix}`,
@@ -45,112 +44,116 @@ function createDefaultUser(): TestUserForm {
     email: `api_test_${suffix}@example.com`,
     password: defaultPassword,
     loginOrEmail: `api_test_${suffix}`,
-    deviceName: 'ArcaneLink API Test Page',
-  }
+    deviceName: 'ArcaneLink API Test Page'
+  };
 }
 
 function formatPayload(value: unknown) {
-  return JSON.stringify(value, null, 2)
+  return JSON.stringify(value, null, 2);
 }
 
 export function ApiTestPage() {
-  const initialUser = useMemo(() => createDefaultUser(), [])
-  const [form, setForm] = useState<TestUserForm>(initialUser)
+  const initialUser = useMemo(() => createDefaultUser(), []);
+  const [form, setForm] = useState<TestUserForm>(initialUser);
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     displayName: initialUser.displayName,
     bio: 'Profile updated from API test page.',
-    websiteUrl: 'https://example.com',
-  })
-  const [accessToken, setAccessToken] = useState('')
-  const [refreshToken, setRefreshToken] = useState('')
-  const [currentUser, setCurrentUser] = useState<UserResponse | null>(null)
-  const [log, setLog] = useState<ApiLogEntry[]>([])
-  const [isBusy, setIsBusy] = useState(false)
+    websiteUrl: 'https://example.com'
+  });
+  const [accessToken, setAccessToken] = useState('');
+  const [refreshToken, setRefreshToken] = useState('');
+  const [currentUser, setCurrentUser] = useState<UserResponse | null>(null);
+  const [log, setLog] = useState<ApiLogEntry[]>([]);
+  const [isBusy, setIsBusy] = useState(false);
 
   const authHeaders = accessToken
     ? {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`
       }
-    : undefined
+    : undefined;
 
   function updateForm(field: keyof TestUserForm, value: string) {
     setForm((current) => ({
       ...current,
-      [field]: value,
-    }))
+      [field]: value
+    }));
   }
 
   function updateProfileForm(field: keyof ProfileForm, value: string) {
     setProfileForm((current) => ({
       ...current,
-      [field]: value,
-    }))
+      [field]: value
+    }));
   }
 
-  function pushLog(title: string, status: ApiLogEntry['status'], detail: unknown) {
+  function pushLog(
+    title: string,
+    status: ApiLogEntry['status'],
+    detail: unknown
+  ) {
     setLog((current) => [
       {
         id: Date.now(),
         title,
         status,
-        detail: typeof detail === 'string' ? detail : formatPayload(detail),
+        detail: typeof detail === 'string' ? detail : formatPayload(detail)
       },
-      ...current,
-    ])
+      ...current
+    ]);
   }
 
   async function runStep<T>(
     title: string,
-    request: () => Promise<T>,
+    request: () => Promise<T>
   ): Promise<T | null> {
-    setIsBusy(true)
+    setIsBusy(true);
 
     try {
-      const result = await request()
-      pushLog(title, 'ok', result ?? 'OK')
-      return result
+      const result = await request();
+      pushLog(title, 'ok', result ?? 'OK');
+      return result;
     } catch (error) {
       pushLog(
         title,
         'error',
-        error instanceof Error ? error.message : 'Request failed.',
-      )
-      return null
+        error instanceof Error ? error.message : 'Request failed.'
+      );
+      return null;
     } finally {
-      setIsBusy(false)
+      setIsBusy(false);
     }
   }
 
   async function ping() {
     await runStep('GET /ping', async () => {
-      const response = await fetch('/ping')
-      return response.text()
-    })
+      const response = await fetch('/ping');
+      return response.text();
+    });
   }
 
   async function register(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault()
+    event?.preventDefault();
 
     const user = await runStep('POST /api/auth/register', async () => {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           login: form.login,
           displayName: form.displayName,
           email: form.email,
-          password: form.password,
-        }),
-      })
+          password: form.password
+        })
+      });
 
-      return readJsonResponse<UserResponse>(response)
-    })
+      return readJsonResponse<UserResponse>(response);
+    });
 
     if (user) {
-      setCurrentUser(user)
-      updateForm('loginOrEmail', user.login)
+      setCurrentUser(user);
+      updateForm('loginOrEmail', user.login);
     }
   }
 
@@ -159,50 +162,50 @@ export function ApiTestPage() {
       const loginResponse = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           loginOrEmail: form.loginOrEmail,
           password: form.password,
-          deviceName: form.deviceName,
-        }),
-      })
+          deviceName: form.deviceName
+        })
+      });
 
-      return readJsonResponse<LoginResponse>(loginResponse)
-    })
+      return readJsonResponse<LoginResponse>(loginResponse);
+    });
 
     if (response) {
-      setAccessToken(response.accessToken)
-      setRefreshToken(response.refreshToken)
+      setAccessToken(response.accessToken);
+      setRefreshToken(response.refreshToken);
     }
   }
 
   async function loadMe() {
     const user = await runStep('GET /api/users/me', async () => {
       const response = await fetch('/api/users/me', {
-        headers: authHeaders,
-      })
+        headers: authHeaders
+      });
 
-      return readJsonResponse<UserResponse>(response)
-    })
+      return readJsonResponse<UserResponse>(response);
+    });
 
     if (user) {
-      setCurrentUser(user)
+      setCurrentUser(user);
     }
   }
 
   async function loadPublicProfile() {
-    const userId = currentUser?.id
+    const userId = currentUser?.id;
 
     if (!userId) {
-      pushLog('GET /api/users/{id}', 'error', 'Load /me first.')
-      return
+      pushLog('GET /api/users/{id}', 'error', 'Load /me first.');
+      return;
     }
 
     await runStep('GET /api/users/{id}', async () => {
-      const response = await fetch(`/api/users/${userId}`)
-      return readJsonResponse<PublicUserProfileResponse>(response)
-    })
+      const response = await fetch(`/api/users/${userId}`);
+      return readJsonResponse<PublicUserProfileResponse>(response);
+    });
   }
 
   async function updateProfile() {
@@ -211,17 +214,17 @@ export function ApiTestPage() {
         method: 'PATCH',
         headers: {
           ...authHeaders,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           displayName: profileForm.displayName,
           bio: profileForm.bio,
-          websiteUrl: profileForm.websiteUrl,
-        }),
-      })
+          websiteUrl: profileForm.websiteUrl
+        })
+      });
 
-      return readJsonResponse<PublicUserProfileResponse>(response)
-    })
+      return readJsonResponse<PublicUserProfileResponse>(response);
+    });
   }
 
   async function refresh() {
@@ -229,30 +232,30 @@ export function ApiTestPage() {
       const refreshResponse = await fetch('/api/auth/refresh', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          refreshToken,
-        }),
-      })
+          refreshToken
+        })
+      });
 
-      return readJsonResponse<LoginResponse>(refreshResponse)
-    })
+      return readJsonResponse<LoginResponse>(refreshResponse);
+    });
 
     if (response) {
-      setAccessToken(response.accessToken)
-      setRefreshToken(response.refreshToken)
+      setAccessToken(response.accessToken);
+      setRefreshToken(response.refreshToken);
     }
   }
 
   async function loadSessions() {
     await runStep('GET /api/auth/sessions', async () => {
       const response = await fetch('/api/auth/sessions', {
-        headers: authHeaders,
-      })
+        headers: authHeaders
+      });
 
-      return readJsonResponse<UserDeviceSessionResponse[]>(response)
-    })
+      return readJsonResponse<UserDeviceSessionResponse[]>(response);
+    });
   }
 
   async function logout() {
@@ -260,31 +263,31 @@ export function ApiTestPage() {
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          refreshToken,
-        }),
-      })
+          refreshToken
+        })
+      });
 
       if (!response.ok) {
-        await readJsonResponse<unknown>(response)
+        await readJsonResponse<unknown>(response);
       }
 
-      setAccessToken('')
-      setRefreshToken('')
-      return 'Logged out.'
-    })
+      setAccessToken('');
+      setRefreshToken('');
+      return 'Logged out.';
+    });
   }
 
   async function runHappyPath() {
-    await ping()
-    await register()
-    await login()
-    await loadMe()
-    await loadPublicProfile()
-    await updateProfile()
-    await loadSessions()
+    await ping();
+    await register();
+    await login();
+    await loadMe();
+    await loadPublicProfile();
+    await updateProfile();
+    await loadSessions();
   }
 
   return (
@@ -465,5 +468,5 @@ export function ApiTestPage() {
         </section>
       </section>
     </main>
-  )
+  );
 }

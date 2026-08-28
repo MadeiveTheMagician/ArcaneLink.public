@@ -1,30 +1,31 @@
-import type { AssetResponse } from '../../../../shared/types'
-import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon'
-import { profileCopy, SystemSelect } from '../../../shared/index'
-import dialogStyles from '../../../shared/styles/Dialog.module.css'
-import styles from './AssetLibraryDialog.module.css'
+import type { AssetResponse } from '../../../../shared/types';
+import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon';
+import { SystemSelect, profileCopy } from '../../../shared/index';
 
-type AvatarSort = 'newest' | 'oldest'
+import dialogStyles from '../../../shared/styles/Dialog.module.css';
+import styles from './AssetLibraryDialog.module.css';
+
+type AvatarSort = 'newest' | 'oldest';
 
 type AssetLibraryDialogProps = {
-  titleId: string
-  title: string
-  description: string
-  emptyText: string
-  loadingText: string
-  assets: AssetResponse[]
-  isLoading: boolean
-  sort: AvatarSort
-  isRounded?: boolean
-  brokenUrls?: Set<string>
-  fallbackSrc?: string
-  onSortChange: (sort: AvatarSort) => void
-  onClose: () => void
-  onSelectAsset: (asset: AssetResponse) => void
-  onDeleteAsset?: (asset: AssetResponse) => void
-  onBrokenUrl?: (url: string) => void
-  formatDate: (value: string) => string
-}
+  titleId: string;
+  title: string;
+  description: string;
+  emptyText: string;
+  loadingText: string;
+  assets: AssetResponse[];
+  isLoading: boolean;
+  sort: AvatarSort;
+  isRounded?: boolean;
+  brokenUrls?: Set<string>;
+  fallbackSrc?: string;
+  onSortChange: (sort: AvatarSort) => void;
+  onClose: () => void;
+  onSelectAsset: (asset: AssetResponse) => void;
+  onDeleteAsset?: (asset: AssetResponse) => void;
+  onBrokenUrl?: (url: string) => void;
+  formatDate: (value: string) => string;
+};
 
 export function AssetLibraryDialog({
   titleId,
@@ -43,7 +44,7 @@ export function AssetLibraryDialog({
   onSelectAsset,
   onDeleteAsset,
   onBrokenUrl,
-  formatDate,
+  formatDate
 }: AssetLibraryDialogProps) {
   return (
     <div className={dialogStyles.backdrop} role="presentation">
@@ -81,18 +82,16 @@ export function AssetLibraryDialog({
           </SystemSelect>
         </label>
 
-        <div
-          className={`${styles.list} ${isRounded ? styles.rounded : ''}`}
-        >
+        <div className={`${styles.list} ${isRounded ? styles.rounded : ''}`}>
           {isLoading ? (
             <p>{loadingText}</p>
           ) : assets.length > 0 ? (
             assets.map((asset) => {
-              const assetUrl = `/api/assets/${asset.id}/content`
+              const assetUrl = `/api/assets/${asset.id}/content`;
               const imageSrc =
                 brokenUrls?.has(assetUrl) && fallbackSrc
                   ? fallbackSrc
-                  : assetUrl
+                  : assetUrl;
 
               return (
                 <div key={asset.id} className={styles.item}>
@@ -120,7 +119,7 @@ export function AssetLibraryDialog({
                     </button>
                   )}
                 </div>
-              )
+              );
             })
           ) : (
             <p>{emptyText}</p>
@@ -128,5 +127,5 @@ export function AssetLibraryDialog({
         </div>
       </section>
     </div>
-  )
+  );
 }

@@ -1,10 +1,10 @@
 export const contextMenuBoundaryAttributes = {
-  'data-context-menu-boundary': 'true',
-} as const
+  'data-context-menu-boundary': 'true'
+} as const;
 
 type AttributeReader = {
-  getAttribute: (name: string) => string | null
-}
+  getAttribute: (name: string) => string | null;
+};
 
 function canReadAttributes(target: unknown): target is AttributeReader {
   return (
@@ -12,7 +12,7 @@ function canReadAttributes(target: unknown): target is AttributeReader {
     target !== null &&
     'getAttribute' in target &&
     typeof target.getAttribute === 'function'
-  )
+  );
 }
 
 /**
@@ -22,11 +22,13 @@ function canReadAttributes(target: unknown): target is AttributeReader {
  * those portal boundaries for pointer and scroll dismissal alike.
  */
 export function isEventInsideContextMenuBoundary(
-  event: Pick<Event, 'composedPath'>,
+  event: Pick<Event, 'composedPath'>
 ) {
-  return event.composedPath().some(
-    (target) =>
-      canReadAttributes(target) &&
-      target.getAttribute('data-context-menu-boundary') === 'true',
-  )
+  return event
+    .composedPath()
+    .some(
+      (target) =>
+        canReadAttributes(target) &&
+        target.getAttribute('data-context-menu-boundary') === 'true'
+    );
 }

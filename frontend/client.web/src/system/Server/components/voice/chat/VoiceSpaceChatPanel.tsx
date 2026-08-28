@@ -1,19 +1,20 @@
-import { SystemIcon, voiceCopy } from '../../../../shared'
+import { SystemIcon, voiceCopy } from '../../../../shared';
 import {
   ServerMessagePanel,
-  type ServerMessagePanelProps,
-} from '../../messages/ServerMessagePanel'
-import styles from './VoiceSpaceChatPanel.module.css'
+  type ServerMessagePanelProps
+} from '../../messages/ServerMessagePanel';
+
+import styles from './VoiceSpaceChatPanel.module.css';
 
 export type VoiceSpaceChatContentProps = Omit<
   ServerMessagePanelProps,
   'headerActions' | 'leadingAction' | 'titleIcon'
->
+>;
 
 type VoiceSpaceChatPanelProps = VoiceSpaceChatContentProps & {
-  placement: 'workspace' | 'detached'
-  onClose: () => void
-}
+  placement: 'workspace' | 'detached';
+  onClose: () => void;
+};
 
 export function VoiceSpaceChatPanel({
   placement,
@@ -38,5 +39,5 @@ export function VoiceSpaceChatPanel({
         }
       />
     </div>
-  )
+  );
 }

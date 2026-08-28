@@ -108,7 +108,8 @@
 }
 
 .authPasswordToggle:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 22%);
+  outline: 1px solid
+    color-mix(in srgb, var(--theme-accent-light), transparent 22%);
   outline-offset: 2px;
 }
 
@@ -123,8 +124,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-accent), transparent 36%);
   border-radius: 9px;
   color: #fff;
-  background:
-    var(--theme-surface-accent);
+  background: var(--theme-surface-accent);
   box-shadow:
     0 16px 36px var(--theme-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
@@ -211,7 +211,6 @@
     font-size: 17px;
     margin-top: auto;
   }
-
 }
 
 @media (max-width: 390px) {

@@ -2,53 +2,50 @@ import type {
   FriendRequestResponse,
   FriendUserResponse,
   ServerMemberResponse,
-  UserFriendResponse,
-} from '../../../../shared/types'
-import {
-  communityCopy,
-  SystemTabPanel,
-  SystemTabs,
-} from '../../../shared'
-import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel'
-import shellStyles from './CommunityShell.module.css'
-import { toggleStringInList } from './communityFilters'
-import type { CommunityTab } from './communityTypes'
-import { BlacklistCommunityTab } from './BlacklistCommunityTab'
-import { FriendsCommunityTab } from './FriendsCommunityTab'
-import { PeopleCommunityTab } from './PeopleCommunityTab'
-import { useCommunityDiscovery } from './useCommunityDiscovery'
+  UserFriendResponse
+} from '../../../../shared/types';
+import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel';
+import { SystemTabPanel, SystemTabs, communityCopy } from '../../../shared';
+import { BlacklistCommunityTab } from './BlacklistCommunityTab';
+import { FriendsCommunityTab } from './FriendsCommunityTab';
+import { PeopleCommunityTab } from './PeopleCommunityTab';
+import { toggleStringInList } from './communityFilters';
+import type { CommunityTab } from './communityTypes';
+import { useCommunityDiscovery } from './useCommunityDiscovery';
+
+import shellStyles from './CommunityShell.module.css';
 
 const communityTabs: Array<{ label: string; value: CommunityTab }> = [
   { label: communityCopy.tabs.friends, value: 'friends' },
   { label: communityCopy.tabs.people, value: 'people' },
-  { label: communityCopy.tabs.blocklist, value: 'blocklist' },
-]
+  { label: communityCopy.tabs.blocklist, value: 'blocklist' }
+];
 
 export type CommunityViewProps = {
-  accessToken: string
-  activeTab: CommunityTab
-  friendNotice: string | null
-  friendSearchQuery: string
-  friendUserIds: Set<string>
-  friends: UserFriendResponse[]
-  incomingFriendRequests: FriendRequestResponse[]
-  isLoadingFriends: boolean
-  isMutatingFriends: boolean
-  isSearchingUsers: boolean
-  outgoingFriendRequests: FriendRequestResponse[]
-  pendingOutgoingUserIds: Set<string>
-  visibleServerMemberships: ServerMemberResponse[]
-  voice: VoiceChannelController
-  onAcceptFriendRequest: (requestId: string) => void
-  onCancelFriendRequest: (requestId: string) => void
-  onDeclineFriendRequest: (requestId: string) => void
-  onFriendSearchQueryChange: (query: string) => void
-  onOpenDirectSpace: (userId: string) => void
-  onStartDirectVoice: (user: FriendUserResponse) => void
-  onRemoveFriend: (userId: string) => void
-  onSendFriendRequest: (userId: string) => void
-  onTabChange: (tab: CommunityTab) => void
-}
+  accessToken: string;
+  activeTab: CommunityTab;
+  friendNotice: string | null;
+  friendSearchQuery: string;
+  friendUserIds: Set<string>;
+  friends: UserFriendResponse[];
+  incomingFriendRequests: FriendRequestResponse[];
+  isLoadingFriends: boolean;
+  isMutatingFriends: boolean;
+  isSearchingUsers: boolean;
+  outgoingFriendRequests: FriendRequestResponse[];
+  pendingOutgoingUserIds: Set<string>;
+  visibleServerMemberships: ServerMemberResponse[];
+  voice: VoiceChannelController;
+  onAcceptFriendRequest: (requestId: string) => void;
+  onCancelFriendRequest: (requestId: string) => void;
+  onDeclineFriendRequest: (requestId: string) => void;
+  onFriendSearchQueryChange: (query: string) => void;
+  onOpenDirectSpace: (userId: string) => void;
+  onStartDirectVoice: (user: FriendUserResponse) => void;
+  onRemoveFriend: (userId: string) => void;
+  onSendFriendRequest: (userId: string) => void;
+  onTabChange: (tab: CommunityTab) => void;
+};
 
 export function CommunityView({
   accessToken,
@@ -73,7 +70,7 @@ export function CommunityView({
   onStartDirectVoice,
   onRemoveFriend,
   onSendFriendRequest,
-  onTabChange,
+  onTabChange
 }: CommunityViewProps) {
   const {
     discoveredPeople,
@@ -86,12 +83,12 @@ export function CommunityView({
     setPeopleOnlineOnly,
     setPeopleScope,
     setPeopleSort,
-    setSelectedTagIds,
+    setSelectedTagIds
   } = useCommunityDiscovery({
     accessToken,
     activeTab,
-    peopleSearchQuery: friendSearchQuery,
-  })
+    peopleSearchQuery: friendSearchQuery
+  });
   return (
     <div className={shellStyles.communityContainer}>
       <section className={shellStyles.communitySurface}>
@@ -112,9 +109,7 @@ export function CommunityView({
         <SystemTabPanel
           className={[
             shellStyles.communityTabPanel,
-            friendNotice
-              ? shellStyles.communityTabPanelWithNotice
-              : '',
+            friendNotice ? shellStyles.communityTabPanelWithNotice : ''
           ].join(' ')}
           idBase="community"
           value={activeTab}
@@ -144,7 +139,7 @@ export function CommunityView({
               onStartDirectVoice={onStartDirectVoice}
               onToggleTag={(tagId) =>
                 setSelectedTagIds((current) =>
-                  toggleStringInList(current, tagId),
+                  toggleStringInList(current, tagId)
                 )
               }
             />
@@ -176,7 +171,7 @@ export function CommunityView({
               onSendFriendRequest={onSendFriendRequest}
               onToggleTag={(tagId) =>
                 setSelectedTagIds((current) =>
-                  toggleStringInList(current, tagId),
+                  toggleStringInList(current, tagId)
                 )
               }
             />
@@ -188,5 +183,5 @@ export function CommunityView({
         </SystemTabPanel>
       </section>
     </div>
-  )
+  );
 }

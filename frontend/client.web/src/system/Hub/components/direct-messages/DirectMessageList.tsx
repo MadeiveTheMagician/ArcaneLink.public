@@ -1,56 +1,59 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import { useDraggable, useDroppable } from '@dnd-kit/core'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type {
   DragEvent as ReactDragEvent,
   MouseEvent as ReactMouseEvent,
   Ref,
-  UIEventHandler,
-} from 'react'
-import type { PrivateSpaceResponse } from '../../../../shared/types'
-import type { FolderDropPlacement } from '../private-space/folders/PrivateSpaceFolderDragArea'
-import { commonCopy } from '../../../shared/copy/common.ru'
-import { communityCopy } from '../../../shared/copy/community.ru'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import { PresenceName } from '../../../shared/ui/PresenceDot'
-import { UnreadBadge } from '../../../shared/ui/UnreadBadge'
+  UIEventHandler
+} from 'react';
+
+import { useDraggable, useDroppable } from '@dnd-kit/core';
+
+import type { PrivateSpaceResponse } from '../../../../shared/types';
+import { commonCopy } from '../../../shared/copy/common.ru';
+import { communityCopy } from '../../../shared/copy/community.ru';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
 import {
   hasOpenBlockingModal,
-  resolveMessageAssetDropDisposition,
-} from '../../../shared/messages/messageAssetDropModel'
-import { PrivateSpaceAvatar } from './DirectMessageAvatar'
+  resolveMessageAssetDropDisposition
+} from '../../../shared/messages/messageAssetDropModel';
+import { PresenceName } from '../../../shared/ui/PresenceDot';
+import { UnreadBadge } from '../../../shared/ui/UnreadBadge';
+import type { FolderDropPlacement } from '../private-space/folders/PrivateSpaceFolderDragArea';
+import { PrivateSpaceAvatar } from './DirectMessageAvatar';
+import { PrivateSpaceListTooltip } from './PrivateSpaceListTooltip';
 import {
   formatPrivateSpaceTime,
   getPrivateSpacePresenceStatus,
   getPrivateSpacePreview,
   getPrivateSpaceTitle,
   getPrivateSpaceTooltipModel,
-  resolvePrivateSpaceMuteState,
-} from './directMessageModel'
-import type { PrivateSpaceTooltipModel } from './directMessageModel'
-import { PrivateSpaceListTooltip } from './PrivateSpaceListTooltip'
-import styles from './DirectMessagesPanel.module.css'
+  resolvePrivateSpaceMuteState
+} from './directMessageModel';
+import type { PrivateSpaceTooltipModel } from './directMessageModel';
 
-const fileHoverOpenDelayMs = 500
+import styles from './DirectMessagesPanel.module.css';
+
+const fileHoverOpenDelayMs = 500;
 
 type DirectMessageListProps = {
-  currentUserId: string
-  activePrivateSpaceId: string | null
-  privateSpaces: PrivateSpaceResponse[]
-  isLoadingPrivateSpaces: boolean
-  listRef?: Ref<HTMLDivElement>
-  onScroll?: UIEventHandler<HTMLDivElement>
-  onOpenPrivateSpace: (spaceId: string) => void
-  onDropFilesToPrivateSpace: (spaceId: string, files: File[]) => void
+  currentUserId: string;
+  activePrivateSpaceId: string | null;
+  privateSpaces: PrivateSpaceResponse[];
+  isLoadingPrivateSpaces: boolean;
+  listRef?: Ref<HTMLDivElement>;
+  onScroll?: UIEventHandler<HTMLDivElement>;
+  onOpenPrivateSpace: (spaceId: string) => void;
+  onDropFilesToPrivateSpace: (spaceId: string, files: File[]) => void;
   onOpenContextMenu: (
     event: ReactMouseEvent<HTMLButtonElement>,
-    space: PrivateSpaceResponse,
-  ) => void
-  folderDragEnabled?: boolean
-  activeDragSpaceId?: string | null
-  overSpaceId?: string | null
-  dropPlacement?: FolderDropPlacement | null
-  pinnedSpaceIds?: ReadonlySet<string>
-}
+    space: PrivateSpaceResponse
+  ) => void;
+  folderDragEnabled?: boolean;
+  activeDragSpaceId?: string | null;
+  overSpaceId?: string | null;
+  dropPlacement?: FolderDropPlacement | null;
+  pinnedSpaceIds?: ReadonlySet<string>;
+};
 
 export function DirectMessageList({
   currentUserId,
@@ -66,178 +69,177 @@ export function DirectMessageList({
   activeDragSpaceId = null,
   overSpaceId = null,
   dropPlacement = null,
-  pinnedSpaceIds = new Set<string>(),
+  pinnedSpaceIds = new Set<string>()
 }: DirectMessageListProps) {
   const [fileDropTargetSpaceId, setFileDropTargetSpaceId] = useState<
     string | null
-  >(null)
+  >(null);
   const fileHoverOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  )
-  const fileHoverSpaceIdRef = useRef<string | null>(null)
-  const [muteClockMs, setMuteClockMs] = useState(() => Date.now())
+    null
+  );
+  const fileHoverSpaceIdRef = useRef<string | null>(null);
+  const [muteClockMs, setMuteClockMs] = useState(() => Date.now());
   const pinnedSpaces = privateSpaces.filter((space) =>
-    pinnedSpaceIds.has(space.spaceId),
-  )
+    pinnedSpaceIds.has(space.spaceId)
+  );
   const regularSpaces = privateSpaces.filter(
-    (space) => !pinnedSpaceIds.has(space.spaceId),
-  )
-  const orderedSpaces = [...pinnedSpaces, ...regularSpaces]
+    (space) => !pinnedSpaceIds.has(space.spaceId)
+  );
+  const orderedSpaces = [...pinnedSpaces, ...regularSpaces];
 
   useEffect(
     () => () => {
       if (fileHoverOpenTimerRef.current) {
-        clearTimeout(fileHoverOpenTimerRef.current)
+        clearTimeout(fileHoverOpenTimerRef.current);
       }
     },
-    [],
-  )
+    []
+  );
 
   useEffect(() => {
     const finiteMuteRemaining = privateSpaces.flatMap((space) => {
       const state = resolvePrivateSpaceMuteState(
         space.viewerSettings,
-        muteClockMs,
-      )
+        muteClockMs
+      );
       return state.isMuted && !state.isIndefinite && state.remainingMs != null
         ? [state.remainingMs]
-        : []
-    })
+        : [];
+    });
 
     if (finiteMuteRemaining.length === 0) {
-      return undefined
+      return undefined;
     }
 
     const refreshDelay = Math.max(
       250,
       finiteMuteRemaining.reduce(
-        (nextRefresh, remainingMs) =>
-          Math.min(nextRefresh, remainingMs),
-        60_000,
-      ),
-    )
+        (nextRefresh, remainingMs) => Math.min(nextRefresh, remainingMs),
+        60_000
+      )
+    );
     const refreshTimer = window.setTimeout(
       () => setMuteClockMs(Date.now()),
-      refreshDelay,
-    )
-    return () => window.clearTimeout(refreshTimer)
-  }, [muteClockMs, privateSpaces])
+      refreshDelay
+    );
+    return () => window.clearTimeout(refreshTimer);
+  }, [muteClockMs, privateSpaces]);
 
   function cancelFileHoverOpen(spaceId?: string) {
     if (spaceId && fileHoverSpaceIdRef.current !== spaceId) {
-      return
+      return;
     }
 
     if (fileHoverOpenTimerRef.current) {
-      clearTimeout(fileHoverOpenTimerRef.current)
-      fileHoverOpenTimerRef.current = null
+      clearTimeout(fileHoverOpenTimerRef.current);
+      fileHoverOpenTimerRef.current = null;
     }
 
-    fileHoverSpaceIdRef.current = null
+    fileHoverSpaceIdRef.current = null;
   }
 
   function scheduleFileHoverOpen(spaceId: string) {
     if (activePrivateSpaceId === spaceId) {
-      cancelFileHoverOpen()
-      return
+      cancelFileHoverOpen();
+      return;
     }
 
     if (fileHoverSpaceIdRef.current === spaceId) {
-      return
+      return;
     }
 
-    cancelFileHoverOpen()
-    fileHoverSpaceIdRef.current = spaceId
+    cancelFileHoverOpen();
+    fileHoverSpaceIdRef.current = spaceId;
     fileHoverOpenTimerRef.current = setTimeout(() => {
-      fileHoverOpenTimerRef.current = null
+      fileHoverOpenTimerRef.current = null;
 
       if (fileHoverSpaceIdRef.current !== spaceId) {
-        return
+        return;
       }
 
-      onOpenPrivateSpace(spaceId)
-    }, fileHoverOpenDelayMs)
+      onOpenPrivateSpace(spaceId);
+    }, fileHoverOpenDelayMs);
   }
 
   function hasDraggedFiles(event: ReactDragEvent<HTMLElement>) {
-    return Array.from(event.dataTransfer.types).includes('Files')
+    return Array.from(event.dataTransfer.types).includes('Files');
   }
 
   function getFileDropDisposition(event: ReactDragEvent<HTMLElement>) {
     return resolveMessageAssetDropDisposition({
       canAccept: true,
       hasFiles: hasDraggedFiles(event),
-      isBlockingModalOpen: hasOpenBlockingModal(document),
-    })
+      isBlockingModalOpen: hasOpenBlockingModal(document)
+    });
   }
 
   function activateFileDrop(
     event: ReactDragEvent<HTMLButtonElement>,
-    spaceId: string,
+    spaceId: string
   ) {
-    const disposition = getFileDropDisposition(event)
-    if (disposition === 'ignore') return
+    const disposition = getFileDropDisposition(event);
+    if (disposition === 'ignore') return;
 
-    event.preventDefault()
-    event.stopPropagation()
+    event.preventDefault();
+    event.stopPropagation();
     if (disposition === 'reject') {
-      event.dataTransfer.dropEffect = 'none'
-      cancelFileHoverOpen()
-      setFileDropTargetSpaceId(null)
-      return
+      event.dataTransfer.dropEffect = 'none';
+      cancelFileHoverOpen();
+      setFileDropTargetSpaceId(null);
+      return;
     }
 
-    event.dataTransfer.dropEffect = 'copy'
-    setFileDropTargetSpaceId(spaceId)
-    scheduleFileHoverOpen(spaceId)
+    event.dataTransfer.dropEffect = 'copy';
+    setFileDropTargetSpaceId(spaceId);
+    scheduleFileHoverOpen(spaceId);
   }
 
   function clearFileDrop(
     event: ReactDragEvent<HTMLButtonElement>,
-    spaceId: string,
+    spaceId: string
   ) {
     if (!hasDraggedFiles(event)) {
-      return
+      return;
     }
 
-    const nextTarget = event.relatedTarget
+    const nextTarget = event.relatedTarget;
     if (
       nextTarget instanceof Node &&
       event.currentTarget.contains(nextTarget)
     ) {
-      return
+      return;
     }
 
-    cancelFileHoverOpen(spaceId)
+    cancelFileHoverOpen(spaceId);
     setFileDropTargetSpaceId((current) =>
-      current === spaceId ? null : current,
-    )
+      current === spaceId ? null : current
+    );
   }
 
   function dropFiles(
     event: ReactDragEvent<HTMLButtonElement>,
-    spaceId: string,
+    spaceId: string
   ) {
-    const disposition = getFileDropDisposition(event)
-    if (disposition === 'ignore') return
+    const disposition = getFileDropDisposition(event);
+    if (disposition === 'ignore') return;
 
-    event.preventDefault()
-    event.stopPropagation()
-    cancelFileHoverOpen()
-    setFileDropTargetSpaceId(null)
+    event.preventDefault();
+    event.stopPropagation();
+    cancelFileHoverOpen();
+    setFileDropTargetSpaceId(null);
     if (disposition === 'reject') {
-      event.dataTransfer.dropEffect = 'none'
-      return
+      event.dataTransfer.dropEffect = 'none';
+      return;
     }
 
-    const files = Array.from(event.dataTransfer.files)
+    const files = Array.from(event.dataTransfer.files);
 
     if (files.length === 0) {
-      onOpenPrivateSpace(spaceId)
-      return
+      onOpenPrivateSpace(spaceId);
+      return;
     }
 
-    onDropFilesToPrivateSpace(spaceId, files)
+    onDropFilesToPrivateSpace(spaceId, files);
   }
 
   return (
@@ -253,19 +255,19 @@ export function DirectMessageList({
         <p className="ui-empty-state">{communityCopy.direct.noMessages}</p>
       )}
       {orderedSpaces.map((space, index) => {
-        const title = getPrivateSpaceTitle(space, currentUserId)
-        const isPinned = pinnedSpaceIds.has(space.spaceId)
+        const title = getPrivateSpaceTitle(space, currentUserId);
+        const isPinned = pinnedSpaceIds.has(space.spaceId);
         const presenceStatus = getPrivateSpacePresenceStatus(
           space,
-          currentUserId,
-        )
-        const preview = getPrivateSpacePreview(space)
+          currentUserId
+        );
+        const preview = getPrivateSpacePreview(space);
         const muteState = resolvePrivateSpaceMuteState(
           space.viewerSettings,
-          muteClockMs,
-        )
-        const lastMessageTime = space.lastMessage?.createdAt ?? space.updatedAt
-        const hasAttachment = Boolean(space.lastMessage?.assets.length)
+          muteClockMs
+        );
+        const lastMessageTime = space.lastMessage?.createdAt ?? space.updatedAt;
+        const hasAttachment = Boolean(space.lastMessage?.assets.length);
 
         return (
           <Fragment key={space.spaceId}>
@@ -349,10 +351,10 @@ export function DirectMessageList({
               </span>
             </DraggableDirectMessage>
           </Fragment>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 function DraggableDirectMessage({
@@ -365,56 +367,50 @@ function DraggableDirectMessage({
   children,
   ...buttonProps
 }: {
-  space: PrivateSpaceResponse
-  disabled: boolean
-  isDropTarget: boolean
-  dropPlacement: FolderDropPlacement | null
-  tooltip: PrivateSpaceTooltipModel
-  className: string
-  children: React.ReactNode
+  space: PrivateSpaceResponse;
+  disabled: boolean;
+  isDropTarget: boolean;
+  dropPlacement: FolderDropPlacement | null;
+  tooltip: PrivateSpaceTooltipModel;
+  className: string;
+  children: React.ReactNode;
 } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'disabled'>) {
   const overlay = (
-    <div className={`${className} ${styles.dragOverlayItem}`}>
-      {children}
-    </div>
-  )
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false)
+    <div className={`${className} ${styles.dragOverlayItem}`}>{children}</div>
+  );
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `private-space:${space.spaceId}`,
     disabled,
     data: {
       dragType: 'private-space',
       spaceId: space.spaceId,
-      overlay,
-    },
-  })
+      overlay
+    }
+  });
   const { setNodeRef: setDroppableRef } = useDroppable({
     id: `private-space-drop:${space.spaceId}`,
     disabled,
-    data: { spaceId: space.spaceId },
-  })
+    data: { spaceId: space.spaceId }
+  });
   const setCombinedNodeRef = useCallback(
     (node: HTMLButtonElement | null) => {
-      buttonRef.current = node
-      setNodeRef(node)
-      setDroppableRef(node)
+      buttonRef.current = node;
+      setNodeRef(node);
+      setDroppableRef(node);
     },
-    [setDroppableRef, setNodeRef],
-  )
+    [setDroppableRef, setNodeRef]
+  );
   return (
     <>
       <button
         ref={setCombinedNodeRef}
         data-private-space-drag-source
         className={`${className} ${isDragging ? styles.folderDragging : ''} ${
-          isDropTarget && dropPlacement === 'before'
-            ? styles.reorderBefore
-            : ''
+          isDropTarget && dropPlacement === 'before' ? styles.reorderBefore : ''
         } ${
-          isDropTarget && dropPlacement === 'after'
-            ? styles.reorderAfter
-            : ''
+          isDropTarget && dropPlacement === 'after' ? styles.reorderAfter : ''
         }`}
         type="button"
         {...buttonProps}
@@ -424,26 +420,26 @@ function DraggableDirectMessage({
           [
             attributes['aria-describedby'],
             buttonProps['aria-describedby'],
-            isTooltipOpen ? `private-space-tooltip-${space.spaceId}` : null,
+            isTooltipOpen ? `private-space-tooltip-${space.spaceId}` : null
           ]
             .filter(Boolean)
             .join(' ') || undefined
         }
         onPointerEnter={(event) => {
-          setIsTooltipOpen(true)
-          buttonProps.onPointerEnter?.(event)
+          setIsTooltipOpen(true);
+          buttonProps.onPointerEnter?.(event);
         }}
         onPointerLeave={(event) => {
-          setIsTooltipOpen(false)
-          buttonProps.onPointerLeave?.(event)
+          setIsTooltipOpen(false);
+          buttonProps.onPointerLeave?.(event);
         }}
         onFocus={(event) => {
-          setIsTooltipOpen(true)
-          buttonProps.onFocus?.(event)
+          setIsTooltipOpen(true);
+          buttonProps.onFocus?.(event);
         }}
         onBlur={(event) => {
-          setIsTooltipOpen(false)
-          buttonProps.onBlur?.(event)
+          setIsTooltipOpen(false);
+          buttonProps.onBlur?.(event);
         }}
       >
         {children}
@@ -455,5 +451,5 @@ function DraggableDirectMessage({
         model={tooltip}
       />
     </>
-  )
+  );
 }

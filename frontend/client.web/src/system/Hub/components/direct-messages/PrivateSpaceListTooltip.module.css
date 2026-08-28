@@ -18,7 +18,11 @@
     ),
     linear-gradient(
       145deg,
-      color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 8%),
+      color-mix(
+        in srgb,
+        var(--theme-control-bg-strong),
+        var(--theme-accent) 8%
+      ),
       var(--theme-surface-raised)
     );
   box-shadow:
@@ -29,7 +33,7 @@
   backdrop-filter: blur(12px);
 }
 
-.tooltip[data-placement="left"] {
+.tooltip[data-placement='left'] {
   animation-name: privateSpaceTooltipEnterLeft;
 }
 
@@ -57,13 +61,12 @@
 
 .separator {
   height: 1px;
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in srgb, var(--theme-accent), transparent 46%),
-      transparent
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--theme-accent), transparent 46%),
+    transparent
+  );
 }
 
 @keyframes privateSpaceTooltipEnter {

@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes'
-import type { VoiceTransmissionQualityProfile } from '../../../shared/voice/voiceSettings'
-import { settingsCopy } from '../../../shared/copy'
-import { VoiceConnectionStatusIcon } from '../../../shared/icons/VoiceConnectionStatusIcon'
-import { voiceDiagnosticsSettingsTargetId } from '../../../shared/navigation/systemSettingsNavigation'
-import { VoiceConnectionDiagnosticsDetails } from '../voice/VoiceConnectionDiagnosticsDetails'
-import { SettingsSection } from './SystemSettingsControls'
-import sharedStyles from './SystemSettingsControls.module.css'
-import styles from './VoiceConnectionDiagnosticsSettings.module.css'
+import { useEffect, useMemo, useState } from 'react';
+
+import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes';
+import { settingsCopy } from '../../../shared/copy';
+import { VoiceConnectionStatusIcon } from '../../../shared/icons/VoiceConnectionStatusIcon';
+import { voiceDiagnosticsSettingsTargetId } from '../../../shared/navigation/systemSettingsNavigation';
+import type { VoiceTransmissionQualityProfile } from '../../../shared/voice/voiceSettings';
+import { VoiceConnectionDiagnosticsDetails } from '../voice/VoiceConnectionDiagnosticsDetails';
+import { SettingsSection } from './SystemSettingsControls';
 import {
   createPrivacySafeVoiceDiagnosticsReport,
   createVoiceTransmissionLimitSummary,
@@ -15,71 +14,72 @@ import {
   formatPrivacySafeVoiceRoute,
   formatVoiceDiagnosticsSampleTime,
   getVoiceDiagnosticsQualityDescription,
-  getVoiceDiagnosticsQualityLabel,
-} from './voiceConnectionDiagnosticsPresentation'
+  getVoiceDiagnosticsQualityLabel
+} from './voiceConnectionDiagnosticsPresentation';
+
+import sharedStyles from './SystemSettingsControls.module.css';
+import styles from './VoiceConnectionDiagnosticsSettings.module.css';
 
 type VoiceConnectionDiagnosticsSettingsProps = {
-  diagnostics: VoiceConnectionDiagnostics | null
-  qualityProfile: VoiceTransmissionQualityProfile
-  adaptiveQuality: boolean
-}
+  diagnostics: VoiceConnectionDiagnostics | null;
+  qualityProfile: VoiceTransmissionQualityProfile;
+  adaptiveQuality: boolean;
+};
 
-type CopyStatus = 'idle' | 'success' | 'error'
+type CopyStatus = 'idle' | 'success' | 'error';
 
 export function VoiceConnectionDiagnosticsSettings({
   diagnostics,
   qualityProfile,
-  adaptiveQuality,
+  adaptiveQuality
 }: VoiceConnectionDiagnosticsSettingsProps) {
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
-  const qualityState = diagnostics?.qualityState ?? 'disconnected'
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle');
+  const qualityState = diagnostics?.qualityState ?? 'disconnected';
   const transmissionSummary = useMemo(
     () =>
       createVoiceTransmissionLimitSummary({
         diagnostics,
         qualityProfile,
-        adaptiveQuality,
+        adaptiveQuality
       }),
-    [adaptiveQuality, diagnostics, qualityProfile],
-  )
+    [adaptiveQuality, diagnostics, qualityProfile]
+  );
   const safeDiagnostics = useMemo(
     () =>
       diagnostics
         ? {
             ...diagnostics,
             codec: formatPrivacySafeVoiceCodec(diagnostics.codec),
-            route: formatPrivacySafeVoiceRoute(diagnostics.route),
+            route: formatPrivacySafeVoiceRoute(diagnostics.route)
           }
         : null,
-    [diagnostics],
-  )
-  const sampleTime = formatVoiceDiagnosticsSampleTime(
-    diagnostics?.sampledAtMs,
-  )
+    [diagnostics]
+  );
+  const sampleTime = formatVoiceDiagnosticsSampleTime(diagnostics?.sampledAtMs);
 
   useEffect(() => {
-    if (copyStatus === 'idle') return undefined
+    if (copyStatus === 'idle') return undefined;
 
-    const resetTimer = window.setTimeout(() => setCopyStatus('idle'), 3_500)
-    return () => window.clearTimeout(resetTimer)
-  }, [copyStatus])
+    const resetTimer = window.setTimeout(() => setCopyStatus('idle'), 3_500);
+    return () => window.clearTimeout(resetTimer);
+  }, [copyStatus]);
 
   async function copyDiagnosticReport() {
     const report = createPrivacySafeVoiceDiagnosticsReport({
       diagnostics,
       qualityProfile,
-      adaptiveQuality,
-    })
+      adaptiveQuality
+    });
 
     try {
       if (!navigator.clipboard?.writeText) {
-        throw new TypeError()
+        throw new TypeError();
       }
 
-      await navigator.clipboard.writeText(report)
-      setCopyStatus('success')
+      await navigator.clipboard.writeText(report);
+      setCopyStatus('success');
     } catch {
-      setCopyStatus('error')
+      setCopyStatus('error');
     }
   }
 
@@ -113,7 +113,7 @@ export function VoiceConnectionDiagnosticsSettings({
                 diagnostics
                   ? settingsCopy.voice.diagnosticsConnectedPeersValue(
                       diagnostics.connectedPeerCount,
-                      diagnostics.peerCount,
+                      diagnostics.peerCount
                     )
                   : settingsCopy.voice.diagnosticsMetricUnavailable
               }
@@ -162,17 +162,17 @@ export function VoiceConnectionDiagnosticsSettings({
         </div>
       </SettingsSection>
     </div>
-  )
+  );
 }
 
 function SummaryValue({
   label,
   value,
-  hint,
+  hint
 }: {
-  label: string
-  value: string
-  hint?: string
+  label: string;
+  value: string;
+  hint?: string;
 }) {
   return (
     <div className={styles.summaryValue}>
@@ -180,5 +180,5 @@ function SummaryValue({
       <dd>{value}</dd>
       {hint ? <small>{hint}</small> : null}
     </div>
-  )
+  );
 }

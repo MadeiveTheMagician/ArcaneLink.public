@@ -1,53 +1,55 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import { notificationCopy } from '../../../shared/copy'
-import type { WebNotificationItem } from './webNotificationModel'
-import styles from './HubServerInvitePreview.module.css'
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { notificationCopy } from '../../../shared/copy';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
+import type { WebNotificationItem } from './webNotificationModel';
+
+import styles from './HubServerInvitePreview.module.css';
 
 type HubServerInvitePreviewProps = {
-  notification: WebNotificationItem
-  onAccept: (inviteId: string) => Promise<void> | void
-  onDecline: (inviteId: string) => Promise<void> | void
-  onClose: () => void
-  onDismiss: (id: string) => void
-}
+  notification: WebNotificationItem;
+  onAccept: (inviteId: string) => Promise<void> | void;
+  onDecline: (inviteId: string) => Promise<void> | void;
+  onClose: () => void;
+  onDismiss: (id: string) => void;
+};
 
-const countFormatter = new Intl.NumberFormat(notificationCopy.locale)
-const CLOSE_ANIMATION_DURATION_MS = 240
+const countFormatter = new Intl.NumberFormat(notificationCopy.locale);
+const CLOSE_ANIMATION_DURATION_MS = 240;
 
 export function HubServerInvitePreview({
   notification,
   onAccept,
   onDecline,
   onClose,
-  onDismiss,
+  onDismiss
 }: HubServerInvitePreviewProps) {
-  const [isClosing, setIsClosing] = useState(false)
-  const closeTimerRef = useRef<number | null>(null)
+  const [isClosing, setIsClosing] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
   const iconUrl = notification.serverIconAssetId
     ? `/api/assets/${notification.serverIconAssetId}/content`
-    : null
+    : null;
 
   useEffect(
     () => () => {
       if (closeTimerRef.current !== null) {
-        window.clearTimeout(closeTimerRef.current)
+        window.clearTimeout(closeTimerRef.current);
       }
     },
-    [],
-  )
+    []
+  );
 
   const requestClose = useCallback(() => {
     if (closeTimerRef.current !== null) {
-      return
+      return;
     }
 
-    setIsClosing(true)
+    setIsClosing(true);
     closeTimerRef.current = window.setTimeout(() => {
-      closeTimerRef.current = null
-      onClose()
-    }, CLOSE_ANIMATION_DURATION_MS)
-  }, [onClose])
+      closeTimerRef.current = null;
+      onClose();
+    }, CLOSE_ANIMATION_DURATION_MS);
+  }, [onClose]);
 
   return (
     <div
@@ -80,7 +82,7 @@ export function HubServerInvitePreview({
                     -50 + (notification.serverIconCropOffsetX ?? 0) * 100
                   }%, ${
                     -50 + (notification.serverIconCropOffsetY ?? 0) * 100
-                  }%) scale(${notification.serverIconCropZoom ?? 1})`,
+                  }%) scale(${notification.serverIconCropZoom ?? 1})`
                 }}
               />
             ) : (
@@ -118,15 +120,15 @@ export function HubServerInvitePreview({
             type="button"
             onClick={() => {
               if (!notification.inviteId) {
-                return
+                return;
               }
 
               void Promise.resolve(onAccept(notification.inviteId))
                 .then(() => {
-                  onDismiss(notification.id)
-                  requestClose()
+                  onDismiss(notification.id);
+                  requestClose();
                 })
-                .catch(() => undefined)
+                .catch(() => undefined);
             }}
           >
             {notificationCopy.actions.acceptInvitation}
@@ -136,15 +138,15 @@ export function HubServerInvitePreview({
             type="button"
             onClick={() => {
               if (!notification.inviteId) {
-                return
+                return;
               }
 
               void Promise.resolve(onDecline(notification.inviteId))
                 .then(() => {
-                  onDismiss(notification.id)
-                  requestClose()
+                  onDismiss(notification.id);
+                  requestClose();
                 })
-                .catch(() => undefined)
+                .catch(() => undefined);
             }}
           >
             {notificationCopy.actions.decline}
@@ -155,5 +157,5 @@ export function HubServerInvitePreview({
         </div>
       </section>
     </div>
-  )
+  );
 }

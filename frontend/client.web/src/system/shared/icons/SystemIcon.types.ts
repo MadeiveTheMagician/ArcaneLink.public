@@ -17,8 +17,8 @@ export const navigationIconNames = [
   'plus',
   'search',
   'sliders',
-  'trash',
-] as const
+  'trash'
+] as const;
 
 export const communicationIconNames = [
   'camera',
@@ -41,8 +41,8 @@ export const communicationIconNames = [
   'send',
   'smile',
   'speaker',
-  'video',
-] as const
+  'video'
+] as const;
 
 export const identityIconNames = [
   'friends',
@@ -53,15 +53,13 @@ export const identityIconNames = [
   'settings',
   'user',
   'user-plus',
-  'unlock',
-] as const
+  'unlock'
+] as const;
 
-export type NavigationIconName = (typeof navigationIconNames)[number]
-export type CommunicationIconName = (typeof communicationIconNames)[number]
-export type IdentityIconName = (typeof identityIconNames)[number]
+export type NavigationIconName = (typeof navigationIconNames)[number];
+export type CommunicationIconName = (typeof communicationIconNames)[number];
+export type IdentityIconName = (typeof identityIconNames)[number];
 export type SystemIconName =
-  | NavigationIconName
-  | CommunicationIconName
-  | IdentityIconName
+  NavigationIconName | CommunicationIconName | IdentityIconName;
 
-export type SystemIconSize = 'small' | 'medium' | 'large' | number
+export type SystemIconSize = 'small' | 'medium' | 'large' | number;

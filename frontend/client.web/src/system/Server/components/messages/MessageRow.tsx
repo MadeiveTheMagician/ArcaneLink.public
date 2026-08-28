@@ -1,39 +1,36 @@
-import {
-  type CSSProperties,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
+
 import type {
   MessageDisplayFormat,
   SpaceMessageAssetResponse,
   SpaceMessageMentionResponse,
-  SpaceMessageResponse,
-} from '../../../../shared/types'
+  SpaceMessageResponse
+} from '../../../../shared/types';
 import {
+  SystemIcon,
   commonCopy,
   defaultMessageBubbleAlignment,
   defaultMessageBubbleWidth,
   isMessageBubbleRightAligned,
-  serverCopy,
-  SystemIcon,
-} from '../../../shared'
+  serverCopy
+} from '../../../shared';
 import type {
   MessageBubbleAlignment,
-  MessageBubbleWidth,
-} from '../../../shared'
-import styles from './MessageRow.module.css'
-import { MessageAttachmentGallery } from './MessageAttachmentGallery'
-import { MessageReactions } from './MessageReactions'
-import { ExternalMediaPreviews } from './ExternalMediaPreview'
-import { formatMessageDay, formatMessageTime } from './messageUtils'
-import { MentionTag } from './MentionTag'
-import { MessageReplyReference } from './MessageReply'
-import { ServerInviteMessageCards } from './ServerInviteMessageCards'
-import { resolveExternalMediaBubbleWidth } from './externalMediaSizeModel'
-import { resolvePrivateMessageReceiptIndicator } from './messageReceiptModel'
-import type { PrivateMessageReceiptIndicator } from './messageReceiptModel'
-import { getMessagePinnedEvent } from '../../../shared/messages/messageEventModel'
+  MessageBubbleWidth
+} from '../../../shared';
+import { getMessagePinnedEvent } from '../../../shared/messages/messageEventModel';
+import { ExternalMediaPreviews } from './ExternalMediaPreview';
+import { MentionTag } from './MentionTag';
+import { MessageAttachmentGallery } from './MessageAttachmentGallery';
+import { MessageReactions } from './MessageReactions';
+import { MessageReplyReference } from './MessageReply';
+import { ServerInviteMessageCards } from './ServerInviteMessageCards';
+import { resolveExternalMediaBubbleWidth } from './externalMediaSizeModel';
+import { resolvePrivateMessageReceiptIndicator } from './messageReceiptModel';
+import type { PrivateMessageReceiptIndicator } from './messageReceiptModel';
+import { formatMessageDay, formatMessageTime } from './messageUtils';
+
+import styles from './MessageRow.module.css';
 
 export function MessageRow({
   message,
@@ -57,36 +54,36 @@ export function MessageRow({
   currentUserId,
   messageDisplayFormat,
   messageBubbleAlignment = defaultMessageBubbleAlignment,
-  messageBubbleWidth = defaultMessageBubbleWidth,
+  messageBubbleWidth = defaultMessageBubbleWidth
 }: {
-  message: SpaceMessageResponse
-  startsNewDay: boolean
-  startsNewAuthor: boolean
-  startsNewBubbleSequence: boolean
-  isHighlighted: boolean
-  onOpenPreview: (asset: SpaceMessageAssetResponse) => void
-  onRequestDownload: (asset: SpaceMessageAssetResponse) => void
-  onContextMenu: (x: number, y: number, focusOnOpen: boolean) => void
-  defaultAttachmentExpanded: boolean
-  loadExternalMediaPreviews: boolean
-  horizontalVideoCardSize: number
-  verticalVideoCardSize: number
-  canReact: boolean
+  message: SpaceMessageResponse;
+  startsNewDay: boolean;
+  startsNewAuthor: boolean;
+  startsNewBubbleSequence: boolean;
+  isHighlighted: boolean;
+  onOpenPreview: (asset: SpaceMessageAssetResponse) => void;
+  onRequestDownload: (asset: SpaceMessageAssetResponse) => void;
+  onContextMenu: (x: number, y: number, focusOnOpen: boolean) => void;
+  defaultAttachmentExpanded: boolean;
+  loadExternalMediaPreviews: boolean;
+  horizontalVideoCardSize: number;
+  verticalVideoCardSize: number;
+  canReact: boolean;
   onSetReaction: (
     messageId: string,
     emojiCode: string,
-    isPresent: boolean,
-  ) => Promise<SpaceMessageResponse | null>
-  onJumpToMessage: (messageId: string, createdAt?: string | null) => void
-  invitePreviewAccessToken?: string | null
-  invitePreviewOrigin?: string | null
-  privateMessageReceiptViewerUserId?: string | null
-  currentUserId: string
-  messageDisplayFormat: MessageDisplayFormat
-  messageBubbleAlignment?: MessageBubbleAlignment
-  messageBubbleWidth?: MessageBubbleWidth
+    isPresent: boolean
+  ) => Promise<SpaceMessageResponse | null>;
+  onJumpToMessage: (messageId: string, createdAt?: string | null) => void;
+  invitePreviewAccessToken?: string | null;
+  invitePreviewOrigin?: string | null;
+  privateMessageReceiptViewerUserId?: string | null;
+  currentUserId: string;
+  messageDisplayFormat: MessageDisplayFormat;
+  messageBubbleAlignment?: MessageBubbleAlignment;
+  messageBubbleWidth?: MessageBubbleWidth;
 }) {
-  const pinnedEvent = getMessagePinnedEvent(message)
+  const pinnedEvent = getMessagePinnedEvent(message);
   if (pinnedEvent) {
     return (
       <>
@@ -103,13 +100,17 @@ export function MessageRow({
           <span className={styles.messageEventRule} aria-hidden="true" />
           <span className={styles.messageEventContent}>
             <SystemIcon name="pin" size={14} />
-            <span>{serverCopy.messages.pinnedMessageEvent(message.senderDisplayName)}</span>
+            <span>
+              {serverCopy.messages.pinnedMessageEvent(
+                message.senderDisplayName
+              )}
+            </span>
             <button
               type="button"
               onClick={() =>
                 onJumpToMessage(
                   pinnedEvent.messageId,
-                  message.replyTo?.createdAt,
+                  message.replyTo?.createdAt
                 )
               }
             >
@@ -119,48 +120,48 @@ export function MessageRow({
           <span className={styles.messageEventRule} aria-hidden="true" />
         </div>
       </>
-    )
+    );
   }
 
   const avatarUrl = message.senderAvatarAssetId
     ? `/api/assets/${message.senderAvatarAssetId}/content`
-    : null
+    : null;
   const visibleMentions = Array.from(
     new Map(
       (message.mentions ?? []).map((mention) => [
         `${mention.kind}:${mention.targetUserId ?? mention.targetRoleId ?? 'everyone'}`,
-        mention,
-      ]),
-    ).values(),
-  )
+        mention
+      ])
+    ).values()
+  );
   const receipt = resolvePrivateMessageReceiptIndicator(
     message,
-    privateMessageReceiptViewerUserId,
-  )
-  const isBubble = messageDisplayFormat === 'bubble'
-  const isOwnMessage = message.senderUserId === currentUserId
+    privateMessageReceiptViewerUserId
+  );
+  const isBubble = messageDisplayFormat === 'bubble';
+  const isOwnMessage = message.senderUserId === currentUserId;
   const isBubbleRightAligned =
     isBubble &&
-    isMessageBubbleRightAligned(messageBubbleAlignment, isOwnMessage)
-  const isBubbleFullWidth =
-    isBubble && messageBubbleWidth === 'full-width'
+    isMessageBubbleRightAligned(messageBubbleAlignment, isOwnMessage);
+  const isBubbleFullWidth = isBubble && messageBubbleWidth === 'full-width';
   const startsVisibleAuthorBlock = isBubble
     ? startsNewBubbleSequence
-    : startsNewAuthor
+    : startsNewAuthor;
   const bubbleMediaWidth = isBubble
     ? resolveExternalMediaBubbleWidth({
         body: message.body,
         enabled: loadExternalMediaPreviews && !message.deletedAt,
         parentHost: window.location.hostname || 'localhost',
         horizontalSize: horizontalVideoCardSize,
-        verticalSize: verticalVideoCardSize,
+        verticalSize: verticalVideoCardSize
       })
-    : null
-  const bubbleStyle = bubbleMediaWidth !== null
-    ? {
-        '--message-bubble-media-width': `${bubbleMediaWidth}px`,
-      } as CSSProperties
-    : undefined
+    : null;
+  const bubbleStyle =
+    bubbleMediaWidth !== null
+      ? ({
+          '--message-bubble-media-width': `${bubbleMediaWidth}px`
+        } as CSSProperties)
+      : undefined;
 
   return (
     <>
@@ -195,27 +196,27 @@ export function MessageRow({
         tabIndex={0}
         aria-keyshortcuts="Shift+F10"
         onContextMenu={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          onContextMenu(event.clientX, event.clientY, false)
+          event.preventDefault();
+          event.stopPropagation();
+          onContextMenu(event.clientX, event.clientY, false);
         }}
         onKeyDown={(event) => {
           const opensContextMenu =
             event.key === 'ContextMenu' ||
-            (event.shiftKey && event.key === 'F10')
+            (event.shiftKey && event.key === 'F10');
 
           if (!opensContextMenu) {
-            return
+            return;
           }
 
-          event.preventDefault()
-          event.stopPropagation()
-          const bounds = event.currentTarget.getBoundingClientRect()
+          event.preventDefault();
+          event.stopPropagation();
+          const bounds = event.currentTarget.getBoundingClientRect();
           onContextMenu(
             bounds.left + Math.min(32, bounds.width / 2),
             bounds.top + Math.min(32, bounds.height / 2),
-            true,
-          )
+            true
+          );
         }}
       >
         {startsVisibleAuthorBlock ? (
@@ -230,7 +231,7 @@ export function MessageRow({
                     message.senderAvatarCropOffsetX * 100
                   }%, ${message.senderAvatarCropOffsetY * 100}%) scale(${
                     message.senderAvatarCropZoom
-                  })`,
+                  })`
                 }}
               />
             ) : (
@@ -261,10 +262,7 @@ export function MessageRow({
             </span>
           )}
           {isBubble && !startsNewBubbleSequence && (
-            <MessageMentionTags
-              mentions={visibleMentions}
-              isCompact
-            />
+            <MessageMentionTags mentions={visibleMentions} isCompact />
           )}
           {message.replyTo && (
             <MessageReplyReference
@@ -275,13 +273,15 @@ export function MessageRow({
                   : () =>
                       onJumpToMessage(
                         message.replyTo!.id,
-                        message.replyTo!.createdAt,
+                        message.replyTo!.createdAt
                       )
               }
             />
           )}
           <CollapsibleMessageBody
-            body={message.deletedAt ? serverCopy.messages.deleted : message.body}
+            body={
+              message.deletedAt ? serverCopy.messages.deleted : message.body
+            }
           />
           {!message.deletedAt &&
             invitePreviewAccessToken &&
@@ -318,18 +318,18 @@ export function MessageRow({
         </div>
       </article>
     </>
-  )
+  );
 }
 
 function MessageMentionTags({
   mentions,
-  isCompact = false,
+  isCompact = false
 }: {
-  mentions: readonly SpaceMessageMentionResponse[]
-  isCompact?: boolean
+  mentions: readonly SpaceMessageMentionResponse[];
+  isCompact?: boolean;
 }) {
   if (mentions.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -347,13 +347,13 @@ function MessageMentionTags({
         />
       ))}
     </span>
-  )
+  );
 }
 
 function MessageReceipt({
-  receipt,
+  receipt
 }: {
-  receipt: PrivateMessageReceiptIndicator
+  receipt: PrivateMessageReceiptIndicator;
 }) {
   return (
     <span
@@ -365,43 +365,43 @@ function MessageReceipt({
     >
       <span aria-hidden="true">{receipt.marks}</span>
     </span>
-  )
+  );
 }
 
 function CollapsibleMessageBody({ body }: { body: string | null }) {
-  const textRef = useRef<HTMLParagraphElement | null>(null)
-  const [isOverflowing, setIsOverflowing] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const textRef = useRef<HTMLParagraphElement | null>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
-    const element = textRef.current
+    const element = textRef.current;
 
     if (!element) {
-      return undefined
+      return undefined;
     }
 
     function measure() {
-      const current = textRef.current
+      const current = textRef.current;
 
       if (!current) {
-        return
+        return;
       }
 
       const lineHeight = Number.parseFloat(
-        window.getComputedStyle(current).lineHeight,
-      )
-      const maxCollapsedHeight = lineHeight * 5
+        window.getComputedStyle(current).lineHeight
+      );
+      const maxCollapsedHeight = lineHeight * 5;
 
-      setIsOverflowing(current.scrollHeight > maxCollapsedHeight + 2)
+      setIsOverflowing(current.scrollHeight > maxCollapsedHeight + 2);
     }
 
-    measure()
+    measure();
 
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
 
-    return () => observer.disconnect()
-  }, [body])
+    return () => observer.disconnect();
+  }, [body]);
 
   return (
     <>
@@ -419,9 +419,11 @@ function CollapsibleMessageBody({ body }: { body: string | null }) {
           type="button"
           onClick={() => setIsExpanded((current) => !current)}
         >
-          {isExpanded ? commonCopy.actions.collapse : serverCopy.messages.expandFull}
+          {isExpanded
+            ? commonCopy.actions.collapse
+            : serverCopy.messages.expandFull}
         </button>
       )}
     </>
-  )
+  );
 }

@@ -1,34 +1,36 @@
-import { useMemo, type CSSProperties } from 'react'
-import { findExternalMedia } from './externalMedia'
+import { type CSSProperties, useMemo } from 'react';
+
+import { findExternalMedia } from './externalMedia';
 import {
   getExternalMediaPreviewListWidth,
-  resolveExternalMediaPreviewLayout,
-} from './externalMediaSizeModel'
-import styles from './ExternalMediaPreview.module.css'
+  resolveExternalMediaPreviewLayout
+} from './externalMediaSizeModel';
+
+import styles from './ExternalMediaPreview.module.css';
 
 export function ExternalMediaPreviews({
   body,
   enabled,
   horizontalSize,
   verticalSize,
-  isBubblePresentation = false,
+  isBubblePresentation = false
 }: {
-  body: string | null
-  enabled: boolean
-  horizontalSize: number
-  verticalSize: number
-  isBubblePresentation?: boolean
+  body: string | null;
+  enabled: boolean;
+  horizontalSize: number;
+  verticalSize: number;
+  isBubblePresentation?: boolean;
 }) {
   const previews = useMemo(
     () =>
       enabled
         ? findExternalMedia(body, window.location.hostname || 'localhost')
         : [],
-    [body, enabled],
-  )
+    [body, enabled]
+  );
 
   if (previews.length === 0) {
-    return null
+    return null;
   }
 
   const configuredListWidth =
@@ -36,8 +38,8 @@ export function ExternalMediaPreviews({
       previews,
       horizontalSize,
       verticalSize,
-      isBubblePresentation,
-    ) ?? 0
+      isBubblePresentation
+    ) ?? 0;
 
   return (
     <div
@@ -46,7 +48,7 @@ export function ExternalMediaPreviews({
       }`}
       style={
         {
-          '--external-media-list-width': `${configuredListWidth}px`,
+          '--external-media-list-width': `${configuredListWidth}px`
         } as CSSProperties
       }
     >
@@ -55,8 +57,8 @@ export function ExternalMediaPreviews({
           preview,
           horizontalSize,
           verticalSize,
-          isBubblePresentation,
-        )
+          isBubblePresentation
+        );
 
         return (
           <figure
@@ -72,7 +74,7 @@ export function ExternalMediaPreviews({
                 '--external-media-player-width': `${layout.playerWidth}px`,
                 '--external-media-backdrop-image': preview.thumbnailUrl
                   ? `url("${preview.thumbnailUrl}")`
-                  : 'none',
+                  : 'none'
               } as CSSProperties
             }
           >
@@ -99,8 +101,8 @@ export function ExternalMediaPreviews({
               </a>
             </figcaption>
           </figure>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

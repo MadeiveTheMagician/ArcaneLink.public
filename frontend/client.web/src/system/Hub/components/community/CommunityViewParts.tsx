@@ -1,40 +1,42 @@
-import { type ReactNode, type Ref, useState } from 'react'
+import { type ReactNode, type Ref, useState } from 'react';
+
 import type {
   FriendRequestResponse,
   FriendUserResponse,
-  ProfileTagResponse,
-} from '../../../../shared/types'
+  ProfileTagResponse
+} from '../../../../shared/types';
 import {
-  communityCopy,
   PresenceName,
   SystemIcon,
   SystemSkeleton,
-} from '../../../shared'
-import type { SystemIconName } from '../../../shared'
-import styles from './CommunityView.module.css'
-import cardStyles from './CommunityCards.module.css'
-import controlStyles from './CommunityControls.module.css'
-import dialogStyles from './CommunityRequestsDialog.module.css'
-import primitiveStyles from './CommunityPrimitives.module.css'
+  communityCopy
+} from '../../../shared';
+import type { SystemIconName } from '../../../shared';
 import type {
   CommunityRequestFilter,
-  CommunityRequestsDialogKind,
   CommunityRequestSort,
-} from './communityTypes'
+  CommunityRequestsDialogKind
+} from './communityTypes';
+
+import cardStyles from './CommunityCards.module.css';
+import controlStyles from './CommunityControls.module.css';
+import primitiveStyles from './CommunityPrimitives.module.css';
+import dialogStyles from './CommunityRequestsDialog.module.css';
+import styles from './CommunityView.module.css';
 
 export function CommunitySection({
   children,
-  title,
+  title
 }: {
-  children: ReactNode
-  title: string
+  children: ReactNode;
+  title: string;
 }) {
   return (
     <section className={primitiveStyles.communitySection}>
       <h2>{title}</h2>
       <div className={primitiveStyles.communityList}>{children}</div>
     </section>
-  )
+  );
 }
 
 export function CommunityRequestsPanel({
@@ -42,13 +44,13 @@ export function CommunityRequestsPanel({
   children,
   count,
   isLoading = false,
-  title,
+  title
 }: {
-  action?: ReactNode
-  children: ReactNode
-  count: number
-  isLoading?: boolean
-  title: string
+  action?: ReactNode;
+  children: ReactNode;
+  count: number;
+  isLoading?: boolean;
+  title: string;
 }) {
   return (
     <section className={primitiveStyles.communityPanel}>
@@ -65,7 +67,7 @@ export function CommunityRequestsPanel({
       <div className={primitiveStyles.communityList}>{children}</div>
       {action}
     </section>
-  )
+  );
 }
 
 export function CommunityFilterCard({
@@ -74,14 +76,14 @@ export function CommunityFilterCard({
   onToggleTag,
   rootRef,
   selectedTagIds,
-  tags,
+  tags
 }: {
-  id?: string
-  onClose: () => void
-  onToggleTag: (tagId: string) => void
-  rootRef?: Ref<HTMLElement>
-  selectedTagIds: string[]
-  tags: ProfileTagResponse[]
+  id?: string;
+  onClose: () => void;
+  onToggleTag: (tagId: string) => void;
+  rootRef?: Ref<HTMLElement>;
+  selectedTagIds: string[];
+  tags: ProfileTagResponse[];
 }) {
   return (
     <section
@@ -104,7 +106,7 @@ export function CommunityFilterCard({
       <div className={controlStyles.communityTagGrid}>
         {tags.length === 0 && <span>{communityCopy.states.tagsEmpty}</span>}
         {tags.map((tag) => {
-          const isSelected = selectedTagIds.includes(tag.id)
+          const isSelected = selectedTagIds.includes(tag.id);
 
           return (
             <button
@@ -116,11 +118,11 @@ export function CommunityFilterCard({
             >
               {tag.title}
             </button>
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }
 
 export function CommunityRequestsDialog({
@@ -131,45 +133,45 @@ export function CommunityRequestsDialog({
   onAcceptFriendRequest,
   onCancelFriendRequest,
   onClose,
-  onDeclineFriendRequest,
+  onDeclineFriendRequest
 }: {
-  incomingRequests: FriendRequestResponse[]
-  isMutatingFriends: boolean
-  kind: CommunityRequestsDialogKind
-  outgoingRequests: FriendRequestResponse[]
-  onAcceptFriendRequest: (requestId: string) => void
-  onCancelFriendRequest: (requestId: string) => void
-  onClose: () => void
-  onDeclineFriendRequest: (requestId: string) => void
+  incomingRequests: FriendRequestResponse[];
+  isMutatingFriends: boolean;
+  kind: CommunityRequestsDialogKind;
+  outgoingRequests: FriendRequestResponse[];
+  onAcceptFriendRequest: (requestId: string) => void;
+  onCancelFriendRequest: (requestId: string) => void;
+  onClose: () => void;
+  onDeclineFriendRequest: (requestId: string) => void;
 }) {
   const [requestFilter, setRequestFilter] =
-    useState<CommunityRequestFilter>('all')
+    useState<CommunityRequestFilter>('all');
   const [requestSort, setRequestSort] =
-    useState<CommunityRequestSort>('recent')
+    useState<CommunityRequestSort>('recent');
   const [newRequestThreshold] = useState(
-    () => Date.now() - 24 * 60 * 60 * 1000,
-  )
-  const requests = kind === 'incoming' ? incomingRequests : outgoingRequests
+    () => Date.now() - 24 * 60 * 60 * 1000
+  );
+  const requests = kind === 'incoming' ? incomingRequests : outgoingRequests;
   const title =
     kind === 'incoming'
       ? communityCopy.requests.incoming
-      : communityCopy.requests.outgoing
+      : communityCopy.requests.outgoing;
   const filteredRequests = requests
     .filter((request) => {
       if (requestFilter === 'all') {
-        return true
+        return true;
       }
 
-      return new Date(request.createdAt).getTime() >= newRequestThreshold
+      return new Date(request.createdAt).getTime() >= newRequestThreshold;
     })
     .sort((firstRequest, secondRequest) => {
-      const firstTime = new Date(firstRequest.createdAt).getTime()
-      const secondTime = new Date(secondRequest.createdAt).getTime()
+      const firstTime = new Date(firstRequest.createdAt).getTime();
+      const secondTime = new Date(secondRequest.createdAt).getTime();
 
       return requestSort === 'recent'
         ? secondTime - firstTime
-        : firstTime - secondTime
-    })
+        : firstTime - secondTime;
+    });
 
   return (
     <div className={dialogStyles.communityDialogLayer} role="presentation">
@@ -218,7 +220,7 @@ export function CommunityRequestsDialog({
             type="button"
             onClick={() =>
               setRequestSort((current) =>
-                current === 'recent' ? 'old' : 'recent',
+                current === 'recent' ? 'old' : 'recent'
               )
             }
           >
@@ -233,10 +235,13 @@ export function CommunityRequestsDialog({
           )}
           {filteredRequests.map((request) => {
             const user =
-              kind === 'incoming' ? request.fromUser : request.toUser
+              kind === 'incoming' ? request.fromUser : request.toUser;
 
             return (
-              <article className={cardStyles.communityRequestCard} key={request.id}>
+              <article
+                className={cardStyles.communityRequestCard}
+                key={request.id}
+              >
                 <CommunityUserAvatar user={user} />
                 <div>
                   <CommunityUserName user={user} />
@@ -274,12 +279,12 @@ export function CommunityRequestsDialog({
                   )}
                 </div>
               </article>
-            )
+            );
           })}
         </div>
       </section>
     </div>
-  )
+  );
 }
 
 export function CommunityUserAvatar({ user }: { user: FriendUserResponse }) {
@@ -293,14 +298,14 @@ export function CommunityUserAvatar({ user }: { user: FriendUserResponse }) {
           style={{
             transform: `translate(${user.avatarCropOffsetX * 100}%, ${
               user.avatarCropOffsetY * 100
-            }%) scale(${user.avatarCropZoom})`,
+            }%) scale(${user.avatarCropZoom})`
           }}
         />
       ) : (
         user.displayName.slice(0, 1).toUpperCase()
       )}
     </span>
-  )
+  );
 }
 
 export function CommunityUserName({ user }: { user: FriendUserResponse }) {
@@ -308,7 +313,7 @@ export function CommunityUserName({ user }: { user: FriendUserResponse }) {
     <PresenceName status={user.presenceStatus}>
       <strong className="ui-ellipsis">{user.displayName}</strong>
     </PresenceName>
-  )
+  );
 }
 
 export type CommunityIconName =
@@ -325,12 +330,9 @@ export type CommunityIconName =
   | 'search'
   | 'server'
   | 'sliders'
-  | 'voice'
+  | 'voice';
 
-const systemIconByCommunityIcon: Record<
-  CommunityIconName,
-  SystemIconName
-> = {
+const systemIconByCommunityIcon: Record<CommunityIconName, SystemIconName> = {
   addUser: 'user-plus',
   check: 'check',
   chevronDown: 'chevron-down',
@@ -344,8 +346,8 @@ const systemIconByCommunityIcon: Record<
   search: 'search',
   server: 'server',
   sliders: 'sliders',
-  voice: 'speaker',
-}
+  voice: 'speaker'
+};
 
 export function CommunityIcon({ name }: { name: CommunityIconName }) {
   return (
@@ -353,5 +355,5 @@ export function CommunityIcon({ name }: { name: CommunityIconName }) {
       className={styles.communitySvgIcon}
       name={systemIconByCommunityIcon[name]}
     />
-  )
+  );
 }

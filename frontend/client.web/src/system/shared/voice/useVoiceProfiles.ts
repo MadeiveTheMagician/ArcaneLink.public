@@ -1,5 +1,7 @@
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useSyncExternalStore } from 'react';
+
 import {
+  type VoiceProfilesSnapshot,
   activateVoiceProfile,
   createVoiceProfile,
   deleteVoiceProfile,
@@ -7,41 +9,40 @@ import {
   getVoiceProfilesSnapshot,
   renameVoiceProfile,
   resetActiveVoiceProfile,
-  subscribeVoiceProfiles,
-  type VoiceProfilesSnapshot,
-} from './voiceProfiles'
+  subscribeVoiceProfiles
+} from './voiceProfiles';
 
 const serverSnapshot: VoiceProfilesSnapshot = {
   activeProfileId: 'default',
-  profiles: [],
-}
-const getServerSnapshot = () => serverSnapshot
+  profiles: []
+};
+const getServerSnapshot = () => serverSnapshot;
 const subscribeToVoiceProfiles = (onStoreChange: () => void) =>
-  subscribeVoiceProfiles(onStoreChange)
+  subscribeVoiceProfiles(onStoreChange);
 
 export function useVoiceProfiles() {
   const snapshot = useSyncExternalStore(
     subscribeToVoiceProfiles,
     getVoiceProfilesSnapshot,
-    getServerSnapshot,
-  )
+    getServerSnapshot
+  );
 
   const activate = useCallback((profileId: string) => {
-    return activateVoiceProfile(profileId)
-  }, [])
+    return activateVoiceProfile(profileId);
+  }, []);
   const create = useCallback((name: string) => {
-    return createVoiceProfile(name)
-  }, [])
+    return createVoiceProfile(name);
+  }, []);
   const duplicate = useCallback((profileId: string) => {
-    return duplicateVoiceProfile(profileId)
-  }, [])
+    return duplicateVoiceProfile(profileId);
+  }, []);
   const rename = useCallback((profileId: string, name: string) => {
-    return renameVoiceProfile(profileId, name)
-  }, [])
+    return renameVoiceProfile(profileId, name);
+  }, []);
   const remove = useCallback((profileId: string) => {
-    return deleteVoiceProfile(profileId)
-  }, [])
-  const resetActive = useCallback(() => resetActiveVoiceProfile(), [])
+    return deleteVoiceProfile(profileId);
+  }, []);
+  const resetActive = useCallback(() => resetActiveVoiceProfile(), []);
 
   return {
     ...snapshot,
@@ -50,6 +51,6 @@ export function useVoiceProfiles() {
     duplicate,
     rename,
     remove,
-    resetActive,
-  }
+    resetActive
+  };
 }

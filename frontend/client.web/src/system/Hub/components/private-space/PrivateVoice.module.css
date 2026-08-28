@@ -10,8 +10,16 @@
   border-bottom: 1px solid var(--theme-border-soft);
   padding: 10px 14px;
   background:
-    radial-gradient(circle at 16% 0%, color-mix(in srgb, var(--theme-accent), transparent 70%), transparent 34%),
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 86%), transparent 58%),
+    radial-gradient(
+      circle at 16% 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 70%),
+      transparent 34%
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 86%),
+      transparent 58%
+    ),
     var(--theme-surface-raised);
   box-shadow:
     0 10px 24px rgba(0, 0, 0, 0.18),
@@ -42,7 +50,7 @@
   transform: translate(50%, 0);
 }
 
-:global([class*="closingPrivateVoicePanel"]) .privateVoiceStrip {
+:global([class*='closingPrivateVoicePanel']) .privateVoiceStrip {
   opacity: 0;
   transform: translateY(-14px);
 }
@@ -63,7 +71,7 @@
     opacity 140ms ease;
 }
 
-:global([class*="closingPrivateVoicePanel"]) .privateVoiceResizeHandle {
+:global([class*='closingPrivateVoicePanel']) .privateVoiceResizeHandle {
   min-height: 0;
   opacity: 0;
   pointer-events: none;
@@ -75,7 +83,7 @@
   right: 0;
   left: 0;
   height: 1px;
-  content: "";
+  content: '';
   background: var(--theme-border-soft);
   box-shadow: none;
   transform: translateY(-50%);
@@ -186,7 +194,11 @@
   border-radius: 8px;
   padding: 8px 10px;
   background:
-    radial-gradient(circle at 50% 32%, var(--theme-backdrop-glow), transparent 38%),
+    radial-gradient(
+      circle at 50% 32%,
+      var(--theme-backdrop-glow),
+      transparent 38%
+    ),
     var(--theme-control-bg);
 }
 
@@ -194,9 +206,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  content: "";
-  background:
-    linear-gradient(180deg, transparent 44%, color-mix(in srgb, var(--color-bg), transparent 18%) 100%);
+  content: '';
+  background: linear-gradient(
+    180deg,
+    transparent 44%,
+    color-mix(in srgb, var(--color-bg), transparent 18%) 100%
+  );
   opacity: 0;
 }
 
@@ -336,7 +351,6 @@
   font-size: 28px;
 }
 
-
 @keyframes privateVoiceSlideDown {
   from {
     opacity: 0;
@@ -350,7 +364,9 @@
 }
 
 @media (max-width: 760px) {
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) :global([class*="privateChatColumn"]) .privateAvatar {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space)
+    :global([class*='privateChatColumn'])
+    .privateAvatar {
     flex: 0 0 34px;
     width: 34px;
     height: 34px;

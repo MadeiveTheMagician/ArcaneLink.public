@@ -13,7 +13,8 @@
 .dialog {
   width: min(430px, calc(100vw - 28px));
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-danger, #ff7189), transparent 56%);
+  border: 1px solid
+    color-mix(in srgb, var(--color-danger, #ff7189), transparent 56%);
   border-radius: 12px;
   color: var(--color-text);
   background:
@@ -43,7 +44,8 @@
   width: 40px;
   height: 40px;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--color-danger, #ff7189), transparent 48%);
+  border: 1px solid
+    color-mix(in srgb, var(--color-danger, #ff7189), transparent 48%);
   border-radius: 10px;
   color: #ffd3da;
   background: color-mix(in srgb, var(--color-danger, #ff7189), transparent 82%);
@@ -170,7 +172,8 @@
 }
 
 .confirm {
-  border: 1px solid color-mix(in srgb, var(--color-danger, #ff7189), transparent 36%);
+  border: 1px solid
+    color-mix(in srgb, var(--color-danger, #ff7189), transparent 36%);
   color: #fff5f7;
   background: color-mix(in srgb, var(--color-danger, #ff7189), #3b1020 48%);
 }

@@ -1,17 +1,19 @@
-import type { ReactNode } from 'react'
-import type { PresenceStatus } from '../../../shared/types'
-import { commonCopy } from '../copy'
-import styles from './PresenceDot.module.css'
+import type { ReactNode } from 'react';
+
+import type { PresenceStatus } from '../../../shared/types';
+import { commonCopy } from '../copy';
+
+import styles from './PresenceDot.module.css';
 
 export function PresenceDot({
   status,
-  className = '',
+  className = ''
 }: {
-  status: PresenceStatus
-  className?: string
+  status: PresenceStatus;
+  className?: string;
 }) {
   if (status !== 'online') {
-    return null
+    return null;
   }
 
   return (
@@ -22,20 +24,20 @@ export function PresenceDot({
       aria-label={commonCopy.status.online}
       title={commonCopy.status.online}
     />
-  )
+  );
 }
 
 export function PresenceName({
   status,
   children,
-  className = '',
+  className = ''
 }: {
-  status: PresenceStatus | null | undefined
-  children: ReactNode
-  className?: string
+  status: PresenceStatus | null | undefined;
+  children: ReactNode;
+  className?: string;
 }) {
   if (status !== 'online') {
-    return <>{children}</>
+    return <>{children}</>;
   }
 
   return (
@@ -43,5 +45,5 @@ export function PresenceName({
       {children}
       <PresenceDot status={status} />
     </span>
-  )
+  );
 }

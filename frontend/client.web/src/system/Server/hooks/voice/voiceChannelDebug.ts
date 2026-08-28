@@ -1,42 +1,42 @@
 import {
   createSafeVoicePeerStatsSummary,
-  serializeSafeVoicePeerStatsSummary,
-} from './voicePeerStatsSummary'
+  serializeSafeVoicePeerStatsSummary
+} from './voicePeerStatsSummary';
 
-export const isVoiceDebugEnabled = resolveVoiceDebugEnabled()
+export const isVoiceDebugEnabled = resolveVoiceDebugEnabled();
 
 function resolveVoiceDebugEnabled() {
   if (import.meta.env?.VITE_VOICE_DEBUG === 'true') {
-    return true
+    return true;
   }
 
   try {
-    return localStorage.getItem('arcanelink.voiceDebug') === '1'
+    return localStorage.getItem('arcanelink.voiceDebug') === '1';
   } catch {
-    return false
+    return false;
   }
 }
 
 export function voiceDebug(event: string, details?: unknown) {
   if (!isVoiceDebugEnabled) {
-    return
+    return;
   }
 
-  console.info(`[voice] ${event}`, details ?? '')
+  console.info(`[voice] ${event}`, details ?? '');
 }
 
 export async function logPeerConnectionStats(
   _remoteUserId: string,
   peer: RTCPeerConnection,
-  sample: string = 'event',
+  sample: string = 'event'
 ) {
   if (!isVoiceDebugEnabled) {
-    return
+    return;
   }
 
-  const stats = await peer.getStats()
-  const statsRecords: unknown[] = []
-  stats.forEach((report) => statsRecords.push(report))
+  const stats = await peer.getStats();
+  const statsRecords: unknown[] = [];
+  stats.forEach((report) => statsRecords.push(report));
   const summary = createSafeVoicePeerStatsSummary({
     sample,
     connectionState: peer.connectionState,
@@ -46,12 +46,12 @@ export async function logPeerConnectionStats(
       direction: transceiver.direction,
       currentDirection: transceiver.currentDirection,
       senderTrack: describeTrack(transceiver.sender.track),
-      receiverTrack: describeTrack(transceiver.receiver.track),
+      receiverTrack: describeTrack(transceiver.receiver.track)
     })),
-    stats: statsRecords,
-  })
+    stats: statsRecords
+  });
 
-  voiceDebug('peer:stats', serializeSafeVoicePeerStatsSummary(summary))
+  voiceDebug('peer:stats', serializeSafeVoicePeerStatsSummary(summary));
 }
 
 function describeTrack(track: MediaStreamTrack | null) {
@@ -60,7 +60,7 @@ function describeTrack(track: MediaStreamTrack | null) {
         kind: track.kind,
         enabled: track.enabled,
         muted: track.muted,
-        readyState: track.readyState,
+        readyState: track.readyState
       }
-    : null
+    : null;
 }

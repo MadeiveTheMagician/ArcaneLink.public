@@ -77,7 +77,9 @@
 .settingsButton svg {
   width: 19px;
   height: 19px;
-  transition: filter 140ms ease, transform 140ms ease;
+  transition:
+    filter 140ms ease,
+    transform 140ms ease;
 }
 
 .inviteButton:hover:not(:disabled) {
@@ -89,8 +91,7 @@
 
 .inviteButton:hover:not(:disabled) svg,
 .settingsButton:hover svg {
-  filter:
-    drop-shadow(0 0 5px var(--theme-glow-strong))
+  filter: drop-shadow(0 0 5px var(--theme-glow-strong))
     drop-shadow(0 0 12px var(--theme-glow));
   transform: scale(1.06);
 }
@@ -149,7 +150,8 @@
     gap: 5px;
   }
 
-  :global(.profile-page.is-server-mode) .topbarActions:has(.mobileReorderButton) {
+  :global(.profile-page.is-server-mode)
+    .topbarActions:has(.mobileReorderButton) {
     grid-template-columns: repeat(3, 30px);
   }
 
@@ -182,8 +184,11 @@
 
   :global(.profile-page.is-server-mode) .mobileReorderButtonActive {
     color: var(--color-text);
-    background:
-      radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--theme-accent), transparent 64%), transparent 64%);
+    background: radial-gradient(
+      circle at 50% 50%,
+      color-mix(in srgb, var(--theme-accent), transparent 64%),
+      transparent 64%
+    );
     box-shadow:
       0 0 12px color-mix(in srgb, var(--theme-accent), transparent 72%),
       0 0 22px color-mix(in srgb, var(--theme-accent-light), transparent 84%);
@@ -194,11 +199,15 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
     min-height: 38px;
     gap: 4px;
-    border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 82%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent-light), transparent 82%);
     border-radius: 13px;
     padding: 4px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
     box-shadow:
       inset 0 0 0 1px rgba(255, 255, 255, 0.02),
       0 12px 28px rgba(0, 0, 0, 0.18);
@@ -224,15 +233,20 @@
     content: none;
   }
 
-  :global(.profile-page.is-server-mode) .mobileServerTabs button[aria-disabled="true"] {
+  :global(.profile-page.is-server-mode)
+    .mobileServerTabs
+    button[aria-disabled='true'] {
     opacity: 0.72;
   }
 
-  :global(.profile-page.is-server-mode) .mobileServerTabs .mobileServerTabActive {
+  :global(.profile-page.is-server-mode)
+    .mobileServerTabs
+    .mobileServerTabActive {
     color: var(--theme-accent-contrast);
     background: var(--theme-surface-accent);
     box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 76%),
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--theme-accent-light), transparent 76%),
       0 0 18px color-mix(in srgb, var(--theme-accent), transparent 84%);
   }
 }

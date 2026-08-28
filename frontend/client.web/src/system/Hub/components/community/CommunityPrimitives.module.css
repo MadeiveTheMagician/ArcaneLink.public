@@ -38,8 +38,18 @@
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--theme-scrollbar-thumb) transparent;
-  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - 24px),
+    transparent 100%
+  );
 }
 
 .communitySection > .communityList::-webkit-scrollbar {
@@ -50,8 +60,10 @@
 .communitySection > .communityList::-webkit-scrollbar-button:start:decrement,
 .communitySection > .communityList::-webkit-scrollbar-button:end:increment,
 .communitySection > .communityList::-webkit-scrollbar-button:single-button,
-.communitySection > .communityList::-webkit-scrollbar-button:vertical:start:decrement,
-.communitySection > .communityList::-webkit-scrollbar-button:vertical:end:increment {
+.communitySection
+  > .communityList::-webkit-scrollbar-button:vertical:start:decrement,
+.communitySection
+  > .communityList::-webkit-scrollbar-button:vertical:end:increment {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -70,9 +82,8 @@
 .communitySection > .communityList::-webkit-scrollbar-thumb {
   border: 5px solid transparent;
   border-radius: 999px;
-  background:
-    color-mix(in srgb, var(--theme-scrollbar-thumb), transparent 8%)
-      padding-box;
+  background: color-mix(in srgb, var(--theme-scrollbar-thumb), transparent 8%)
+    padding-box;
 }
 
 .communityPanel {

@@ -1,45 +1,41 @@
-export const voiceInputLevelEventName = 'arcanelink:voice-input-level'
+export const voiceInputLevelEventName = 'arcanelink:voice-input-level';
 
 export type VoiceInputLevelDetail = {
-  levelDb: number
-  normalizedLevel: number
-  thresholdDb: number
-  isSpeaking: boolean
-  isTrackLive: boolean
-}
+  levelDb: number;
+  normalizedLevel: number;
+  thresholdDb: number;
+  isSpeaking: boolean;
+  isTrackLive: boolean;
+};
 
-export type VoiceInputLevelListener = (
-  detail: VoiceInputLevelDetail,
-) => void
+export type VoiceInputLevelListener = (detail: VoiceInputLevelDetail) => void;
 
 export function publishVoiceInputLevel(detail: VoiceInputLevelDetail) {
   if (typeof window === 'undefined') {
-    return
+    return;
   }
 
   window.dispatchEvent(
     new CustomEvent<VoiceInputLevelDetail>(voiceInputLevelEventName, {
-      detail,
-    }),
-  )
+      detail
+    })
+  );
 }
 
-export function subscribeVoiceInputLevel(
-  listener: VoiceInputLevelListener,
-) {
+export function subscribeVoiceInputLevel(listener: VoiceInputLevelListener) {
   if (typeof window === 'undefined') {
-    return () => undefined
+    return () => undefined;
   }
 
   const handleLevel = (event: Event) => {
-    const detail = (event as CustomEvent<VoiceInputLevelDetail>).detail
+    const detail = (event as CustomEvent<VoiceInputLevelDetail>).detail;
     if (detail) {
-      listener(detail)
+      listener(detail);
     }
-  }
+  };
 
-  window.addEventListener(voiceInputLevelEventName, handleLevel)
+  window.addEventListener(voiceInputLevelEventName, handleLevel);
   return () => {
-    window.removeEventListener(voiceInputLevelEventName, handleLevel)
-  }
+    window.removeEventListener(voiceInputLevelEventName, handleLevel);
+  };
 }

@@ -1,33 +1,38 @@
+import { voiceCopy } from '../../../shared/index';
 import {
   isVoiceDebugEnabled,
   logPeerConnectionStats,
-  voiceDebug,
-} from './voiceChannelDebug'
-import { voiceCopy } from '../../../shared/index'
-import { resolveVoicePeerRecoveryDelayMs } from './voicePeerRecoveryModel'
-
+  voiceDebug
+} from './voiceChannelDebug';
+import { resolveVoicePeerRecoveryDelayMs } from './voicePeerRecoveryModel';
 
 type VoicePeerConnectionHandlersOptions = {
-  peer: RTCPeerConnection
-  remoteParticipantId: string
-  getRemoteStream: (participantId: string) => MediaStream | null
-  setRemoteStream: (participantId: string, stream: MediaStream) => void
-  startVoiceActivityMonitor: (participantId: string, stream: MediaStream) => void
-  rememberCandidateType: (participantId: string, candidateType: string | null) => void
+  peer: RTCPeerConnection;
+  remoteParticipantId: string;
+  getRemoteStream: (participantId: string) => MediaStream | null;
+  setRemoteStream: (participantId: string, stream: MediaStream) => void;
+  startVoiceActivityMonitor: (
+    participantId: string,
+    stream: MediaStream
+  ) => void;
+  rememberCandidateType: (
+    participantId: string,
+    candidateType: string | null
+  ) => void;
   sendVoiceSignal: (
     targetParticipantId: string,
     kind: 'ice',
-    payload: RTCIceCandidateInit,
-  ) => Promise<boolean>
-  updatePeerStatus: (participantId: string) => void
-  reportIceFailure: (participantId: string) => void
+    payload: RTCIceCandidateInit
+  ) => Promise<boolean>;
+  updatePeerStatus: (participantId: string) => void;
+  reportIceFailure: (participantId: string) => void;
   restartPeerIce: (
     participantId: string,
-    peer: RTCPeerConnection,
-  ) => Promise<void>
-  closePeer: (participantId: string) => void
-  setVoiceError: (message: string | null) => void
-}
+    peer: RTCPeerConnection
+  ) => Promise<void>;
+  closePeer: (participantId: string) => void;
+  setVoiceError: (message: string | null) => void;
+};
 
 export function attachVoicePeerConnectionHandlers({
   peer,
@@ -41,21 +46,24 @@ export function attachVoicePeerConnectionHandlers({
   reportIceFailure,
   restartPeerIce,
   closePeer,
-  setVoiceError,
+  setVoiceError
 }: VoicePeerConnectionHandlersOptions) {
-  let pendingIceCandidateErrorTimeout: ReturnType<typeof window.setTimeout> | null =
-    null
+  let pendingIceCandidateErrorTimeout: ReturnType<
+    typeof window.setTimeout
+  > | null = null;
   let pendingPeerRecoveryTimeout: ReturnType<typeof window.setTimeout> | null =
-    null
-  let isPeerRecoveryInFlight = false
-  let hasAttemptedPeerRecovery = false
-  let statsSnapshotGeneration = 0
-  const statsSnapshotTimeoutIds = new Set<number>()
+    null;
+  let isPeerRecoveryInFlight = false;
+  let hasAttemptedPeerRecovery = false;
+  let statsSnapshotGeneration = 0;
+  const statsSnapshotTimeoutIds = new Set<number>();
 
   function cancelStatsSnapshots() {
-    statsSnapshotGeneration += 1
-    statsSnapshotTimeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
-    statsSnapshotTimeoutIds.clear()
+    statsSnapshotGeneration += 1;
+    statsSnapshotTimeoutIds.forEach((timeoutId) =>
+      window.clearTimeout(timeoutId)
+    );
+    statsSnapshotTimeoutIds.clear();
   }
 
   function captureStatsSnapshot(sample: string) {
@@ -63,36 +71,36 @@ export function attachVoicePeerConnectionHandlers({
       (error) => {
         voiceDebug('peer:stats-failed', {
           sample,
-          message: error instanceof Error ? error.message : String(error),
-        })
-      },
-    )
+          message: error instanceof Error ? error.message : String(error)
+        });
+      }
+    );
   }
 
   function scheduleConnectedStatsSnapshots() {
-    cancelStatsSnapshots()
+    cancelStatsSnapshots();
     if (!isVoiceDebugEnabled) {
-      return
+      return;
     }
 
-    const generation = statsSnapshotGeneration
-    ;[0, 2_000, 5_000, 10_000].forEach((delayMs) => {
+    const generation = statsSnapshotGeneration;
+    [0, 2_000, 5_000, 10_000].forEach((delayMs) => {
       const timeoutId = window.setTimeout(() => {
-        statsSnapshotTimeoutIds.delete(timeoutId)
+        statsSnapshotTimeoutIds.delete(timeoutId);
         if (
           generation !== statsSnapshotGeneration ||
           peer.connectionState !== 'connected' ||
           peer.signalingState === 'closed'
         ) {
-          return
+          return;
         }
 
         captureStatsSnapshot(
-          delayMs === 0 ? 'connected' : `connected+${delayMs}ms`,
-        )
-      }, delayMs)
-      statsSnapshotTimeoutIds.add(timeoutId)
-    })
+          delayMs === 0 ? 'connected' : `connected+${delayMs}ms`
+        );
+      }, delayMs);
+      statsSnapshotTimeoutIds.add(timeoutId);
+    });
   }
 
   function isPeerConnected() {
@@ -100,28 +108,30 @@ export function attachVoicePeerConnectionHandlers({
       peer.connectionState === 'connected' ||
       peer.iceConnectionState === 'connected' ||
       peer.iceConnectionState === 'completed'
-    )
+    );
   }
 
   function clearPendingIceCandidateError() {
     if (pendingIceCandidateErrorTimeout) {
-      window.clearTimeout(pendingIceCandidateErrorTimeout)
-      pendingIceCandidateErrorTimeout = null
+      window.clearTimeout(pendingIceCandidateErrorTimeout);
+      pendingIceCandidateErrorTimeout = null;
     }
   }
 
   function isPeerRecoveryState() {
-    return resolveVoicePeerRecoveryDelayMs(
-      peer.connectionState,
-      hasAttemptedPeerRecovery,
-      peer.iceConnectionState,
-    ) !== null
+    return (
+      resolveVoicePeerRecoveryDelayMs(
+        peer.connectionState,
+        hasAttemptedPeerRecovery,
+        peer.iceConnectionState
+      ) !== null
+    );
   }
 
   function clearPendingPeerRecovery() {
     if (pendingPeerRecoveryTimeout !== null) {
-      window.clearTimeout(pendingPeerRecoveryTimeout)
-      pendingPeerRecoveryTimeout = null
+      window.clearTimeout(pendingPeerRecoveryTimeout);
+      pendingPeerRecoveryTimeout = null;
     }
   }
 
@@ -129,114 +139,116 @@ export function attachVoicePeerConnectionHandlers({
     const delayMs = resolveVoicePeerRecoveryDelayMs(
       peer.connectionState,
       hasAttemptedPeerRecovery,
-      peer.iceConnectionState,
-    )
+      peer.iceConnectionState
+    );
     if (
       delayMs === null ||
       pendingPeerRecoveryTimeout !== null ||
       isPeerRecoveryInFlight
     ) {
-      return
+      return;
     }
 
     pendingPeerRecoveryTimeout = window.setTimeout(() => {
-      pendingPeerRecoveryTimeout = null
+      pendingPeerRecoveryTimeout = null;
       if (!isPeerRecoveryState()) {
-        return
+        return;
       }
 
-      isPeerRecoveryInFlight = true
+      isPeerRecoveryInFlight = true;
       void restartPeerIce(remoteParticipantId, peer)
         .catch((error) => {
           voiceDebug('ice:recovery-loop-failed', {
             remoteParticipantId,
-            message: error instanceof Error ? error.message : String(error),
-          })
+            message: error instanceof Error ? error.message : String(error)
+          });
         })
         .finally(() => {
-          isPeerRecoveryInFlight = false
-          const shouldContinueRecovery = isPeerRecoveryState()
-          hasAttemptedPeerRecovery = shouldContinueRecovery
+          isPeerRecoveryInFlight = false;
+          const shouldContinueRecovery = isPeerRecoveryState();
+          hasAttemptedPeerRecovery = shouldContinueRecovery;
           if (shouldContinueRecovery) {
-            schedulePeerRecovery()
+            schedulePeerRecovery();
           }
-        })
-    }, delayMs)
+        });
+    }, delayMs);
   }
 
   peer.onicecandidateerror = (event) => {
     voiceDebug('ice:candidate-error', {
       remoteParticipantId,
       errorCode: event.errorCode,
-      errorText: event.errorText,
-    })
+      errorText: event.errorText
+    });
     if (isPeerConnected()) {
-      return
+      return;
     }
 
     if (event.errorCode === 401 || event.errorCode === 438) {
-      setVoiceError(voiceCopy.errors.turnAuthRejected)
+      setVoiceError(voiceCopy.errors.turnAuthRejected);
     } else if (event.errorCode >= 700) {
-      clearPendingIceCandidateError()
+      clearPendingIceCandidateError();
       pendingIceCandidateErrorTimeout = window.setTimeout(() => {
-        pendingIceCandidateErrorTimeout = null
+        pendingIceCandidateErrorTimeout = null;
 
         if (isPeerConnected() || getRemoteStream(remoteParticipantId)) {
-          return
+          return;
         }
 
-        setVoiceError(voiceCopy.errors.turnConnectionFailed)
-      }, 2500)
+        setVoiceError(voiceCopy.errors.turnConnectionFailed);
+      }, 2500);
     }
-  }
+  };
 
   peer.onicecandidate = (event) => {
     if (event.candidate) {
-      clearPendingIceCandidateError()
-      rememberCandidateType(remoteParticipantId, event.candidate.type)
+      clearPendingIceCandidateError();
+      rememberCandidateType(remoteParticipantId, event.candidate.type);
       voiceDebug('ice:local-candidate', {
         remoteParticipantId,
         candidateType: event.candidate.type,
-        protocol: event.candidate.protocol,
-      })
+        protocol: event.candidate.protocol
+      });
       if (event.candidate.type === 'relay') {
-        setVoiceError(null)
+        setVoiceError(null);
       }
       void sendVoiceSignal(remoteParticipantId, 'ice', event.candidate).catch(
         (error) => {
           voiceDebug('ice:signal-send-failed', {
             remoteParticipantId,
-            message: error instanceof Error ? error.message : String(error),
-          })
-        },
-      )
+            message: error instanceof Error ? error.message : String(error)
+          });
+        }
+      );
     } else {
       voiceDebug('ice:gathering-complete', {
-        remoteParticipantId,
-      })
+        remoteParticipantId
+      });
     }
-  }
+  };
 
   peer.ontrack = (event) => {
     const remoteStream =
       getRemoteStream(remoteParticipantId) ??
       event.streams[0] ??
-      new MediaStream()
+      new MediaStream();
 
-    if (!remoteStream.getTracks().some((track) => track.id === event.track.id)) {
-      remoteStream.addTrack(event.track)
+    if (
+      !remoteStream.getTracks().some((track) => track.id === event.track.id)
+    ) {
+      remoteStream.addTrack(event.track);
     }
     event.track.onended = () => {
-      remoteStream.removeTrack(event.track)
-      setRemoteStream(remoteParticipantId, remoteStream)
-      updatePeerStatus(remoteParticipantId)
-    }
+      remoteStream.removeTrack(event.track);
+      setRemoteStream(remoteParticipantId, remoteStream);
+      updatePeerStatus(remoteParticipantId);
+    };
     event.track.onmute = () => {
-      updatePeerStatus(remoteParticipantId)
-    }
+      updatePeerStatus(remoteParticipantId);
+    };
     event.track.onunmute = () => {
-      updatePeerStatus(remoteParticipantId)
-    }
+      updatePeerStatus(remoteParticipantId);
+    };
 
     voiceDebug('track:remote', {
       remoteParticipantId,
@@ -247,33 +259,33 @@ export function attachVoicePeerConnectionHandlers({
       readyState: event.track.readyState,
       streamlessTrack: event.streams.length === 0,
       streamAudioTracks: remoteStream.getAudioTracks().length,
-      streamVideoTracks: remoteStream.getVideoTracks().length,
-    })
-    clearPendingIceCandidateError()
-    setVoiceError(null)
+      streamVideoTracks: remoteStream.getVideoTracks().length
+    });
+    clearPendingIceCandidateError();
+    setVoiceError(null);
     if (remoteStream.getAudioTracks().length > 0) {
-      startVoiceActivityMonitor(remoteParticipantId, remoteStream)
+      startVoiceActivityMonitor(remoteParticipantId, remoteStream);
     }
-    setRemoteStream(remoteParticipantId, remoteStream)
-    updatePeerStatus(remoteParticipantId)
-  }
+    setRemoteStream(remoteParticipantId, remoteStream);
+    updatePeerStatus(remoteParticipantId);
+  };
 
   peer.oniceconnectionstatechange = () => {
     voiceDebug('peer:ice-state', {
       remoteParticipantId,
-      iceConnectionState: peer.iceConnectionState,
-    })
-    updatePeerStatus(remoteParticipantId)
+      iceConnectionState: peer.iceConnectionState
+    });
+    updatePeerStatus(remoteParticipantId);
 
     if (peer.iceConnectionState === 'failed') {
-      reportIceFailure(remoteParticipantId)
-      clearPendingPeerRecovery()
-      schedulePeerRecovery()
-      return
+      reportIceFailure(remoteParticipantId);
+      clearPendingPeerRecovery();
+      schedulePeerRecovery();
+      return;
     }
     if (peer.iceConnectionState === 'disconnected') {
-      schedulePeerRecovery()
-      return
+      schedulePeerRecovery();
+      return;
     }
     if (
       (peer.iceConnectionState === 'connected' ||
@@ -281,48 +293,48 @@ export function attachVoicePeerConnectionHandlers({
       peer.connectionState !== 'failed' &&
       peer.connectionState !== 'disconnected'
     ) {
-      clearPendingPeerRecovery()
-      hasAttemptedPeerRecovery = false
+      clearPendingPeerRecovery();
+      hasAttemptedPeerRecovery = false;
     }
-  }
+  };
   peer.onicegatheringstatechange = () => {
     voiceDebug('peer:ice-gathering-state', {
       remoteParticipantId,
-      iceGatheringState: peer.iceGatheringState,
-    })
-  }
+      iceGatheringState: peer.iceGatheringState
+    });
+  };
   peer.onsignalingstatechange = () => {
     voiceDebug('peer:signaling-state', {
       remoteParticipantId,
-      signalingState: peer.signalingState,
-    })
-    updatePeerStatus(remoteParticipantId)
-  }
+      signalingState: peer.signalingState
+    });
+    updatePeerStatus(remoteParticipantId);
+  };
   peer.onconnectionstatechange = () => {
     voiceDebug('peer:connection-state', {
       remoteParticipantId,
-      connectionState: peer.connectionState,
-    })
+      connectionState: peer.connectionState
+    });
     if (peer.connectionState === 'connected') {
-      scheduleConnectedStatsSnapshots()
+      scheduleConnectedStatsSnapshots();
     } else if (peer.connectionState === 'failed') {
-      cancelStatsSnapshots()
-      captureStatsSnapshot('failed')
+      cancelStatsSnapshots();
+      captureStatsSnapshot('failed');
     } else if (peer.connectionState === 'closed') {
-      cancelStatsSnapshots()
+      cancelStatsSnapshots();
     }
-    updatePeerStatus(remoteParticipantId)
+    updatePeerStatus(remoteParticipantId);
 
     if (
       peer.connectionState === 'connected' &&
       peer.iceConnectionState !== 'failed' &&
       peer.iceConnectionState !== 'disconnected'
     ) {
-      clearPendingIceCandidateError()
-      clearPendingPeerRecovery()
-      hasAttemptedPeerRecovery = false
-      setVoiceError(null)
-      return
+      clearPendingIceCandidateError();
+      clearPendingPeerRecovery();
+      hasAttemptedPeerRecovery = false;
+      setVoiceError(null);
+      return;
     }
 
     if (isPeerRecoveryState()) {
@@ -330,16 +342,16 @@ export function attachVoicePeerConnectionHandlers({
         peer.connectionState === 'failed' ||
         peer.iceConnectionState === 'failed'
       ) {
-        reportIceFailure(remoteParticipantId)
-        clearPendingPeerRecovery()
+        reportIceFailure(remoteParticipantId);
+        clearPendingPeerRecovery();
       }
-      schedulePeerRecovery()
-      return
+      schedulePeerRecovery();
+      return;
     }
 
-    clearPendingPeerRecovery()
+    clearPendingPeerRecovery();
     if (peer.connectionState === 'closed') {
-      closePeer(remoteParticipantId)
+      closePeer(remoteParticipantId);
     }
-  }
+  };
 }

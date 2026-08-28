@@ -1,5 +1,5 @@
-import type { SystemTheme } from '../systemThemes'
-import { themeCopy } from '../theme.copy'
+import type { SystemTheme } from '../systemThemes';
+import { themeCopy } from '../theme.copy';
 
 export const greenAppleTheme: SystemTheme = {
   code: 'green-apple',
@@ -90,6 +90,6 @@ export const greenAppleTheme: SystemTheme = {
       'linear-gradient(180deg, rgba(194, 210, 173, 0.94), rgba(130, 102, 79, 0.9))',
     '--theme-arcane-backdrop':
       'linear-gradient(180deg, rgba(24, 37, 19, 0.16), rgba(13, 23, 11, 0.24)), radial-gradient(circle at 76% 26%, rgba(104, 141, 69, 0.12), transparent 30%)',
-    '--shadow-sapphire': '0 26px 90px rgba(85, 124, 53, 0.16)',
-  },
-}
+    '--shadow-sapphire': '0 26px 90px rgba(85, 124, 53, 0.16)'
+  }
+};

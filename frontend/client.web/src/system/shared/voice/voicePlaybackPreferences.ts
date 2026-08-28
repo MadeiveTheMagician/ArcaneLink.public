@@ -1,72 +1,69 @@
-import type { VoiceUserAudioSettings } from '../types/voicePlayback'
+import type { VoiceUserAudioSettings } from '../types/voicePlayback';
 import {
   clampVoiceParticipantVolume,
-  defaultVoiceParticipantVolume,
-} from './voiceParticipantVolume'
+  defaultVoiceParticipantVolume
+} from './voiceParticipantVolume';
 
-export const VOICE_PLAYBACK_PREFERENCES_VERSION = 1 as const
+export const VOICE_PLAYBACK_PREFERENCES_VERSION = 1 as const;
 export const voicePlaybackPreferencesStorageKey =
-  'arcanelink:voice-playback-preferences:v1'
-export const maxVoicePlaybackPreferenceEntries = 500
+  'arcanelink:voice-playback-preferences:v1';
+export const maxVoicePlaybackPreferenceEntries = 500;
 
 export const defaultVoiceUserAudioSettings: Readonly<VoiceUserAudioSettings> =
   Object.freeze({
     volume: defaultVoiceParticipantVolume,
     isMuted: false,
-    isVideoHidden: false,
-  })
+    isVideoHidden: false
+  });
 
 export type VoicePlaybackPreferencesSnapshot = Record<
   string,
   VoiceUserAudioSettings
->
+>;
 
 export type VoicePlaybackPreferencesStorage = Pick<
   Storage,
   'getItem' | 'setItem'
->
+>;
 
 type StoredVoicePlaybackPreferences = {
-  version: typeof VOICE_PLAYBACK_PREFERENCES_VERSION
-  settingsByUserId: VoicePlaybackPreferencesSnapshot
-}
+  version: typeof VOICE_PLAYBACK_PREFERENCES_VERSION;
+  settingsByUserId: VoicePlaybackPreferencesSnapshot;
+};
 
 type VoicePlaybackPreferencesListener = (
-  snapshot: VoicePlaybackPreferencesSnapshot,
-) => void
+  snapshot: VoicePlaybackPreferencesSnapshot
+) => void;
 
 const listenersByOwner = new Map<
   string,
   Set<VoicePlaybackPreferencesListener>
->()
-const snapshotsByOwner = new Map<
-  string,
-  VoicePlaybackPreferencesSnapshot
->()
-const ownersWithUnpersistedChanges = new Set<string>()
-let isStorageListenerAttached = false
+>();
+const snapshotsByOwner = new Map<string, VoicePlaybackPreferencesSnapshot>();
+const ownersWithUnpersistedChanges = new Set<string>();
+let isStorageListenerAttached = false;
 
 export function normalizeVoiceUserId(userId: string) {
-  return userId.trim().toLowerCase()
+  return userId.trim().toLowerCase();
 }
 
 export function getVoicePlaybackPreferencesStorageKey(
-  ownerUserId?: string | null,
+  ownerUserId?: string | null
 ) {
-  const ownerKey = normalizeVoiceOwnerId(ownerUserId)
+  const ownerKey = normalizeVoiceOwnerId(ownerUserId);
   return ownerKey
     ? `${voicePlaybackPreferencesStorageKey}:${encodeURIComponent(ownerKey)}`
-    : voicePlaybackPreferencesStorageKey
+    : voicePlaybackPreferencesStorageKey;
 }
 
 export function normalizeVoiceUserAudioSettings(
-  value: unknown,
+  value: unknown
 ): VoiceUserAudioSettings {
   if (!value || typeof value !== 'object') {
-    return { ...defaultVoiceUserAudioSettings }
+    return { ...defaultVoiceUserAudioSettings };
   }
 
-  const candidate = value as Partial<VoiceUserAudioSettings>
+  const candidate = value as Partial<VoiceUserAudioSettings>;
   return {
     volume:
       typeof candidate.volume === 'number'
@@ -79,170 +76,168 @@ export function normalizeVoiceUserAudioSettings(
     isVideoHidden:
       typeof candidate.isVideoHidden === 'boolean'
         ? candidate.isVideoHidden
-        : defaultVoiceUserAudioSettings.isVideoHidden,
-  }
+        : defaultVoiceUserAudioSettings.isVideoHidden
+  };
 }
 
 export function parseVoicePlaybackPreferences(
-  raw: string | null,
+  raw: string | null
 ): VoicePlaybackPreferencesSnapshot {
   if (!raw) {
-    return {}
+    return {};
   }
 
   try {
-    const parsed = JSON.parse(raw) as Partial<StoredVoicePlaybackPreferences>
+    const parsed = JSON.parse(raw) as Partial<StoredVoicePlaybackPreferences>;
     if (
       parsed.version !== VOICE_PLAYBACK_PREFERENCES_VERSION ||
       !parsed.settingsByUserId ||
       typeof parsed.settingsByUserId !== 'object'
     ) {
-      return {}
+      return {};
     }
 
-    return normalizeVoicePlaybackPreferences(parsed.settingsByUserId)
+    return normalizeVoicePlaybackPreferences(parsed.settingsByUserId);
   } catch {
-    return {}
+    return {};
   }
 }
 
 export function loadVoicePlaybackPreferences(
   storage: VoicePlaybackPreferencesStorage | null = getBrowserStorage(),
-  ownerUserId?: string | null,
+  ownerUserId?: string | null
 ) {
   if (!storage) {
-    return {}
+    return {};
   }
 
   try {
     return parseVoicePlaybackPreferences(
-      storage.getItem(getVoicePlaybackPreferencesStorageKey(ownerUserId)),
-    )
+      storage.getItem(getVoicePlaybackPreferencesStorageKey(ownerUserId))
+    );
   } catch {
-    return {}
+    return {};
   }
 }
 
 export function getVoicePlaybackPreferencesSnapshot(
-  ownerUserId?: string | null,
+  ownerUserId?: string | null
 ) {
-  const ownerKey = normalizeVoiceOwnerId(ownerUserId)
-  let snapshot = snapshotsByOwner.get(ownerKey)
+  const ownerKey = normalizeVoiceOwnerId(ownerUserId);
+  let snapshot = snapshotsByOwner.get(ownerKey);
   if (!snapshot) {
-    snapshot = loadVoicePlaybackPreferences(undefined, ownerKey)
-    snapshotsByOwner.set(ownerKey, snapshot)
+    snapshot = loadVoicePlaybackPreferences(undefined, ownerKey);
+    snapshotsByOwner.set(ownerKey, snapshot);
   }
-  return snapshot
+  return snapshot;
 }
 
 export function subscribeVoicePlaybackPreferences(
   listener: VoicePlaybackPreferencesListener,
-  ownerUserId?: string | null,
+  ownerUserId?: string | null
 ) {
-  const ownerKey = normalizeVoiceOwnerId(ownerUserId)
-  const storage = getBrowserStorage()
+  const ownerKey = normalizeVoiceOwnerId(ownerUserId);
+  const storage = getBrowserStorage();
   if (storage && !ownersWithUnpersistedChanges.has(ownerKey)) {
     snapshotsByOwner.set(
       ownerKey,
-      loadVoicePlaybackPreferences(storage, ownerKey),
-    )
+      loadVoicePlaybackPreferences(storage, ownerKey)
+    );
   }
-  const listeners = getOwnerListeners(ownerKey)
-  listeners.add(listener)
-  attachStorageListener()
+  const listeners = getOwnerListeners(ownerKey);
+  listeners.add(listener);
+  attachStorageListener();
   return () => {
-    listeners.delete(listener)
+    listeners.delete(listener);
     if (listeners.size === 0) {
-      listenersByOwner.delete(ownerKey)
+      listenersByOwner.delete(ownerKey);
     }
-  }
+  };
 }
 
 export function updateVoiceUserAudioSettings(
   userId: string,
   patch: Partial<VoiceUserAudioSettings>,
   storage: VoicePlaybackPreferencesStorage | null = getBrowserStorage(),
-  ownerUserId?: string | null,
+  ownerUserId?: string | null
 ) {
-  const normalizedUserId = normalizeVoiceUserId(userId)
+  const normalizedUserId = normalizeVoiceUserId(userId);
   if (!normalizedUserId) {
-    return getVoicePlaybackPreferencesSnapshot(ownerUserId)
+    return getVoicePlaybackPreferencesSnapshot(ownerUserId);
   }
 
-  const current = getVoicePlaybackPreferencesSnapshot(ownerUserId)
+  const current = getVoicePlaybackPreferencesSnapshot(ownerUserId);
   const settings = normalizeVoiceUserAudioSettings({
     ...defaultVoiceUserAudioSettings,
     ...current[normalizedUserId],
-    ...patch,
-  })
-  const nextBase = { ...current }
+    ...patch
+  });
+  const nextBase = { ...current };
   if (
     !(normalizedUserId in nextBase) &&
     Object.keys(nextBase).length >= maxVoicePlaybackPreferenceEntries
   ) {
-    const oldestUserId = Object.keys(nextBase)[0]
+    const oldestUserId = Object.keys(nextBase)[0];
     if (oldestUserId) {
-      delete nextBase[oldestUserId]
+      delete nextBase[oldestUserId];
     }
   }
   const next = {
     ...nextBase,
-    [normalizedUserId]: settings,
-  }
-  return persistVoicePlaybackPreferences(next, storage, ownerUserId)
+    [normalizedUserId]: settings
+  };
+  return persistVoicePlaybackPreferences(next, storage, ownerUserId);
 }
 
 function normalizeVoicePlaybackPreferences(
-  value: Record<string, unknown>,
+  value: Record<string, unknown>
 ): VoicePlaybackPreferencesSnapshot {
-  const normalized: VoicePlaybackPreferencesSnapshot = {}
+  const normalized: VoicePlaybackPreferencesSnapshot = {};
 
   for (const [userId, settings] of Object.entries(value).slice(
     0,
-    maxVoicePlaybackPreferenceEntries,
+    maxVoicePlaybackPreferenceEntries
   )) {
-    const normalizedUserId = normalizeVoiceUserId(userId)
+    const normalizedUserId = normalizeVoiceUserId(userId);
     if (!normalizedUserId) {
-      continue
+      continue;
     }
-    normalized[normalizedUserId] = normalizeVoiceUserAudioSettings(settings)
+    normalized[normalizedUserId] = normalizeVoiceUserAudioSettings(settings);
   }
 
-  return normalized
+  return normalized;
 }
 
 function persistVoicePlaybackPreferences(
   snapshot: VoicePlaybackPreferencesSnapshot,
   storage: VoicePlaybackPreferencesStorage | null,
-  ownerUserId?: string | null,
+  ownerUserId?: string | null
 ) {
-  const ownerKey = normalizeVoiceOwnerId(ownerUserId)
-  const normalized = normalizeVoicePlaybackPreferences(snapshot)
+  const ownerKey = normalizeVoiceOwnerId(ownerUserId);
+  const normalized = normalizeVoicePlaybackPreferences(snapshot);
   const stored: StoredVoicePlaybackPreferences = {
     version: VOICE_PLAYBACK_PREFERENCES_VERSION,
-    settingsByUserId: normalized,
-  }
+    settingsByUserId: normalized
+  };
 
   if (storage) {
     try {
       storage.setItem(
         getVoicePlaybackPreferencesStorageKey(ownerKey),
-        JSON.stringify(stored),
-      )
-      ownersWithUnpersistedChanges.delete(ownerKey)
+        JSON.stringify(stored)
+      );
+      ownersWithUnpersistedChanges.delete(ownerKey);
     } catch {
       // The in-memory preferences remain active when storage is unavailable.
-      ownersWithUnpersistedChanges.add(ownerKey)
+      ownersWithUnpersistedChanges.add(ownerKey);
     }
   } else {
-    ownersWithUnpersistedChanges.add(ownerKey)
+    ownersWithUnpersistedChanges.add(ownerKey);
   }
 
-  snapshotsByOwner.set(ownerKey, normalized)
-  listenersByOwner
-    .get(ownerKey)
-    ?.forEach((listener) => listener(normalized))
-  return normalized
+  snapshotsByOwner.set(ownerKey, normalized);
+  listenersByOwner.get(ownerKey)?.forEach((listener) => listener(normalized));
+  return normalized;
 }
 
 function attachStorageListener() {
@@ -251,67 +246,65 @@ function attachStorageListener() {
     typeof window.addEventListener !== 'function' ||
     isStorageListenerAttached
   ) {
-    return
+    return;
   }
 
-  isStorageListenerAttached = true
+  isStorageListenerAttached = true;
   window.addEventListener('storage', (event) => {
-    const ownerKey = resolveVoicePlaybackOwnerFromStorageKey(event.key)
+    const ownerKey = resolveVoicePlaybackOwnerFromStorageKey(event.key);
     if (ownerKey === null) {
-      return
+      return;
     }
 
-    const snapshot = parseVoicePlaybackPreferences(event.newValue)
-    ownersWithUnpersistedChanges.delete(ownerKey)
-    snapshotsByOwner.set(ownerKey, snapshot)
-    listenersByOwner
-      .get(ownerKey)
-      ?.forEach((listener) => listener(snapshot))
-  })
+    const snapshot = parseVoicePlaybackPreferences(event.newValue);
+    ownersWithUnpersistedChanges.delete(ownerKey);
+    snapshotsByOwner.set(ownerKey, snapshot);
+    listenersByOwner.get(ownerKey)?.forEach((listener) => listener(snapshot));
+  });
 }
 
 function resolveVoicePlaybackOwnerFromStorageKey(key: string | null) {
   if (key === voicePlaybackPreferencesStorageKey) {
-    return ''
+    return '';
   }
 
-  const prefix = `${voicePlaybackPreferencesStorageKey}:`
+  const prefix = `${voicePlaybackPreferencesStorageKey}:`;
   if (!key?.startsWith(prefix)) {
-    return null
+    return null;
   }
 
   try {
-    return normalizeVoiceOwnerId(decodeURIComponent(key.slice(prefix.length)))
+    return normalizeVoiceOwnerId(decodeURIComponent(key.slice(prefix.length)));
   } catch {
-    return null
+    return null;
   }
 }
 
 function normalizeVoiceOwnerId(ownerUserId?: string | null) {
-  return normalizeVoiceUserId(ownerUserId ?? '')
+  return normalizeVoiceUserId(ownerUserId ?? '');
 }
 
 function getOwnerListeners(ownerKey: string) {
-  let listeners = listenersByOwner.get(ownerKey)
+  let listeners = listenersByOwner.get(ownerKey);
   if (!listeners) {
-    listeners = new Set<VoicePlaybackPreferencesListener>()
-    listenersByOwner.set(ownerKey, listeners)
+    listeners = new Set<VoicePlaybackPreferencesListener>();
+    listenersByOwner.set(ownerKey, listeners);
   }
 
-  return listeners
+  return listeners;
 }
 
 function getBrowserStorage(): VoicePlaybackPreferencesStorage | null {
   if (typeof window === 'undefined') {
-    return null
+    return null;
   }
 
   try {
     return typeof window.localStorage?.getItem === 'function' &&
       typeof window.localStorage?.setItem === 'function'
       ? window.localStorage
-      : null
+      : null;
   } catch {
-    return null
+    return null;
   }
 }

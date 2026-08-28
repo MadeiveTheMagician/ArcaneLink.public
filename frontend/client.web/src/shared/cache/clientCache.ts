@@ -3,42 +3,37 @@ import type {
   PrivateSpaceResponse,
   ServerMemberResponse,
   UserFriendResponse,
-  UserProfileSettingsResponse,
-} from '../types'
+  UserProfileSettingsResponse
+} from '../types';
 
-const layoutCacheVersion = 1
-export const userDataCacheVersion = 2
-const dataCacheVersion = userDataCacheVersion
-const layoutCacheTtlMs = 14 * 24 * 60 * 60 * 1000
-const dataCacheTtlMs = 24 * 60 * 60 * 1000
-const dataCacheDbName = 'arcanelink-client-cache'
-const dataCacheStoreName = 'snapshots'
+const layoutCacheVersion = 1;
+export const userDataCacheVersion = 2;
+const dataCacheVersion = userDataCacheVersion;
+const layoutCacheTtlMs = 14 * 24 * 60 * 60 * 1000;
+const dataCacheTtlMs = 24 * 60 * 60 * 1000;
+const dataCacheDbName = 'arcanelink-client-cache';
+const dataCacheStoreName = 'snapshots';
 
 export type LayoutCacheWorkspace =
-  | 'profile'
-  | 'server'
-  | 'servers'
-  | 'friends'
-  | 'invites'
-  | 'private-space'
+  'profile' | 'server' | 'servers' | 'friends' | 'invites' | 'private-space';
 
-export type LayoutCacheMobileTab = 'servers' | 'messages' | 'profile' | 'menu'
+export type LayoutCacheMobileTab = 'servers' | 'messages' | 'profile' | 'menu';
 
 export type LayoutCachePanelWidths = {
-  sidePanelWidth: number
-  memberPanelWidth: number
-}
+  sidePanelWidth: number;
+  memberPanelWidth: number;
+};
 
 export type LayoutCacheSnapshot = {
-  version: number
-  userId: string
-  updatedAt: number
-  activeWorkspace: LayoutCacheWorkspace
-  activeServerId: string | null
-  activePrivateSpaceId: string | null
-  isServerPanelOpen: boolean
-  mobileTab: LayoutCacheMobileTab
-  panelWidths: LayoutCachePanelWidths
+  version: number;
+  userId: string;
+  updatedAt: number;
+  activeWorkspace: LayoutCacheWorkspace;
+  activeServerId: string | null;
+  activePrivateSpaceId: string | null;
+  isServerPanelOpen: boolean;
+  mobileTab: LayoutCacheMobileTab;
+  panelWidths: LayoutCachePanelWidths;
   profileSettings: Pick<
     UserProfileSettingsResponse,
     | 'interfaceScale'
@@ -60,36 +55,37 @@ export type LayoutCacheSnapshot = {
     | 'profileColor'
     | 'profileBackgroundAssetId'
     | 'applySystemThemeToOtherProfiles'
-  >
-}
+  >;
+};
 
 export type FriendsCacheSnapshot = {
-  friends: UserFriendResponse[]
-  incomingRequests: FriendRequestResponse[]
-  outgoingRequests: FriendRequestResponse[]
-}
+  friends: UserFriendResponse[];
+  incomingRequests: FriendRequestResponse[];
+  outgoingRequests: FriendRequestResponse[];
+};
 
-export type UserDataCacheKey = 'serverMemberships' | 'friends' | 'privateSpaces'
+export type UserDataCacheKey =
+  'serverMemberships' | 'friends' | 'privateSpaces';
 
 type DataCacheValueByKey = {
-  serverMemberships: ServerMemberResponse[]
-  friends: FriendsCacheSnapshot
-  privateSpaces: PrivateSpaceResponse[]
-}
+  serverMemberships: ServerMemberResponse[];
+  friends: FriendsCacheSnapshot;
+  privateSpaces: PrivateSpaceResponse[];
+};
 
 type DataCacheRecord<T> = {
-  key: string
-  version: number
-  updatedAt: number
-  value: T
-}
+  key: string;
+  version: number;
+  updatedAt: number;
+  value: T;
+};
 
 function getLayoutCacheKey(userId: string) {
-  return `arcanelink.layoutCache.v${layoutCacheVersion}.${userId}`
+  return `arcanelink.layoutCache.v${layoutCacheVersion}.${userId}`;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null;
 }
 
 function isFresh(updatedAt: unknown, ttlMs: number) {
@@ -97,15 +93,15 @@ function isFresh(updatedAt: unknown, ttlMs: number) {
     typeof updatedAt === 'number' &&
     Number.isFinite(updatedAt) &&
     Date.now() - updatedAt <= ttlMs
-  )
+  );
 }
 
 export function isUserDataCacheRecordCompatible(
   record: unknown,
-  now = Date.now(),
+  now = Date.now()
 ) {
   if (!isObject(record) || !('value' in record)) {
-    return false
+    return false;
   }
 
   return (
@@ -113,35 +109,35 @@ export function isUserDataCacheRecordCompatible(
     typeof record.updatedAt === 'number' &&
     Number.isFinite(record.updatedAt) &&
     now - record.updatedAt <= dataCacheTtlMs
-  )
+  );
 }
 
 export function readLayoutCache(userId: string): LayoutCacheSnapshot | null {
   try {
-    const raw = window.localStorage.getItem(getLayoutCacheKey(userId))
+    const raw = window.localStorage.getItem(getLayoutCacheKey(userId));
     if (!raw) {
-      return null
+      return null;
     }
 
-    const parsed = JSON.parse(raw) as unknown
+    const parsed = JSON.parse(raw) as unknown;
     if (
       !isObject(parsed) ||
       parsed.version !== layoutCacheVersion ||
       parsed.userId !== userId ||
       !isFresh(parsed.updatedAt, layoutCacheTtlMs)
     ) {
-      return null
+      return null;
     }
 
-    return parsed as LayoutCacheSnapshot
+    return parsed as LayoutCacheSnapshot;
   } catch {
-    return null
+    return null;
   }
 }
 
 export function writeLayoutCache(
   userId: string,
-  snapshot: Omit<LayoutCacheSnapshot, 'version' | 'userId' | 'updatedAt'>,
+  snapshot: Omit<LayoutCacheSnapshot, 'version' | 'userId' | 'updatedAt'>
 ) {
   try {
     window.localStorage.setItem(
@@ -150,85 +146,84 @@ export function writeLayoutCache(
         ...snapshot,
         version: layoutCacheVersion,
         userId,
-        updatedAt: Date.now(),
-      }),
-    )
+        updatedAt: Date.now()
+      })
+    );
   } catch {
     // Best-effort UI cache; storage quota or privacy mode should not break app use.
   }
 }
 
 function getDataCacheKey(userId: string, key: UserDataCacheKey) {
-  return `${userId}:${key}`
+  return `${userId}:${key}`;
 }
 
 function openDataCacheDb() {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = window.indexedDB.open(dataCacheDbName, dataCacheVersion)
+    const request = window.indexedDB.open(dataCacheDbName, dataCacheVersion);
 
     request.onupgradeneeded = () => {
-      const db = request.result
+      const db = request.result;
       if (!db.objectStoreNames.contains(dataCacheStoreName)) {
-        db.createObjectStore(dataCacheStoreName, { keyPath: 'key' })
+        db.createObjectStore(dataCacheStoreName, { keyPath: 'key' });
       }
-    }
+    };
 
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }
 
 async function withDataCacheStore<T>(
   mode: IDBTransactionMode,
-  run: (store: IDBObjectStore) => IDBRequest<T>,
+  run: (store: IDBObjectStore) => IDBRequest<T>
 ) {
-  const db = await openDataCacheDb()
+  const db = await openDataCacheDb();
 
   try {
     return await new Promise<T>((resolve, reject) => {
-      const transaction = db.transaction(dataCacheStoreName, mode)
-      const request = run(transaction.objectStore(dataCacheStoreName))
+      const transaction = db.transaction(dataCacheStoreName, mode);
+      const request = run(transaction.objectStore(dataCacheStoreName));
 
-      request.onsuccess = () => resolve(request.result)
-      request.onerror = () => reject(request.error)
-      transaction.onerror = () => reject(transaction.error)
-    })
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+      transaction.onerror = () => reject(transaction.error);
+    });
   } finally {
-    db.close()
+    db.close();
   }
 }
 
 export async function readUserDataCache<K extends UserDataCacheKey>(
   userId: string,
-  key: K,
+  key: K
 ): Promise<DataCacheValueByKey[K] | null> {
   if (!window.indexedDB) {
-    return null
+    return null;
   }
 
   try {
-    const record = await withDataCacheStore<DataCacheRecord<DataCacheValueByKey[K]> | undefined>(
-      'readonly',
-      (store) => store.get(getDataCacheKey(userId, key)),
-    )
+    const record = await withDataCacheStore<
+      DataCacheRecord<DataCacheValueByKey[K]> | undefined
+    >('readonly', (store) => store.get(getDataCacheKey(userId, key)));
 
     if (!record || !isUserDataCacheRecordCompatible(record)) {
-      return null
+      return null;
     }
 
-    return record.value
+    return record.value;
   } catch {
-    return null
+    return null;
   }
 }
 
 export async function writeUserDataCache<K extends UserDataCacheKey>(
   userId: string,
   key: K,
-  value: DataCacheValueByKey[K],
+  value: DataCacheValueByKey[K]
 ) {
   if (!window.indexedDB) {
-    return
+    return;
   }
 
   try {
@@ -237,9 +232,9 @@ export async function writeUserDataCache<K extends UserDataCacheKey>(
         key: getDataCacheKey(userId, key),
         version: dataCacheVersion,
         updatedAt: Date.now(),
-        value,
-      }),
-    )
+        value
+      })
+    );
   } catch {
     // Cached data is optional and must never make a fresh network path fail.
   }
@@ -247,14 +242,14 @@ export async function writeUserDataCache<K extends UserDataCacheKey>(
 
 export async function clearUserDataCache(userId: string) {
   if (!window.indexedDB) {
-    return
+    return;
   }
 
   await Promise.all(
     (['serverMemberships', 'friends', 'privateSpaces'] as const).map((key) =>
       withDataCacheStore<undefined>('readwrite', (store) =>
-        store.delete(getDataCacheKey(userId, key)),
-      ).catch(() => undefined),
-    ),
-  )
+        store.delete(getDataCacheKey(userId, key))
+      ).catch(() => undefined)
+    )
+  );
 }

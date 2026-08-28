@@ -1,16 +1,16 @@
-import { normalizeDetachedVoicePreset } from './detachedVoiceLayoutModel'
-import type { DetachedVoiceLayoutStorage } from './detachedVoiceLayoutTypes'
+import { normalizeDetachedVoicePreset } from './detachedVoiceLayoutModel';
+import type { DetachedVoiceLayoutStorage } from './detachedVoiceLayoutTypes';
 
-const detachedVoiceLayoutStorageKey = 'arcanelink.detachedVoiceLayout.v1'
+const detachedVoiceLayoutStorageKey = 'arcanelink.detachedVoiceLayout.v1';
 
 export function loadDetachedVoiceLayoutStorage(): DetachedVoiceLayoutStorage {
   try {
-    const raw = window.localStorage.getItem(detachedVoiceLayoutStorageKey)
+    const raw = window.localStorage.getItem(detachedVoiceLayoutStorageKey);
     if (!raw) {
-      return createDefaultDetachedVoiceLayoutStorage()
+      return createDefaultDetachedVoiceLayoutStorage();
     }
 
-    const parsed = JSON.parse(raw) as Partial<DetachedVoiceLayoutStorage>
+    const parsed = JSON.parse(raw) as Partial<DetachedVoiceLayoutStorage>;
 
     return {
       version: 1,
@@ -28,10 +28,10 @@ export function loadDetachedVoiceLayoutStorage(): DetachedVoiceLayoutStorage {
           ? parsed.showSelfCamera
           : true,
       isTableView:
-        typeof parsed.isTableView === 'boolean' ? parsed.isTableView : true,
-    }
+        typeof parsed.isTableView === 'boolean' ? parsed.isTableView : true
+    };
   } catch {
-    return createDefaultDetachedVoiceLayoutStorage()
+    return createDefaultDetachedVoiceLayoutStorage();
   }
 }
 
@@ -42,15 +42,15 @@ function createDefaultDetachedVoiceLayoutStorage(): DetachedVoiceLayoutStorage {
     lastPresetId: null,
     showParticipantsWithoutVideo: true,
     showSelfCamera: true,
-    isTableView: true,
-  }
+    isTableView: true
+  };
 }
 
 export function saveDetachedVoiceLayoutStorage(
-  storage: DetachedVoiceLayoutStorage,
+  storage: DetachedVoiceLayoutStorage
 ) {
   window.localStorage.setItem(
     detachedVoiceLayoutStorageKey,
-    JSON.stringify(storage),
-  )
+    JSON.stringify(storage)
+  );
 }

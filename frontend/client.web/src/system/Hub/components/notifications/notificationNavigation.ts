@@ -1,26 +1,26 @@
-import type { UserNotificationResponse } from '../../../../shared/types'
+import type { UserNotificationResponse } from '../../../../shared/types';
 
 export type NotificationTarget =
   | {
-      kind: 'private-message'
-      spaceId: string
-      messageId: string
-      createdAt: string
+      kind: 'private-message';
+      spaceId: string;
+      messageId: string;
+      createdAt: string;
     }
   | {
-      kind: 'server-message'
-      serverId: string
-      spaceId: string
-      messageId: string
-      createdAt: string
+      kind: 'server-message';
+      serverId: string;
+      spaceId: string;
+      messageId: string;
+      createdAt: string;
     }
-  | { kind: 'friend-requests' }
+  | { kind: 'friend-requests' };
 
 export function resolveNotificationTarget(
-  notification: UserNotificationResponse,
+  notification: UserNotificationResponse
 ): NotificationTarget | null {
   if (notification.kind === 'friend-request') {
-    return { kind: 'friend-requests' }
+    return { kind: 'friend-requests' };
   }
 
   if (
@@ -28,20 +28,20 @@ export function resolveNotificationTarget(
     !notification.spaceId ||
     !notification.messageId
   ) {
-    return null
+    return null;
   }
 
   const messageTarget = {
     spaceId: notification.spaceId,
     messageId: notification.messageId,
-    createdAt: notification.messageCreatedAt ?? notification.createdAt,
-  }
+    createdAt: notification.messageCreatedAt ?? notification.createdAt
+  };
 
   return notification.serverId
     ? {
         kind: 'server-message',
         serverId: notification.serverId,
-        ...messageTarget,
+        ...messageTarget
       }
-    : { kind: 'private-message', ...messageTarget }
+    : { kind: 'private-message', ...messageTarget };
 }

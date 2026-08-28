@@ -8,8 +8,16 @@
   border-top: 0;
   border-bottom: 0;
   background:
-    radial-gradient(circle at 82% 8%, var(--theme-backdrop-glow), transparent 30%),
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+    radial-gradient(
+      circle at 82% 8%,
+      var(--theme-backdrop-glow),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      var(--theme-frame-bg),
+      var(--theme-control-bg-strong)
+    );
 }
 
 .channelPlaceholder header {
@@ -52,4 +60,3 @@
   padding: 24px 28px;
   text-align: center;
 }
-

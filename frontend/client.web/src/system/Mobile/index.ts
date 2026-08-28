@@ -1,2 +1,2 @@
-export { MobileHubNav } from './components/MobileHubNav'
-export { MobileMenuTab } from './components/MobileMenuTab'
+export { MobileHubNav } from './components/MobileHubNav';
+export { MobileMenuTab } from './components/MobileMenuTab';

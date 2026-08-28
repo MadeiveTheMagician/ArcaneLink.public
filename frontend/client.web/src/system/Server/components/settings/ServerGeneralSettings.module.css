@@ -91,7 +91,11 @@
   border-radius: 8px;
   color: var(--color-text);
   background:
-    radial-gradient(circle at 32% 24%, color-mix(in srgb, var(--theme-accent-light), transparent 46%), transparent 34%),
+    radial-gradient(
+      circle at 32% 24%,
+      color-mix(in srgb, var(--theme-accent-light), transparent 46%),
+      transparent 34%
+    ),
     var(--theme-surface-accent);
 }
 

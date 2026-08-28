@@ -14,14 +14,14 @@ export const authCopy = {
     resetPassword: 'Сменить пароль',
     resendVerification: 'Отправить письмо ещё раз',
     saving: 'Сохраняем...',
-    sending: 'Отправляем...',
+    sending: 'Отправляем...'
   },
   aria: {
     changeForm: 'Смена формы',
     hidePassword: 'Скрыть пароль',
     registerSteps: 'Этапы регистрации',
     showPassword: 'Показать пароль',
-    step: (index: number, label: string) => `Шаг ${index}: ${label}`,
+    step: (index: number, label: string) => `Шаг ${index}: ${label}`
   },
   fields: {
     displayName: 'Профиль',
@@ -36,27 +36,29 @@ export const authCopy = {
     password: 'Пароль',
     newPassword: 'Новый пароль',
     confirmPassword: 'Повторите новый пароль',
-    rememberMe: 'Запомнить меня',
+    rememberMe: 'Запомнить меня'
   },
   hints: {
     deviceReady: 'Печать устройства готова. Введите учётные данные для входа.',
     forgotPassword: 'Забыли пароль?',
-    loginCopy: 'Войдите в свой контур и продолжите работу с серверами, друзьями и личными сообщениями.',
-    registerCopy: 'Заполните четыре печати регистрации. После создания аккаунта портал вернет вас ко входу.',
-    registerReady: 'Заполните свиток регистрации. После создания аккаунта портал вернет вас ко входу.',
+    loginCopy:
+      'Войдите в свой контур и продолжите работу с серверами, друзьями и личными сообщениями.',
+    registerCopy:
+      'Заполните четыре печати регистрации. После создания аккаунта портал вернет вас ко входу.',
+    registerReady:
+      'Заполните свиток регистрации. После создания аккаунта портал вернет вас ко входу.',
     registrationEmailVerification:
       'После регистрации мы отправим на email ссылку. Войти можно только после подтверждения адреса.',
     forgotPasswordCopy:
       'Укажите email или логин. Если аккаунт активен, мы отправим безопасную ссылку.',
     resetPasswordCopy:
       'Задайте новый пароль. После смены все активные сеансы будут завершены.',
-    confirmEmailCopy:
-      'Проверяем одноразовую ссылку и активируем email.',
+    confirmEmailCopy: 'Проверяем одноразовую ссылку и активируем email.'
   },
   labels: {
     device: 'Устройство',
     requirements: 'Требования',
-    stepOf: (current: number, total: number) => `Шаг ${current} из ${total}`,
+    stepOf: (current: number, total: number) => `Шаг ${current} из ${total}`
   },
   requirements: {
     displayName: 'Требования к профилю',
@@ -75,7 +77,7 @@ export const authCopy = {
     passwordMinLength: 'Минимум 8 символов',
     passwordNoWhitespace: 'Нет пробелов',
     passwordSpecial: 'Есть спецсимвол',
-    passwordUppercase: 'Есть заглавная буква',
+    passwordUppercase: 'Есть заглавная буква'
   },
   messages: {
     loginFailed: 'Вход не выполнен.',
@@ -89,10 +91,8 @@ export const authCopy = {
       'Адрес email ещё не подтверждён. Откройте ссылку из письма, затем войдите.',
     verificationSent:
       'Если аккаунт ожидает подтверждения, новое письмо будет отправлено.',
-    recoverySent:
-      'Если аккаунт найден, ссылка для смены пароля отправлена.',
-    passwordResetSuccess:
-      'Пароль изменён. Теперь войдите с новым паролем.',
+    recoverySent: 'Если аккаунт найден, ссылка для смены пароля отправлена.',
+    passwordResetSuccess: 'Пароль изменён. Теперь войдите с новым паролем.',
     emailConfirmed:
       'Адрес email подтверждён. Аккаунт активирован, можно войти.',
     confirmingEmail: 'Проверяем ссылку подтверждения...',
@@ -113,23 +113,23 @@ export const authCopy = {
     sendingVerification: 'Отправляем письмо подтверждения...',
     verificationSendFailed:
       'Не удалось отправить письмо подтверждения. Повторите попытку позже.',
-    passwordsDoNotMatch: 'Пароли не совпадают.',
+    passwordsDoNotMatch: 'Пароли не совпадают.'
   },
   steps: {
     displayName: 'Профиль',
     email: 'Email',
     login: 'Логин',
-    password: 'Пароль',
+    password: 'Пароль'
   },
   tabs: {
     login: 'Вход',
-    register: 'Регистрация',
+    register: 'Регистрация'
   },
   titles: {
     confirmEmail: 'Подтверждение email',
     forgotPassword: 'Восстановление пароля',
     resetPassword: 'Новый пароль',
-    verifyEmail: 'Проверьте почту',
+    verifyEmail: 'Проверьте почту'
   },
   themeTest: {
     activeFrame: 'Активный фрейм',
@@ -155,6 +155,6 @@ export const authCopy = {
     text: 'Текст',
     themePicker: 'Темы для проверки',
     danger: 'Опасность',
-    mutedText: 'Вторичный текст',
-  },
-} as const
+    mutedText: 'Вторичный текст'
+  }
+} as const;

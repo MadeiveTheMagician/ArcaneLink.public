@@ -11,7 +11,11 @@
   border-radius: 12px;
   padding: 7px;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-accent), transparent 91%), transparent 58%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-accent), transparent 91%),
+      transparent 58%
+    ),
     color-mix(in srgb, var(--theme-control-bg-strong), #050817 10%);
   box-shadow:
     0 16px 40px rgba(0, 0, 0, 0.42),
@@ -49,7 +53,11 @@
 .optionActive {
   border-color: color-mix(in srgb, var(--theme-accent-light), transparent 72%);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 78%), transparent 90%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 78%),
+      transparent 90%
+    ),
     var(--theme-hover-bg);
 }
 
@@ -59,7 +67,8 @@
   height: 30px;
   place-items: center;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 72%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-accent-light), transparent 72%);
   border-radius: 9px;
   color: var(--theme-accent-light);
   background: color-mix(in srgb, var(--theme-accent), transparent 86%);
@@ -70,7 +79,7 @@
   border-radius: inherit;
 }
 
-.option[data-mention-kind="everyone"] .optionIcon {
+.option[data-mention-kind='everyone'] .optionIcon {
   color: #ffe1a6;
   background: rgba(180, 111, 24, 0.22);
 }
@@ -98,7 +107,8 @@
 }
 
 .kindBadge {
-  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 66%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-accent-light), transparent 66%);
   border-radius: 999px;
   padding: 2px 7px;
   color: var(--theme-accent-light);
@@ -124,7 +134,7 @@
 .roleDivider::before,
 .roleDivider::after {
   height: 1px;
-  content: "";
+  content: '';
   background: var(--theme-border-soft);
 }
 

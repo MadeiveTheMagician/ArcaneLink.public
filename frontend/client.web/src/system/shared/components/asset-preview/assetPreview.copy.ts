@@ -1,6 +1,6 @@
 export const assetPreviewCopy = {
   aria: {
-    close: 'Закрыть просмотр',
+    close: 'Закрыть просмотр'
   },
-  imageAlt: 'Прикреплённое изображение',
-} as const
+  imageAlt: 'Прикреплённое изображение'
+} as const;

@@ -2,40 +2,41 @@ import type {
   CSSProperties,
   HTMLAttributes,
   KeyboardEvent,
-  ReactNode,
-} from 'react'
-import styles from './SystemTabs.module.css'
+  ReactNode
+} from 'react';
+
+import styles from './SystemTabs.module.css';
 
 type SystemTabOption<TValue extends string> = {
-  badge?: ReactNode
-  disabled?: boolean
-  label: string
-  value: TValue
-}
+  badge?: ReactNode;
+  disabled?: boolean;
+  label: string;
+  value: TValue;
+};
 
 type SystemTabsProps<TValue extends string> = Omit<
   HTMLAttributes<HTMLDivElement>,
   'children' | 'onChange'
 > & {
-  idBase: string
-  label: string
-  onChange: (value: TValue) => void
-  options: readonly SystemTabOption<TValue>[]
-  value: TValue
-}
+  idBase: string;
+  label: string;
+  onChange: (value: TValue) => void;
+  options: readonly SystemTabOption<TValue>[];
+  value: TValue;
+};
 
 type SystemTabPanelProps<TValue extends string> = Omit<
   HTMLAttributes<HTMLDivElement>,
   'id' | 'role'
 > & {
-  idBase: string
-  value: TValue
-}
+  idBase: string;
+  value: TValue;
+};
 
 type TabsStyle = CSSProperties & {
-  '--system-tabs-columns': number
-  '--system-tabs-mobile-columns': number
-}
+  '--system-tabs-columns': number;
+  '--system-tabs-mobile-columns': number;
+};
 
 export function SystemTabs<TValue extends string>({
   className = '',
@@ -50,26 +51,26 @@ export function SystemTabs<TValue extends string>({
   const tabsStyle: TabsStyle = {
     ...style,
     '--system-tabs-columns': Math.max(1, options.length),
-    '--system-tabs-mobile-columns': Math.max(1, Math.min(2, options.length)),
-  }
+    '--system-tabs-mobile-columns': Math.max(1, Math.min(2, options.length))
+  };
 
   function moveFocus(
     event: KeyboardEvent<HTMLButtonElement>,
-    optionIndex: number,
+    optionIndex: number
   ) {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
-      return
+      return;
     }
 
     const enabledIndexes = options.flatMap((option, index) =>
-      option.disabled ? [] : [index],
-    )
+      option.disabled ? [] : [index]
+    );
     if (enabledIndexes.length === 0) {
-      return
+      return;
     }
 
-    event.preventDefault()
-    const currentIndex = Math.max(0, enabledIndexes.indexOf(optionIndex))
+    event.preventDefault();
+    const currentIndex = Math.max(0, enabledIndexes.indexOf(optionIndex));
     const targetIndex =
       event.key === 'Home'
         ? enabledIndexes[0]
@@ -80,23 +81,23 @@ export function SystemTabs<TValue extends string>({
             : enabledIndexes[
                 (currentIndex - 1 + enabledIndexes.length) %
                   enabledIndexes.length
-              ]
+              ];
     if (targetIndex === undefined) {
-      return
+      return;
     }
 
-    const nextOption = options[targetIndex]
+    const nextOption = options[targetIndex];
     if (!nextOption) {
-      return
+      return;
     }
 
-    const tabList = event.currentTarget.parentElement
+    const tabList = event.currentTarget.parentElement;
     const nextTab = tabList?.querySelector<HTMLButtonElement>(
-      `[data-system-tab-index="${targetIndex}"]`,
-    )
+      `[data-system-tab-index="${targetIndex}"]`
+    );
 
-    nextTab?.focus()
-    onChange(nextOption.value)
+    nextTab?.focus();
+    onChange(nextOption.value);
   }
 
   return (
@@ -109,8 +110,8 @@ export function SystemTabs<TValue extends string>({
       style={tabsStyle}
     >
       {options.map((option, index) => {
-        const isActive = option.value === value
-        const ids = getSystemTabIds(idBase, option.value)
+        const isActive = option.value === value;
+        const ids = getSystemTabIds(idBase, option.value);
 
         return (
           <button
@@ -132,10 +133,10 @@ export function SystemTabs<TValue extends string>({
               <span className={styles.badge}>{option.badge}</span>
             ) : null}
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 export function SystemTabPanel<TValue extends string>({
@@ -144,7 +145,7 @@ export function SystemTabPanel<TValue extends string>({
   value,
   ...props
 }: SystemTabPanelProps<TValue>) {
-  const ids = getSystemTabIds(idBase, value)
+  const ids = getSystemTabIds(idBase, value);
 
   return (
     <div
@@ -154,14 +155,14 @@ export function SystemTabPanel<TValue extends string>({
       aria-labelledby={ids.tabId}
       tabIndex={tabIndex}
     />
-  )
+  );
 }
 
 function getSystemTabIds(idBase: string, value: string) {
-  const encodedValue = encodeURIComponent(value)
+  const encodedValue = encodeURIComponent(value);
 
   return {
     panelId: `${idBase}-panel-${encodedValue}`,
-    tabId: `${idBase}-tab-${encodedValue}`,
-  }
+    tabId: `${idBase}-tab-${encodedValue}`
+  };
 }

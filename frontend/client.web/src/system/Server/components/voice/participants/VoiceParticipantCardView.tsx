@@ -1,38 +1,37 @@
-import type {
-  CSSProperties,
-  MouseEvent as ReactMouseEvent,
-} from 'react'
-import { voiceCopy } from '../../../../shared/copy/voice.ru.ts'
-import type { VoiceUserAudioSettings } from '../../../../shared/types/voicePlayback'
-import { fallbackAvatarAccent } from '../../../../shared/utils/avatarAccent'
-import type { VoiceParticipant } from '../../../hooks/voice/useVoiceChannel'
-import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes'
-import { VoiceParticipantAvatar } from './VoiceParticipantIdentity'
-import { VoiceParticipantLocalStatus } from './VoiceParticipantLocalStatus'
-import { VoiceVideoTile } from './VoiceVideoTile'
-import workspaceStyles from '../../shell/ServerWorkspace.module.css'
-import styles from './VoiceParticipants.module.css'
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 
-export type VoiceParticipantCardVariant = 'grid' | 'expanded' | 'side'
+import { voiceCopy } from '../../../../shared/copy/voice.ru.ts';
+import type { VoiceUserAudioSettings } from '../../../../shared/types/voicePlayback';
+import { fallbackAvatarAccent } from '../../../../shared/utils/avatarAccent';
+import type { VoiceParticipant } from '../../../hooks/voice/useVoiceChannel';
+import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes';
+import { VoiceParticipantAvatar } from './VoiceParticipantIdentity';
+import { VoiceParticipantLocalStatus } from './VoiceParticipantLocalStatus';
+import { VoiceVideoTile } from './VoiceVideoTile';
+
+import workspaceStyles from '../../shell/ServerWorkspace.module.css';
+import styles from './VoiceParticipants.module.css';
+
+export type VoiceParticipantCardVariant = 'grid' | 'expanded' | 'side';
 
 type VoiceParticipantCardViewProps = {
-  card: VoiceParticipantCard
-  variant: VoiceParticipantCardVariant
-  isConnected: boolean
-  isVideoHidden: boolean
-  audioSettings?: VoiceUserAudioSettings
-  accent: string | undefined
-  onAccentChange: (participantId: string, accent: string) => void
-  onExpand: (participantId: string, hideMobileChrome: boolean) => void
-  onCollapse: (showMobileChrome: boolean) => void
-  onToggleMobileChrome: () => void
+  card: VoiceParticipantCard;
+  variant: VoiceParticipantCardVariant;
+  isConnected: boolean;
+  isVideoHidden: boolean;
+  audioSettings?: VoiceUserAudioSettings;
+  accent: string | undefined;
+  onAccentChange: (participantId: string, accent: string) => void;
+  onExpand: (participantId: string, hideMobileChrome: boolean) => void;
+  onCollapse: (showMobileChrome: boolean) => void;
+  onToggleMobileChrome: () => void;
   onOpenContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
-    participant: VoiceParticipant,
-  ) => void
-}
+    participant: VoiceParticipant
+  ) => void;
+};
 
-const mobileVoiceWorkspaceQuery = '(max-width: 760px)'
+const mobileVoiceWorkspaceQuery = '(max-width: 760px)';
 
 export function VoiceParticipantCardView({
   card,
@@ -45,7 +44,7 @@ export function VoiceParticipantCardView({
   onExpand,
   onCollapse,
   onToggleMobileChrome,
-  onOpenContextMenu,
+  onOpenContextMenu
 }: VoiceParticipantCardViewProps) {
   const {
     hasVideo,
@@ -54,14 +53,14 @@ export function VoiceParticipantCardView({
     normalizedParticipantId,
     participant,
     participantMember,
-    participantStream,
-  } = card
-  const isMobile = isMobileVoiceWorkspace()
-  const showsVideo = hasVideo && !isVideoHidden
-  const canExpandCard = isConnected && (!isMobile || showsVideo)
+    participantStream
+  } = card;
+  const isMobile = isMobileVoiceWorkspace();
+  const showsVideo = hasVideo && !isVideoHidden;
+  const canExpandCard = isConnected && (!isMobile || showsVideo);
   const voiceCardStyle = {
-    '--voice-card-accent': accent ?? fallbackAvatarAccent,
-  } as CSSProperties
+    '--voice-card-accent': accent ?? fallbackAvatarAccent
+  } as CSSProperties;
 
   return (
     <article
@@ -83,38 +82,43 @@ export function VoiceParticipantCardView({
       style={voiceCardStyle}
       tabIndex={0}
       onClick={(event) => {
-        event.stopPropagation()
+        event.stopPropagation();
 
-        if (!canExpandCard) return
+        if (!canExpandCard) return;
 
         if (variant === 'expanded') {
           if (isMobile) {
-            onToggleMobileChrome()
-            return
+            onToggleMobileChrome();
+            return;
           }
 
-          onCollapse(false)
-          return
+          onCollapse(false);
+          return;
         }
 
-        onExpand(normalizedParticipantId, isMobile && showsVideo)
+        onExpand(normalizedParticipantId, isMobile && showsVideo);
       }}
       onContextMenu={(event) => {
-        onOpenContextMenu(event, participant)
+        onOpenContextMenu(event, participant);
       }}
       onKeyDown={(event) => {
-        if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) {
-          return
+        if (
+          event.key !== 'ContextMenu' &&
+          !(event.shiftKey && event.key === 'F10')
+        ) {
+          return;
         }
 
-        event.preventDefault()
-        const bounds = event.currentTarget.getBoundingClientRect()
-        event.currentTarget.dispatchEvent(new MouseEvent('contextmenu', {
-          bubbles: true,
-          cancelable: true,
-          clientX: bounds.left + 18,
-          clientY: bounds.top + 18,
-        }))
+        event.preventDefault();
+        const bounds = event.currentTarget.getBoundingClientRect();
+        event.currentTarget.dispatchEvent(
+          new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+            clientX: bounds.left + 18,
+            clientY: bounds.top + 18
+          })
+        );
       }}
     >
       {participantStream && showsVideo ? (
@@ -126,8 +130,8 @@ export function VoiceParticipantCardView({
               type="button"
               aria-label={voiceCopy.channel.expandStream}
               onClick={(event) => {
-                event.stopPropagation()
-                onExpand(normalizedParticipantId, true)
+                event.stopPropagation();
+                onExpand(normalizedParticipantId, true);
               }}
             >
               <span aria-hidden="true" />
@@ -139,8 +143,8 @@ export function VoiceParticipantCardView({
               type="button"
               aria-label={voiceCopy.channel.shrinkStream}
               onClick={(event) => {
-                event.stopPropagation()
-                onCollapse(true)
+                event.stopPropagation();
+                onCollapse(true);
               }}
             >
               <span aria-hidden="true" />
@@ -170,12 +174,12 @@ export function VoiceParticipantCardView({
         />
       </div>
     </article>
-  )
+  );
 }
 
 function isMobileVoiceWorkspace() {
   return (
     typeof window !== 'undefined' &&
     window.matchMedia(mobileVoiceWorkspaceQuery).matches
-  )
+  );
 }

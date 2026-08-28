@@ -1,85 +1,86 @@
-import { useEffect, useState } from 'react'
-import type { PointerEvent } from 'react'
+import { useEffect, useState } from 'react';
+import type { PointerEvent } from 'react';
 
-export const defaultSidePanelWidth = 300
-export const defaultMemberPanelWidth = 300
-export const responsiveMemberPanelCompactMaxWidth = 1200
+export const defaultSidePanelWidth = 300;
+export const defaultMemberPanelWidth = 300;
+export const responsiveMemberPanelCompactMaxWidth = 1200;
 
-const sidePanelMinWidth = 250
-const sidePanelMaxWidth = 520
-const memberPanelMinWidth = 54
-const memberPanelMaxWidth = 520
-const memberPanelCompactWidth = 100
+const sidePanelMinWidth = 250;
+const sidePanelMaxWidth = 520;
+const memberPanelMinWidth = 54;
+const memberPanelMaxWidth = 520;
+const memberPanelCompactWidth = 100;
 
-export function shouldUseResponsiveMemberPanelCompact(
-  viewportWidth: number,
-) {
-  return viewportWidth <= responsiveMemberPanelCompactMaxWidth
+export function shouldUseResponsiveMemberPanelCompact(viewportWidth: number) {
+  return viewportWidth <= responsiveMemberPanelCompactMaxWidth;
 }
 
 type PanelResizeOptions = {
-  initialSidePanelWidth?: number
-  initialMemberPanelWidth?: number
+  initialSidePanelWidth?: number;
+  initialMemberPanelWidth?: number;
   onWidthsChange?: (widths: {
-    sidePanelWidth: number
-    memberPanelWidth: number
-  }) => void
-}
+    sidePanelWidth: number;
+    memberPanelWidth: number;
+  }) => void;
+};
 
 export function usePanelResize({
   initialSidePanelWidth = defaultSidePanelWidth,
   initialMemberPanelWidth = defaultMemberPanelWidth,
-  onWidthsChange,
+  onWidthsChange
 }: PanelResizeOptions = {}) {
-  const [sidePanelWidth, setSidePanelWidth] = useState(initialSidePanelWidth)
+  const [sidePanelWidth, setSidePanelWidth] = useState(initialSidePanelWidth);
   const [memberPanelWidth, setMemberPanelWidth] = useState(
-    initialMemberPanelWidth,
-  )
+    initialMemberPanelWidth
+  );
   const [isResponsiveMemberPanelCompact, setIsResponsiveMemberPanelCompact] =
     useState(() =>
       typeof window === 'undefined'
         ? false
-        : shouldUseResponsiveMemberPanelCompact(window.innerWidth),
-    )
+        : shouldUseResponsiveMemberPanelCompact(window.innerWidth)
+    );
 
   const isMemberPanelCompact =
     memberPanelWidth <= memberPanelCompactWidth ||
-    isResponsiveMemberPanelCompact
+    isResponsiveMemberPanelCompact;
 
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return
+    if (
+      typeof window === 'undefined' ||
+      typeof window.matchMedia !== 'function'
+    ) {
+      return;
     }
 
     const mediaQuery = window.matchMedia(
-      `(max-width: ${responsiveMemberPanelCompactMaxWidth}px)`,
-    )
+      `(max-width: ${responsiveMemberPanelCompactMaxWidth}px)`
+    );
     const updateResponsiveCompactState = () => {
-      setIsResponsiveMemberPanelCompact(mediaQuery.matches)
-    }
+      setIsResponsiveMemberPanelCompact(mediaQuery.matches);
+    };
 
-    updateResponsiveCompactState()
-    mediaQuery.addEventListener('change', updateResponsiveCompactState)
+    updateResponsiveCompactState();
+    mediaQuery.addEventListener('change', updateResponsiveCompactState);
 
     return () => {
-      mediaQuery.removeEventListener('change', updateResponsiveCompactState)
-    }
-  }, [])
+      mediaQuery.removeEventListener('change', updateResponsiveCompactState);
+    };
+  }, []);
 
   function startPaneResize(
     pane: 'spaces' | 'members' | 'hub',
-    event: PointerEvent<HTMLButtonElement>,
+    event: PointerEvent<HTMLButtonElement>
   ) {
-    event.preventDefault()
+    event.preventDefault();
 
-    const startX = event.clientX
-    const startWidth = pane === 'members' ? memberPanelWidth : sidePanelWidth
-    const pageElement = event.currentTarget.closest('.profile-page') as
-      | HTMLElement
-      | null
+    const startX = event.clientX;
+    const startWidth = pane === 'members' ? memberPanelWidth : sidePanelWidth;
+    const pageElement = event.currentTarget.closest(
+      '.profile-page'
+    ) as HTMLElement | null;
 
     try {
-      event.currentTarget.setPointerCapture(event.pointerId)
+      event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
       // The window listeners below keep resize stable if capture is unavailable.
     }
@@ -88,61 +89,70 @@ export function usePanelResize({
       const rawWidth =
         pane === 'members'
           ? startWidth + startX - pointerEvent.clientX
-          : startWidth + pointerEvent.clientX - startX
+          : startWidth + pointerEvent.clientX - startX;
 
       return Math.round(
         pane === 'members'
-          ? Math.min(Math.max(rawWidth, memberPanelMinWidth), memberPanelMaxWidth)
-          : Math.min(Math.max(rawWidth, sidePanelMinWidth), sidePanelMaxWidth),
-      )
+          ? Math.min(
+              Math.max(rawWidth, memberPanelMinWidth),
+              memberPanelMaxWidth
+            )
+          : Math.min(Math.max(rawWidth, sidePanelMinWidth), sidePanelMaxWidth)
+      );
     }
 
     function applyWidth(width: number) {
       if (!pageElement) {
-        return
+        return;
       }
 
       if (pane === 'members') {
-        pageElement.style.setProperty('--profile-member-panel-width', `${width}px`)
-        return
+        pageElement.style.setProperty(
+          '--profile-member-panel-width',
+          `${width}px`
+        );
+        return;
       }
 
-      pageElement.style.setProperty('--profile-side-panel-width', `${width}px`)
-      pageElement.style.setProperty('--profile-space-panel-width', `${width}px`)
+      pageElement.style.setProperty('--profile-side-panel-width', `${width}px`);
+      pageElement.style.setProperty(
+        '--profile-space-panel-width',
+        `${width}px`
+      );
     }
 
     function handlePointerMove(pointerEvent: globalThis.PointerEvent) {
-      pointerEvent.preventDefault()
-      applyWidth(resolveNextWidth(pointerEvent))
+      pointerEvent.preventDefault();
+      applyWidth(resolveNextWidth(pointerEvent));
     }
 
     function finishResize(pointerEvent: globalThis.PointerEvent) {
-      const nextWidth = resolveNextWidth(pointerEvent)
+      const nextWidth = resolveNextWidth(pointerEvent);
 
-      applyWidth(nextWidth)
+      applyWidth(nextWidth);
 
       if (pane === 'members') {
-        setMemberPanelWidth(nextWidth)
+        setMemberPanelWidth(nextWidth);
         onWidthsChange?.({
           sidePanelWidth,
-          memberPanelWidth: nextWidth,
-        })
+          memberPanelWidth: nextWidth
+        });
       } else {
-        setSidePanelWidth(nextWidth)
+        setSidePanelWidth(nextWidth);
         onWidthsChange?.({
           sidePanelWidth: nextWidth,
-          memberPanelWidth,
-        })
+          memberPanelWidth
+        });
       }
 
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', finishResize)
-      window.removeEventListener('pointercancel', finishResize)
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', finishResize);
+      window.removeEventListener('pointercancel', finishResize);
     }
 
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', finishResize)
-    window.addEventListener('pointercancel', finishResize)
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', finishResize);
+    window.addEventListener('pointercancel', finishResize);
   }
 
   return {
@@ -150,6 +160,6 @@ export function usePanelResize({
     memberPanelWidth,
     hubPanelWidth: sidePanelWidth,
     isMemberPanelCompact,
-    startPaneResize,
-  }
+    startPaneResize
+  };
 }

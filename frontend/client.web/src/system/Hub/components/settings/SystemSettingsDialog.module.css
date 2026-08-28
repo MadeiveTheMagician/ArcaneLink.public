@@ -18,13 +18,13 @@
 
 .backdropClosing {
   pointer-events: none;
-  animation: settingsBackdropOut
-    var(--settings-close-duration, 200ms) ease-in both;
+  animation: settingsBackdropOut var(--settings-close-duration, 200ms) ease-in
+    both;
 }
 
 .dialogClosing {
-  animation: settingsDialogOut
-    var(--settings-close-duration, 200ms) ease-in both;
+  animation: settingsDialogOut var(--settings-close-duration, 200ms) ease-in
+    both;
 }
 
 @keyframes settingsBackdropIn {
@@ -134,8 +134,9 @@
 
 .closeButton:hover > span,
 .closeButton:focus-visible > span {
-  filter:
-    drop-shadow(0 0 5px color-mix(in srgb, var(--color-text), transparent 52%))
+  filter: drop-shadow(
+      0 0 5px color-mix(in srgb, var(--color-text), transparent 52%)
+    )
     drop-shadow(0 0 12px color-mix(in srgb, var(--color-text), transparent 76%));
   transform: scale(1.05);
 }
@@ -397,11 +398,11 @@
     grid-auto-columns: max-content;
     overflow-x: auto;
     border-right: 0;
-    border-bottom: 1px solid var(--profile-border-soft, var(--theme-border-soft));
+    border-bottom: 1px solid
+      var(--profile-border-soft, var(--theme-border-soft));
   }
 
   .tabGroup {
     width: min(230px, 72vw);
   }
-
 }

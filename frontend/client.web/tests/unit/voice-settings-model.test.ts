@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
+
 import {
   VOICE_SETTINGS_VERSION,
   createVoiceAudioConstraints,
@@ -8,28 +9,28 @@ import {
   parseVoiceSettings,
   resolveEffectiveVoiceSpatialAudioMode,
   saveVoiceSettings,
-  voiceSettingsStorageKey,
-} from '../../src/system/shared/voice/voiceSettings'
+  voiceSettingsStorageKey
+} from '../../src/system/shared/voice/voiceSettings';
 
 test.describe('voice settings model', () => {
   test('uses voice-safe defaults for missing or malformed storage', () => {
     expect(defaultVoiceSettings).toMatchObject({
       thresholdMode: 'manual',
-      manualThresholdDb: -45,
-    })
-    expect(parseVoiceSettings(null)).toEqual(defaultVoiceSettings)
-    expect(parseVoiceSettings('{broken')).toEqual(defaultVoiceSettings)
+      manualThresholdDb: -45
+    });
+    expect(parseVoiceSettings(null)).toEqual(defaultVoiceSettings);
+    expect(parseVoiceSettings('{broken')).toEqual(defaultVoiceSettings);
     expect(
       parseVoiceSettings(
         JSON.stringify({
           version: VOICE_SETTINGS_VERSION + 1,
           settings: {
-            autoGainControl: true,
-          },
-        }),
-      ),
-    ).toEqual(defaultVoiceSettings)
-  })
+            autoGainControl: true
+          }
+        })
+      )
+    ).toEqual(defaultVoiceSettings);
+  });
 
   test('normalizes persisted settings and clamps numeric values', () => {
     expect(
@@ -48,8 +49,8 @@ test.describe('voice settings model', () => {
         warnInputUnavailable: false,
         warnSpeakingWhileMuted: true,
         qualityProfile: 'high',
-        adaptiveQuality: false,
-      }),
+        adaptiveQuality: false
+      })
     ).toEqual({
       inputDeviceId: 'microphone-1',
       outputDeviceId: 'default',
@@ -67,17 +68,16 @@ test.describe('voice settings model', () => {
       warnInputUnavailable: false,
       warnSpeakingWhileMuted: true,
       qualityProfile: 'high',
-      adaptiveQuality: false,
-    })
-  })
+      adaptiveQuality: false
+    });
+  });
 
   test('preserves a spatial preference while the effective mode is disabled', () => {
     expect(
-      normalizeVoiceSettings({ spatialAudioMode: 'immersive' })
-        .spatialAudioMode,
-    ).toBe('immersive')
-    expect(resolveEffectiveVoiceSpatialAudioMode('immersive')).toBe('off')
-  })
+      normalizeVoiceSettings({ spatialAudioMode: 'immersive' }).spatialAudioMode
+    ).toBe('immersive');
+    expect(resolveEffectiveVoiceSpatialAudioMode('immersive')).toBe('off');
+  });
 
   test('adds quality defaults to old settings without losing their values', () => {
     expect(
@@ -88,10 +88,10 @@ test.describe('voice settings model', () => {
             inputDeviceId: 'legacy-microphone',
             outputVolumePercent: 64,
             inputMode: 'push-to-talk',
-            pushToTalkKeyCode: 'KeyC',
-          },
-        }),
-      ),
+            pushToTalkKeyCode: 'KeyC'
+          }
+        })
+      )
     ).toMatchObject({
       inputDeviceId: 'legacy-microphone',
       outputVolumePercent: 64,
@@ -100,103 +100,101 @@ test.describe('voice settings model', () => {
       thresholdMode: 'manual',
       manualThresholdDb: -45,
       qualityProfile: 'automatic',
-      adaptiveQuality: true,
-    })
-  })
+      adaptiveQuality: true
+    });
+  });
 
   test('normalizes invalid quality settings independently', () => {
     expect(
       normalizeVoiceSettings({
         qualityProfile: 'studio',
-        adaptiveQuality: 'yes',
-      }),
+        adaptiveQuality: 'yes'
+      })
     ).toMatchObject({
       qualityProfile: 'automatic',
-      adaptiveQuality: true,
-    })
+      adaptiveQuality: true
+    });
     expect(
       normalizeVoiceSettings({
         qualityProfile: 'data-saver',
-        adaptiveQuality: false,
-      }),
+        adaptiveQuality: false
+      })
     ).toMatchObject({
       qualityProfile: 'data-saver',
-      adaptiveQuality: false,
-    })
-  })
+      adaptiveQuality: false
+    });
+  });
 
   test('reads legacy unwrapped settings and writes a versioned envelope', () => {
     expect(
       parseVoiceSettings(
         JSON.stringify({
           autoGainControl: true,
-          manualThresholdDb: -42,
-        }),
-      ),
+          manualThresholdDb: -42
+        })
+      )
     ).toMatchObject({
       autoGainControl: true,
       thresholdMode: 'manual',
-      manualThresholdDb: -42,
-    })
+      manualThresholdDb: -42
+    });
 
-    const values = new Map<string, string>()
+    const values = new Map<string, string>();
     const storage = {
       getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => values.set(key, value),
-    }
+      setItem: (key: string, value: string) => values.set(key, value)
+    };
     const saved = saveVoiceSettings(
       {
         ...defaultVoiceSettings,
-        outputVolumePercent: 65,
+        outputVolumePercent: 65
       },
-      storage,
-    )
+      storage
+    );
 
-    expect(saved.outputVolumePercent).toBe(65)
+    expect(saved.outputVolumePercent).toBe(65);
     expect(JSON.parse(values.get(voiceSettingsStorageKey) ?? '{}')).toEqual({
       version: VOICE_SETTINGS_VERSION,
-      settings: saved,
-    })
-  })
+      settings: saved
+    });
+  });
 
   test('builds capture constraints for system and explicit microphones', () => {
     expect(createVoiceAudioConstraints({ ...defaultVoiceSettings })).toEqual({
       echoCancellation: true,
       noiseSuppression: true,
-      autoGainControl: false,
-    })
+      autoGainControl: false
+    });
 
     expect(
       createVoiceAudioConstraints({
         ...defaultVoiceSettings,
         inputDeviceId: 'microphone-2',
         echoCancellation: false,
-        autoGainControl: true,
-      }),
+        autoGainControl: true
+      })
     ).toEqual({
       deviceId: { exact: 'microphone-2' },
       echoCancellation: false,
       noiseSuppression: true,
-      autoGainControl: true,
-    })
-  })
+      autoGainControl: true
+    });
+  });
 
   test('allows ordinary push-to-talk keys but rejects navigation and modifiers', () => {
-    expect(isPushToTalkKeyCodeAllowed('KeyV')).toBe(true)
-    expect(isPushToTalkKeyCodeAllowed('Space')).toBe(true)
-    expect(isPushToTalkKeyCodeAllowed('Numpad5')).toBe(true)
-    expect(isPushToTalkKeyCodeAllowed('Slash')).toBe(true)
-    expect(isPushToTalkKeyCodeAllowed('Escape')).toBe(false)
-    expect(isPushToTalkKeyCodeAllowed('ControlLeft')).toBe(false)
-    expect(isPushToTalkKeyCodeAllowed('ArrowUp')).toBe(false)
-    expect(isPushToTalkKeyCodeAllowed('PageDown')).toBe(false)
-    expect(isPushToTalkKeyCodeAllowed('F5')).toBe(false)
-    expect(
-      isPushToTalkKeyCodeAllowed('KeyV', { ctrlKey: true }),
-    ).toBe(false)
-    expect(
-      isPushToTalkKeyCodeAllowed('Space', { isComposing: true }),
-    ).toBe(false)
-    expect(isPushToTalkKeyCodeAllowed('')).toBe(false)
-  })
-})
+    expect(isPushToTalkKeyCodeAllowed('KeyV')).toBe(true);
+    expect(isPushToTalkKeyCodeAllowed('Space')).toBe(true);
+    expect(isPushToTalkKeyCodeAllowed('Numpad5')).toBe(true);
+    expect(isPushToTalkKeyCodeAllowed('Slash')).toBe(true);
+    expect(isPushToTalkKeyCodeAllowed('Escape')).toBe(false);
+    expect(isPushToTalkKeyCodeAllowed('ControlLeft')).toBe(false);
+    expect(isPushToTalkKeyCodeAllowed('ArrowUp')).toBe(false);
+    expect(isPushToTalkKeyCodeAllowed('PageDown')).toBe(false);
+    expect(isPushToTalkKeyCodeAllowed('F5')).toBe(false);
+    expect(isPushToTalkKeyCodeAllowed('KeyV', { ctrlKey: true })).toBe(false);
+    expect(isPushToTalkKeyCodeAllowed('Space', { isComposing: true })).toBe(
+      false
+    );
+    expect(isPushToTalkKeyCodeAllowed('')).toBe(false);
+  });
+});

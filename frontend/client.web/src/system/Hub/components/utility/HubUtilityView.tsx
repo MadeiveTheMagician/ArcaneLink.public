@@ -1,9 +1,10 @@
 import {
+  type PointerEvent as ReactPointerEvent,
   useEffect,
   useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from 'react'
+  useState
+} from 'react';
+
 import type {
   FriendRequestResponse,
   FriendUserResponse,
@@ -12,102 +13,104 @@ import type {
   ServerInviteResponse,
   ServerMemberResponse,
   SpaceMessageResponse,
-  UserFriendResponse,
-} from '../../../../shared/types'
-import { ServersBrowser } from '../../../Server/components/navigation/ServersBrowser'
-import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel'
-import type {
-  VoicePlaybackState,
-  VoiceUserAudioSettings,
-} from '../../../shared/types/voicePlayback'
-import type { FocusPrivateMessageRequest } from '../private-space/usePrivateSpaceMessages'
-import type { HubWorkspace } from '../shell/useHubWorkspace'
-import { CommunityView } from '../community/CommunityView'
-import type {
-  CommunityNavigationRequest,
-  CommunityTab,
-} from '../community/communityTypes'
-import { PrivateSpaceWorkspace } from '../private-space/PrivateSpaceWorkspace'
-import { NotificationCenter } from '../notifications/NotificationCenter'
-import type { NotificationTarget } from '../notifications/notificationNavigation'
+  UserFriendResponse
+} from '../../../../shared/types';
+import { ServersBrowser } from '../../../Server/components/navigation/ServersBrowser';
+import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel';
 import {
   defaultMessageBubbleAlignment,
-  defaultMessageBubbleWidth,
-} from '../../../shared'
+  defaultMessageBubbleWidth
+} from '../../../shared';
 import type {
   MessageBubbleAlignment,
-  MessageBubbleWidth,
-} from '../../../shared'
+  MessageBubbleWidth
+} from '../../../shared';
+import type {
+  VoicePlaybackState,
+  VoiceUserAudioSettings
+} from '../../../shared/types/voicePlayback';
+import { CommunityView } from '../community/CommunityView';
+import type {
+  CommunityNavigationRequest,
+  CommunityTab
+} from '../community/communityTypes';
+import { NotificationCenter } from '../notifications/NotificationCenter';
+import type { NotificationTarget } from '../notifications/notificationNavigation';
+import { PrivateSpaceWorkspace } from '../private-space/PrivateSpaceWorkspace';
+import type { FocusPrivateMessageRequest } from '../private-space/usePrivateSpaceMessages';
+import type { HubWorkspace } from '../shell/useHubWorkspace';
 
 type HubUtilityViewProps = {
-  activeWorkspace: HubWorkspace
-  accessToken: string
-  activePrivateSpaceId: string | null
-  currentUserId: string
-  privateSpaces: PrivateSpaceResponse[]
-  directServerInvites: ServerInviteResponse[]
-  visibleServerMemberships: ServerMemberResponse[]
-  friends: UserFriendResponse[]
-  incomingFriendRequests: FriendRequestResponse[]
-  outgoingFriendRequests: FriendRequestResponse[]
-  friendSearchQuery: string
-  isLoadingFriends: boolean
-  isMutatingPrivateSpaces: boolean
-  isSearchingUsers: boolean
-  isMutatingFriends: boolean
-  friendNotice: string | null
-  pendingOutgoingUserIds: Set<string>
-  friendUserIds: Set<string>
-  voice: VoiceChannelController
-  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>
-  isMemberPanelCompact: boolean
-  defaultAttachmentExpanded: boolean
-  loadExternalMediaPreviews: boolean
-  horizontalVideoCardSize: number
-  verticalVideoCardSize: number
-  privateMessageDisplayFormat?: MessageDisplayFormat
-  privateMessageBubbleAlignment?: MessageBubbleAlignment
-  privateMessageBubbleWidth?: MessageBubbleWidth
+  activeWorkspace: HubWorkspace;
+  accessToken: string;
+  activePrivateSpaceId: string | null;
+  currentUserId: string;
+  privateSpaces: PrivateSpaceResponse[];
+  directServerInvites: ServerInviteResponse[];
+  visibleServerMemberships: ServerMemberResponse[];
+  friends: UserFriendResponse[];
+  incomingFriendRequests: FriendRequestResponse[];
+  outgoingFriendRequests: FriendRequestResponse[];
+  friendSearchQuery: string;
+  isLoadingFriends: boolean;
+  isMutatingPrivateSpaces: boolean;
+  isSearchingUsers: boolean;
+  isMutatingFriends: boolean;
+  friendNotice: string | null;
+  pendingOutgoingUserIds: Set<string>;
+  friendUserIds: Set<string>;
+  voice: VoiceChannelController;
+  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>;
+  isMemberPanelCompact: boolean;
+  defaultAttachmentExpanded: boolean;
+  loadExternalMediaPreviews: boolean;
+  horizontalVideoCardSize: number;
+  verticalVideoCardSize: number;
+  privateMessageDisplayFormat?: MessageDisplayFormat;
+  privateMessageBubbleAlignment?: MessageBubbleAlignment;
+  privateMessageBubbleWidth?: MessageBubbleWidth;
   pendingPrivateSpaceDroppedFiles: {
-    id: string
-    spaceId: string
-    files: File[]
-  } | null
+    id: string;
+    spaceId: string;
+    files: File[];
+  } | null;
   onAddPrivateSpaceMember: (
     spaceId: string,
-    userId: string,
-  ) => Promise<PrivateSpaceResponse | null>
+    userId: string
+  ) => Promise<PrivateSpaceResponse | null>;
   onChangeVoiceAudioSettings: (
     participantId: string,
-    patch: Partial<VoiceUserAudioSettings>,
-  ) => void
-  onPendingPrivateSpaceDroppedFilesConsumed: (id: string) => void
-  onServerJoined: (membership: ServerMemberResponse) => void
-  onOpenServer: (membership: ServerMemberResponse) => void
-  onOpenDirectSpace: (userId: string) => void
-  onStartDirectVoice: (user: FriendUserResponse) => void
+    patch: Partial<VoiceUserAudioSettings>
+  ) => void;
+  onPendingPrivateSpaceDroppedFilesConsumed: (id: string) => void;
+  onServerJoined: (membership: ServerMemberResponse) => void;
+  onOpenServer: (membership: ServerMemberResponse) => void;
+  onOpenDirectSpace: (userId: string) => void;
+  onStartDirectVoice: (user: FriendUserResponse) => void;
   onLoadInviteTargetServers: (
-    targetUserId: string,
-  ) => Promise<ServerMemberResponse[]>
-  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void
-  onAcceptDirectServerInvite: (inviteId: string) => void
-  onDeclineDirectServerInvite: (inviteId: string) => void
-  onOpenNotificationTarget: (target: NotificationTarget) => void
-  communityNavigationRequest: CommunityNavigationRequest | null
-  onCommunityNavigationRequestConsumed: (requestId: number) => void
-  onFriendSearchQueryChange: (query: string) => void
-  onSendFriendRequest: (userId: string) => void
-  onAcceptFriendRequest: (requestId: string) => void
-  onDeclineFriendRequest: (requestId: string) => void
-  onCancelFriendRequest: (requestId: string) => void
-  onRemoveFriend: (userId: string) => void
-  onCreateServer: () => void
-  onStartPrivateInfoResize: (event: ReactPointerEvent<HTMLButtonElement>) => void
-  onReturnToDirectMessages: () => void
-  focusedPrivateMessage?: FocusPrivateMessageRequest | null
-  onOpenPrivateSearchResult: (message: SpaceMessageResponse) => void
-}
+    targetUserId: string
+  ) => Promise<ServerMemberResponse[]>;
+  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void;
+  onAcceptDirectServerInvite: (inviteId: string) => void;
+  onDeclineDirectServerInvite: (inviteId: string) => void;
+  onOpenNotificationTarget: (target: NotificationTarget) => void;
+  communityNavigationRequest: CommunityNavigationRequest | null;
+  onCommunityNavigationRequestConsumed: (requestId: number) => void;
+  onFriendSearchQueryChange: (query: string) => void;
+  onSendFriendRequest: (userId: string) => void;
+  onAcceptFriendRequest: (requestId: string) => void;
+  onDeclineFriendRequest: (requestId: string) => void;
+  onCancelFriendRequest: (requestId: string) => void;
+  onRemoveFriend: (userId: string) => void;
+  onCreateServer: () => void;
+  onStartPrivateInfoResize: (
+    event: ReactPointerEvent<HTMLButtonElement>
+  ) => void;
+  onReturnToDirectMessages: () => void;
+  focusedPrivateMessage?: FocusPrivateMessageRequest | null;
+  onOpenPrivateSearchResult: (message: SpaceMessageResponse) => void;
+};
 
 export function HubUtilityView({
   activeWorkspace,
@@ -164,10 +167,10 @@ export function HubUtilityView({
   onStartPrivateInfoResize,
   onReturnToDirectMessages,
   focusedPrivateMessage,
-  onOpenPrivateSearchResult,
+  onOpenPrivateSearchResult
 }: HubUtilityViewProps) {
-  const [communityTab, setCommunityTab] = useState<CommunityTab>('friends')
-  const handledCommunityNavigationRequestRef = useRef<number | null>(null)
+  const [communityTab, setCommunityTab] = useState<CommunityTab>('friends');
+  const handledCommunityNavigationRequestRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (
@@ -175,17 +178,14 @@ export function HubUtilityView({
       handledCommunityNavigationRequestRef.current ===
         communityNavigationRequest.id
     ) {
-      return
+      return;
     }
 
     handledCommunityNavigationRequestRef.current =
-      communityNavigationRequest.id
-    setCommunityTab(communityNavigationRequest.tab)
-    onCommunityNavigationRequestConsumed(communityNavigationRequest.id)
-  }, [
-    communityNavigationRequest,
-    onCommunityNavigationRequestConsumed,
-  ])
+      communityNavigationRequest.id;
+    setCommunityTab(communityNavigationRequest.tab);
+    onCommunityNavigationRequestConsumed(communityNavigationRequest.id);
+  }, [communityNavigationRequest, onCommunityNavigationRequestConsumed]);
 
   if (activeWorkspace === 'private-space') {
     return (
@@ -228,7 +228,7 @@ export function HubUtilityView({
         onStartInfoResize={onStartPrivateInfoResize}
         onReturnToDirectMessages={onReturnToDirectMessages}
       />
-    )
+    );
   }
 
   if (activeWorkspace === 'friends') {
@@ -258,7 +258,7 @@ export function HubUtilityView({
         onSendFriendRequest={onSendFriendRequest}
         onTabChange={setCommunityTab}
       />
-    )
+    );
   }
 
   if (activeWorkspace === 'invites') {
@@ -271,7 +271,7 @@ export function HubUtilityView({
         onDeclineDirectServerInvite={onDeclineDirectServerInvite}
         onOpenTarget={onOpenNotificationTarget}
       />
-    )
+    );
   }
 
   return (
@@ -282,5 +282,5 @@ export function HubUtilityView({
       onOpenServer={onOpenServer}
       onServerJoined={onServerJoined}
     />
-  )
+  );
 }

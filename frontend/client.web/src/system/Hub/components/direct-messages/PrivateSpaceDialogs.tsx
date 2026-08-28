@@ -1,41 +1,43 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { apiJson } from '../../../../shared/api/api'
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+
+import { apiJson } from '../../../../shared/api/api';
 import type {
   PrivateSpaceResponse,
   PublicUserProfileResponse,
-  UserFriendResponse,
-} from '../../../../shared/types'
-import { commonCopy, communityCopy, PresenceName } from '../../../shared'
-import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer'
-import { PrivateSpaceAvatar, UserAvatar } from './DirectMessageAvatar'
-import { getPrivateSpaceOtherMember } from './directMessageModel'
-import styles from './PrivateSpaceDialogs.module.css'
+  UserFriendResponse
+} from '../../../../shared/types';
+import { PresenceName, commonCopy, communityCopy } from '../../../shared';
+import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
+import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon';
+import { PrivateSpaceAvatar, UserAvatar } from './DirectMessageAvatar';
+import { getPrivateSpaceOtherMember } from './directMessageModel';
+
+import styles from './PrivateSpaceDialogs.module.css';
 
 type DialogShellProps = {
-  title: string
-  onClose: () => void
-  children: ReactNode
-  footer?: ReactNode
-  wide?: boolean
-}
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+  wide?: boolean;
+};
 
 export function DialogShell({
   title,
   onClose,
   children,
   footer,
-  wide = false,
+  wide = false
 }: DialogShellProps) {
-  const titleId = useId()
-  const dialogRef = useRef<HTMLElement | null>(null)
+  const titleId = useId();
+  const dialogRef = useRef<HTMLElement | null>(null);
 
   useDismissableLayer({
     isOpen: true,
     layerRef: dialogRef,
-    onDismiss: onClose,
-  })
+    onDismiss: onClose
+  });
 
   return (
     <div className={styles.overlay} role="presentation">
@@ -60,7 +62,7 @@ export function DialogShell({
         {footer && <footer>{footer}</footer>}
       </section>
     </div>
-  )
+  );
 }
 
 export function InvitePrivateSpaceMemberDialog({
@@ -69,37 +71,37 @@ export function InvitePrivateSpaceMemberDialog({
   isLoadingCandidates,
   isSaving,
   onClose,
-  onInvite,
+  onInvite
 }: {
-  candidates: UserFriendResponse[]
-  spaceKind: PrivateSpaceResponse['kind']
-  isLoadingCandidates: boolean
-  isSaving: boolean
-  onClose: () => void
-  onInvite: (userId: string) => Promise<PrivateSpaceResponse | null>
+  candidates: UserFriendResponse[];
+  spaceKind: PrivateSpaceResponse['kind'];
+  isLoadingCandidates: boolean;
+  isSaving: boolean;
+  onClose: () => void;
+  onInvite: (userId: string) => Promise<PrivateSpaceResponse | null>;
 }) {
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const isBusy = isSaving || pendingUserId !== null
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const isBusy = isSaving || pendingUserId !== null;
 
   async function invite(userId: string) {
-    if (isBusy) return
+    if (isBusy) return;
 
-    setPendingUserId(userId)
-    setError(null)
+    setPendingUserId(userId);
+    setError(null);
 
     try {
-      const privateSpace = await onInvite(userId)
+      const privateSpace = await onInvite(userId);
       if (!privateSpace) {
-        setError(communityCopy.direct.addMemberFailed)
-        return
+        setError(communityCopy.direct.addMemberFailed);
+        return;
       }
 
-      onClose()
+      onClose();
     } catch {
-      setError(communityCopy.direct.addMemberFailed)
+      setError(communityCopy.direct.addMemberFailed);
     } finally {
-      setPendingUserId(null)
+      setPendingUserId(null);
     }
   }
 
@@ -148,7 +150,7 @@ export function InvitePrivateSpaceMemberDialog({
           <p className={styles.empty}>{communityCopy.direct.inviteEmpty}</p>
         ) : (
           candidates.map((friend) => {
-            const isPending = pendingUserId === friend.friendUserId
+            const isPending = pendingUserId === friend.friendUserId;
 
             return (
               <button
@@ -178,30 +180,30 @@ export function InvitePrivateSpaceMemberDialog({
                   <SystemIcon name="user-plus" size={17} />
                 )}
               </button>
-            )
+            );
           })
         )}
       </div>
     </DialogShell>
-  )
+  );
 }
 
 export function CreatePrivateSpaceDialog({
   friends,
   isSaving,
   onClose,
-  onCreate,
+  onCreate
 }: {
-  friends: UserFriendResponse[]
-  isSaving: boolean
-  onClose: () => void
-  onCreate: (memberUserIds: string[], title?: string | null) => Promise<void>
+  friends: UserFriendResponse[];
+  isSaving: boolean;
+  onClose: () => void;
+  onCreate: (memberUserIds: string[], title?: string | null) => Promise<void>;
 }) {
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
-    () => new Set(),
-  )
-  const [title, setTitle] = useState('')
-  const isDirect = selectedUserIds.size === 1
+    () => new Set()
+  );
+  const [title, setTitle] = useState('');
+  const isDirect = selectedUserIds.size === 1;
 
   return (
     <DialogShell
@@ -219,7 +221,7 @@ export function CreatePrivateSpaceDialog({
             onClick={() =>
               void onCreate(
                 [...selectedUserIds],
-                isDirect ? null : title.trim() || null,
+                isDirect ? null : title.trim() || null
               )
             }
           >
@@ -251,7 +253,7 @@ export function CreatePrivateSpaceDialog({
           </p>
         ) : (
           friends.map((friend) => {
-            const selected = selectedUserIds.has(friend.friendUserId)
+            const selected = selectedUserIds.has(friend.friendUserId);
             return (
               <button
                 key={friend.friendUserId}
@@ -260,13 +262,13 @@ export function CreatePrivateSpaceDialog({
                 aria-pressed={selected}
                 onClick={() =>
                   setSelectedUserIds((current) => {
-                    const next = new Set(current)
+                    const next = new Set(current);
                     if (next.has(friend.friendUserId)) {
-                      next.delete(friend.friendUserId)
+                      next.delete(friend.friendUserId);
                     } else {
-                      next.add(friend.friendUserId)
+                      next.add(friend.friendUserId);
                     }
-                    return next
+                    return next;
                   })
                 }
               >
@@ -281,17 +283,14 @@ export function CreatePrivateSpaceDialog({
                   </PresenceName>
                   <small>@{friend.friend.login}</small>
                 </span>
-                <SystemIcon
-                  name={selected ? 'check' : 'plus'}
-                  size={17}
-                />
+                <SystemIcon name={selected ? 'check' : 'plus'} size={17} />
               </button>
-            )
+            );
           })
         )}
       </div>
     </DialogShell>
-  )
+  );
 }
 
 export function PrivateSpaceTextSettingDialog({
@@ -302,18 +301,18 @@ export function PrivateSpaceTextSettingDialog({
   maxLength = 64,
   isSaving,
   onClose,
-  onSave,
+  onSave
 }: {
-  title: string
-  label: string
-  initialValue: string | null
-  placeholder: string
-  maxLength?: number
-  isSaving: boolean
-  onClose: () => void
-  onSave: (value: string | null) => Promise<void>
+  title: string;
+  label: string;
+  initialValue: string | null;
+  placeholder: string;
+  maxLength?: number;
+  isSaving: boolean;
+  onClose: () => void;
+  onSave: (value: string | null) => Promise<void>;
 }) {
-  const [value, setValue] = useState(initialValue ?? '')
+  const [value, setValue] = useState(initialValue ?? '');
 
   return (
     <DialogShell
@@ -349,29 +348,29 @@ export function PrivateSpaceTextSettingDialog({
         </small>
       </label>
     </DialogShell>
-  )
+  );
 }
 
 export function GroupPrivateSpaceSettingsDialog({
   space,
   isSaving,
   onClose,
-  onSave,
+  onSave
 }: {
-  space: PrivateSpaceResponse
-  isSaving: boolean
-  onClose: () => void
+  space: PrivateSpaceResponse;
+  isSaving: boolean;
+  onClose: () => void;
   onSave: (value: {
-    title: string
-    description: string
-    avatarFile: File | null
-    clearAvatar: boolean
-  }) => Promise<void>
+    title: string;
+    description: string;
+    avatarFile: File | null;
+    clearAvatar: boolean;
+  }) => Promise<void>;
 }) {
-  const [title, setTitle] = useState(space.title ?? '')
-  const [description, setDescription] = useState(space.description ?? '')
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [clearAvatar, setClearAvatar] = useState(false)
+  const [title, setTitle] = useState(space.title ?? '');
+  const [description, setDescription] = useState(space.description ?? '');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [clearAvatar, setClearAvatar] = useState(false);
 
   return (
     <DialogShell
@@ -391,7 +390,7 @@ export function GroupPrivateSpaceSettingsDialog({
                 title,
                 description,
                 avatarFile,
-                clearAvatar,
+                clearAvatar
               })
             }
           >
@@ -414,8 +413,8 @@ export function GroupPrivateSpaceSettingsDialog({
             type="file"
             accept="image/*"
             onChange={(event) => {
-              setAvatarFile(event.target.files?.[0] ?? null)
-              setClearAvatar(false)
+              setAvatarFile(event.target.files?.[0] ?? null);
+              setClearAvatar(false);
             }}
           />
         </label>
@@ -424,8 +423,8 @@ export function GroupPrivateSpaceSettingsDialog({
             type="button"
             className={styles.linkButton}
             onClick={() => {
-              setAvatarFile(null)
-              setClearAvatar(true)
+              setAvatarFile(null);
+              setClearAvatar(true);
             }}
           >
             {communityCopy.direct.removeGroupAvatar}
@@ -450,7 +449,7 @@ export function GroupPrivateSpaceSettingsDialog({
         />
       </label>
     </DialogShell>
-  )
+  );
 }
 
 export function DirectUserProfileDialog({
@@ -458,81 +457,80 @@ export function DirectUserProfileDialog({
   currentUserId,
   space,
   targetMember,
-  onClose,
+  onClose
 }: {
-  accessToken: string
-  currentUserId: string
-  space: PrivateSpaceResponse
-  targetMember?: PrivateSpaceResponse['members'][number]
-  onClose: () => void
+  accessToken: string;
+  currentUserId: string;
+  space: PrivateSpaceResponse;
+  targetMember?: PrivateSpaceResponse['members'][number];
+  onClose: () => void;
 }) {
-  const member = targetMember ?? getPrivateSpaceOtherMember(space, currentUserId)
-  const targetUserId = member?.userId ?? null
-  const [profile, setProfile] =
-    useState<PublicUserProfileResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [reloadVersion, setReloadVersion] = useState(0)
+  const member =
+    targetMember ?? getPrivateSpaceOtherMember(space, currentUserId);
+  const targetUserId = member?.userId ?? null;
+  const [profile, setProfile] = useState<PublicUserProfileResponse | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
     if (!targetUserId) {
-      setProfile(null)
-      setIsLoading(false)
-      setLoadError(communityCopy.direct.userUnavailable)
-      return undefined
+      setProfile(null);
+      setIsLoading(false);
+      setLoadError(communityCopy.direct.userUnavailable);
+      return undefined;
     }
 
-    const request = new AbortController()
-    let isCurrent = true
+    const request = new AbortController();
+    let isCurrent = true;
 
-    setProfile(null)
-    setIsLoading(true)
-    setLoadError(null)
+    setProfile(null);
+    setIsLoading(true);
+    setLoadError(null);
 
     apiJson<PublicUserProfileResponse>(
       `/api/users/${encodeURIComponent(targetUserId)}`,
       {
         accessToken,
-        signal: request.signal,
-      },
+        signal: request.signal
+      }
     )
       .then((loadedProfile) => {
         if (isCurrent) {
-          setProfile(loadedProfile)
+          setProfile(loadedProfile);
         }
       })
       .catch(() => {
         if (isCurrent && !request.signal.aborted) {
-          setLoadError(communityCopy.direct.userProfileLoadFailed)
+          setLoadError(communityCopy.direct.userProfileLoadFailed);
         }
       })
       .finally(() => {
         if (isCurrent) {
-          setIsLoading(false)
+          setIsLoading(false);
         }
-      })
+      });
 
     return () => {
-      isCurrent = false
-      request.abort()
-    }
-  }, [accessToken, reloadVersion, targetUserId])
+      isCurrent = false;
+      request.abort();
+    };
+  }, [accessToken, reloadVersion, targetUserId]);
 
-  if (!member) return null
+  if (!member) return null;
 
-  const fallbackUser = member.user
-  const displayName = profile?.displayName || fallbackUser.displayName
-  const login = profile?.login || fallbackUser.login
-  const presenceStatus =
-    profile?.presenceStatus ?? fallbackUser.presenceStatus
-  const avatarAssetId =
-    profile?.avatarAssetId ?? fallbackUser.avatarAssetId
+  const fallbackUser = member.user;
+  const displayName = profile?.displayName || fallbackUser.displayName;
+  const login = profile?.login || fallbackUser.login;
+  const presenceStatus = profile?.presenceStatus ?? fallbackUser.presenceStatus;
+  const avatarAssetId = profile?.avatarAssetId ?? fallbackUser.avatarAssetId;
   const avatarCropOffsetX =
-    profile?.avatarCropOffsetX ?? fallbackUser.avatarCropOffsetX
+    profile?.avatarCropOffsetX ?? fallbackUser.avatarCropOffsetX;
   const avatarCropOffsetY =
-    profile?.avatarCropOffsetY ?? fallbackUser.avatarCropOffsetY
-  const avatarCropZoom =
-    profile?.avatarCropZoom ?? fallbackUser.avatarCropZoom
+    profile?.avatarCropOffsetY ?? fallbackUser.avatarCropOffsetY;
+  const avatarCropZoom = profile?.avatarCropZoom ?? fallbackUser.avatarCropZoom;
 
   return (
     <DialogShell
@@ -541,10 +539,7 @@ export function DirectUserProfileDialog({
       wide
     >
       <div className={styles.profileHero}>
-        <span
-          className={`${styles.profileAvatar} ui-frame`}
-          aria-hidden="true"
-        >
+        <span className={`${styles.profileAvatar} ui-frame`} aria-hidden="true">
           {avatarAssetId ? (
             <img
               className="ui-media-fit"
@@ -553,7 +548,7 @@ export function DirectUserProfileDialog({
               style={{
                 transform: `translate(${avatarCropOffsetX * 100}%, ${
                   avatarCropOffsetY * 100
-                }%) scale(${avatarCropZoom})`,
+                }%) scale(${avatarCropZoom})`
               }}
             />
           ) : (
@@ -582,9 +577,7 @@ export function DirectUserProfileDialog({
           className={`${styles.profileLoadState} ${styles.profileLoadError}`}
           role="alert"
         >
-          <span>
-            {loadError || communityCopy.direct.userProfileLoadFailed}
-          </span>
+          <span>{loadError || communityCopy.direct.userProfileLoadFailed}</span>
           <button
             type="button"
             onClick={() => setReloadVersion((current) => current + 1)}
@@ -636,31 +629,31 @@ export function DirectUserProfileDialog({
         </>
       )}
     </DialogShell>
-  )
+  );
 }
 
 const profileDateFormatter = new Intl.DateTimeFormat('ru-RU', {
   day: 'numeric',
   month: 'long',
-  year: 'numeric',
-})
+  year: 'numeric'
+});
 
 function formatProfileDate(value: string) {
-  const timestamp = Date.parse(value)
+  const timestamp = Date.parse(value);
 
   return Number.isFinite(timestamp)
     ? profileDateFormatter.format(timestamp)
-    : commonCopy.empty.notSpecified
+    : commonCopy.empty.notSpecified;
 }
 
 export function MarkAllPrivateSpacesReadDialog({
   isSaving,
   onClose,
-  onConfirm,
+  onConfirm
 }: {
-  isSaving: boolean
-  onClose: () => void
-  onConfirm: () => Promise<void>
+  isSaving: boolean;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
 }) {
   return (
     <DialogShell
@@ -688,43 +681,41 @@ export function MarkAllPrivateSpacesReadDialog({
         {communityCopy.direct.markAllReadDescription}
       </p>
     </DialogShell>
-  )
+  );
 }
 
 export type PrivateSpaceAction =
-  | 'clear-history'
-  | 'leave-group'
-  | 'delete-direct'
+  'clear-history' | 'leave-group' | 'delete-direct';
 
 export function PrivateSpaceActionDialog({
   action,
   isSaving,
   onClose,
-  onConfirm,
+  onConfirm
 }: {
-  action: PrivateSpaceAction
-  isSaving: boolean
-  onClose: () => void
-  onConfirm: () => Promise<void>
+  action: PrivateSpaceAction;
+  isSaving: boolean;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
 }) {
   const content =
     action === 'clear-history'
       ? {
           title: communityCopy.direct.clearHistoryTitle,
           description: communityCopy.direct.clearHistoryDescription,
-          confirm: communityCopy.direct.clearHistory,
+          confirm: communityCopy.direct.clearHistory
         }
       : action === 'leave-group'
         ? {
             title: communityCopy.direct.leaveGroupTitle,
             description: communityCopy.direct.leaveGroupDescription,
-            confirm: communityCopy.direct.leaveGroup,
+            confirm: communityCopy.direct.leaveGroup
           }
         : {
             title: communityCopy.direct.deleteDirectTitle,
             description: communityCopy.direct.deleteDirectDescription,
-            confirm: communityCopy.direct.deleteDirect,
-          }
+            confirm: communityCopy.direct.deleteDirect
+          };
 
   return (
     <DialogShell
@@ -753,5 +744,5 @@ export function PrivateSpaceActionDialog({
     >
       <p className={styles.warning}>{content.description}</p>
     </DialogShell>
-  )
+  );
 }

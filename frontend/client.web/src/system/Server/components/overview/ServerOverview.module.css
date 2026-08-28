@@ -24,8 +24,11 @@
 .activityCard {
   border: 1px solid var(--theme-section-border);
   border-radius: 7px;
-  background:
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg));
+  background: linear-gradient(
+    180deg,
+    var(--theme-frame-bg),
+    var(--theme-control-bg)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     0 18px 46px rgba(0, 0, 0, 0.18);
@@ -113,25 +116,38 @@
   align-items: end;
   overflow: hidden;
   padding: 16px;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-bg), transparent 92%), color-mix(in srgb, var(--color-bg), transparent 22%));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-bg), transparent 92%),
+    color-mix(in srgb, var(--color-bg), transparent 22%)
+  );
 }
 
 .welcomeCard::before {
   position: absolute;
   inset: 0;
   z-index: -1;
-  content: "";
+  content: '';
   background:
-    linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--color-bg), transparent 78%) 38%, color-mix(in srgb, var(--color-bg), transparent 22%) 64%, color-mix(in srgb, var(--color-bg), transparent 8%) 100%),
-    linear-gradient(180deg, color-mix(in srgb, var(--color-bg), transparent 82%), color-mix(in srgb, var(--color-bg), transparent 78%));
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--color-bg), transparent 78%) 38%,
+      color-mix(in srgb, var(--color-bg), transparent 22%) 64%,
+      color-mix(in srgb, var(--color-bg), transparent 8%) 100%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-bg), transparent 82%),
+      color-mix(in srgb, var(--color-bg), transparent 78%)
+    );
 }
 
 .welcomeCard::after {
   position: absolute;
   inset: 0;
   z-index: -2;
-  content: "";
+  content: '';
   background-image: var(--theme-overview-bg-image);
   background-position: center;
   background-repeat: no-repeat;
@@ -139,11 +155,23 @@
   transform: translateZ(0);
 }
 
-:global(html[data-system-theme-assets="none"]) .welcomeCard::after {
+:global(html[data-system-theme-assets='none']) .welcomeCard::after {
   background:
-    radial-gradient(circle at 22% 28%, var(--theme-glow-strong), transparent 24%),
-    radial-gradient(circle at 72% 24%, var(--theme-backdrop-glow), transparent 32%),
-    linear-gradient(135deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    radial-gradient(
+      circle at 22% 28%,
+      var(--theme-glow-strong),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 72% 24%,
+      var(--theme-backdrop-glow),
+      transparent 32%
+    ),
+    linear-gradient(
+      135deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
 }
 
 .castle {
@@ -208,8 +236,11 @@
 .quickActions button:hover,
 .activityCard button:hover {
   border-color: var(--theme-border-accent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-accent), transparent 24%), color-mix(in srgb, var(--theme-accent), var(--color-bg) 54%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-accent), transparent 24%),
+    color-mix(in srgb, var(--theme-accent), var(--color-bg) 54%)
+  );
 }
 
 .quickActions,
@@ -345,7 +376,11 @@
   border: 1px solid color-mix(in srgb, var(--color-success), transparent 74%);
   border-radius: 999px;
   padding: 6px 10px;
-  color: color-mix(in srgb, var(--color-success), var(--color-text) 22%) !important;
+  color: color-mix(
+    in srgb,
+    var(--color-success),
+    var(--color-text) 22%
+  ) !important;
   background: color-mix(in srgb, var(--color-success), transparent 93%);
   box-shadow: 0 0 18px color-mix(in srgb, var(--color-success), transparent 88%);
   font-size: 11px !important;
@@ -433,7 +468,11 @@
 .spaceOverviewCategory .spaceOverviewCategory {
   margin: 10px 12px;
   border-color: var(--theme-section-border);
-  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 12%);
+  background: color-mix(
+    in srgb,
+    var(--theme-control-bg-strong),
+    transparent 12%
+  );
   box-shadow: none;
 }
 
@@ -446,15 +485,15 @@
   color: var(--theme-text-soft);
 }
 
-.spaceOverviewCategory[data-depth="1"] > header {
+.spaceOverviewCategory[data-depth='1'] > header {
   padding-left: 28px;
 }
 
-.spaceOverviewCategory[data-depth="2"] > header {
+.spaceOverviewCategory[data-depth='2'] > header {
   padding-left: 42px;
 }
 
-.spaceOverviewCategory[data-depth="3"] > header {
+.spaceOverviewCategory[data-depth='3'] > header {
   padding-left: 56px;
 }
 
@@ -502,15 +541,15 @@
   border-top: 0;
 }
 
-.spaceOverviewRow[data-depth="1"] {
+.spaceOverviewRow[data-depth='1'] {
   padding-left: 28px;
 }
 
-.spaceOverviewRow[data-depth="2"] {
+.spaceOverviewRow[data-depth='2'] {
   padding-left: 42px;
 }
 
-.spaceOverviewRow[data-depth="3"] {
+.spaceOverviewRow[data-depth='3'] {
   padding-left: 56px;
 }
 
@@ -674,4 +713,3 @@
     justify-content: start;
   }
 }
-

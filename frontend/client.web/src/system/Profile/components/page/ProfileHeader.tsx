@@ -1,22 +1,23 @@
-import type { ServerMemberResponse } from '../../../../shared/types'
-import type { HubWorkspace } from '../../../Hub/components/shell/useHubWorkspace'
-import { profileCopy } from '../../../shared'
-import styles from './ProfileHeader.module.css'
+import type { ServerMemberResponse } from '../../../../shared/types';
+import type { HubWorkspace } from '../../../Hub/components/shell/useHubWorkspace';
+import { profileCopy } from '../../../shared';
+
+import styles from './ProfileHeader.module.css';
 
 type ProfileHeaderProps = {
-  activeWorkspace: HubWorkspace
-  selectedServerMembership: ServerMemberResponse | null
-  onToggleServers: () => void
-  onOpenServerSettings: () => void
-  onLogout: () => void
-}
+  activeWorkspace: HubWorkspace;
+  selectedServerMembership: ServerMemberResponse | null;
+  onToggleServers: () => void;
+  onOpenServerSettings: () => void;
+  onLogout: () => void;
+};
 
 export function ProfileHeader({
   activeWorkspace,
   selectedServerMembership,
   onToggleServers,
   onOpenServerSettings,
-  onLogout,
+  onLogout
 }: ProfileHeaderProps) {
   return (
     <header className={styles.header}>
@@ -53,5 +54,5 @@ export function ProfileHeader({
         </div>
       )}
     </header>
-  )
+  );
 }

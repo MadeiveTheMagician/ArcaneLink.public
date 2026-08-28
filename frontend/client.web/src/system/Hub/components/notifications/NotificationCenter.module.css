@@ -7,8 +7,16 @@
   padding: 22px clamp(18px, 3vw, 38px) 30px;
   color: var(--color-text);
   background:
-    radial-gradient(circle at 84% 4%, color-mix(in srgb, var(--theme-accent), transparent 88%), transparent 30%),
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+    radial-gradient(
+      circle at 84% 4%,
+      color-mix(in srgb, var(--theme-accent), transparent 88%),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      var(--theme-frame-bg),
+      var(--theme-control-bg-strong)
+    );
 }
 
 .header {
@@ -233,7 +241,8 @@
   border-radius: 9px;
   padding: 13px 16px 13px 10px;
   background: var(--theme-frame-bg-strong);
-  box-shadow: inset 12px 0 28px color-mix(in srgb, var(--theme-accent), transparent 94%);
+  box-shadow: inset 12px 0 28px
+    color-mix(in srgb, var(--theme-accent), transparent 94%);
   transition:
     border-color 150ms ease,
     background 150ms ease,
@@ -262,7 +271,8 @@
 
 .invite {
   border-left-color: var(--color-success);
-  box-shadow: inset 12px 0 28px color-mix(in srgb, var(--color-success), transparent 94%);
+  box-shadow: inset 12px 0 28px
+    color-mix(in srgb, var(--color-success), transparent 94%);
 }
 
 .system {

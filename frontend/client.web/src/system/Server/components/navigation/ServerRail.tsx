@@ -1,70 +1,73 @@
+import { useCallback, useRef, useState } from 'react';
+import type { CSSProperties, MouseEvent } from 'react';
+
 import {
-  closestCenter,
   DndContext,
   PointerSensor,
+  closestCenter,
   useDraggable,
   useDroppable,
   useSensor,
-  useSensors,
-} from '@dnd-kit/core'
+  useSensors
+} from '@dnd-kit/core';
 import type {
   CollisionDetection,
   DragEndEvent,
   DragOverEvent,
-  DragStartEvent,
-} from '@dnd-kit/core'
-import { useCallback, useRef, useState } from 'react'
-import type { CSSProperties, MouseEvent } from 'react'
+  DragStartEvent
+} from '@dnd-kit/core';
+
 import type {
   ServerMemberDetailsResponse,
-  ServerMemberResponse,
-} from '../../../../shared/types'
+  ServerMemberResponse
+} from '../../../../shared/types';
+import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon';
 import {
-  commonCopy,
-  communityCopy,
-  serverCopy,
   SystemIcon,
   UnreadBadge,
-} from '../../../shared/index'
-import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon'
-import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton'
-import { getUnreadMessageLabel } from '../../../shared/ui/unreadBadgeModel'
-import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel'
-import { ServerTooltip } from './ServerTooltip'
-import styles from './ServerRail.module.css'
+  commonCopy,
+  communityCopy,
+  serverCopy
+} from '../../../shared/index';
+import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton';
+import { getUnreadMessageLabel } from '../../../shared/ui/unreadBadgeModel';
+import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel';
+import { ServerTooltip } from './ServerTooltip';
+
+import styles from './ServerRail.module.css';
 
 const serverRailSkeletonKeys = Array.from(
   { length: 16 },
-  (_, index) => `server-${index + 1}`,
-)
+  (_, index) => `server-${index + 1}`
+);
 
 type ServerRailProps = {
-  avatarSrc: string
-  isOpen: boolean
-  isLoadingServers: boolean
-  memberships: ServerMemberResponse[]
-  selectedServerId?: string
-  selectedServerMembers: ServerMemberDetailsResponse[]
-  selectedServerVoiceParticipants: VoiceParticipant[]
-  onOpenProfile: () => void
-  onOpenServer: (membership: ServerMemberResponse) => void
+  avatarSrc: string;
+  isOpen: boolean;
+  isLoadingServers: boolean;
+  memberships: ServerMemberResponse[];
+  selectedServerId?: string;
+  selectedServerMembers: ServerMemberDetailsResponse[];
+  selectedServerVoiceParticipants: VoiceParticipant[];
+  onOpenProfile: () => void;
+  onOpenServer: (membership: ServerMemberResponse) => void;
   onOpenContextMenu: (
     event: MouseEvent<HTMLButtonElement>,
-    membership: ServerMemberResponse,
-  ) => void
-  onReorderServers: (activeServerId: string, overServerId: string) => void
-  onCreateServer: () => void
-  onShowAllServers: () => void
-  onShowFriends: () => void
-  onShowInvites: () => void
-}
+    membership: ServerMemberResponse
+  ) => void;
+  onReorderServers: (activeServerId: string, overServerId: string) => void;
+  onCreateServer: () => void;
+  onShowAllServers: () => void;
+  onShowFriends: () => void;
+  onShowInvites: () => void;
+};
 
-type ServerDropPlacement = 'before' | 'after'
+type ServerDropPlacement = 'before' | 'after';
 
 type ServerDropIndicator = {
-  serverId: string
-  placement: ServerDropPlacement
-}
+  serverId: string;
+  placement: ServerDropPlacement;
+};
 
 export function ServerRail({
   avatarSrc,
@@ -81,59 +84,61 @@ export function ServerRail({
   onCreateServer,
   onShowAllServers,
   onShowFriends,
-  onShowInvites,
+  onShowInvites
 }: ServerRailProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 6,
-      },
-    }),
-  )
+        distance: 6
+      }
+    })
+  );
   const [dropIndicator, setDropIndicator] =
-    useState<ServerDropIndicator | null>(null)
+    useState<ServerDropIndicator | null>(null);
 
   function handleServerDragStart(event: DragStartEvent) {
-    const activeServerId = String(event.active.id)
+    const activeServerId = String(event.active.id);
 
-    if (memberships.some((membership) => membership.serverId === activeServerId)) {
-      document.body.classList.add('is-server-rail-dragging')
-      setDropIndicator(null)
+    if (
+      memberships.some((membership) => membership.serverId === activeServerId)
+    ) {
+      document.body.classList.add('is-server-rail-dragging');
+      setDropIndicator(null);
     }
   }
 
   function handleServerDragOver(event: DragOverEvent) {
-    const activeServerId = String(event.active.id)
-    const overServerId = event.over ? String(event.over.id) : null
+    const activeServerId = String(event.active.id);
+    const overServerId = event.over ? String(event.over.id) : null;
     const nextIndicator = getServerDropIndicator(
       memberships,
       activeServerId,
-      overServerId,
-    )
+      overServerId
+    );
 
     setDropIndicator((current) =>
       current?.serverId === nextIndicator?.serverId &&
       current?.placement === nextIndicator?.placement
         ? current
-        : nextIndicator,
-    )
+        : nextIndicator
+    );
   }
 
   function handleServerDragEnd(event: DragEndEvent) {
-    document.body.classList.remove('is-server-rail-dragging')
-    setDropIndicator(null)
+    document.body.classList.remove('is-server-rail-dragging');
+    setDropIndicator(null);
 
-    const activeServerId = String(event.active.id)
-    const overServerId = event.over ? String(event.over.id) : null
+    const activeServerId = String(event.active.id);
+    const overServerId = event.over ? String(event.over.id) : null;
 
     if (overServerId && activeServerId !== overServerId) {
-      onReorderServers(activeServerId, overServerId)
+      onReorderServers(activeServerId, overServerId);
     }
   }
 
   function handleServerDragCancel() {
-    document.body.classList.remove('is-server-rail-dragging')
-    setDropIndicator(null)
+    document.body.classList.remove('is-server-rail-dragging');
+    setDropIndicator(null);
   }
 
   return (
@@ -254,7 +259,7 @@ export function ServerRail({
         </button>
       </div>
     </aside>
-  )
+  );
 }
 
 function ServerRailItem({
@@ -264,50 +269,50 @@ function ServerRailItem({
   voiceParticipantMembers,
   dropPlacement,
   onOpenServer,
-  onOpenContextMenu,
+  onOpenContextMenu
 }: {
-  membership: ServerMemberResponse
-  isSelected: boolean
-  voiceParticipants: VoiceParticipant[]
-  voiceParticipantMembers: ServerMemberDetailsResponse[]
-  dropPlacement: ServerDropPlacement | null
-  onOpenServer: (membership: ServerMemberResponse) => void
+  membership: ServerMemberResponse;
+  isSelected: boolean;
+  voiceParticipants: VoiceParticipant[];
+  voiceParticipantMembers: ServerMemberDetailsResponse[];
+  dropPlacement: ServerDropPlacement | null;
+  onOpenServer: (membership: ServerMemberResponse) => void;
   onOpenContextMenu: (
     event: MouseEvent<HTMLButtonElement>,
-    membership: ServerMemberResponse,
-  ) => void
+    membership: ServerMemberResponse
+  ) => void;
 }) {
-  const { server } = membership
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false)
+  const { server } = membership;
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const {
     attributes,
     listeners,
     setNodeRef: setDraggableRef,
     transform,
-    isDragging,
+    isDragging
   } = useDraggable({
-    id: membership.serverId,
-  })
+    id: membership.serverId
+  });
   const { setNodeRef: setDroppableRef } = useDroppable({
-    id: membership.serverId,
-  })
+    id: membership.serverId
+  });
   const setServerButtonRef = useCallback(
     (node: HTMLButtonElement | null) => {
-      buttonRef.current = node
-      setDraggableRef(node)
+      buttonRef.current = node;
+      setDraggableRef(node);
     },
-    [setDraggableRef],
-  )
-  const tooltipId = `server-tooltip-${server.id}`
-  const unreadLabel = getUnreadMessageLabel(membership.unreadCount)
+    [setDraggableRef]
+  );
+  const tooltipId = `server-tooltip-${server.id}`;
+  const unreadLabel = getUnreadMessageLabel(membership.unreadCount);
   const dragStyle = transform
     ? ({
         transform: `translate3d(0, ${transform.y}px, 0)`,
         transition: 'none',
-        willChange: 'transform',
+        willChange: 'transform'
       } satisfies CSSProperties)
-    : undefined
+    : undefined;
 
   return (
     <div
@@ -346,7 +351,7 @@ function ServerRailItem({
               style={{
                 transform: `translate(${server.iconCropOffsetX * 100}%, ${
                   server.iconCropOffsetY * 100
-                }%) scale(${server.iconCropZoom})`,
+                }%) scale(${server.iconCropZoom})`
               }}
             />
           ) : (
@@ -367,39 +372,39 @@ function ServerRailItem({
         serverTitle={server.title}
       />
     </div>
-  )
+  );
 }
 
 function getServerDropIndicator(
   memberships: ServerMemberResponse[],
   activeServerId: string,
-  overServerId: string | null,
+  overServerId: string | null
 ): ServerDropIndicator | null {
   if (!overServerId || activeServerId === overServerId) {
-    return null
+    return null;
   }
 
   const activeIndex = memberships.findIndex(
-    (membership) => membership.serverId === activeServerId,
-  )
+    (membership) => membership.serverId === activeServerId
+  );
   const overIndex = memberships.findIndex(
-    (membership) => membership.serverId === overServerId,
-  )
+    (membership) => membership.serverId === overServerId
+  );
 
   if (activeIndex < 0 || overIndex < 0) {
-    return null
+    return null;
   }
 
   return {
     serverId: overServerId,
-    placement: activeIndex < overIndex ? 'after' : 'before',
-  }
+    placement: activeIndex < overIndex ? 'after' : 'before'
+  };
 }
 
 const serverRailCollisionDetection: CollisionDetection = (args) =>
   closestCenter({
     ...args,
     droppableContainers: args.droppableContainers.filter(
-      (container) => container.id !== args.active.id,
-    ),
-  })
+      (container) => container.id !== args.active.id
+    )
+  });

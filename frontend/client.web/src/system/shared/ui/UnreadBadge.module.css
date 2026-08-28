@@ -3,7 +3,8 @@
   min-width: 18px;
   height: 18px;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 42%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-accent-light), transparent 42%);
   border-radius: 999px;
   padding: 0 5px;
   color: var(--theme-accent-contrast);

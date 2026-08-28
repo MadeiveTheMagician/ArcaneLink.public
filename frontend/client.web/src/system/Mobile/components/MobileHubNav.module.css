@@ -15,12 +15,21 @@
     gap: 2px;
     min-height: var(--mobile-nav-panel-height, 54px);
     height: var(--mobile-nav-panel-height, 54px);
-    border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 54%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-border-control), transparent 54%);
     border-radius: 14px;
     padding: 5px;
     background:
-      radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--theme-accent), transparent 92%), transparent 62%),
-      linear-gradient(180deg, var(--theme-frame-bg-strong), var(--theme-control-bg-strong));
+      radial-gradient(
+        circle at 50% 100%,
+        color-mix(in srgb, var(--theme-accent), transparent 92%),
+        transparent 62%
+      ),
+      linear-gradient(
+        180deg,
+        var(--theme-frame-bg-strong),
+        var(--theme-control-bg-strong)
+      );
     box-shadow:
       0 12px 28px rgba(0, 0, 0, 0.34),
       0 0 14px var(--theme-glow),
@@ -55,10 +64,14 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    content: "";
+    content: '';
     opacity: 0;
-    background:
-      radial-gradient(circle, color-mix(in srgb, var(--theme-accent-light), transparent 38%) 0%, color-mix(in srgb, var(--theme-accent), transparent 74%) 42%, transparent 72%);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--theme-accent-light), transparent 38%) 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 74%) 42%,
+      transparent 72%
+    );
     filter: blur(7px);
     transform: translate(-50%, -50%) scale(0.76);
     transition:
@@ -116,16 +129,21 @@
     font-size: 10px;
   }
 
-  :global(.profile-page.is-server-mode:has([data-space-kind="text"][data-space-open="true"]))
+  :global(
+      .profile-page.is-server-mode:has(
+          [data-space-kind='text'][data-space-open='true']
+        )
+    )
     .nav,
-  :global(.profile-page.is-mobile-tab-messages.is-private-space)
-    .nav {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space) .nav {
     opacity: 0;
     pointer-events: none;
     transform: translateY(105%);
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space.is-private-chat-closing)
+  :global(
+      .profile-page.is-mobile-tab-messages.is-private-space.is-private-chat-closing
+    )
     .nav {
     opacity: 1;
     pointer-events: auto;

@@ -3,55 +3,58 @@ import type {
   ServerMemberResponse,
   ServerRoleResponse,
   SpaceResponse,
-  SpaceTypeCode,
-} from '../../../../shared/types'
-import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu'
-import { serverCopy } from '../../../shared/copy'
+  SpaceTypeCode
+} from '../../../../shared/types';
+import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu';
+import { serverCopy } from '../../../shared/copy';
 import {
   canRemoveServerMember,
-  getAssignableServerRoles,
-} from '../../utils/serverGovernanceCapabilities'
+  getAssignableServerRoles
+} from '../../utils/serverGovernanceCapabilities';
 
 type BuildSpaceContextMenuItemsOptions = {
-  space: SpaceResponse | null
-  spaces: SpaceResponse[]
-  canManageSpace: boolean
-  isMutatingSpaces: boolean
-  maxCategoryDepth: number
-  onCreateSpace: (typeCode: SpaceTypeCode, parentSpaceId: string | null) => void
-  onEditSpace: (space: SpaceResponse) => void
-  onDeleteSpace: (space: SpaceResponse) => void
-}
+  space: SpaceResponse | null;
+  spaces: SpaceResponse[];
+  canManageSpace: boolean;
+  isMutatingSpaces: boolean;
+  maxCategoryDepth: number;
+  onCreateSpace: (
+    typeCode: SpaceTypeCode,
+    parentSpaceId: string | null
+  ) => void;
+  onEditSpace: (space: SpaceResponse) => void;
+  onDeleteSpace: (space: SpaceResponse) => void;
+};
 
 type BuildMemberContextMenuItemsOptions = {
-  member: ServerMemberDetailsResponse
-  currentUserId: string
-  currentMember: ServerMemberDetailsResponse | null
-  canAssignRoles: boolean
-  canBanMembers: boolean
-  canKickMembers: boolean
-  canManageServer: boolean
-  isOwner: boolean
-  friendUserIds: Set<string>
-  pendingOutgoingUserIds: Set<string>
-  inviteServers: ServerMemberResponse[]
-  serverRoles: ServerRoleResponse[]
-  isMutatingFriends: boolean
-  isMutatingGovernance: boolean
-  isMutatingServerMember: boolean
-  isMutatingDirectMessageBlock: boolean
-  isUserBlockStatusResolved: boolean
-  isUserBlocked: boolean
-  onOpenMemberProfile: (member: ServerMemberDetailsResponse) => void
-  onOpenDirectSpace: (userId: string) => void
-  onSendFriendRequest: (userId: string) => void
-  onToggleUserBlock: (userId: string) => void
-  onCreateDirectInvite: (serverId: string, userId: string) => void
-  onAssignServerRole: (memberId: string, roleId: string) => void
-  onTransferOwnership: (member: ServerMemberDetailsResponse) => void
-  onRemoveServerMember: (member: ServerMemberDetailsResponse) => void
-  onBanServerMember: (member: ServerMemberDetailsResponse) => void
-}
+  member: ServerMemberDetailsResponse;
+  currentUserId: string;
+  currentMember: ServerMemberDetailsResponse | null;
+  canAssignRoles: boolean;
+  canBanMembers: boolean;
+  canKickMembers: boolean;
+  canManageServer: boolean;
+  isOwner: boolean;
+  friendUserIds: Set<string>;
+  pendingOutgoingUserIds: Set<string>;
+  inviteServers: ServerMemberResponse[];
+  serverRoles: ServerRoleResponse[];
+  isMutatingFriends: boolean;
+  isMutatingGovernance: boolean;
+  isMutatingServerMember: boolean;
+  isMutatingDirectMessageBlock: boolean;
+  isUserBlockStatusResolved: boolean;
+  isUserBlocked: boolean;
+  onOpenMemberProfile: (member: ServerMemberDetailsResponse) => void;
+  onOpenDirectSpace: (userId: string) => void;
+  onSendFriendRequest: (userId: string) => void;
+  onToggleUserBlock: (userId: string) => void;
+  onCreateDirectInvite: (serverId: string, userId: string) => void;
+  onAssignServerRole: (memberId: string, roleId: string) => void;
+  onTransferOwnership: (member: ServerMemberDetailsResponse) => void;
+  onRemoveServerMember: (member: ServerMemberDetailsResponse) => void;
+  onBanServerMember: (member: ServerMemberDetailsResponse) => void;
+};
 
 export function buildSpaceContextMenuItems({
   space,
@@ -61,15 +64,14 @@ export function buildSpaceContextMenuItems({
   maxCategoryDepth,
   onCreateSpace,
   onEditSpace,
-  onDeleteSpace,
+  onDeleteSpace
 }: BuildSpaceContextMenuItemsOptions): ContextMenuItem[] {
   if (!canManageSpace) {
-    return []
+    return [];
   }
 
-  const parentSpaceId = space?.typeCode === 'category'
-    ? space.id
-    : space?.parentSpaceId ?? null
+  const parentSpaceId =
+    space?.typeCode === 'category' ? space.id : (space?.parentSpaceId ?? null);
 
   if (!space) {
     return buildCreateSpaceContextItems({
@@ -77,8 +79,8 @@ export function buildSpaceContextMenuItems({
       spaces,
       isMutatingSpaces,
       maxCategoryDepth,
-      onCreateSpace,
-    })
+      onCreateSpace
+    });
   }
 
   return [
@@ -90,7 +92,7 @@ export function buildSpaceContextMenuItems({
           : serverCopy.contextMenu.space
       }`,
       icon: 'settings',
-      onSelect: () => onEditSpace(space),
+      onSelect: () => onEditSpace(space)
     },
     {
       type: 'item',
@@ -102,7 +104,7 @@ export function buildSpaceContextMenuItems({
       icon: 'trash',
       danger: true,
       disabled: isMutatingSpaces,
-      onSelect: () => onDeleteSpace(space),
+      onSelect: () => onDeleteSpace(space)
     },
     ...(space.typeCode === 'category'
       ? ([
@@ -112,11 +114,11 @@ export function buildSpaceContextMenuItems({
             spaces,
             isMutatingSpaces,
             maxCategoryDepth,
-            onCreateSpace,
-          }),
+            onCreateSpace
+          })
         ] satisfies ContextMenuItem[])
-      : []),
-  ]
+      : [])
+  ];
 }
 
 export function buildMemberContextMenuItems({
@@ -146,36 +148,36 @@ export function buildMemberContextMenuItems({
   onAssignServerRole,
   onTransferOwnership,
   onRemoveServerMember,
-  onBanServerMember,
+  onBanServerMember
 }: BuildMemberContextMenuItemsOptions): ContextMenuItem[] {
-  const isSelf = member.userId === currentUserId
-  const isGovernanceTarget = !member.isOwner && !isSelf
+  const isSelf = member.userId === currentUserId;
+  const isGovernanceTarget = !member.isOwner && !isSelf;
   const assignableRoles = getAssignableServerRoles(
     serverRoles,
     currentMember,
     canManageServer,
-    isOwner,
-  )
-  const canAssignRole = canAssignRoles && isGovernanceTarget
-  const canTransferOwnership = isOwner && isGovernanceTarget
+    isOwner
+  );
+  const canAssignRole = canAssignRoles && isGovernanceTarget;
+  const canTransferOwnership = isOwner && isGovernanceTarget;
   const canKickMember = canRemoveServerMember({
     member,
     currentMember,
     serverRoles,
     currentUserId,
     isOwner,
-    canManageMembers: canKickMembers,
-  })
+    canManageMembers: canKickMembers
+  });
   const canBanMember = canRemoveServerMember({
     member,
     currentMember,
     serverRoles,
     currentUserId,
     isOwner,
-    canManageMembers: canBanMembers,
-  })
-  const isFriend = friendUserIds.has(member.userId)
-  const hasPendingFriendRequest = pendingOutgoingUserIds.has(member.userId)
+    canManageMembers: canBanMembers
+  });
+  const isFriend = friendUserIds.has(member.userId);
+  const hasPendingFriendRequest = pendingOutgoingUserIds.has(member.userId);
   const governanceItems: ContextMenuItem[] = [
     ...(canAssignRole
       ? ([
@@ -191,10 +193,10 @@ export function buildMemberContextMenuItems({
                     label: role.title,
                     icon: 'role' as const,
                     disabled: isMutatingGovernance,
-                    onSelect: () => onAssignServerRole(member.id, role.id),
+                    onSelect: () => onAssignServerRole(member.id, role.id)
                   }))
-                : undefined,
-          },
+                : undefined
+          }
         ] satisfies ContextMenuItem[])
       : []),
     ...(canTransferOwnership
@@ -204,8 +206,8 @@ export function buildMemberContextMenuItems({
             label: serverCopy.contextMenu.transferOwnership,
             icon: 'role',
             disabled: isMutatingGovernance,
-            onSelect: () => onTransferOwnership(member),
-          },
+            onSelect: () => onTransferOwnership(member)
+          }
         ] satisfies ContextMenuItem[])
       : []),
     ...(canBanMember
@@ -216,8 +218,8 @@ export function buildMemberContextMenuItems({
             icon: 'block',
             danger: true,
             disabled: isMutatingServerMember || isMutatingGovernance,
-            onSelect: () => onBanServerMember(member),
-          },
+            onSelect: () => onBanServerMember(member)
+          }
         ] satisfies ContextMenuItem[])
       : []),
     ...(canKickMember
@@ -228,25 +230,25 @@ export function buildMemberContextMenuItems({
             icon: 'trash',
             danger: true,
             disabled: isMutatingServerMember,
-            onSelect: () => onRemoveServerMember(member),
-          },
+            onSelect: () => onRemoveServerMember(member)
+          }
         ] satisfies ContextMenuItem[])
-      : []),
-  ]
+      : [])
+  ];
 
   return [
     {
       type: 'item',
       label: serverCopy.contextMenu.profile,
       icon: 'profile',
-      onSelect: () => onOpenMemberProfile(member),
+      onSelect: () => onOpenMemberProfile(member)
     },
     {
       type: 'item',
       label: serverCopy.contextMenu.directMessage,
       icon: 'message',
       disabled: isSelf,
-      onSelect: () => onOpenDirectSpace(member.userId),
+      onSelect: () => onOpenDirectSpace(member.userId)
     },
     {
       type: 'item',
@@ -258,7 +260,7 @@ export function buildMemberContextMenuItems({
       icon: 'friend',
       disabled:
         isSelf || isFriend || hasPendingFriendRequest || isMutatingFriends,
-      onSelect: () => onSendFriendRequest(member.userId),
+      onSelect: () => onSendFriendRequest(member.userId)
     },
     {
       type: 'item',
@@ -271,9 +273,10 @@ export function buildMemberContextMenuItems({
               type: 'item',
               label: membership.server.title,
               icon: 'invite',
-              onSelect: () => onCreateDirectInvite(membership.serverId, member.userId),
+              onSelect: () =>
+                onCreateDirectInvite(membership.serverId, member.userId)
             }))
-          : undefined,
+          : undefined
     },
     ...(!isSelf
       ? ([
@@ -287,14 +290,17 @@ export function buildMemberContextMenuItems({
             icon: 'block',
             disabled:
               isMutatingDirectMessageBlock || !isUserBlockStatusResolved,
-            onSelect: () => onToggleUserBlock(member.userId),
-          },
+            onSelect: () => onToggleUserBlock(member.userId)
+          }
         ] satisfies ContextMenuItem[])
       : []),
     ...(governanceItems.length > 0
-      ? ([{ type: 'separator' }, ...governanceItems] satisfies ContextMenuItem[])
-      : []),
-  ]
+      ? ([
+          { type: 'separator' },
+          ...governanceItems
+        ] satisfies ContextMenuItem[])
+      : [])
+  ];
 }
 
 function buildCreateSpaceContextItems({
@@ -302,18 +308,21 @@ function buildCreateSpaceContextItems({
   spaces,
   isMutatingSpaces,
   maxCategoryDepth,
-  onCreateSpace,
+  onCreateSpace
 }: {
-  parentSpaceId: string | null
-  spaces: SpaceResponse[]
-  isMutatingSpaces: boolean
-  maxCategoryDepth: number
-  onCreateSpace: (typeCode: SpaceTypeCode, parentSpaceId: string | null) => void
+  parentSpaceId: string | null;
+  spaces: SpaceResponse[];
+  isMutatingSpaces: boolean;
+  maxCategoryDepth: number;
+  onCreateSpace: (
+    typeCode: SpaceTypeCode,
+    parentSpaceId: string | null
+  ) => void;
 }): ContextMenuItem[] {
   const parentDepth = parentSpaceId
     ? getCategoryDepth(parentSpaceId, spaces, maxCategoryDepth)
-    : 0
-  const canCreateCategory = parentDepth < maxCategoryDepth
+    : 0;
+  const canCreateCategory = parentDepth < maxCategoryDepth;
 
   return [
     {
@@ -323,50 +332,50 @@ function buildCreateSpaceContextItems({
         : serverCopy.contextMenu.nestingLimit,
       icon: 'space',
       disabled: isMutatingSpaces || !canCreateCategory,
-      onSelect: () => onCreateSpace('category', parentSpaceId),
+      onSelect: () => onCreateSpace('category', parentSpaceId)
     },
     {
       type: 'item',
       label: serverCopy.contextMenu.createTextSpace,
       icon: 'message',
       disabled: isMutatingSpaces,
-      onSelect: () => onCreateSpace('text_room', parentSpaceId),
+      onSelect: () => onCreateSpace('text_room', parentSpaceId)
     },
     {
       type: 'item',
       label: serverCopy.contextMenu.createVoiceSpace,
       icon: 'space',
       disabled: isMutatingSpaces,
-      onSelect: () => onCreateSpace('voice_room', parentSpaceId),
-    },
-  ]
+      onSelect: () => onCreateSpace('voice_room', parentSpaceId)
+    }
+  ];
 }
 
 function getCategoryDepth(
   spaceId: string,
   spaces: SpaceResponse[],
-  maxCategoryDepth: number,
+  maxCategoryDepth: number
 ) {
-  let depth = 0
-  let currentId: string | null = spaceId
-  const visited = new Set<string>()
+  let depth = 0;
+  let currentId: string | null = spaceId;
+  const visited = new Set<string>();
 
   while (currentId) {
     if (visited.has(currentId)) {
-      return maxCategoryDepth
+      return maxCategoryDepth;
     }
 
-    visited.add(currentId)
+    visited.add(currentId);
 
-    const space = spaces.find((item) => item.id === currentId)
+    const space = spaces.find((item) => item.id === currentId);
 
     if (!space || space.typeCode !== 'category') {
-      return depth
+      return depth;
     }
 
-    depth += 1
-    currentId = space.parentSpaceId
+    depth += 1;
+    currentId = space.parentSpaceId;
   }
 
-  return depth
+  return depth;
 }

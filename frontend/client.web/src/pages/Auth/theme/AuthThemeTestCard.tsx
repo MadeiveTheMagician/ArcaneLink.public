@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react'
-import type { CSSProperties } from 'react'
+import { useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
+
+import { buildSystemThemeVariables } from '../../../styles/systemThemeTokens';
 import {
   DEFAULT_SYSTEM_THEME_CODE,
-  getSystemTheme,
   SYSTEM_THEMES,
-} from '../../../styles/systemThemes'
-import { buildSystemThemeVariables } from '../../../styles/systemThemeTokens'
-import { authCopy } from '../../../system/shared/index'
-import styles from './AuthThemeTestCard.module.css'
+  getSystemTheme
+} from '../../../styles/systemThemes';
+import { authCopy } from '../../../system/shared/index';
+
+import styles from './AuthThemeTestCard.module.css';
 
 const sampleTokens = [
   [authCopy.themeTest.surface, '--color-bg'],
@@ -19,21 +21,20 @@ const sampleTokens = [
   [authCopy.themeTest.accent, '--color-sapphire'],
   [authCopy.themeTest.lightAccent, '--color-sapphire-light'],
   [authCopy.themeTest.success, '--color-success'],
-  [authCopy.themeTest.danger, '--color-danger'],
-] as const
+  [authCopy.themeTest.danger, '--color-danger']
+] as const;
 
 export function AuthThemeTestCard() {
   const [selectedThemeCode, setSelectedThemeCode] = useState(
-    DEFAULT_SYSTEM_THEME_CODE,
-  )
-  const selectedTheme = getSystemTheme(selectedThemeCode)
+    DEFAULT_SYSTEM_THEME_CODE
+  );
+  const selectedTheme = getSystemTheme(selectedThemeCode);
   const previewStyle = useMemo(
     () =>
-      buildSystemThemeVariables(
-        selectedTheme.variables,
-      ) as CSSProperties & Record<string, string>,
-    [selectedTheme],
-  )
+      buildSystemThemeVariables(selectedTheme.variables) as CSSProperties &
+        Record<string, string>,
+    [selectedTheme]
+  );
 
   return (
     <details className={styles.themeTester}>
@@ -43,12 +44,17 @@ export function AuthThemeTestCard() {
       </summary>
 
       <section className={styles.themeTesterBody} style={previewStyle}>
-        <div className={styles.themePicker} aria-label={authCopy.themeTest.themePicker}>
+        <div
+          className={styles.themePicker}
+          aria-label={authCopy.themeTest.themePicker}
+        >
           {SYSTEM_THEMES.map((theme) => (
             <button
               key={theme.code}
               className={
-                theme.code === selectedTheme.code ? styles.themeOptionActive : ''
+                theme.code === selectedTheme.code
+                  ? styles.themeOptionActive
+                  : ''
               }
               type="button"
               onClick={() => setSelectedThemeCode(theme.code)}
@@ -110,7 +116,9 @@ export function AuthThemeTestCard() {
               <span>{authCopy.themeTest.lists}</span>
               <strong>{authCopy.themeTest.selectedStates}</strong>
             </header>
-            <div className={styles.listItem}>{authCopy.themeTest.normalItem}</div>
+            <div className={styles.listItem}>
+              {authCopy.themeTest.normalItem}
+            </div>
             <div className={`${styles.listItem} ${styles.listItemActive}`}>
               {authCopy.themeTest.activeItem}
             </div>
@@ -132,5 +140,5 @@ export function AuthThemeTestCard() {
         </div>
       </section>
     </details>
-  )
+  );
 }

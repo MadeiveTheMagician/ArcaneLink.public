@@ -10,8 +10,16 @@
     border-radius: 0;
     padding: 10px 14px 12px;
     background:
-      radial-gradient(circle at 76% 0%, var(--theme-backdrop-glow), transparent 36%),
-      linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+      radial-gradient(
+        circle at 76% 0%,
+        var(--theme-backdrop-glow),
+        transparent 36%
+      ),
+      linear-gradient(
+        180deg,
+        var(--theme-frame-bg),
+        var(--theme-control-bg-strong)
+      );
   }
 
   :global(.profile-page.is-server-mode) .spacePanel > nav,
@@ -25,12 +33,7 @@
     min-height: 0;
     padding: 8px 0 calc(60px + env(safe-area-inset-bottom));
     scroll-padding: 8px 0 calc(60px + env(safe-area-inset-bottom));
-    mask-image: linear-gradient(
-      180deg,
-      transparent 0,
-      #000 18px,
-      #000 100%
-    );
+    mask-image: linear-gradient(180deg, transparent 0, #000 18px, #000 100%);
     opacity: 1;
     transform: translateX(0);
     visibility: visible;
@@ -44,11 +47,21 @@
     cursor: grab;
   }
 
-  :global(.profile-page.is-server-mode) .mobileSpacesReorderEnabled .spaceCategoryButton,
-  :global(.profile-page.is-server-mode) .mobileSpacesReorderEnabled .spaceLeaf > button {
-    border-color: color-mix(in srgb, var(--theme-accent-light), transparent 68%);
+  :global(.profile-page.is-server-mode)
+    .mobileSpacesReorderEnabled
+    .spaceCategoryButton,
+  :global(.profile-page.is-server-mode)
+    .mobileSpacesReorderEnabled
+    .spaceLeaf
+    > button {
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent-light),
+      transparent 68%
+    );
     box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 88%),
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--theme-accent-light), transparent 88%),
       0 0 18px color-mix(in srgb, var(--theme-accent), transparent 88%);
   }
 
@@ -57,11 +70,15 @@
     justify-items: start;
     min-height: 68px;
     gap: 10px;
-    border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 88%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent-light), transparent 88%);
     border-radius: 10px;
     padding: 10px 12px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
     box-shadow:
       inset 0 0 0 1px rgba(255, 255, 255, 0.018),
       0 10px 22px rgba(0, 0, 0, 0.16);
@@ -74,12 +91,25 @@
 
   :global(.profile-page.is-server-mode) .spacePanel nav button:hover,
   :global(.profile-page.is-server-mode) .spacePanel nav button.active {
-    border-color: color-mix(in srgb, var(--theme-accent-light), transparent 68%);
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent-light),
+      transparent 68%
+    );
     background:
-      radial-gradient(circle at 12% 50%, color-mix(in srgb, var(--theme-accent), transparent 72%), transparent 42%),
-      linear-gradient(180deg, var(--theme-hover-bg), var(--theme-control-bg-strong));
+      radial-gradient(
+        circle at 12% 50%,
+        color-mix(in srgb, var(--theme-accent), transparent 72%),
+        transparent 42%
+      ),
+      linear-gradient(
+        180deg,
+        var(--theme-hover-bg),
+        var(--theme-control-bg-strong)
+      );
     box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 86%),
+      inset 0 0 0 1px
+        color-mix(in srgb, var(--theme-accent-light), transparent 86%),
       0 0 22px color-mix(in srgb, var(--theme-accent), transparent 88%);
   }
 
@@ -103,14 +133,21 @@
     border-radius: 999px;
     color: var(--theme-accent-light);
     background:
-      radial-gradient(circle at 48% 44%, color-mix(in srgb, var(--theme-accent), transparent 44%), transparent 62%),
+      radial-gradient(
+        circle at 48% 44%,
+        color-mix(in srgb, var(--theme-accent), transparent 44%),
+        transparent 62%
+      ),
       var(--theme-control-bg-strong);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 88%);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent-light), transparent 88%);
     font-size: 20px;
     font-weight: 900;
   }
 
-  :global(.profile-page.is-server-mode) .mobileSpaceChannelIcon .voiceSpaceIcon {
+  :global(.profile-page.is-server-mode)
+    .mobileSpaceChannelIcon
+    .voiceSpaceIcon {
     width: 22px;
     height: 22px;
   }
@@ -162,7 +199,8 @@
     margin-left: -5px;
     border-color: var(--theme-frame-bg-strong);
     font-size: 9px;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 62%);
+    box-shadow: 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent-light), transparent 62%);
   }
 
   :global(.profile-page.is-server-mode) .mobileSpaceVoiceAvatar:first-child {
@@ -195,11 +233,15 @@
 
   :global(.profile-page.is-server-mode) .spaceCategory {
     gap: 8px;
-    border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 86%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-accent-light), transparent 86%);
     border-radius: 12px;
     padding: 8px 8px 10px 14px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
   }
 
   :global(.profile-page.is-server-mode) .spaceCategoryButton {
@@ -217,7 +259,7 @@
     display: grid;
     place-items: center;
     color: var(--theme-text-faint);
-    content: "...";
+    content: '...';
     opacity: 1;
     background: transparent;
     box-shadow: none;
@@ -236,8 +278,12 @@
     left: 3px;
   }
 
-  :global(.profile-page.is-server-mode) .spaceCategoryChildrenInner > .spaceCategory::before,
-  :global(.profile-page.is-server-mode) .spaceCategoryChildrenInner > .spaceLeaf::before {
+  :global(.profile-page.is-server-mode)
+    .spaceCategoryChildrenInner
+    > .spaceCategory::before,
+  :global(.profile-page.is-server-mode)
+    .spaceCategoryChildrenInner
+    > .spaceLeaf::before {
     left: -14px;
     width: 12px;
   }

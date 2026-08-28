@@ -1,92 +1,94 @@
-import { useEffect, useState } from 'react'
-import { apiJson } from '../../shared/api/api'
+import { useEffect, useState } from 'react';
+
+import { apiJson } from '../../shared/api/api';
 import type {
   ServerInvitePreviewResponse,
-  ServerMemberResponse,
-} from '../../shared/types'
-import { invitePageCopy } from './InvitePage.copy'
-import styles from './InvitePage.module.css'
+  ServerMemberResponse
+} from '../../shared/types';
+import { invitePageCopy } from './InvitePage.copy';
+
+import styles from './InvitePage.module.css';
 
 type InvitePageProps = {
-  code: string
-  accessToken: string
-  onAccepted: (membership: ServerMemberResponse) => void
-  onDeclined: () => void
-}
+  code: string;
+  accessToken: string;
+  onAccepted: (membership: ServerMemberResponse) => void;
+  onDeclined: () => void;
+};
 
 function formatCount(value: number) {
-  return new Intl.NumberFormat('ru-RU').format(value)
+  return new Intl.NumberFormat('ru-RU').format(value);
 }
 
 function getInvalidText(reason: string | null) {
   if (reason === 'expired') {
-    return invitePageCopy.errors.expired
+    return invitePageCopy.errors.expired;
   }
 
   if (reason === 'max_uses_reached') {
-    return invitePageCopy.errors.maxUsesReached
+    return invitePageCopy.errors.maxUsesReached;
   }
 
   if (reason === 'revoked') {
-    return invitePageCopy.errors.revoked
+    return invitePageCopy.errors.revoked;
   }
 
-  return invitePageCopy.errors.invalid
+  return invitePageCopy.errors.invalid;
 }
 
 export function InvitePage({
   code,
   accessToken,
   onAccepted,
-  onDeclined,
+  onDeclined
 }: InvitePageProps) {
   const [preview, setPreview] = useState<ServerInvitePreviewResponse | null>(
-    null,
-  )
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAccepting, setIsAccepting] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+    null
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true
+    let isMounted = true;
 
     apiJson<ServerInvitePreviewResponse>(`/api/server-invites/${code}`, {
-      accessToken,
+      accessToken
     })
       .then((invitePreview) => {
         if (isMounted) {
-          setPreview(invitePreview)
-          setMessage(null)
+          setPreview(invitePreview);
+          setMessage(null);
         }
       })
       .catch((error) => {
         if (isMounted) {
-          setPreview(null)
+          setPreview(null);
           setMessage(
             error instanceof Error
               ? error.message
-              : invitePageCopy.errors.invalid,
-          )
+              : invitePageCopy.errors.invalid
+          );
         }
       })
       .finally(() => {
         if (isMounted) {
-          setIsLoading(false)
+          setIsLoading(false);
         }
-      })
+      });
 
     return () => {
-      isMounted = false
-    }
-  }, [accessToken, code])
+      isMounted = false;
+    };
+  }, [accessToken, code]);
 
   async function acceptInvite() {
     if (!preview?.isActive) {
-      return
+      return;
     }
 
-    setIsAccepting(true)
-    setMessage(null)
+    setIsAccepting(true);
+    setMessage(null);
 
     try {
       const membership = await apiJson<ServerMemberResponse>(
@@ -94,27 +96,28 @@ export function InvitePage({
         {
           method: 'POST',
           accessToken,
-          body: { code },
-        },
-      )
-      onAccepted(membership)
+          body: { code }
+        }
+      );
+      onAccepted(membership);
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : invitePageCopy.errors.acceptFailed,
-      )
+          : invitePageCopy.errors.acceptFailed
+      );
     } finally {
-      setIsAccepting(false)
+      setIsAccepting(false);
     }
   }
 
-  const isInvalid = !isLoading && (!preview || !preview.isActive)
-  const activePreview = preview?.isActive ? preview : null
-  const title = activePreview?.serverTitle ?? preview?.serverTitle ?? 'ArcaneLink'
+  const isInvalid = !isLoading && (!preview || !preview.isActive);
+  const activePreview = preview?.isActive ? preview : null;
+  const title =
+    activePreview?.serverTitle ?? preview?.serverTitle ?? 'ArcaneLink';
   const iconUrl = activePreview?.serverIconAssetId
     ? `/api/assets/${activePreview.serverIconAssetId}/content`
-    : null
+    : null;
 
   return (
     <main className={styles.page}>
@@ -151,7 +154,7 @@ export function InvitePage({
                           -50 + activePreview.serverIconCropOffsetX * 100
                         }%, ${
                           -50 + activePreview.serverIconCropOffsetY * 100
-                        }%) scale(${activePreview.serverIconCropZoom})`,
+                        }%) scale(${activePreview.serverIconCropZoom})`
                       }}
                     />
                   ) : (
@@ -183,7 +186,7 @@ export function InvitePage({
                   {new Intl.DateTimeFormat('ru-RU', {
                     day: '2-digit',
                     month: 'long',
-                    year: 'numeric',
+                    year: 'numeric'
                   }).format(new Date(activePreview.expiresAt))}
                   .
                 </p>
@@ -214,5 +217,5 @@ export function InvitePage({
         )}
       </section>
     </main>
-  )
+  );
 }

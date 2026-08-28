@@ -1,20 +1,24 @@
-import { SystemIcon } from '../SystemIcon'
-import styles from './SystemPlusIcon.module.css'
+import { SystemIcon } from '../SystemIcon';
+
+import styles from './SystemPlusIcon.module.css';
 
 type SystemPlusIconProps = {
-  className?: string
-  size?: 'small' | 'medium' | 'large'
-}
+  className?: string;
+  size?: 'small' | 'medium' | 'large';
+};
 
-const plusIconSizes: Record<NonNullable<SystemPlusIconProps['size']>, number> = {
+const plusIconSizes: Record<
+  NonNullable<SystemPlusIconProps['size']>,
+  number
+> = {
   small: 16,
   medium: 22,
-  large: 38,
-}
+  large: 38
+};
 
 export function SystemPlusIcon({
   className = '',
-  size = 'medium',
+  size = 'medium'
 }: SystemPlusIconProps) {
   return (
     <SystemIcon
@@ -23,5 +27,5 @@ export function SystemPlusIcon({
       size={plusIconSizes[size]}
       glow
     />
-  )
+  );
 }

@@ -1,72 +1,89 @@
-import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from 'react'
-import type { ServerMemberDetailsResponse, SpaceResponse } from '../../../../shared/types'
-import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel'
-import type { VoiceUserAudioSettings } from '../../../shared/types/voicePlayback'
-import type { ServerDetail } from '../../utils/serverWorkspaceModel'
-import { SystemIcon } from '../../../shared'
-import styles from './ServerChannelTreeNavigation.module.css'
-import type { SpaceDropMode } from './spaceReorderModel'
-import { getSpaceNodeClassName, SpaceNavigationButton } from './SpaceNavigationButton'
-import type { SpaceDropTarget, VoiceParticipantDragState } from './useSpaceTreeDragAndDrop'
-import { canManageSpace } from '../../utils/spaceCapabilities'
+import type {
+  DragEvent as ReactDragEvent,
+  MouseEvent as ReactMouseEvent
+} from 'react';
+
+import type {
+  ServerMemberDetailsResponse,
+  SpaceResponse
+} from '../../../../shared/types';
+import { SystemIcon } from '../../../shared';
+import type { VoiceUserAudioSettings } from '../../../shared/types/voicePlayback';
+import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel';
+import type { ServerDetail } from '../../utils/serverWorkspaceModel';
+import { canManageSpace } from '../../utils/spaceCapabilities';
+import {
+  SpaceNavigationButton,
+  getSpaceNodeClassName
+} from './SpaceNavigationButton';
+import type { SpaceDropMode } from './spaceReorderModel';
+import type {
+  SpaceDropTarget,
+  VoiceParticipantDragState
+} from './useSpaceTreeDragAndDrop';
+
+import styles from './ServerChannelTreeNavigation.module.css';
 
 type SpaceNavigationNodeProps = {
-  depth: number
-  space: SpaceResponse
-  spaces: SpaceResponse[]
-  visibleDetail: ServerDetail | null
-  participantsBySpaceId: Record<string, VoiceParticipant[]>
-  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  serverMembers: ServerMemberDetailsResponse[]
-  serverMemberCount: number
-  speakingParticipantIds: Record<string, boolean>
-  openVoiceChatSpaceId: string | null
-  collapsedCategoryIds: Set<string>
-  canDragSpaces: boolean
-  canMoveVoiceParticipants: boolean
-  draggedSpaceId: string | null
-  spaceDropTarget: SpaceDropTarget | null
-  voiceDropTargetSpaceId: string | null
-  draggedVoiceParticipant: VoiceParticipantDragState | null
-  onSelect: (space: SpaceResponse) => void
-  onOpenVoiceChat: (space: SpaceResponse) => void
-  onToggleCategory: (spaceId: string) => void
-  onStartSpaceDrag: (event: ReactDragEvent<HTMLElement>, space: SpaceResponse) => void
+  depth: number;
+  space: SpaceResponse;
+  spaces: SpaceResponse[];
+  visibleDetail: ServerDetail | null;
+  participantsBySpaceId: Record<string, VoiceParticipant[]>;
+  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  serverMembers: ServerMemberDetailsResponse[];
+  serverMemberCount: number;
+  speakingParticipantIds: Record<string, boolean>;
+  openVoiceChatSpaceId: string | null;
+  collapsedCategoryIds: Set<string>;
+  canDragSpaces: boolean;
+  canMoveVoiceParticipants: boolean;
+  draggedSpaceId: string | null;
+  spaceDropTarget: SpaceDropTarget | null;
+  voiceDropTargetSpaceId: string | null;
+  draggedVoiceParticipant: VoiceParticipantDragState | null;
+  onSelect: (space: SpaceResponse) => void;
+  onOpenVoiceChat: (space: SpaceResponse) => void;
+  onToggleCategory: (spaceId: string) => void;
+  onStartSpaceDrag: (
+    event: ReactDragEvent<HTMLElement>,
+    space: SpaceResponse
+  ) => void;
   onUpdateSpaceDropTarget: (
     event: ReactDragEvent<HTMLElement>,
     target: SpaceResponse,
-    modeOverride?: SpaceDropMode,
-  ) => void
+    modeOverride?: SpaceDropMode
+  ) => void;
   onDropSpaceOnTarget: (
     event: ReactDragEvent<HTMLElement>,
     target: SpaceResponse,
-    modeOverride?: SpaceDropMode,
-  ) => void
-  onClearSpaceDragState: () => void
+    modeOverride?: SpaceDropMode
+  ) => void;
+  onClearSpaceDragState: () => void;
   onStartVoiceParticipantDrag: (
     event: ReactDragEvent<HTMLElement>,
     sourceSpaceId: string,
-    participant: VoiceParticipant,
-  ) => void
+    participant: VoiceParticipant
+  ) => void;
   onUpdateVoiceParticipantDropTarget: (
     event: ReactDragEvent<HTMLElement>,
-    target: SpaceResponse,
-  ) => void
+    target: SpaceResponse
+  ) => void;
   onDropVoiceParticipantOnTarget: (
     event: ReactDragEvent<HTMLElement>,
-    target: SpaceResponse,
-  ) => void
-  onClearVoiceDragState: () => void
+    target: SpaceResponse
+  ) => void;
+  onClearVoiceDragState: () => void;
   onOpenVoiceParticipantContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
     participant: VoiceParticipant,
-    sourceSpaceId: string,
-  ) => void
+    sourceSpaceId: string
+  ) => void;
   onContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
-    space: SpaceResponse | null,
-  ) => void
-}
+    space: SpaceResponse | null
+  ) => void;
+};
 
 export function SpaceNavigationNode({
   depth,
@@ -98,13 +115,13 @@ export function SpaceNavigationNode({
   onDropVoiceParticipantOnTarget,
   onClearVoiceDragState,
   onOpenVoiceParticipantContextMenu,
-  onContextMenu,
+  onContextMenu
 }: SpaceNavigationNodeProps) {
   if (space.typeCode === 'category') {
     const childSpaces = spaces
       .filter((item) => item.parentSpaceId === space.id)
-      .sort(compareSpaces)
-    const isCollapsed = collapsedCategoryIds.has(space.id)
+      .sort(compareSpaces);
+    const isCollapsed = collapsedCategoryIds.has(space.id);
 
     return (
       <div
@@ -112,7 +129,7 @@ export function SpaceNavigationNode({
           styles.spaceCategory,
           space,
           draggedSpaceId,
-          spaceDropTarget,
+          spaceDropTarget
         )}
         data-collapsed={isCollapsed ? 'true' : 'false'}
         data-depth={depth}
@@ -169,7 +186,9 @@ export function SpaceNavigationNode({
                 onDropSpaceOnTarget={onDropSpaceOnTarget}
                 onClearSpaceDragState={onClearSpaceDragState}
                 onStartVoiceParticipantDrag={onStartVoiceParticipantDrag}
-                onUpdateVoiceParticipantDropTarget={onUpdateVoiceParticipantDropTarget}
+                onUpdateVoiceParticipantDropTarget={
+                  onUpdateVoiceParticipantDropTarget
+                }
                 onDropVoiceParticipantOnTarget={onDropVoiceParticipantOnTarget}
                 onClearVoiceDragState={onClearVoiceDragState}
                 onOpenVoiceParticipantContextMenu={
@@ -181,7 +200,7 @@ export function SpaceNavigationNode({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -224,9 +243,11 @@ export function SpaceNavigationNode({
       }
       onContextMenu={(event) => onContextMenu(event, space)}
     />
-  )
+  );
 }
 
 function compareSpaces(first: SpaceResponse, second: SpaceResponse) {
-  return first.position - second.position || first.title.localeCompare(second.title)
+  return (
+    first.position - second.position || first.title.localeCompare(second.title)
+  );
 }

@@ -1,121 +1,119 @@
-import { useState } from 'react'
-import type { ImageCrop } from '../../../shared/media/ImageCropEditor'
-import { apiJson, apiNoContent } from '../../../shared/api/api'
+import { useState } from 'react';
+
+import { apiJson, apiNoContent } from '../../../shared/api/api';
+import type { ImageCrop } from '../../../shared/media/ImageCropEditor';
 import type {
   AssetResponse,
-  OwnUserProfileResponse,
-} from '../../../shared/types'
-import { profileCopy } from '../../shared'
-import { useUserPresenceChanged } from '../../shared/hooks/useUserPresenceChanged'
-import { patchPublicProfilePresence } from '../../shared/presence/presenceModel'
+  OwnUserProfileResponse
+} from '../../../shared/types';
+import { profileCopy } from '../../shared';
+import { useUserPresenceChanged } from '../../shared/hooks/useUserPresenceChanged';
 import {
   captureUserPresenceEventBoundary,
-  reconcilePublicProfileWithLatestPresence,
-} from '../../shared/presence/presenceEventStore'
-import { useAssetImagePicker } from './useAssetImagePicker'
+  reconcilePublicProfileWithLatestPresence
+} from '../../shared/presence/presenceEventStore';
+import { patchPublicProfilePresence } from '../../shared/presence/presenceModel';
+import { useAssetImagePicker } from './useAssetImagePicker';
 
-type AssetSort = 'newest' | 'oldest'
+type AssetSort = 'newest' | 'oldest';
 
-const maxAvatarUploadSizeBytes = 10 * 1024 * 1024
+const maxAvatarUploadSizeBytes = 10 * 1024 * 1024;
 const allowedAvatarMimeTypes = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/gif',
-  'image/bmp',
-])
+  'image/bmp'
+]);
 
 type UseProfileAvatarOptions = {
-  accessToken: string
-  initialProfile: OwnUserProfileResponse
-  sort: AssetSort
-}
+  accessToken: string;
+  initialProfile: OwnUserProfileResponse;
+  sort: AssetSort;
+};
 
 export function useProfileAvatar({
   accessToken,
   initialProfile,
-  sort,
+  sort
 }: UseProfileAvatarOptions) {
-  const [publicProfile, setPublicProfile] = useState(initialProfile)
-  const [isSavingAvatar, setIsSavingAvatar] = useState(false)
-  const [avatarError, setAvatarError] = useState<string | null>(null)
-  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false)
+  const [publicProfile, setPublicProfile] = useState(initialProfile);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
   const [assetPendingDelete, setAssetPendingDelete] =
-    useState<AssetResponse | null>(null)
-  const [isDeletingAsset, setIsDeletingAsset] = useState(false)
+    useState<AssetResponse | null>(null);
+  const [isDeletingAsset, setIsDeletingAsset] = useState(false);
   const [brokenAvatarUrls, setBrokenAvatarUrls] = useState<Set<string>>(
-    () => new Set(),
-  )
+    () => new Set()
+  );
 
   useUserPresenceChanged((payload) => {
-    setPublicProfile((current) =>
-      patchPublicProfilePresence(current, payload),
-    )
-  })
+    setPublicProfile((current) => patchPublicProfilePresence(current, payload));
+  });
 
   const avatarPicker = useAssetImagePicker({
     accessToken,
     libraryEndpoint: '/api/assets/me/avatar',
-    sort,
-  })
+    sort
+  });
 
   const profileAvatarUrl = publicProfile.avatarAssetId
     ? `/api/assets/${publicProfile.avatarAssetId}/content`
-    : '/brand/default-avatar.svg'
+    : '/brand/default-avatar.svg';
   const avatarSrc =
     avatarPicker.draft?.previewUrl ||
     (brokenAvatarUrls.has(profileAvatarUrl)
       ? '/brand/default-avatar.svg'
-      : profileAvatarUrl)
+      : profileAvatarUrl);
 
   const avatarStyle = {
     transform: `translate(-50%, -50%) translate(${
       publicProfile.avatarCropOffsetX * 100
     }%, ${
       publicProfile.avatarCropOffsetY * 100
-    }%) scale(${publicProfile.avatarCropZoom})`,
-  }
+    }%) scale(${publicProfile.avatarCropZoom})`
+  };
 
   function markBrokenAvatar(url: string) {
-    setBrokenAvatarUrls((current) => new Set(current).add(url))
+    setBrokenAvatarUrls((current) => new Set(current).add(url));
   }
 
   async function loadPublicProfile() {
-    const presenceBoundary = captureUserPresenceEventBoundary()
+    const presenceBoundary = captureUserPresenceEventBoundary();
     const profile = reconcilePublicProfileWithLatestPresence(
-      await apiJson<OwnUserProfileResponse>(
-        '/api/users/me/profile',
-        { accessToken },
-      ),
-      presenceBoundary,
-    )
+      await apiJson<OwnUserProfileResponse>('/api/users/me/profile', {
+        accessToken
+      }),
+      presenceBoundary
+    );
 
-    setPublicProfile(profile)
+    setPublicProfile(profile);
   }
 
   function showAvatarLibrary() {
-    setIsAvatarMenuOpen(false)
-    avatarPicker.openLibrary()
+    setIsAvatarMenuOpen(false);
+    avatarPicker.openLibrary();
   }
 
   function selectAvatarAsset(asset: AssetResponse) {
-    avatarPicker.selectAsset(asset)
+    avatarPicker.selectAsset(asset);
   }
 
   async function deleteAvatarAsset(asset: AssetResponse) {
-    setIsDeletingAsset(true)
+    setIsDeletingAsset(true);
 
     try {
       await apiNoContent(`/api/assets/${asset.id}`, {
         method: 'DELETE',
-        accessToken,
-      })
+        accessToken
+      });
 
-      avatarPicker.removeAsset(asset.id)
+      avatarPicker.removeAsset(asset.id);
 
       setPublicProfile((currentProfile) => {
         if (currentProfile.avatarAssetId !== asset.id) {
-          return currentProfile
+          return currentProfile;
         }
 
         return {
@@ -124,76 +122,76 @@ export function useProfileAvatar({
           avatarSourceAssetId: null,
           avatarCropOffsetX: 0,
           avatarCropOffsetY: 0,
-          avatarCropZoom: 1,
-        }
-      })
+          avatarCropZoom: 1
+        };
+      });
 
-      setAssetPendingDelete(null)
+      setAssetPendingDelete(null);
     } finally {
-      setIsDeletingAsset(false)
+      setIsDeletingAsset(false);
     }
   }
 
   function openAvatarPicker() {
-    setIsAvatarMenuOpen(false)
-    avatarPicker.fileInputRef.current?.click()
+    setIsAvatarMenuOpen(false);
+    avatarPicker.fileInputRef.current?.click();
   }
 
   function selectAvatarFile(file: File | undefined) {
-    setAvatarError(null)
-    avatarPicker.selectFile(file)
+    setAvatarError(null);
+    avatarPicker.selectFile(file);
   }
 
   function cancelAvatarChange() {
-    setAvatarError(null)
-    avatarPicker.cancelCrop()
+    setAvatarError(null);
+    avatarPicker.cancelCrop();
   }
 
   async function confirmAvatarChange(crop: ImageCrop) {
     if (!avatarPicker.draft) {
-      return
+      return;
     }
 
-    setIsSavingAvatar(true)
-    setAvatarError(null)
+    setIsSavingAvatar(true);
+    setAvatarError(null);
 
     try {
-      const assetId = avatarPicker.draft.assetId
+      const assetId = avatarPicker.draft.assetId;
 
       if (!assetId && avatarPicker.draft.file) {
-        validateAvatarFile(avatarPicker.draft.file)
+        validateAvatarFile(avatarPicker.draft.file);
 
-        const formData = new FormData()
-        formData.append('File', avatarPicker.draft.file)
-        formData.append('CropOffsetX', String(crop.offsetX))
-        formData.append('CropOffsetY', String(crop.offsetY))
-        formData.append('CropZoom', String(crop.zoom))
+        const formData = new FormData();
+        formData.append('File', avatarPicker.draft.file);
+        formData.append('CropOffsetX', String(crop.offsetX));
+        formData.append('CropOffsetY', String(crop.offsetY));
+        formData.append('CropZoom', String(crop.zoom));
 
-        const presenceBoundary = captureUserPresenceEventBoundary()
+        const presenceBoundary = captureUserPresenceEventBoundary();
         const updatedProfile = reconcilePublicProfileWithLatestPresence(
           await apiJson<OwnUserProfileResponse>(
             '/api/users/me/profile/avatar/upload',
             {
               method: 'POST',
               accessToken,
-              body: formData,
-            },
+              body: formData
+            }
           ),
-          presenceBoundary,
-        )
+          presenceBoundary
+        );
 
-        setPublicProfile(updatedProfile)
-        avatarPicker.completeCrop()
+        setPublicProfile(updatedProfile);
+        avatarPicker.completeCrop();
 
-        await avatarPicker.loadAssets()
-        return
+        await avatarPicker.loadAssets();
+        return;
       }
 
       if (!assetId) {
-        throw new Error(profileCopy.errors.avatarAssetMissing)
+        throw new Error(profileCopy.errors.avatarAssetMissing);
       }
 
-      const presenceBoundary = captureUserPresenceEventBoundary()
+      const presenceBoundary = captureUserPresenceEventBoundary();
       const updatedProfile = reconcilePublicProfileWithLatestPresence(
         await apiJson<OwnUserProfileResponse>(
           `/api/users/me/profile/avatar/${assetId}`,
@@ -203,21 +201,21 @@ export function useProfileAvatar({
             body: {
               cropOffsetX: crop.offsetX,
               cropOffsetY: crop.offsetY,
-              cropZoom: crop.zoom,
-            },
-          },
+              cropZoom: crop.zoom
+            }
+          }
         ),
-        presenceBoundary,
-      )
+        presenceBoundary
+      );
 
-      setPublicProfile(updatedProfile)
-      avatarPicker.completeCrop()
+      setPublicProfile(updatedProfile);
+      avatarPicker.completeCrop();
 
-      await avatarPicker.loadAssets()
+      await avatarPicker.loadAssets();
     } catch (error) {
-      setAvatarError(getAvatarSaveError(error))
+      setAvatarError(getAvatarSaveError(error));
     } finally {
-      setIsSavingAvatar(false)
+      setIsSavingAvatar(false);
     }
   }
 
@@ -242,32 +240,32 @@ export function useProfileAvatar({
     openAvatarPicker,
     selectAvatarFile,
     cancelAvatarChange,
-    confirmAvatarChange,
-  }
+    confirmAvatarChange
+  };
 }
 
 function getAvatarSaveError(error: unknown) {
   if (!(error instanceof Error)) {
-    return profileCopy.errors.avatarSaveFailed
+    return profileCopy.errors.avatarSaveFailed;
   }
 
   const localErrors = new Set<string>([
     profileCopy.errors.avatarAssetMissing,
     profileCopy.errors.avatarTooLarge,
-    profileCopy.errors.avatarUnsupportedType,
-  ])
+    profileCopy.errors.avatarUnsupportedType
+  ]);
 
   return localErrors.has(error.message)
     ? error.message
-    : profileCopy.errors.avatarSaveFailed
+    : profileCopy.errors.avatarSaveFailed;
 }
 
 function validateAvatarFile(file: File) {
   if (file.size > maxAvatarUploadSizeBytes) {
-    throw new Error(profileCopy.errors.avatarTooLarge)
+    throw new Error(profileCopy.errors.avatarTooLarge);
   }
 
   if (!allowedAvatarMimeTypes.has(file.type)) {
-    throw new Error(profileCopy.errors.avatarUnsupportedType)
+    throw new Error(profileCopy.errors.avatarUnsupportedType);
   }
 }

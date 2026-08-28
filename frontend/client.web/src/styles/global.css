@@ -82,7 +82,8 @@
   border-color: var(--theme-border-accent);
   color: var(--color-text);
   background: var(--theme-hover-bg);
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-accent), transparent 84%);
+  box-shadow: 0 12px 28px
+    color-mix(in srgb, var(--theme-accent), transparent 84%);
 }
 
 .ui-radio-card:has(input:checked) {

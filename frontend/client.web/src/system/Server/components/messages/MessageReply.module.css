@@ -9,7 +9,11 @@
   border-radius: 10px 10px 0 0;
   padding: 8px 10px;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 86%), transparent 70%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 86%),
+      transparent 70%
+    ),
     var(--theme-control-bg-strong);
   box-shadow: inset 3px 0 0 var(--theme-accent-light);
 }
@@ -91,13 +95,18 @@
   align-items: center;
   gap: 4px;
   margin: 4px 0 6px;
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft), transparent 36%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-border-soft), transparent 36%);
   border-left: 2px solid var(--theme-accent-light);
   border-radius: 6px;
   padding: 6px 9px;
   color: inherit;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 88%), transparent 72%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 88%),
+      transparent 72%
+    ),
     color-mix(in srgb, var(--theme-control-bg-strong), transparent 18%);
   box-shadow: 0 0 14px color-mix(in srgb, var(--theme-accent), transparent 92%);
 }
@@ -111,7 +120,11 @@
 .referenceButton:focus-visible {
   border-color: color-mix(in srgb, var(--theme-accent-light), transparent 48%);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 78%), transparent 78%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 78%),
+      transparent 78%
+    ),
     var(--theme-control-bg-strong);
 }
 

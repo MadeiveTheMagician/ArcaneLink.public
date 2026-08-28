@@ -1,10 +1,13 @@
 .wrap {
   position: relative;
+  width: 100%;
   min-width: 0;
 }
 
 .shell {
   display: grid;
+  width: 100%;
+  box-sizing: border-box;
   grid-template-columns: 20px minmax(0, 1fr) 24px auto;
   min-height: 32px;
   align-items: center;

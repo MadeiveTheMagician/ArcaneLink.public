@@ -26,6 +26,8 @@ import type {
 } from '../../../../shared/types'
 import { DirectMessagesPanel } from '../direct-messages/DirectMessagesPanel'
 import { HubUtilityView } from '../utility/HubUtilityView'
+import type { NotificationTarget } from '../notifications/notificationNavigation'
+import type { CommunityNavigationRequest } from '../community/communityTypes'
 import { HubVoiceParticipantsPanel } from '../voice/HubVoiceParticipantsPanel'
 import { SystemErrorBoundary } from '../../../shared/errors/SystemErrorBoundary'
 import type {
@@ -129,6 +131,9 @@ type HubWorkspacePaneProps = {
   onOpenServer: (membership: ServerMemberResponse) => void
   onAcceptDirectServerInvite: (inviteId: string) => void
   onDeclineDirectServerInvite: (inviteId: string) => void
+  onOpenNotificationTarget: (target: NotificationTarget) => void
+  communityNavigationRequest: CommunityNavigationRequest | null
+  onCommunityNavigationRequestConsumed: (requestId: number) => void
   onFriendSearchQueryChange: (query: string) => void
   onSendFriendRequest: (userId: string) => void
   onAcceptFriendRequest: (requestId: string) => void
@@ -210,6 +215,9 @@ export function HubWorkspacePane({
   onOpenServer,
   onAcceptDirectServerInvite,
   onDeclineDirectServerInvite,
+  onOpenNotificationTarget,
+  communityNavigationRequest,
+  onCommunityNavigationRequestConsumed,
   onFriendSearchQueryChange,
   onSendFriendRequest,
   onAcceptFriendRequest,
@@ -254,7 +262,6 @@ export function HubWorkspacePane({
           onUpdateGroupSettings={onUpdateGroupPrivateSpaceSettings}
           onMarkPrivateSpaceRead={onMarkPrivateSpaceRead}
           onMarkAllPrivateSpacesRead={onMarkAllPrivateSpacesRead}
-          onOpenSearchResult={onOpenPrivateSearchResult}
         />
       )}
       {activeWorkspace !== 'profile' && activeWorkspace !== 'private-space' && (
@@ -335,8 +342,15 @@ export function HubWorkspacePane({
               onOpenServer={onOpenServer}
               onOpenDirectSpace={onOpenDirectSpace}
               onStartDirectVoice={onStartDirectVoice}
+              onLoadInviteTargetServers={onLoadInviteTargetServers}
+              onCreateDirectServerInvite={onCreateDirectServerInvite}
               onAcceptDirectServerInvite={onAcceptDirectServerInvite}
               onDeclineDirectServerInvite={onDeclineDirectServerInvite}
+              onOpenNotificationTarget={onOpenNotificationTarget}
+              communityNavigationRequest={communityNavigationRequest}
+              onCommunityNavigationRequestConsumed={
+                onCommunityNavigationRequestConsumed
+              }
               onAddPrivateSpaceMember={onAddPrivateSpaceMember}
               onChangeVoiceAudioSettings={onChangeVoiceAudioSettings}
               onPendingPrivateSpaceDroppedFilesConsumed={
@@ -352,6 +366,7 @@ export function HubWorkspacePane({
               onCreateServer={onCreateServer}
               onReturnToDirectMessages={onReturnToDirectMessages}
               focusedPrivateMessage={focusedPrivateMessage}
+              onOpenPrivateSearchResult={onOpenPrivateSearchResult}
             />
           </SystemErrorBoundary>
         )}

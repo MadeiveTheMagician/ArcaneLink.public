@@ -76,11 +76,11 @@
 .arcane-detached-preset-block {
   display: grid;
   gap: 6px;
-  color: rgba(238, 242, 255, 0.86);
+  color: var(--theme-text-soft);
   font-size: 13px;
 }
 .arcane-detached-preset-caption {
-  color: rgba(220, 228, 255, 0.72);
+  color: var(--theme-text-faint);
   font-size: 12px;
 }
 .arcane-detached-preset-row {
@@ -101,7 +101,7 @@
 }
 .arcane-detached-empty-state {
   margin: auto;
-  color: rgba(220, 228, 255, 0.68);
+  color: var(--theme-text-faint);
   font-size: 14px;
 }
 
@@ -118,7 +118,7 @@
   height: 0;
   border-right: 6px solid transparent;
   border-left: 6px solid transparent;
-  border-top: 7px solid rgba(220, 228, 255, 0.72);
+  border-top: 7px solid var(--theme-text-faint);
   justify-self: center;
 }
 .arcane-detached-dropdown-menu {
@@ -130,12 +130,12 @@
   display: grid;
   max-height: 180px;
   overflow: auto;
-  border: 1px solid rgba(159, 123, 255, 0.24);
+  border: 1px solid var(--theme-border-control);
   border-radius: 8px;
   padding: 5px;
   background:
-    radial-gradient(circle at 0 0, rgba(123, 97, 255, 0.18), transparent 42%),
-    rgba(7, 11, 27, 0.99);
+    radial-gradient(circle at 0 0, var(--theme-backdrop-glow), transparent 42%),
+    var(--theme-frame-bg-strong);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.46);
   transform-origin: 50% 0;
   animation: arcanelink-detached-dropdown-in 130ms ease-out both;
@@ -155,26 +155,26 @@
   border: 0;
   border-radius: 6px;
   padding: var(--detached-option-padding, 7px 9px);
-  color: #eef2ff;
+  color: var(--color-text);
   font-size: 12px;
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
 .arcane-detached-menu-option[data-active="true"] {
-  background: rgba(123, 97, 255, 0.34);
+  background: var(--theme-active-bg);
 }
 .arcane-detached-menu-option:hover {
-  background: rgba(159, 123, 255, 0.18);
+  background: var(--theme-hover-bg);
 }
 .arcane-detached-compact-button {
   box-sizing: border-box;
   min-height: 38px;
-  border: 1px solid rgba(211, 224, 255, 0.12);
+  border: 1px solid var(--theme-border-control);
   border-radius: 7px;
   padding: 7px 10px;
   color: var(--color-text);
-  background: rgba(7, 11, 27, 0.54);
+  background: var(--theme-control-bg);
   cursor: pointer;
 }
 .arcane-detached-compact-button[data-danger="true"] {

@@ -1,4 +1,4 @@
-﻿@media (max-width: 760px) {
+@media (max-width: 760px) {
   .mobileSpaceToolbar {
     position: sticky;
     top: 0;
@@ -64,7 +64,7 @@
   }
 
   .mobileSpaceTitle i {
-    color: rgba(193, 202, 238, 0.9);
+    color: var(--theme-text-soft);
     font-style: normal;
   }
 

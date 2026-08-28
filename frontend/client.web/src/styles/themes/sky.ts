@@ -4,8 +4,8 @@ import { themeCopy } from '../theme.copy'
 export const skyTheme: SystemTheme = {
   code: 'sky',
   title: themeCopy.titles.sky,
-  dominantColor: '#54b8ff',
-  previewColors: ['#061725', '#54b8ff', '#b4e3ff'],
+  dominantColor: '#7faec8',
+  previewColors: ['#101f29', '#7faec8', '#b9d7e3'],
   assetSet: 'none',
   /*
    * Color variable guide:
@@ -51,19 +51,19 @@ export const skyTheme: SystemTheme = {
    * --shadow-sapphire: theme shadow used by elevated UI.
    */
   variables: {
-    '--color-bg': '#061725',
-    '--color-surface': 'rgba(6, 23, 37, 0.78)',
-    '--color-surface-strong': 'rgba(6, 23, 37, 0.95)',
-    '--color-border': '#1d5373',
-    '--color-text': '#e8f7ff',
-    '--color-muted': '#99c7df',
-    '--color-sapphire': '#54b8ff',
-    '--color-sapphire-light': '#9bd7ff',
-    '--color-violet': '#54b8ff',
-    '--color-rune': '#c4ebff',
+    '--color-bg': '#101f29',
+    '--color-surface': 'rgba(17, 33, 43, 0.82)',
+    '--color-surface-strong': 'rgba(17, 33, 43, 0.96)',
+    '--color-border': '#3d6071',
+    '--color-text': '#edf6f8',
+    '--color-muted': '#a7c2cd',
+    '--color-sapphire': '#7faec8',
+    '--color-sapphire-light': '#b2d1df',
+    '--color-violet': '#9b91b8',
+    '--color-rune': '#c9e0e8',
     '--color-danger': '#ff7575',
     '--color-success': '#84f4c4',
-    '--theme-accent-contrast': '#061725',
-    '--shadow-sapphire': '0 26px 90px rgba(84, 184, 255, 0.22)',
+    '--theme-accent-contrast': '#10202a',
+    '--shadow-sapphire': '0 26px 90px rgba(127, 174, 200, 0.2)',
   },
 }

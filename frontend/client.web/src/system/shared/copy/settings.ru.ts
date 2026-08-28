@@ -5,6 +5,31 @@ export const settingsCopy = {
     accountInfoTitle: 'Данные для входа',
     activeSessions: 'Активные сеансы устройств',
     currentSession: 'Текущий',
+    currentSessionProtected: 'Текущий сеанс останется активным',
+    otherSessionsCount: (count: number) => {
+      const remainder100 = count % 100
+      const remainder10 = count % 10
+      const suffix =
+        remainder100 >= 11 && remainder100 <= 14
+          ? 'других устройств'
+          : remainder10 === 1
+            ? 'другое устройство'
+            : remainder10 >= 2 && remainder10 <= 4
+              ? 'других устройства'
+              : 'других устройств'
+
+      return `${count} ${suffix}`
+    },
+    revokeSession: 'Прервать сеанс',
+    revokingSession: 'Прерываем...',
+    revokeSessionQuestion: 'Прервать этот сеанс?',
+    revokeSessionWarning:
+      'Устройство потеряет возможность обновить токен и будет отключено от ArcaneLink.',
+    revokeOtherSessions: 'Прервать все остальные сеансы',
+    revokingOtherSessions: 'Прерываем сеансы...',
+    revokeOtherSessionsQuestion: 'Прервать все остальные сеансы?',
+    revokeOtherSessionsWarning:
+      'Текущий сеанс останется активным. Остальные устройства будут отключены от ArcaneLink.',
     deleteAccount: 'Удалить учётную запись',
     deleteAccountDescription:
       'Этот пункт вынесен отдельно, чтобы его нельзя было нажать случайно.',
@@ -23,6 +48,33 @@ export const settingsCopy = {
     passwordSecurityTitle: 'Пароль и безопасность',
     username: 'Логин',
     unknownDevice: 'Неизвестное устройство',
+    cancelChange: 'Отменить',
+    change: 'Изменить',
+    confirmNewPassword: 'Повторите новый пароль',
+    currentPassword: 'Текущий пароль',
+    emailChangeFailed:
+      'Не удалось запросить смену email. Проверьте пароль и доступность адреса.',
+    emailChangeRequested:
+      'Письмо отправлено на новый адрес. Текущий email изменится только после подтверждения ссылки.',
+    loginChangeFailed:
+      'Не удалось изменить логин. Проверьте текущий пароль и доступность логина.',
+    loginChangedReauthentication:
+      'Логин изменён. Все сеансы завершены — войдите в ArcaneLink заново.',
+    newEmail: 'Новый email',
+    newLogin: 'Новый логин',
+    newPassword: 'Новый пароль',
+    passwordChangeFailed:
+      'Не удалось изменить пароль. Проверьте текущий пароль и требования безопасности.',
+    passwordChangedReauthentication:
+      'Пароль изменён. Все сеансы завершены — войдите в ArcaneLink заново.',
+    passwordRequirements:
+      'От 8 до 128 символов: строчная и заглавная буквы, цифра, спецсимвол, без пробелов.',
+    saveChange: 'Сохранить',
+    savingChange: 'Сохраняем...',
+    revokeAllSessions: 'Прервать все сеансы',
+    revokingAllSessions: 'Прерываем все сеансы...',
+    revokeAllSessionsWarning:
+      'Прервать все активные сеансы, включая текущий? После этого потребуется войти заново.',
     yesDelete: 'Да, удалить',
   },
   actions: {
@@ -46,6 +98,9 @@ export const settingsCopy = {
     loadProfileTags: 'Не удалось загрузить теги.',
     loadServerProfile: 'Не удалось загрузить профиль для выбранного сервера.',
     loadSessions: 'Не удалось загрузить активные сеансы.',
+    revokeSession: 'Не удалось прервать выбранный сеанс.',
+    revokeOtherSessions: 'Не удалось прервать остальные сеансы.',
+    revokeAllSessions: 'Не удалось прервать все сеансы.',
     saveDisplayName: 'Не удалось сохранить отображаемое имя.',
     saveBanner: 'Не удалось применить баннер профиля.',
     saveServerProfile: 'Не удалось сохранить серверный профиль.',

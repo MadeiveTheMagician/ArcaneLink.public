@@ -1,10 +1,48 @@
 import { expect, test } from '@playwright/test'
 import {
+  privateSpaceDragPreviewSize,
+  resolveCenteredDragPreviewTransform,
   resolveFolderChipDropPlacement,
   resolvePointerDropPlacement,
 } from '../../src/system/Hub/components/private-space/folders/privateSpaceFolderDragModel'
 
 test.describe('private-space folder drag geometry', () => {
+  test('centers the compact conversation preview on the activation point', () => {
+    const transform = resolveCenteredDragPreviewTransform({
+      transform: { x: 40, y: 15 },
+      activationPoint: { x: 260, y: 230 },
+      sourceRect: {
+        top: 200,
+        left: 100,
+        width: 320,
+        height: 62,
+      },
+      previewSize: privateSpaceDragPreviewSize,
+    })
+
+    const previewLeft = 100 + transform.x
+    const previewTop = 200 + transform.y
+    const currentPointer = { x: 260 + 40, y: 230 + 15 }
+
+    expect(previewLeft + privateSpaceDragPreviewSize.width / 2).toBe(
+      currentPointer.x,
+    )
+    expect(previewTop + privateSpaceDragPreviewSize.height / 2).toBe(
+      currentPointer.y,
+    )
+  })
+
+  test('keeps the existing transform when preview geometry is invalid', () => {
+    expect(
+      resolveCenteredDragPreviewTransform({
+        transform: { x: 18, y: -6 },
+        activationPoint: { x: 130, y: 84 },
+        sourceRect: { top: 50, left: 30, width: 0, height: 0 },
+        previewSize: { width: 0, height: 36 },
+      }),
+    ).toEqual({ x: 18, y: -6 })
+  })
+
   test('switches a vertical target slightly before its visual midpoint', () => {
     const targetRect = {
       top: 100,

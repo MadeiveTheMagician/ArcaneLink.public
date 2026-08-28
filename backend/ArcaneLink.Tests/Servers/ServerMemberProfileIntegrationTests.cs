@@ -10,6 +10,7 @@ using ArcaneLink.DataBase.DTOs.Messages;
 using ArcaneLink.DataBase.DTOs.Servers;
 using ArcaneLink.DataBase.Models.AssetsModels;
 using ArcaneLink.DataBase.Models.ServersModels;
+using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.Services.Realtime;
 using ArcaneLink.Services.Realtime.Abstractions;
 using ArcaneLink.Services.Servers.Authorization;
@@ -23,6 +24,251 @@ namespace ArcaneLink.Tests.Servers;
 
 public sealed class ServerMemberProfileIntegrationTests
 {
+    [Fact]
+    public async Task ViewerProfile_ReturnsServerIdentityAppearanceRolesAndMutualContextWithoutPermissions()
+    {
+        using var factory = new ArcaneLinkApiFactory();
+        _ = factory.Services;
+        var now = DateTime.UtcNow;
+        var roleId = Guid.NewGuid();
+        var roleAssignmentId = Guid.NewGuid();
+        var backgroundAssetId = Guid.NewGuid();
+        var secondServerId = Guid.NewGuid();
+        var ownerFriendRequestId = Guid.NewGuid();
+        var memberFriendRequestId = Guid.NewGuid();
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var memberSettings = await db.UserProfileSettings.SingleAsync(
+                settings => settings.UserId == ArcaneLinkApiFactory.MemberUserId);
+            memberSettings.SelectedThemeId = SystemThemeIds.Graphite;
+            memberSettings.ProfileColor = "#334455";
+            memberSettings.ProfileBackgroundAssetId = backgroundAssetId;
+
+            db.Assets.Add(new Asset
+            {
+                Id = backgroundAssetId,
+                OwnerUserId = ArcaneLinkApiFactory.MemberUserId,
+                AssetTypeId = AssetTypeIds.ProfileBackground,
+                StorageKey = $"tests/profile-background/{backgroundAssetId}.webp",
+                OriginalFileName = "profile-background.webp",
+                MimeType = "image/webp",
+                SizeBytes = 1,
+                Sha256 = new string('c', 64),
+                Width = 1,
+                Height = 1,
+                CreatedAt = now
+            });
+
+            db.ServerRoles.Add(new ServerRole
+            {
+                Id = roleId,
+                ServerId = ArcaneLinkApiFactory.ServerId,
+                Title = "Archivist",
+                Kind = ServerRoleKindCodes.Standard,
+                Color = "#aabbcc",
+                Level = 12,
+                PermissionMask = ServerRolePermissionMaskCodec.Encode(
+                    ServerPermissionRegistry.CreateMask(["ADMINISTRATOR"])),
+                PermissionSchemaVersion = ServerPermissionRegistry.SchemaVersion,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            db.ServerMemberRoles.Add(new ServerMemberRole
+            {
+                Id = roleAssignmentId,
+                ServerId = ArcaneLinkApiFactory.ServerId,
+                MemberId = ArcaneLinkApiFactory.MemberMemberId,
+                RoleId = roleId,
+                AssignedByUserId = ArcaneLinkApiFactory.OwnerUserId,
+                AssignedAt = now
+            });
+
+            db.FriendRequests.AddRange(
+                new FriendRequest
+                {
+                    Id = ownerFriendRequestId,
+                    FromUserId = ArcaneLinkApiFactory.OwnerUserId,
+                    ToUserId = ArcaneLinkApiFactory.OutsiderUserId,
+                    StatusId = FriendRequestStatusIds.Accepted,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    RespondedAt = now
+                },
+                new FriendRequest
+                {
+                    Id = memberFriendRequestId,
+                    FromUserId = ArcaneLinkApiFactory.MemberUserId,
+                    ToUserId = ArcaneLinkApiFactory.OutsiderUserId,
+                    StatusId = FriendRequestStatusIds.Accepted,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    RespondedAt = now
+                });
+            db.UserFriends.AddRange(
+                new UserFriend
+                {
+                    UserId = ArcaneLinkApiFactory.OwnerUserId,
+                    FriendUserId = ArcaneLinkApiFactory.OutsiderUserId,
+                    CreatedByRequestId = ownerFriendRequestId,
+                    CreatedAt = now
+                },
+                new UserFriend
+                {
+                    UserId = ArcaneLinkApiFactory.OutsiderUserId,
+                    FriendUserId = ArcaneLinkApiFactory.OwnerUserId,
+                    CreatedByRequestId = ownerFriendRequestId,
+                    CreatedAt = now
+                },
+                new UserFriend
+                {
+                    UserId = ArcaneLinkApiFactory.MemberUserId,
+                    FriendUserId = ArcaneLinkApiFactory.OutsiderUserId,
+                    CreatedByRequestId = memberFriendRequestId,
+                    CreatedAt = now
+                },
+                new UserFriend
+                {
+                    UserId = ArcaneLinkApiFactory.OutsiderUserId,
+                    FriendUserId = ArcaneLinkApiFactory.MemberUserId,
+                    CreatedByRequestId = memberFriendRequestId,
+                    CreatedAt = now
+                });
+
+            db.Servers.Add(new Server
+            {
+                Id = secondServerId,
+                CreatedByUserId = ArcaneLinkApiFactory.OwnerUserId,
+                OwnerUserId = ArcaneLinkApiFactory.OwnerUserId,
+                Slug = $"shared-{secondServerId:N}",
+                Title = "Another Shared Server",
+                AccessMode = ServerAccessModeCodes.Private,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            db.ServerMembers.AddRange(
+                new ServerMember
+                {
+                    Id = Guid.NewGuid(),
+                    ServerId = secondServerId,
+                    UserId = ArcaneLinkApiFactory.OwnerUserId,
+                    StatusId = ServerMemberStatusIds.Active,
+                    JoinedAt = now,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                },
+                new ServerMember
+                {
+                    Id = Guid.NewGuid(),
+                    ServerId = secondServerId,
+                    UserId = ArcaneLinkApiFactory.MemberUserId,
+                    StatusId = ServerMemberStatusIds.Active,
+                    JoinedAt = now,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = factory.CreateClient();
+        client.AuthorizeWith(await client.LoginAsync("owner"));
+        using var response = await client.GetAsync(
+            ProfilePath(ArcaneLinkApiFactory.MemberUserId.ToString()));
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("permission", json, StringComparison.OrdinalIgnoreCase);
+
+        var profile = JsonSerializer.Deserialize<ServerMemberViewerProfileResponse>(
+            json,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(profile);
+        Assert.Equal(ArcaneLinkApiFactory.MemberMemberId, profile.MemberId);
+        Assert.Equal("member", profile.Login);
+        Assert.Equal("graphite", profile.ProfileThemeCode);
+        Assert.Equal("#334455", profile.ProfileColor);
+        Assert.Equal(backgroundAssetId, profile.ProfileBackgroundAssetId);
+        var role = Assert.Single(profile.Roles);
+        Assert.Equal(roleId, role.Id);
+        Assert.Equal("Archivist", role.Title);
+        Assert.Equal("#aabbcc", role.Color);
+        Assert.Equal(1, profile.MutualFriendCount);
+        var mutualFriend = Assert.Single(profile.MutualFriends);
+        Assert.Equal(ArcaneLinkApiFactory.OutsiderUserId, mutualFriend.UserId);
+        Assert.Equal(2, profile.MutualServerCount);
+        Assert.Equal(
+            ["Another Shared Server", "Test Server"],
+            profile.MutualServers.Select(server => server.Title).ToArray());
+
+        client.AuthorizeWith(await client.LoginAsync("member"));
+        using var selfResponse = await client.GetAsync(
+            ProfilePath(ArcaneLinkApiFactory.MemberUserId.ToString()));
+        selfResponse.EnsureSuccessStatusCode();
+        var selfJson = await selfResponse.Content.ReadAsStringAsync();
+        Assert.DoesNotContain(
+            "permission",
+            selfJson,
+            StringComparison.OrdinalIgnoreCase);
+
+        var selfProfile = JsonSerializer.Deserialize<ServerMemberViewerProfileResponse>(
+            selfJson,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(selfProfile);
+        Assert.Equal(ArcaneLinkApiFactory.MemberMemberId, selfProfile.MemberId);
+        Assert.Equal("member", selfProfile.Login);
+        Assert.Equal("graphite", selfProfile.ProfileThemeCode);
+        Assert.Equal("#334455", selfProfile.ProfileColor);
+        Assert.Equal(backgroundAssetId, selfProfile.ProfileBackgroundAssetId);
+        var selfRole = Assert.Single(selfProfile.Roles);
+        Assert.Equal(roleId, selfRole.Id);
+        Assert.Equal(0, selfProfile.MutualFriendCount);
+        Assert.Empty(selfProfile.MutualFriends);
+        Assert.Equal(0, selfProfile.MutualServerCount);
+        Assert.Empty(selfProfile.MutualServers);
+    }
+
+    [Theory]
+    [InlineData("not-member")]
+    [InlineData("left")]
+    [InlineData("banned")]
+    public async Task ViewerProfile_HidesTargetsWithoutActiveMembership(
+        string targetState)
+    {
+        using var factory = new ArcaneLinkApiFactory();
+        _ = factory.Services;
+        var targetUserId = ArcaneLinkApiFactory.MemberUserId;
+
+        if (targetState != "not-member")
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var member = await db.ServerMembers.SingleAsync(item =>
+                item.Id == ArcaneLinkApiFactory.MemberMemberId);
+            if (targetState == "left")
+            {
+                member.StatusId = ServerMemberStatusIds.Left;
+                member.LeftAt = DateTime.UtcNow;
+            }
+            else
+            {
+                member.StatusId = ServerMemberStatusIds.Banned;
+                member.BannedAt = DateTime.UtcNow;
+            }
+
+            await db.SaveChangesAsync();
+        }
+        else
+        {
+            targetUserId = ArcaneLinkApiFactory.OutsiderUserId;
+        }
+
+        using var client = factory.CreateClient();
+        client.AuthorizeWith(await client.LoginAsync("owner"));
+        using var response = await client.GetAsync(
+            ProfilePath(targetUserId.ToString()));
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     [Fact]
     public async Task CustomServerNickname_RequiresTheExactGranularPermission()
     {

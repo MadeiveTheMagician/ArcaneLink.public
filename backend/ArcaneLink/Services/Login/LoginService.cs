@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase._Data;
+using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Login;
 using ArcaneLink.DataBase.DTOs.Logout;
@@ -99,15 +99,10 @@ namespace ArcaneLink.Services.Login
             //
             // Это защищает от user enumeration:
             // нельзя понять, существует login/email или нет.
-            if (user == null ||
-                user.DeletedAt != null)
+            if (user == null)
             {
+                _passwordService.PerformDummyVerification(request.Password);
                 throw new InvalidLoginCredentialsException();
-            }
-
-            if (user.StatusId == UserStatusIds.Banned)
-            {
-                throw new UserWasBannedException();
             }
 
             // Проверяем пароль.
@@ -122,6 +117,27 @@ namespace ArcaneLink.Services.Login
 
             // Если пароль неверный — та же единая ошибка.
             if (passwordResult == PasswordVerificationResult.Failed)
+            {
+                throw new InvalidLoginCredentialsException();
+            }
+
+            if (user.DeletedAt != null)
+            {
+                throw new InvalidLoginCredentialsException();
+            }
+
+            if (user.StatusId == UserStatusIds.Banned)
+            {
+                throw new UserWasBannedException();
+            }
+
+            if (user.StatusId == UserStatusIds.PendingEmailVerification ||
+                user.EmailConfirmedAt == null)
+            {
+                throw new EmailNotConfirmedException();
+            }
+
+            if (user.StatusId != UserStatusIds.Active)
             {
                 throw new InvalidLoginCredentialsException();
             }

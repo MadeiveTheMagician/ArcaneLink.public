@@ -324,7 +324,7 @@
   border: 1px solid transparent;
   border-radius: 7px;
   padding: 2px 7px;
-  color: rgba(190, 200, 242, 0.78);
+  color: var(--theme-text-soft);
   transition:
     border-color 140ms ease,
     background 140ms ease,
@@ -368,10 +368,10 @@
   height: 22px;
   place-items: center;
   overflow: hidden;
-  border: 1px solid rgba(121, 183, 255, 0.24);
+  border: 1px solid var(--theme-border-control);
   border-radius: 6px;
-  color: rgba(235, 239, 255, 0.92);
-  background: rgba(18, 28, 58, 0.88);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
   font-size: 11px;
   font-weight: 900;
 }
@@ -385,8 +385,8 @@
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 54%);
   border-radius: 999px;
-  color: rgba(235, 239, 255, 0.94);
-  background: rgba(18, 28, 58, 0.92);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
   font-size: 10px;
   font-weight: 900;
 }
@@ -394,7 +394,7 @@
 .voiceChannelMembers strong {
   min-width: 0;
   overflow: hidden;
-  color: rgba(222, 228, 255, 0.9);
+  color: var(--theme-text-soft);
   font-size: 12px;
   font-weight: 800;
   text-overflow: ellipsis;

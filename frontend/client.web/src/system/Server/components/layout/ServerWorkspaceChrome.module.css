@@ -80,6 +80,18 @@
   box-shadow: none;
 }
 
+:global([data-server-workspace][data-members-panel-collapsed="true"]) .memberPanelSlot,
+:global([data-server-workspace][data-members-panel-collapsed="true"]) .memberPanelSlot:global(.ui-panel) {
+  border-left-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resizer,
+  .resizer::before {
+    transition: none;
+  }
+}
+
 @media (max-width: 760px) {
   .topbar {
     grid-column: 1;

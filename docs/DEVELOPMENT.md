@@ -4,7 +4,7 @@ Run all commands from the repository root unless a section says otherwise.
 
 ## Prerequisites
 
-- .NET SDK `10.0.300` (pinned by `global.json`)
+- .NET SDK `10.0.400` (pinned by `global.json`)
 - Node.js 24 and npm 11
 - Docker Desktop or Docker Engine with Compose v2
 - PostgreSQL 17, either local or through Compose

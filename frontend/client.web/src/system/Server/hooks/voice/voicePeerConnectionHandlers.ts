@@ -1,4 +1,8 @@
-import { logPeerConnectionStats, voiceDebug } from './voiceChannelDebug'
+import {
+  isVoiceDebugEnabled,
+  logPeerConnectionStats,
+  voiceDebug,
+} from './voiceChannelDebug'
 import { voiceCopy } from '../../../shared/index'
 import { resolveVoicePeerRecoveryDelayMs } from './voicePeerRecoveryModel'
 
@@ -45,6 +49,51 @@ export function attachVoicePeerConnectionHandlers({
     null
   let isPeerRecoveryInFlight = false
   let hasAttemptedPeerRecovery = false
+  let statsSnapshotGeneration = 0
+  const statsSnapshotTimeoutIds = new Set<number>()
+
+  function cancelStatsSnapshots() {
+    statsSnapshotGeneration += 1
+    statsSnapshotTimeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    statsSnapshotTimeoutIds.clear()
+  }
+
+  function captureStatsSnapshot(sample: string) {
+    void logPeerConnectionStats(remoteParticipantId, peer, sample).catch(
+      (error) => {
+        voiceDebug('peer:stats-failed', {
+          sample,
+          message: error instanceof Error ? error.message : String(error),
+        })
+      },
+    )
+  }
+
+  function scheduleConnectedStatsSnapshots() {
+    cancelStatsSnapshots()
+    if (!isVoiceDebugEnabled) {
+      return
+    }
+
+    const generation = statsSnapshotGeneration
+    ;[0, 2_000, 5_000, 10_000].forEach((delayMs) => {
+      const timeoutId = window.setTimeout(() => {
+        statsSnapshotTimeoutIds.delete(timeoutId)
+        if (
+          generation !== statsSnapshotGeneration ||
+          peer.connectionState !== 'connected' ||
+          peer.signalingState === 'closed'
+        ) {
+          return
+        }
+
+        captureStatsSnapshot(
+          delayMs === 0 ? 'connected' : `connected+${delayMs}ms`,
+        )
+      }, delayMs)
+      statsSnapshotTimeoutIds.add(timeoutId)
+    })
+  }
 
   function isPeerConnected() {
     return (
@@ -62,10 +111,11 @@ export function attachVoicePeerConnectionHandlers({
   }
 
   function isPeerRecoveryState() {
-    return (
-      peer.connectionState === 'disconnected' ||
-      peer.connectionState === 'failed'
-    )
+    return resolveVoicePeerRecoveryDelayMs(
+      peer.connectionState,
+      hasAttemptedPeerRecovery,
+      peer.iceConnectionState,
+    ) !== null
   }
 
   function clearPendingPeerRecovery() {
@@ -79,6 +129,7 @@ export function attachVoicePeerConnectionHandlers({
     const delayMs = resolveVoicePeerRecoveryDelayMs(
       peer.connectionState,
       hasAttemptedPeerRecovery,
+      peer.iceConnectionState,
     )
     if (
       delayMs === null ||
@@ -104,8 +155,9 @@ export function attachVoicePeerConnectionHandlers({
         })
         .finally(() => {
           isPeerRecoveryInFlight = false
-          hasAttemptedPeerRecovery = true
-          if (isPeerRecoveryState()) {
+          const shouldContinueRecovery = isPeerRecoveryState()
+          hasAttemptedPeerRecovery = shouldContinueRecovery
+          if (shouldContinueRecovery) {
             schedulePeerRecovery()
           }
         })
@@ -115,9 +167,6 @@ export function attachVoicePeerConnectionHandlers({
   peer.onicecandidateerror = (event) => {
     voiceDebug('ice:candidate-error', {
       remoteParticipantId,
-      address: event.address,
-      port: event.port,
-      url: event.url,
       errorCode: event.errorCode,
       errorText: event.errorText,
     })
@@ -149,8 +198,6 @@ export function attachVoicePeerConnectionHandlers({
         remoteParticipantId,
         candidateType: event.candidate.type,
         protocol: event.candidate.protocol,
-        address: event.candidate.address,
-        port: event.candidate.port,
       })
       if (event.candidate.type === 'relay') {
         setVoiceError(null)
@@ -217,6 +264,26 @@ export function attachVoicePeerConnectionHandlers({
       iceConnectionState: peer.iceConnectionState,
     })
     updatePeerStatus(remoteParticipantId)
+
+    if (peer.iceConnectionState === 'failed') {
+      reportIceFailure(remoteParticipantId)
+      clearPendingPeerRecovery()
+      schedulePeerRecovery()
+      return
+    }
+    if (peer.iceConnectionState === 'disconnected') {
+      schedulePeerRecovery()
+      return
+    }
+    if (
+      (peer.iceConnectionState === 'connected' ||
+        peer.iceConnectionState === 'completed') &&
+      peer.connectionState !== 'failed' &&
+      peer.connectionState !== 'disconnected'
+    ) {
+      clearPendingPeerRecovery()
+      hasAttemptedPeerRecovery = false
+    }
   }
   peer.onicegatheringstatechange = () => {
     voiceDebug('peer:ice-gathering-state', {
@@ -236,12 +303,21 @@ export function attachVoicePeerConnectionHandlers({
       remoteParticipantId,
       connectionState: peer.connectionState,
     })
-    if (['connected', 'failed'].includes(peer.connectionState)) {
-      void logPeerConnectionStats(remoteParticipantId, peer)
+    if (peer.connectionState === 'connected') {
+      scheduleConnectedStatsSnapshots()
+    } else if (peer.connectionState === 'failed') {
+      cancelStatsSnapshots()
+      captureStatsSnapshot('failed')
+    } else if (peer.connectionState === 'closed') {
+      cancelStatsSnapshots()
     }
     updatePeerStatus(remoteParticipantId)
 
-    if (peer.connectionState === 'connected') {
+    if (
+      peer.connectionState === 'connected' &&
+      peer.iceConnectionState !== 'failed' &&
+      peer.iceConnectionState !== 'disconnected'
+    ) {
       clearPendingIceCandidateError()
       clearPendingPeerRecovery()
       hasAttemptedPeerRecovery = false
@@ -249,14 +325,14 @@ export function attachVoicePeerConnectionHandlers({
       return
     }
 
-    if (peer.connectionState === 'disconnected') {
-      schedulePeerRecovery()
-      return
-    }
-
-    if (peer.connectionState === 'failed') {
-      reportIceFailure(remoteParticipantId)
-      clearPendingPeerRecovery()
+    if (isPeerRecoveryState()) {
+      if (
+        peer.connectionState === 'failed' ||
+        peer.iceConnectionState === 'failed'
+      ) {
+        reportIceFailure(remoteParticipantId)
+        clearPendingPeerRecovery()
+      }
       schedulePeerRecovery()
       return
     }

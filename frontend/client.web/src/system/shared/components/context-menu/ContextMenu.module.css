@@ -1,4 +1,4 @@
-﻿.positioningLayer {
+.positioningLayer {
   position: fixed;
   inset: 0;
   z-index: calc(var(--z-context-menu) - 1);
@@ -16,13 +16,13 @@
   max-height: var(--profile-context-max-height, calc(100vh - 16px));
   width: 264px;
   gap: 3px;
-  border: 1px solid rgba(42, 47, 74, 0.96);
+  border: 1px solid var(--theme-border-control);
   border-radius: 8px;
   padding: 8px;
   color: var(--color-text);
   background:
     radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-accent), transparent 90%), transparent 34%),
-    linear-gradient(180deg, rgba(12, 17, 34, 0.98), rgba(5, 9, 20, 0.98));
+    var(--theme-surface-raised);
   box-shadow:
     0 18px 48px rgba(0, 0, 0, 0.44),
     0 0 24px color-mix(in srgb, var(--theme-accent), transparent 90%);
@@ -297,12 +297,12 @@
   display: grid;
   width: 264px;
   max-height: min(420px, calc(100vh - 18px));
-  border: 1px solid rgba(42, 47, 74, 0.96);
+  border: 1px solid var(--theme-border-control);
   border-radius: 8px;
   padding: 8px;
   background:
     radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-accent), transparent 90%), transparent 34%),
-    linear-gradient(180deg, rgba(12, 17, 34, 0.98), rgba(5, 9, 20, 0.98));
+    var(--theme-surface-raised);
   box-shadow:
     0 18px 48px rgba(0, 0, 0, 0.44),
     0 0 24px color-mix(in srgb, var(--theme-accent), transparent 90%);

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { apiJson } from '../../../shared/api/api'
 import type { SpaceMessageResponse } from '../../../shared/types'
 import { SystemCloseIcon } from '../../shared/icons/components/SystemCloseIcon'
+import { SystemSelect } from '../../shared/ui/SystemSelect'
 import buttonStyles from '../../shared/styles/Button.module.css'
 import dialogStyles from '../../shared/styles/Dialog.module.css'
 import { moderationCopy, moderationReasonOptions } from '../moderationCopy.ru'
@@ -31,20 +32,20 @@ export function MessageReportDialog({
   const [submittedReport, setSubmittedReport] =
     useState<ModerationReportResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const reasonRef = useRef<HTMLSelectElement | null>(null)
+  const reasonSelectId = useId()
 
   useEffect(() => {
-    reasonRef.current?.focus()
+    document.getElementById(reasonSelectId)?.focus()
 
     function closeFromKeyboard(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !isSubmitting) {
+      if (event.key === 'Escape' && !event.defaultPrevented && !isSubmitting) {
         onClose()
       }
     }
 
     window.addEventListener('keydown', closeFromKeyboard)
     return () => window.removeEventListener('keydown', closeFromKeyboard)
-  }, [isSubmitting, onClose])
+  }, [isSubmitting, onClose, reasonSelectId])
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -124,12 +125,13 @@ export function MessageReportDialog({
 
             <label>
               <span>{moderationCopy.report.reason}</span>
-              <select
-                ref={reasonRef}
+              <SystemSelect
+                id={reasonSelectId}
+                aria-label={moderationCopy.report.reason}
                 value={reasonCode}
                 disabled={isSubmitting}
-                onChange={(event) =>
-                  setReasonCode(event.target.value as ModerationReasonCode)
+                onValueChange={(value) =>
+                  setReasonCode(value as ModerationReasonCode)
                 }
               >
                 {moderationReasonOptions.map((option) => (
@@ -137,7 +139,7 @@ export function MessageReportDialog({
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </SystemSelect>
             </label>
 
             <label>

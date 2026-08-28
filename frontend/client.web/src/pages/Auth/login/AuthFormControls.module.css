@@ -25,6 +25,15 @@
   grid-template-columns: 28px minmax(0, 1fr) 38px;
 }
 
+.authPasswordField > i {
+  grid-column: 1;
+}
+
+.authPasswordField > span,
+.authPasswordField > input {
+  grid-column: 2;
+}
+
 .authField i {
   display: grid;
   width: 24px;
@@ -46,7 +55,7 @@
   stroke-width: 1.9;
 }
 
-.authField span {
+.authField > span {
   display: none;
 }
 
@@ -74,6 +83,8 @@
 
 .authPasswordToggle {
   display: grid;
+  grid-column: 3;
+  grid-row: 1 / -1;
   width: 34px;
   height: 34px;
   place-items: center;
@@ -167,7 +178,7 @@
     grid-template-columns: 28px minmax(0, 1fr) 36px;
   }
 
-  .authField span {
+  .authField > span {
     display: none;
   }
 

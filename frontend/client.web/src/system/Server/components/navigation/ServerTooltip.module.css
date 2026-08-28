@@ -56,8 +56,8 @@
   overflow: hidden;
   border: 2px solid var(--theme-surface-raised);
   border-radius: 50%;
-  color: var(--theme-accent-contrast);
-  background: var(--theme-surface-accent);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
   box-shadow: 0 0 9px var(--theme-glow);
   font-size: 9px;
   font-weight: 850;

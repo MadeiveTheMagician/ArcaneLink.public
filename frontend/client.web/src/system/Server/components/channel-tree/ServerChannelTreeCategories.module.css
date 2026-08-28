@@ -3,7 +3,7 @@
   --space-tree-branch: 8px;
   --space-tree-line: var(--theme-accent-light);
   --space-tree-line-cyan: color-mix(in srgb, var(--theme-accent-light), transparent 52%);
-  --space-tree-line-core: rgba(246, 248, 255, 0.86);
+  --space-tree-line-core: color-mix(in srgb, var(--color-text), transparent 14%);
 
   position: relative;
   display: grid;
@@ -24,7 +24,7 @@
   min-height: 24px !important;
   margin: 4px 0 1px;
   padding: 0 4px !important;
-  color: rgba(187, 198, 236, 0.68) !important;
+  color: var(--theme-text-faint) !important;
   text-transform: uppercase;
   transition:
     background 160ms ease,
@@ -33,7 +33,7 @@
 }
 
 .spaceCategoryButton span {
-  color: rgba(204, 190, 255, 0.82) !important;
+  color: var(--theme-text-soft) !important;
   font-size: 11px !important;
   filter:
     drop-shadow(0 0 5px var(--theme-glow-strong))
@@ -47,10 +47,10 @@
 
 .spaceCategoryButton:hover span,
 .spaceCategoryButton:hover strong {
-  color: rgba(226, 232, 255, 0.86) !important;
+  color: var(--color-text) !important;
   filter:
-    drop-shadow(0 0 6px rgba(145, 116, 255, 0.45))
-    drop-shadow(0 0 14px rgba(72, 184, 255, 0.2));
+    drop-shadow(0 0 6px var(--theme-glow-strong))
+    drop-shadow(0 0 14px var(--theme-glow));
 }
 
 .spaceCategory[data-collapsed="true"] > .spaceCategoryButton span {
@@ -58,7 +58,7 @@
 }
 
 .spaceCategoryButton strong {
-  color: rgba(205, 214, 255, 0.78) !important;
+  color: var(--theme-text-soft) !important;
   font-size: 11px !important;
   font-weight: 900 !important;
   letter-spacing: 0.03em;
@@ -133,9 +133,9 @@
     );
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 84%),
-    0 0 10px rgba(122, 91, 255, 0.62),
+    0 0 10px var(--theme-glow-strong),
     0 0 22px var(--theme-glow),
-    0 0 34px rgba(122, 91, 255, 0.2);
+    0 0 34px var(--theme-glow);
   opacity: 0.94;
   transition:
     opacity 160ms ease,
@@ -176,7 +176,7 @@
     );
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 88%),
-    0 0 10px rgba(122, 91, 255, 0.56),
+    0 0 10px var(--theme-glow-strong),
     0 0 22px var(--theme-glow);
   opacity: 0.94;
 }

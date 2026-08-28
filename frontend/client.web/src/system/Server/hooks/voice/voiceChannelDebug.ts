@@ -1,3 +1,8 @@
+import {
+  createSafeVoicePeerStatsSummary,
+  serializeSafeVoicePeerStatsSummary,
+} from './voicePeerStatsSummary'
+
 export const isVoiceDebugEnabled = resolveVoiceDebugEnabled()
 
 function resolveVoiceDebugEnabled() {
@@ -21,73 +26,41 @@ export function voiceDebug(event: string, details?: unknown) {
 }
 
 export async function logPeerConnectionStats(
-  remoteUserId: string,
+  _remoteUserId: string,
   peer: RTCPeerConnection,
+  sample: string = 'event',
 ) {
   if (!isVoiceDebugEnabled) {
     return
   }
 
   const stats = await peer.getStats()
-  const selectedPairs: unknown[] = []
-  const candidates: unknown[] = []
-  const inboundAudio: unknown[] = []
-  const outboundAudio: unknown[] = []
-
-  stats.forEach((report) => {
-    if (
-      report.type === 'candidate-pair' &&
-      (report.selected || report.nominated)
-    ) {
-      selectedPairs.push({
-        id: report.id,
-        state: report.state,
-        selected: report.selected,
-        nominated: report.nominated,
-        bytesSent: report.bytesSent,
-        bytesReceived: report.bytesReceived,
-        localCandidateId: report.localCandidateId,
-        remoteCandidateId: report.remoteCandidateId,
-      })
-    }
-
-    if (
-      report.type === 'local-candidate' ||
-      report.type === 'remote-candidate'
-    ) {
-      candidates.push({
-        id: report.id,
-        type: report.type,
-        candidateType: report.candidateType,
-        protocol: report.protocol,
-        address: report.address ?? report.ip,
-        port: report.port,
-        relayProtocol: report.relayProtocol,
-      })
-    }
-
-    if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-      inboundAudio.push({
-        packetsReceived: report.packetsReceived,
-        packetsLost: report.packetsLost,
-        bytesReceived: report.bytesReceived,
-        jitter: report.jitter,
-      })
-    }
-
-    if (report.type === 'outbound-rtp' && report.kind === 'audio') {
-      outboundAudio.push({
-        packetsSent: report.packetsSent,
-        bytesSent: report.bytesSent,
-      })
-    }
+  const statsRecords: unknown[] = []
+  stats.forEach((report) => statsRecords.push(report))
+  const summary = createSafeVoicePeerStatsSummary({
+    sample,
+    connectionState: peer.connectionState,
+    iceConnectionState: peer.iceConnectionState,
+    signalingState: peer.signalingState,
+    transceivers: peer.getTransceivers().map((transceiver) => ({
+      direction: transceiver.direction,
+      currentDirection: transceiver.currentDirection,
+      senderTrack: describeTrack(transceiver.sender.track),
+      receiverTrack: describeTrack(transceiver.receiver.track),
+    })),
+    stats: statsRecords,
   })
 
-  voiceDebug('peer:stats', {
-    remoteUserId,
-    selectedPairs,
-    candidates,
-    inboundAudio,
-    outboundAudio,
-  })
+  voiceDebug('peer:stats', serializeSafeVoicePeerStatsSummary(summary))
+}
+
+function describeTrack(track: MediaStreamTrack | null) {
+  return track
+    ? {
+        kind: track.kind,
+        enabled: track.enabled,
+        muted: track.muted,
+        readyState: track.readyState,
+      }
+    : null
 }

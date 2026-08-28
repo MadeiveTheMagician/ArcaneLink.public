@@ -1,4 +1,8 @@
 import type { VoiceUserAudioSettings } from '../types/voicePlayback'
+import {
+  clampVoiceParticipantVolume,
+  defaultVoiceParticipantVolume,
+} from './voiceParticipantVolume'
 
 export const VOICE_PLAYBACK_PREFERENCES_VERSION = 1 as const
 export const voicePlaybackPreferencesStorageKey =
@@ -7,7 +11,7 @@ export const maxVoicePlaybackPreferenceEntries = 500
 
 export const defaultVoiceUserAudioSettings: Readonly<VoiceUserAudioSettings> =
   Object.freeze({
-    volume: 1,
+    volume: defaultVoiceParticipantVolume,
     isMuted: false,
     isVideoHidden: false,
   })
@@ -65,8 +69,8 @@ export function normalizeVoiceUserAudioSettings(
   const candidate = value as Partial<VoiceUserAudioSettings>
   return {
     volume:
-      typeof candidate.volume === 'number' && Number.isFinite(candidate.volume)
-        ? Math.min(2, Math.max(0, candidate.volume))
+      typeof candidate.volume === 'number'
+        ? clampVoiceParticipantVolume(candidate.volume)
         : defaultVoiceUserAudioSettings.volume,
     isMuted:
       typeof candidate.isMuted === 'boolean'

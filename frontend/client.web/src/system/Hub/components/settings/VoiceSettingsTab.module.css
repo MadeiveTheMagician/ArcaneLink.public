@@ -20,10 +20,10 @@
   display: grid;
   gap: 9px;
   min-width: 0;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 7px;
-  padding: 14px;
-  background: var(--theme-control-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 7px 2px;
+  background: transparent;
 }
 
 .deviceField strong,
@@ -42,10 +42,6 @@
 }
 
 .deviceField > span {
-  width: 100%;
-}
-
-.deviceField select {
   width: 100%;
 }
 
@@ -87,15 +83,15 @@
 .noiseRuntimePanel {
   display: grid;
   gap: 12px;
-  border: 1px solid color-mix(in srgb, var(--color-success, #6ee7a7), transparent 55%);
   border-radius: 7px;
   padding: 13px;
   background: color-mix(in srgb, var(--color-success, #6ee7a7), transparent 92%);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-success, #6ee7a7), transparent 42%);
 }
 
 .noiseRuntimePanelDegraded {
-  border-color: color-mix(in srgb, var(--color-warning, #f6b85f), transparent 48%);
   background: color-mix(in srgb, var(--color-warning, #f6b85f), transparent 92%);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-warning, #f6b85f), transparent 36%);
 }
 
 .noiseRuntimePanel header {
@@ -144,10 +140,10 @@
   display: flex;
   gap: 11px;
   min-width: 0;
-  border: 1px solid var(--theme-section-border);
+  border: 0;
   border-radius: 7px;
   padding: 14px;
-  background: var(--theme-control-bg);
+  background: transparent;
   cursor: pointer;
   transition:
     border-color 150ms ease,
@@ -161,9 +157,8 @@
 }
 
 .choiceCardActive {
-  border-color: var(--theme-border-accent);
-  background: var(--theme-surface-accent);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--theme-accent), transparent 86%);
+  background: var(--theme-active-bg);
+  box-shadow: inset 3px 0 0 var(--theme-accent-light);
 }
 
 .choiceCard input {

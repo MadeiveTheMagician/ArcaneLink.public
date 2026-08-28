@@ -131,7 +131,7 @@
 .textComposer {
   display: grid;
   box-sizing: border-box;
-  grid-template-columns: 26px minmax(0, 1fr) 26px;
+  grid-template-columns: 26px minmax(0, 1fr) 26px 26px;
   align-items: center;
   gap: 7px;
   min-height: var(--server-composer-height);
@@ -185,7 +185,7 @@
   min-height: var(--server-composer-control-height);
   place-items: center;
   padding: 0;
-  color: rgba(166, 178, 218, 0.82);
+  color: var(--theme-text-soft);
 }
 
 .textComposer .attachButton:not(:disabled):hover {
@@ -228,7 +228,7 @@
 }
 
 .textComposer textarea[name="messageBody"]::placeholder {
-  color: rgba(166, 178, 218, 0.72);
+  color: var(--theme-text-faint);
 }
 
 .textComposer textarea[name="messageBody"]:disabled {
@@ -265,7 +265,7 @@
 }
 
 .sendButton:not(:disabled):hover {
-  color: rgba(226, 218, 255, 1);
+  color: var(--color-text);
   background: transparent;
   filter:
     drop-shadow(0 0 5px var(--theme-glow-strong))
@@ -296,7 +296,7 @@
 
 @media (max-width: 760px) {
   .textComposer {
-    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    grid-template-columns: 32px minmax(0, 1fr) 32px 32px;
     gap: 8px;
   }
 

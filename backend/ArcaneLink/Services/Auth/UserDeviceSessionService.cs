@@ -76,11 +76,18 @@ namespace ArcaneLink.Services.Auth
         public async Task<bool> RevokeSessionAsync(
             Guid userId,
             Guid sessionId,
+            Guid currentDeviceSessionId,
             CancellationToken cancellationToken = default)
         {
+            if (sessionId == currentDeviceSessionId)
+            {
+                return false;
+            }
+
             var session = await _db.UserDeviceSessions
                 .FirstOrDefaultAsync(
                     x => x.Id == sessionId &&
+                         x.Id != currentDeviceSessionId &&
                          x.UserId == userId &&
                          x.RevokedAt == null,
                     cancellationToken);
@@ -120,6 +127,103 @@ namespace ArcaneLink.Services.Auth
                 cancellationToken);
 
             return true;
+        }
+
+        public async Task<int> RevokeOtherSessionsAsync(
+            Guid userId,
+            Guid currentDeviceSessionId,
+            CancellationToken cancellationToken = default)
+        {
+            var sessions = await _db.UserDeviceSessions
+                .Where(x => x.UserId == userId &&
+                            x.Id != currentDeviceSessionId &&
+                            x.RevokedAt == null)
+                .ToListAsync(cancellationToken);
+
+            if (sessions.Count == 0)
+            {
+                return 0;
+            }
+
+            var sessionIds = sessions.Select(x => x.Id).ToArray();
+            var now = DateTime.UtcNow;
+            var revokedByIp = _requestInfoService.GetClientIpAddress();
+
+            foreach (var session in sessions)
+            {
+                session.RevokedAt = now;
+                session.LastUsedAt = now;
+            }
+
+            var sessionRefreshTokens = await _db.UserRefreshTokens
+                .Where(x => x.DeviceSessionId != null &&
+                            sessionIds.Contains(x.DeviceSessionId.Value) &&
+                            x.RevokedAt == null)
+                .ToListAsync(cancellationToken);
+
+            foreach (var token in sessionRefreshTokens)
+            {
+                token.RevokedAt = now;
+                token.RevokedByIp = revokedByIp;
+            }
+
+            await _db.SaveChangesAsync(cancellationToken);
+            await _realtime.NotifyUserAsync(
+                userId,
+                RealtimeEventNames.UserSessionsChanged,
+                new { sessionIds },
+                cancellationToken);
+
+            foreach (var sessionId in sessionIds)
+            {
+                await _realtime.NotifyUserAsync(
+                    userId,
+                    RealtimeEventNames.CurrentSessionRevoked,
+                    new { sessionId },
+                    cancellationToken);
+            }
+
+            return sessionIds.Length;
+        }
+
+        public async Task<int> RevokeAllSessionsAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            var sessions = await _db.UserDeviceSessions
+                .Where(x => x.UserId == userId && x.RevokedAt == null)
+                .ToListAsync(cancellationToken);
+            var tokens = await _db.UserRefreshTokens
+                .Where(x => x.UserId == userId && x.RevokedAt == null)
+                .ToListAsync(cancellationToken);
+            var now = DateTime.UtcNow;
+            var revokedByIp = _requestInfoService.GetClientIpAddress();
+
+            foreach (var session in sessions)
+            {
+                session.RevokedAt = now;
+                session.LastUsedAt = now;
+            }
+
+            foreach (var token in tokens)
+            {
+                token.RevokedAt = now;
+                token.RevokedByIp = revokedByIp;
+            }
+
+            await _db.SaveChangesAsync(cancellationToken);
+            await _realtime.NotifyUserAsync(
+                userId,
+                RealtimeEventNames.UserSessionsChanged,
+                new { all = true },
+                cancellationToken);
+            await _realtime.NotifyUserAsync(
+                userId,
+                RealtimeEventNames.CurrentSessionRevoked,
+                new { all = true },
+                cancellationToken);
+
+            return sessions.Count;
         }
     }
 }

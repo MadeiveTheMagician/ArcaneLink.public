@@ -11,7 +11,7 @@ import { AssetCropDialog } from '../../../Profile/components/assets/AssetCropDia
 import { AssetLibraryDialog } from '../../../Profile/components/assets/AssetLibraryDialog'
 import { useAssetImagePicker } from '../../../Profile/hooks/useAssetImagePicker'
 import { settingsCopy } from '../../../shared/copy'
-import { SystemDropdown } from '../../../shared/ui/SystemDropdown'
+import { SystemSelect } from '../../../shared/ui/SystemSelect'
 import { SettingsSection } from './SystemSettingsControls'
 import sharedStyles from './SystemSettingsControls.module.css'
 import styles from './ServerMemberProfileSettings.module.css'
@@ -385,16 +385,18 @@ export function ServerMemberProfileSettings({
         {memberships.length > 0 ? (
           <div className={styles.serverSelector}>
             <span>{settingsCopy.profile.serverProfileSelect}</span>
-            <SystemDropdown
+            <SystemSelect
               value={selectedServerId}
-              ariaLabel={settingsCopy.profile.serverProfileSelect}
+              aria-label={settingsCopy.profile.serverProfileSelect}
               disabled={isLoading || isSaving}
-              options={memberships.map((membership) => ({
-                value: membership.serverId,
-                label: membership.server.title,
-              }))}
-              onChange={chooseServer}
-            />
+              onValueChange={chooseServer}
+            >
+              {memberships.map((membership) => (
+                <option key={membership.serverId} value={membership.serverId}>
+                  {membership.server.title}
+                </option>
+              ))}
+            </SystemSelect>
           </div>
         ) : (
           <p className={sharedStyles.statusText}>

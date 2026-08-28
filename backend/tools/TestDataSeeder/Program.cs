@@ -352,6 +352,7 @@ static User CreateUser(
         EmailNorm = email.ToUpperInvariant(),
         PasswordHash = string.Empty,
         StatusId = UserStatusIds.Active,
+        EmailConfirmedAt = createdAt,
         SubscriptionTypeId = SubscriptionTypeIds.Free,
         CreatedAt = createdAt,
         UpdatedAt = createdAt,
@@ -630,6 +631,7 @@ static async Task EnsureUserStatusesAndSubscriptionsAsync(
 {
     var main = await db.Users.FirstAsync(x => x.Id == mainUser.Id);
     main.StatusId = UserStatusIds.Active;
+    main.EmailConfirmedAt ??= main.CreatedAt == default ? now : main.CreatedAt;
     main.DeletedAt = null;
     main.SubscriptionTypeId = SubscriptionTypeIds.Prime;
     main.UpdatedAt = now;
@@ -644,6 +646,7 @@ static async Task EnsureUserStatusesAndSubscriptionsAsync(
             9 => UserStatusIds.Deleted,
             _ => UserStatusIds.Active
         };
+        user.EmailConfirmedAt ??= user.CreatedAt == default ? now : user.CreatedAt;
         user.DeletedAt = user.StatusId == UserStatusIds.Deleted
             ? now.AddDays(-1).AddMinutes(index)
             : null;

@@ -1,18 +1,15 @@
 import {
   useState,
-  type ChangeEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from 'react'
 import type {
   PrivateSpaceResponse,
-  PrivateSpaceMemberResponse,
   PrivateSpaceFolderResponse,
 } from '../../../../shared/types'
 import { communityCopy } from '../../../shared/copy/community.ru'
 import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon'
 import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import type { useMessageSearch } from '../../../shared/hooks/useMessageSearch'
+import { SystemSearchInput } from '../../../shared/ui/SystemSearchInput'
 import { DirectMessageList } from './DirectMessageList'
 import { useMobileDirectMessageList } from './useMobileDirectMessageList'
 import { PrivateSpaceFolderRail } from '../private-space/folders/PrivateSpaceFolderRail'
@@ -21,17 +18,15 @@ import type { usePrivateSpaceFolders } from '../private-space/folders/usePrivate
 import { privateSpaceFolderCopy } from '../private-space/folders/privateSpaceFolderCopy.ru'
 import styles from './DirectMessagesPanel.module.css'
 
-type MessageSearchController = ReturnType<typeof useMessageSearch>
-
 type DirectMessagesMobileViewProps = {
   currentUserId: string
   activePrivateSpaceId: string | null
   privateSpaces: PrivateSpaceResponse[]
   folderController: ReturnType<typeof usePrivateSpaceFolders>
-  activeMembers: PrivateSpaceMemberResponse[]
   isLoadingPrivateSpaces: boolean
   isMutatingPrivateSpaces: boolean
-  messageSearch: MessageSearchController
+  conversationQuery: string
+  onConversationQueryChange: (value: string) => void
   onToggleCreate: () => void
   onCreateFolder: () => void
   onEditFolder: (folder: PrivateSpaceFolderResponse) => void
@@ -50,10 +45,10 @@ export function DirectMessagesMobileView({
   activePrivateSpaceId,
   privateSpaces,
   folderController,
-  activeMembers,
   isLoadingPrivateSpaces,
   isMutatingPrivateSpaces,
-  messageSearch,
+  conversationQuery,
+  onConversationQueryChange,
   onToggleCreate,
   onCreateFolder,
   onEditFolder,
@@ -67,88 +62,26 @@ export function DirectMessagesMobileView({
   const { listRef, isCreateVisible, handleScroll } =
     useMobileDirectMessageList({
       isLoading: isLoadingPrivateSpaces,
-      isSearchActive: messageSearch.isActive,
+      isSearchActive: conversationQuery.trim().length > 0,
       itemCount: privateSpaces.length,
       viewKey: folderController.activeFolderId,
     })
 
-  function updateSearchFilter(
-    event: ChangeEvent<HTMLSelectElement>,
-    key: 'senderUserId' | 'attachmentType',
-  ) {
-    messageSearch.setFilters((current) => ({
-      ...current,
-      [key]: event.target.value,
-    }))
-  }
-
-  function submitSearchByEnter(event: ReactKeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      messageSearch.submitSearch()
-    }
-  }
-
   return (
     <div className={styles.mobileContent}>
       <div className={styles.search}>
-        <SystemIcon className={styles.searchIcon} name="search" size={18} />
-        <input
-          className="ui-field-control"
-          name="directMessageSearch"
-          placeholder={communityCopy.direct.search}
-          value={messageSearch.query}
-          onChange={(event) => messageSearch.setQuery(event.target.value)}
-          onKeyDown={submitSearchByEnter}
+        <SystemSearchInput
+          name="directConversationSearchMobile"
+          aria-label={privateSpaceFolderCopy.panelSearch}
+          placeholder={privateSpaceFolderCopy.panelSearch}
+          value={conversationQuery}
+          onChange={(event) =>
+            onConversationQueryChange(event.target.value)
+          }
         />
-        <div className={styles.searchFilters}>
-          <label>
-            <span>{communityCopy.direct.searchAttachments.sender}</span>
-            <select
-              value={messageSearch.filters.senderUserId}
-              onChange={(event) => updateSearchFilter(event, 'senderUserId')}
-            >
-              <option value="">
-                {communityCopy.direct.searchAttachments.anyParticipant}
-              </option>
-              {activeMembers.map((member) => (
-                <option key={member.userId} value={member.userId}>
-                  {member.user.displayName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>{communityCopy.direct.searchAttachments.label}</span>
-            <select
-              value={messageSearch.filters.attachmentType}
-              onChange={(event) => updateSearchFilter(event, 'attachmentType')}
-            >
-              <option value="">
-                {communityCopy.direct.searchAttachments.noFilter}
-              </option>
-              <option value="any">
-                {communityCopy.direct.searchAttachments.anyAttachment}
-              </option>
-              <option value="image">
-                {communityCopy.direct.searchAttachments.image}
-              </option>
-              <option value="video">
-                {communityCopy.direct.searchAttachments.video}
-              </option>
-              <option value="audio">
-                {communityCopy.direct.searchAttachments.audio}
-              </option>
-              <option value="file">
-                {communityCopy.direct.searchAttachments.file}
-              </option>
-            </select>
-          </label>
-        </div>
       </div>
 
-      {!messageSearch.isActive && (
-        <PrivateSpaceFolderDragArea
+      <PrivateSpaceFolderDragArea
           disabled={folderController.isMutating || !isFolderDragUnlocked}
           folderDragAxis="horizontal"
           onAssign={folderController.addSpaceToFolder}
@@ -231,7 +164,6 @@ export function DirectMessagesMobileView({
           </button>
         </>}
         </PrivateSpaceFolderDragArea>
-      )}
     </div>
   )
 }

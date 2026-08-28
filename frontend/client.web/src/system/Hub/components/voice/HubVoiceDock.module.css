@@ -1,4 +1,4 @@
-﻿.dock {
+.dock {
   position: fixed;
   left: 10px;
   bottom: 10px;
@@ -177,7 +177,7 @@
 
 .connectionText small {
   margin-top: 2px;
-  color: rgba(195, 205, 238, 0.88);
+  color: var(--theme-text-faint);
   font-size: 9px;
 }
 
@@ -322,6 +322,14 @@
   padding-bottom: 1px;
   animation: voiceDockReveal 190ms 30ms ease-out both;
   transform-origin: bottom;
+}
+
+.privateConnectionActions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.returnToCallAction {
+  color: var(--theme-accent-light);
 }
 
 .connectionClosing {

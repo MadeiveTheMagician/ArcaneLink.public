@@ -1,7 +1,6 @@
 import type {
   AssetResponse,
   DirectMessageBlockedUserResponse,
-  SpaceMessageResponse,
   PrivateSpaceResponse,
   ServerMemberResponse,
   UserFriendResponse,
@@ -10,10 +9,9 @@ import type { ImageCrop } from '../../../../shared/media/ImageCropEditor'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { apiJson, apiNoContent } from '../../../../shared/api/api'
 import { ContextMenu } from '../../../shared/components/context-menu/ContextMenu'
-import { MessageSearchControl } from '../../../shared/components/message-search/MessageSearchControl'
-import { MessageSearchResults } from '../../../shared/components/message-search/MessageSearchResults'
 import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon'
 import { SystemIcon } from '../../../shared/icons/SystemIcon'
+import { SystemSearchInput } from '../../../shared/ui/SystemSearchInput'
 import {
   communityCopy,
   dispatchUserBlockChanged,
@@ -22,8 +20,9 @@ import {
   UserBlockDialog,
   type UserBlockDialogTarget,
 } from '../../../shared'
-import { useMessageSearch } from '../../../shared/hooks/useMessageSearch'
-import { getPrivateSpaceTitle } from './directMessageModel'
+import {
+  filterPrivateSpacesByConversationQuery,
+} from './directMessageModel'
 import { useDirectMessageContextMenu } from './useDirectMessageContextMenu'
 import { DirectMessagesDesktopView } from './DirectMessagesDesktopView'
 import { DirectMessagesMobileView } from './DirectMessagesMobileView'
@@ -107,7 +106,6 @@ type DirectMessagesPanelProps = {
   ) => Promise<PrivateSpaceResponse>
   onMarkPrivateSpaceRead: (spaceId: string) => Promise<void>
   onMarkAllPrivateSpacesRead: () => Promise<{ updatedSpaceCount: number }>
-  onOpenSearchResult: (message: SpaceMessageResponse) => void
 }
 
 export function DirectMessagesPanel({
@@ -135,7 +133,6 @@ export function DirectMessagesPanel({
   onUpdateGroupSettings,
   onMarkPrivateSpaceRead,
   onMarkAllPrivateSpacesRead,
-  onOpenSearchResult,
 }: DirectMessagesPanelProps) {
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
   const [profileDialogSpace, setProfileDialogSpace] =
@@ -165,23 +162,11 @@ export function DirectMessagesPanel({
   const [isDialogSaving, setIsDialogSaving] = useState(false)
   const customAvatarInputRef = useRef<HTMLInputElement | null>(null)
   const [isFolderRailCollapsed, setIsFolderRailCollapsed] = useState(false)
+  const [conversationQuery, setConversationQuery] = useState('')
   const [folderDialog, setFolderDialog] = useState<{
     folder: import('../../../../shared/types').PrivateSpaceFolderResponse | null
   } | null>(null)
   const folderController = usePrivateSpaceFolders(accessToken, privateSpaces)
-  const messageSearch = useMessageSearch({
-    accessToken,
-    endpoint: activePrivateSpaceId
-      ? `/api/private-spaces/${activePrivateSpaceId}/messages/search`
-      : null,
-  })
-  const activePrivateSpace = privateSpaces.find(
-    (space) => space.spaceId === activePrivateSpaceId,
-  )
-  const activeMembers =
-    activePrivateSpace?.members.filter(
-      (member) => member.statusCode === 'active',
-    ) ?? []
 
   const folderPrivateSpaces = folderController.activeFolder
     ? orderPrivateSpaces(
@@ -190,16 +175,11 @@ export function DirectMessagesPanel({
         folderController.activeFolder.isSystem,
       )
     : privateSpaces
-  const normalizedConversationQuery = messageSearch.isActive
-    ? ''
-    : messageSearch.query.trim().toLocaleLowerCase('ru-RU')
-  const visiblePrivateSpaces = normalizedConversationQuery
-    ? folderPrivateSpaces.filter((space) =>
-        getPrivateSpaceTitle(space, currentUserId)
-          .toLocaleLowerCase('ru-RU')
-          .includes(normalizedConversationQuery),
-      )
-    : folderPrivateSpaces
+  const visiblePrivateSpaces = filterPrivateSpacesByConversationQuery(
+    folderPrivateSpaces,
+    currentUserId,
+    conversationQuery,
+  )
   const showMarkAllRead =
     showPrivateReadAllButton &&
     privateSpaces.some((space) => space.unreadCount > 0)
@@ -220,6 +200,13 @@ export function DirectMessagesPanel({
     pinnedSpaceIds: new Set(
       folderController.activeFolder?.pinnedSpaceIds ?? [],
     ),
+    folders: folderController.folders,
+    onAddToFolder: (folderId, spaceId) => {
+      void folderController.addSpaceToFolder(folderId, spaceId)
+    },
+    onRemoveFromFolder: (folderId, spaceId) => {
+      void folderController.removeSpaceFromFolder(folderId, spaceId)
+    },
     onOpenUserProfile: setProfileDialogSpace,
     onOpenNote: setNoteDialogSpace,
     onOpenNickname: setNicknameDialogSpace,
@@ -305,32 +292,19 @@ export function DirectMessagesPanel({
 
   return (
     <aside
-      className={`${styles.panel} ${
-        messageSearch.isActive ? styles.searchMode : ''
-      } ${className ?? ''} ui-panel`}
+      className={`${styles.panel} ${className ?? ''} ui-panel`}
       aria-label={communityCopy.direct.title}
     >
       <div className={styles.desktopSearchControl}>
-      <MessageSearchControl
-        name="directMessageSearchTags"
-        ariaLabel={communityCopy.direct.searchInDirectMessages}
-        query={messageSearch.query}
-        filters={messageSearch.filters}
-        placeholder={privateSpaceFolderCopy.panelSearch}
-        userOptions={activeMembers.map((member) => ({
-          id: member.userId,
-          displayName: member.user.displayName,
-          login: member.user.login,
-          avatarAssetId: member.user.avatarAssetId,
-          avatarCropOffsetX: member.user.avatarCropOffsetX,
-          avatarCropOffsetY: member.user.avatarCropOffsetY,
-          avatarCropZoom: member.user.avatarCropZoom,
-        }))}
-        onQueryChange={messageSearch.setQuery}
-        onFiltersChange={messageSearch.setFilters}
-        onSubmit={messageSearch.submitSearch}
-        onClear={messageSearch.clearSearch}
-        actions={(
+        <div className={styles.conversationSearchRow}>
+          <SystemSearchInput
+            className={styles.conversationSearchInput}
+            name="directConversationSearch"
+            aria-label={privateSpaceFolderCopy.panelSearch}
+            placeholder={privateSpaceFolderCopy.panelSearch}
+            value={conversationQuery}
+            onChange={(event) => setConversationQuery(event.target.value)}
+          />
           <div className={styles.searchActions}>
             <button
               type="button"
@@ -362,8 +336,7 @@ export function DirectMessagesPanel({
               <SystemPlusIcon size="small" />
             </button>
           </div>
-        )}
-      />
+        </div>
       </div>
       <DirectMessagesMobileView
         currentUserId={currentUserId}
@@ -372,54 +345,40 @@ export function DirectMessagesPanel({
         folderController={folderController}
         onCreateFolder={() => setFolderDialog({ folder: null })}
         onEditFolder={(folder) => setFolderDialog({ folder })}
-        activeMembers={activeMembers}
         isLoadingPrivateSpaces={isLoadingPrivateSpaces}
         isMutatingPrivateSpaces={isMutatingPrivateSpaces}
-        messageSearch={messageSearch}
+        conversationQuery={conversationQuery}
+        onConversationQueryChange={setConversationQuery}
         onToggleCreate={() => setIsCreateMenuOpen((current) => !current)}
         onOpenPrivateSpace={onOpenPrivateSpace}
         onDropFilesToPrivateSpace={onDropFilesToPrivateSpace}
-        onOpenContextMenu={openContextMenu}
+        onOpenContextMenu={(event, space) =>
+          openContextMenu(event, space, folderController.activeFolderId)
+        }
         onMarkAllRead={
           showMarkAllRead ? () => setIsReadAllDialogOpen(true) : undefined
         }
         markAllReadDisabled={isDialogSaving || isMutatingPrivateSpaces}
       />
 
-      {messageSearch.isActive ? (
-        <MessageSearchResults
-          query={messageSearch.submittedQuery}
-          results={messageSearch.results}
-          isSearching={messageSearch.isSearching}
-          error={messageSearch.error}
-          getSpaceLabel={() =>
-            getPrivateSpaceTitle(
-              privateSpaces.find(
-                (space) => space.spaceId === activePrivateSpaceId,
-              ),
-              currentUserId,
-            )
-          }
-          onOpenMessage={onOpenSearchResult}
-        />
-      ) : (
-        <DirectMessagesDesktopView
-          currentUserId={currentUserId}
-          activePrivateSpaceId={activePrivateSpaceId}
-          privateSpaces={visiblePrivateSpaces}
-          folderController={folderController}
-          isFolderRailCollapsed={isFolderRailCollapsed}
-          onEditFolder={(folder) => setFolderDialog({ folder })}
-          isLoadingPrivateSpaces={isLoadingPrivateSpaces}
-          onOpenPrivateSpace={onOpenPrivateSpace}
-          onDropFilesToPrivateSpace={onDropFilesToPrivateSpace}
-          onOpenContextMenu={openContextMenu}
-          onMarkAllRead={
-            showMarkAllRead ? () => setIsReadAllDialogOpen(true) : undefined
-          }
-          markAllReadDisabled={isDialogSaving || isMutatingPrivateSpaces}
-        />
-      )}
+      <DirectMessagesDesktopView
+        currentUserId={currentUserId}
+        activePrivateSpaceId={activePrivateSpaceId}
+        privateSpaces={visiblePrivateSpaces}
+        folderController={folderController}
+        isFolderRailCollapsed={isFolderRailCollapsed}
+        onEditFolder={(folder) => setFolderDialog({ folder })}
+        isLoadingPrivateSpaces={isLoadingPrivateSpaces}
+        onOpenPrivateSpace={onOpenPrivateSpace}
+        onDropFilesToPrivateSpace={onDropFilesToPrivateSpace}
+        onOpenContextMenu={(event, space) =>
+          openContextMenu(event, space, folderController.activeFolderId)
+        }
+        onMarkAllRead={
+          showMarkAllRead ? () => setIsReadAllDialogOpen(true) : undefined
+        }
+        markAllReadDisabled={isDialogSaving || isMutatingPrivateSpaces}
+      />
 
       {contextMenu && (
         <ContextMenu

@@ -15,15 +15,19 @@ export function AuthMobileRegisterWizard({
   registerProgress,
   mobileRegisterStep,
   isLoading,
+  isPasswordVisible,
   onChange,
   onChangeStep,
+  onPasswordVisibilityChange,
 }: {
   registerForm: RegisterForm
   registerProgress: boolean[]
   mobileRegisterStep: number
   isLoading: boolean
+  isPasswordVisible: boolean
   onChange: (form: RegisterForm) => void
   onChangeStep: (step: number) => void
+  onPasswordVisibilityChange: (isVisible: boolean) => void
 }) {
   const mobileStep = registerSteps[mobileRegisterStep] ?? registerSteps[0]
   const mobileStepRequirements = getRegisterStepRequirements(
@@ -71,10 +75,19 @@ export function AuthMobileRegisterWizard({
         </p>
         <h2>{mobileStep.label}</h2>
 
+        {mobileRegisterStep === 0 && (
+          <p className={styles.authRegistrationNotice}>
+            <SystemIcon name="mail" size={16} />
+            <span>{authCopy.hints.registrationEmailVerification}</span>
+          </p>
+        )}
+
         <RegisterWizardField
           stepKey={mobileStep.key}
           registerForm={registerForm}
+          isPasswordVisible={isPasswordVisible}
           onChange={onChange}
+          onPasswordVisibilityChange={onPasswordVisibilityChange}
         />
 
         <RegisterRequirementsPanel

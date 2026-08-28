@@ -1,4 +1,4 @@
-export const fallbackAvatarAccent = '139, 94, 255'
+export const fallbackAvatarAccent = '128, 128, 128'
 
 export function toAvatarAccent(image: HTMLImageElement) {
   const sampleSize = 24

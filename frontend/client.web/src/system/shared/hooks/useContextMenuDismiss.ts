@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { isEventInsideContextMenuBoundary } from '../services/contextMenuEventBoundary'
 
 export function useContextMenuDismiss(isOpen: boolean, onClose: () => void) {
   useEffect(() => {
@@ -6,8 +7,10 @@ export function useContextMenuDismiss(isOpen: boolean, onClose: () => void) {
       return undefined
     }
 
-    function closeByPointer() {
-      onClose()
+    function closeByExternalPointer(event: MouseEvent) {
+      if (!isEventInsideContextMenuBoundary(event)) {
+        onClose()
+      }
     }
 
     function closeByKey(event: KeyboardEvent) {
@@ -17,27 +20,19 @@ export function useContextMenuDismiss(isOpen: boolean, onClose: () => void) {
     }
 
     function closeByExternalScroll(event: Event) {
-      const scrollStartedInsideContextMenu = event
-        .composedPath()
-        .some(
-          (target) =>
-            target instanceof HTMLElement &&
-            target.dataset.contextMenuRoot === 'true',
-        )
-
-      if (!scrollStartedInsideContextMenu) {
+      if (!isEventInsideContextMenuBoundary(event)) {
         onClose()
       }
     }
 
-    window.addEventListener('click', closeByPointer)
-    window.addEventListener('contextmenu', closeByPointer)
+    window.addEventListener('click', closeByExternalPointer)
+    window.addEventListener('contextmenu', closeByExternalPointer)
     window.addEventListener('keydown', closeByKey)
     window.addEventListener('scroll', closeByExternalScroll, true)
 
     return () => {
-      window.removeEventListener('click', closeByPointer)
-      window.removeEventListener('contextmenu', closeByPointer)
+      window.removeEventListener('click', closeByExternalPointer)
+      window.removeEventListener('contextmenu', closeByExternalPointer)
       window.removeEventListener('keydown', closeByKey)
       window.removeEventListener('scroll', closeByExternalScroll, true)
     }

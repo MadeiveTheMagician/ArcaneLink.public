@@ -9,6 +9,7 @@ import type {
 } from '../../../../../shared/types'
 import { serverCopy } from '../../../../shared/copy'
 import buttonStyles from '../../../../shared/styles/Button.module.css'
+import { SystemSelect } from '../../../../shared/ui/SystemSelect'
 import {
   buildSpacePermissionOverrideRequest,
   type SpacePermissionEffect,
@@ -168,12 +169,12 @@ export function SpacePermissionEditor({
       <div className={styles.controls}>
         <label>
           <span>{serverCopy.workspaceDialogs.permissionTargetType}</span>
-          <select
-            className="ui-field-control"
+          <SystemSelect
+            aria-label={serverCopy.workspaceDialogs.permissionTargetType}
             value={targetKind}
             disabled={isMutating}
-            onChange={(event) =>
-              setTargetKind(event.target.value as SpacePermissionTargetKind)
+            onValueChange={(value) =>
+              setTargetKind(value as SpacePermissionTargetKind)
             }
           >
             <option value="role">
@@ -182,16 +183,16 @@ export function SpacePermissionEditor({
             <option value="member">
               {serverCopy.workspaceDialogs.permissionTargetMember}
             </option>
-          </select>
+          </SystemSelect>
         </label>
 
         <label>
           <span>{serverCopy.workspaceDialogs.permissionTarget}</span>
-          <select
-            className="ui-field-control"
+          <SystemSelect
+            aria-label={serverCopy.workspaceDialogs.permissionTarget}
             value={targetId}
             disabled={isMutating || availableTargets.length === 0}
-            onChange={(event) => setTargetId(event.target.value)}
+            onValueChange={setTargetId}
           >
             {availableTargets.length === 0 && (
               <option value="">
@@ -203,33 +204,33 @@ export function SpacePermissionEditor({
                 {target.title}
               </option>
             ))}
-          </select>
+          </SystemSelect>
         </label>
 
         <label>
           <span>{serverCopy.workspaceDialogs.permission}</span>
-          <select
-            className="ui-field-control"
+          <SystemSelect
+            aria-label={serverCopy.workspaceDialogs.permission}
             value={permissionId}
             disabled={isMutating || permissions.length === 0}
-            onChange={(event) => setPermissionId(event.target.value)}
+            onValueChange={setPermissionId}
           >
             {permissions.map((permission) => (
               <option key={permission.id} value={permission.id}>
                 {permission.title}
               </option>
             ))}
-          </select>
+          </SystemSelect>
         </label>
 
         <label>
           <span>{serverCopy.workspaceDialogs.permissionEffect}</span>
-          <select
-            className="ui-field-control"
+          <SystemSelect
+            aria-label={serverCopy.workspaceDialogs.permissionEffect}
             value={effect}
             disabled={isMutating}
-            onChange={(event) =>
-              setEffect(event.target.value as SpacePermissionEffect)
+            onValueChange={(value) =>
+              setEffect(value as SpacePermissionEffect)
             }
           >
             <option value="allow">
@@ -238,7 +239,7 @@ export function SpacePermissionEditor({
             <option value="deny">
               {serverCopy.workspaceDialogs.permissionDeny}
             </option>
-          </select>
+          </SystemSelect>
         </label>
 
         <button

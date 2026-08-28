@@ -41,3 +41,34 @@ test('pinned messages panel opens and expands an attached asset', async ({ page 
   await expect(assetCard).toHaveAttribute('data-expanded', 'true')
   await expect(pinnedPanel.locator('img[alt="pinned-preview.png"]')).toBeVisible()
 })
+
+test('message asset preview navigates with keyboard arrows', async ({ page }) => {
+  await page
+    .getByRole('button', { name: 'pinned-preview.png' })
+    .first()
+    .click()
+
+  const preview = page.getByRole('dialog')
+  await expect(preview).toHaveAttribute('aria-label', 'pinned-preview.png')
+
+  await page.keyboard.press('ArrowLeft')
+  await expect(preview).toHaveAttribute('aria-label', 'pinned-preview.png')
+
+  await page.keyboard.press('ArrowRight')
+  await expect(preview).toHaveAttribute(
+    'aria-label',
+    'pinned-preview-next.png',
+  )
+
+  await page.keyboard.press('ArrowRight')
+  await expect(preview).toHaveAttribute(
+    'aria-label',
+    'pinned-preview-next.png',
+  )
+
+  await page.keyboard.press('ArrowLeft')
+  await expect(preview).toHaveAttribute('aria-label', 'pinned-preview.png')
+
+  await page.keyboard.press('Escape')
+  await expect(preview).toBeHidden()
+})

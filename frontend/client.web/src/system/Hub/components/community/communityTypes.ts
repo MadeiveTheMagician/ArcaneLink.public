@@ -1,6 +1,10 @@
 import { communityCopy } from '../../../shared'
 
 export type CommunityTab = 'friends' | 'people' | 'blocklist'
+export type CommunityNavigationRequest = {
+  id: number
+  tab: CommunityTab
+}
 export type CommunityFriendStatusFilter = 'all' | 'online' | 'offline'
 export type CommunityRequestsDialogKind = 'incoming' | 'outgoing'
 export type CommunityPeopleScope = 'all' | 'shared-servers'

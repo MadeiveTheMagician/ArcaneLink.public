@@ -27,10 +27,12 @@ import { createRealtimeRefreshCoalescer } from '../../../shared/hooks/realtimeRe
 import type { MessageFocusRequest } from '../../../shared/messages/messageFocusModel'
 import {
   getOldestMessageCursor,
+  getMessageWindowCursor,
   hasOlderMessagePage,
   mergeLatestMessagePage,
   messageHistoryPageSize,
   prependOlderMessagePage,
+  type OlderMessageLoadResult,
 } from './messagePaginationModel'
 
 type SpaceMessagesChangedPayload = {
@@ -200,7 +202,7 @@ export function useSpaceMessages(
   async function loadMessages(
     silent = false,
     before?: { createdAt: string; id: string } | null,
-  ) {
+  ): Promise<SpaceMessageResponse[] | null> {
     const requestId = ++messagesRequestIdRef.current
     ++latestMessagesRequestIdRef.current
     ++olderMessagesRequestIdRef.current
@@ -219,7 +221,7 @@ export function useSpaceMessages(
       setPinnedMessages([])
       setIsLoadingMessages(false)
       setMessageError(null)
-      return
+      return null
     }
 
     if (!silent) {
@@ -243,15 +245,16 @@ export function useSpaceMessages(
         )
 
       if (messagesRequestIdRef.current !== requestId) {
-        return
+        return null
       }
 
       setMessages(loadedMessages)
       setLoadedMessagesSourceId(requestedSourceId)
       setHasOlderMessages(hasOlderMessagePage(loadedMessages))
+      return loadedMessages
     } catch (error) {
       if (messagesRequestIdRef.current !== requestId) {
-        return
+        return null
       }
 
       setMessageError(
@@ -260,6 +263,7 @@ export function useSpaceMessages(
       setMessages([])
       setLoadedMessagesSourceId(requestedSourceId)
       setHasOlderMessages(false)
+      return null
     } finally {
       if (!silent && messagesRequestIdRef.current === requestId) {
         setIsLoadingMessages(false)
@@ -267,7 +271,19 @@ export function useSpaceMessages(
     }
   }
 
-  async function loadOlderMessages(): Promise<boolean> {
+  async function loadMessageWindow(messageId: string, createdAt: string) {
+    const cursor = getMessageWindowCursor(messageId, createdAt)
+    if (!cursor) {
+      return false
+    }
+
+    const loadedMessages = await loadMessages(false, cursor)
+    return Boolean(
+      loadedMessages?.some((message) => message.id === messageId),
+    )
+  }
+
+  async function loadOlderMessages(): Promise<OlderMessageLoadResult> {
     const requestedSpaceId = spaceId
     const requestedServerId = selectedServerMembership.serverId
     const requestedSourceId = requestedSpaceId
@@ -278,16 +294,19 @@ export function useSpaceMessages(
       !requestedSpaceId ||
       !requestedSourceId ||
       loadedMessagesSourceIdRef.current !== requestedSourceId ||
-      !hasOlderMessagesRef.current ||
       isLoadingOlderMessagesRef.current
     ) {
-      return false
+      return 'stale'
+    }
+
+    if (!hasOlderMessagesRef.current) {
+      return 'exhausted'
     }
 
     const cursor = getOldestMessageCursor(messagesRef.current)
     if (!cursor) {
       setHasOlderMessages(false)
-      return false
+      return 'exhausted'
     }
 
     const requestId = ++olderMessagesRequestIdRef.current
@@ -309,7 +328,7 @@ export function useSpaceMessages(
         olderMessagesRequestIdRef.current !== requestId ||
         activeMessageSourceIdRef.current !== requestedSourceId
       ) {
-        return false
+        return 'stale'
       }
 
       setMessages((current) =>
@@ -317,7 +336,7 @@ export function useSpaceMessages(
       )
       setHasOlderMessages(hasOlderMessagePage(olderMessages))
       setMessageError(null)
-      return olderMessages.length > 0
+      return olderMessages.length > 0 ? 'loaded' : 'exhausted'
     } catch (error) {
       if (
         olderMessagesRequestIdRef.current === requestId &&
@@ -329,7 +348,12 @@ export function useSpaceMessages(
             : serverCopy.messages.loadFailed,
         )
       }
-      return false
+      return (
+        olderMessagesRequestIdRef.current === requestId &&
+        activeMessageSourceIdRef.current === requestedSourceId
+          ? 'failed'
+          : 'stale'
+      )
     } finally {
       if (olderMessagesRequestIdRef.current === requestId) {
         isLoadingOlderMessagesRef.current = false
@@ -552,21 +576,49 @@ export function useSpaceMessages(
 
     try {
       setMessageError(null)
-      return await apiJson<SpaceMessageResponse>(
+      const message = await apiJson<SpaceMessageResponse>(
         `/api/servers/${selectedServerMembership.serverId}/spaces/${spaceId}/messages/${messageId}/pin`,
         {
           method: 'POST',
           accessToken,
         },
-      ).then((message) => {
-        void loadPinnedMessages(true)
-        return message
-      })
+      )
+      await Promise.all([
+        refreshLatestMessages(),
+        loadPinnedMessages(true),
+      ])
+      return message
     } catch (error) {
       setMessageError(
         error instanceof Error ? error.message : serverCopy.messages.pinFailed,
       )
       return null
+    }
+  }
+
+  async function unpinMessage(messageId: string) {
+    if (!spaceId || !canManageMessages) {
+      return false
+    }
+
+    try {
+      setMessageError(null)
+      await apiNoContent(
+        `/api/servers/${selectedServerMembership.serverId}/spaces/${spaceId}/messages/${messageId}/pin`,
+        {
+          method: 'DELETE',
+          accessToken,
+        },
+      )
+      setPinnedMessages((current) =>
+        current.filter((message) => message.id !== messageId),
+      )
+      return true
+    } catch (error) {
+      setMessageError(
+        error instanceof Error ? error.message : serverCopy.messages.unpinFailed,
+      )
+      return false
     }
   }
 
@@ -744,12 +796,14 @@ export function useSpaceMessages(
     mentionCandidates,
     loadMentionCandidates,
     loadMessages,
+    loadMessageWindow,
     loadOlderMessages,
     loadPinnedMessages,
     sendMessage,
     updateMessage,
     deleteMessage,
     pinMessage,
+    unpinMessage,
     setMessageReaction,
     markMessagesRead,
   }

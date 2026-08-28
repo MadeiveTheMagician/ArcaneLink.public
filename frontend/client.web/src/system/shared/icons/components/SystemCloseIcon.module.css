@@ -1,5 +1,5 @@
 .icon {
-  --system-icon-color: var(--color-text);
+  --theme-icon-glow-color: transparent;
   pointer-events: none;
 }
 
@@ -8,9 +8,9 @@
 }
 
 .medium {
-  --system-icon-size: 32px;
+  --system-icon-size: 22px;
 }
 
 .large {
-  --system-icon-size: 64px;
+  --system-icon-size: 38px;
 }

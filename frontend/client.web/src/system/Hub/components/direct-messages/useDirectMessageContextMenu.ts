@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import type {
   PrivateSpaceMemberResponse,
+  PrivateSpaceFolderResponse,
   PrivateSpaceResponse,
   ServerMemberResponse,
 } from '../../../../shared/types'
@@ -14,9 +15,12 @@ import {
   getPrivateSpaceOtherMember,
   resolvePrivateSpaceMuteState,
 } from './directMessageModel'
+import { privateSpaceFolderCopy } from '../private-space/folders/privateSpaceFolderCopy.ru'
+import { getPrivateSpaceFolderContext } from '../private-space/folders/privateSpaceFolderModel'
 
 type DirectMessageContextMenuState = {
   space: PrivateSpaceResponse
+  folderId: string
   x: number
   y: number
 }
@@ -28,6 +32,7 @@ type DirectMessageContextMenuOptions = {
   friendUserIds: Set<string>
   isMutatingPrivateSpaces: boolean
   pinnedSpaceIds: Set<string>
+  folders: PrivateSpaceFolderResponse[]
   onOpenUserProfile: (space: PrivateSpaceResponse) => void
   onOpenNote: (space: PrivateSpaceResponse) => void
   onOpenNickname: (space: PrivateSpaceResponse) => void
@@ -35,6 +40,8 @@ type DirectMessageContextMenuOptions = {
   onClearCustomAvatar: (spaceId: string) => void
   onOpenGroupSettings: (space: PrivateSpaceResponse) => void
   onTogglePin: (spaceId: string, isPinned: boolean) => void
+  onAddToFolder: (folderId: string, spaceId: string) => void
+  onRemoveFromFolder: (folderId: string, spaceId: string) => void
   onSetMute: (spaceId: string, mode: MuteMode) => void
   onMarkRead: (spaceId: string) => void
   onBlockUser: (member: PrivateSpaceMemberResponse) => void
@@ -55,6 +62,7 @@ export function useDirectMessageContextMenu({
   friendUserIds,
   isMutatingPrivateSpaces,
   pinnedSpaceIds,
+  folders,
   onOpenUserProfile,
   onOpenNote,
   onOpenNickname,
@@ -62,6 +70,8 @@ export function useDirectMessageContextMenu({
   onClearCustomAvatar,
   onOpenGroupSettings,
   onTogglePin,
+  onAddToFolder,
+  onRemoveFromFolder,
   onSetMute,
   onMarkRead,
   onBlockUser,
@@ -93,6 +103,7 @@ export function useDirectMessageContextMenu({
   function openContextMenu(
     event: ReactMouseEvent<HTMLButtonElement>,
     space: PrivateSpaceResponse,
+    folderId: string,
   ) {
     event.preventDefault()
     event.stopPropagation()
@@ -100,6 +111,7 @@ export function useDirectMessageContextMenu({
     setMuteClockMs(openedAt)
     setContextMenu({
       space,
+      folderId,
       x: event.clientX,
       y: event.clientY,
     })
@@ -187,6 +199,11 @@ export function useDirectMessageContextMenu({
     if (!contextMenu) return []
 
     const space = contextMenu.space
+    const folderContext = getPrivateSpaceFolderContext(
+      folders,
+      contextMenu.folderId,
+      space.spaceId,
+    )
     const isPinned = pinnedSpaceIds.has(space.spaceId)
     const muteState = resolvePrivateSpaceMuteState(
       space.viewerSettings,
@@ -194,6 +211,42 @@ export function useDirectMessageContextMenu({
     )
     const muteRemaining = formatPrivateSpaceMuteRemaining(muteState)
     const sharedItems: ContextMenuItem[] = [
+      ...(folderContext.activeFolder?.isSystem
+        ? [
+            {
+              id: 'private-space-add-to-folder',
+              type: 'item' as const,
+              label: privateSpaceFolderCopy.addToFolder,
+              icon: 'folder' as const,
+              disabled:
+                isMutatingPrivateSpaces || folderContext.addTargets.length === 0,
+              submenu: folderContext.addTargets.map((folder) => ({
+                id: `private-space-add-to-folder:${folder.id}`,
+                type: 'item' as const,
+                label: privateSpaceFolderCopy.addToFolderLabel(folder.name),
+                visualLabel: `${folder.icon} ${folder.name}`,
+                onSelect: () => onAddToFolder(folder.id, space.spaceId),
+              })),
+            },
+          ]
+        : folderContext.activeFolder
+          ? [
+              {
+                id: 'private-space-remove-from-folder',
+                type: 'item' as const,
+                label: privateSpaceFolderCopy.removeFromFolder(
+                  folderContext.activeFolder.name,
+                ),
+                icon: 'folder' as const,
+                disabled: isMutatingPrivateSpaces,
+                onSelect: () =>
+                  onRemoveFromFolder(
+                    folderContext.activeFolder!.id,
+                    space.spaceId,
+                  ),
+              },
+            ]
+          : []),
       {
         type: 'item',
         label: isPinned

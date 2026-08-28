@@ -48,10 +48,45 @@ test('settings keep one category list open and collapse content sections', async
 
   await expect(dialog).toBeVisible()
   await expect(voiceCategory).toHaveAttribute('aria-expanded', 'true')
+  const accountDisclosure = navigation.locator(
+    '[data-settings-category-sections="account"]',
+  )
+  const voiceDisclosure = navigation.locator(
+    '[data-settings-category-sections="voice"]',
+  )
+  await expect(accountDisclosure).toHaveAttribute('aria-hidden', 'true')
+  await expect(accountDisclosure).toHaveAttribute('inert', '')
+  await expect(voiceDisclosure).toHaveAttribute('aria-hidden', 'false')
+  await expect(voiceDisclosure).not.toHaveAttribute('inert', '')
 
   await accountCategory.click()
   await expect(accountCategory).toHaveAttribute('aria-expanded', 'true')
   await expect(voiceCategory).toHaveAttribute('aria-expanded', 'false')
+  await expect(accountDisclosure).toHaveAttribute('aria-hidden', 'false')
+  await expect(accountDisclosure).not.toHaveAttribute('inert', '')
+  await expect(voiceDisclosure).toHaveAttribute('aria-hidden', 'true')
+  await expect(voiceDisclosure).toHaveAttribute('inert', '')
+
+  await accountDisclosure
+    .getByRole('button', {
+      name: settingsCopy.account.passwordSecurityTitle,
+      exact: true,
+    })
+    .click()
+  const sessionsToggle = dialog.locator('[data-account-sessions-toggle]')
+  const sessionsContent = dialog.locator('[data-account-sessions-content]')
+  await expect(sessionsToggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(sessionsContent).toHaveAttribute('aria-hidden', 'true')
+  await expect(sessionsContent).toHaveAttribute('inert', '')
+  await sessionsToggle.click()
+  await expect(sessionsToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(sessionsContent).toHaveAttribute('aria-hidden', 'false')
+  await expect(sessionsContent).not.toHaveAttribute('inert', '')
+  await expect(sessionsContent.getByText('Current browser')).toBeVisible()
+  await expect(sessionsContent.getByText('Other browser')).toBeVisible()
+  await expect(
+    sessionsContent.getByText(settingsCopy.errors.loadSessions),
+  ).toHaveCount(0)
 
   await interfaceCategory.click()
   await expect(interfaceCategory).toHaveAttribute('aria-expanded', 'true')
@@ -75,7 +110,11 @@ test('settings keep one category list open and collapse content sections', async
   await expect(spatialNavigationLink).toBeDisabled()
   await expect(spatialToggle).toBeDisabled()
   await expect(spatialToggle).toHaveAttribute('aria-expanded', 'false')
-  await expect(spatialSection.locator('div[hidden]')).toBeHidden()
+  const spatialContent = spatialSection.locator(
+    '[data-settings-section-content]',
+  )
+  await expect(spatialContent).toHaveAttribute('aria-hidden', 'true')
+  await expect(spatialContent).toHaveAttribute('inert', '')
 
   const warningSection = dialog
     .getByRole('heading', {
@@ -106,7 +145,20 @@ test('settings keep one category list open and collapse content sections', async
   await expect(
     warningSection.getByText(settingsCopy.voice.warningDescription),
   ).toBeHidden()
-  await expect(warningSection.locator('div[hidden]')).toBeHidden()
+  const warningContent = warningSection.locator(
+    '[data-settings-section-content]',
+  )
+  const warningTransition = await warningContent.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element)
+    return {
+      duration: computedStyle.transitionDuration,
+      property: computedStyle.transitionProperty,
+    }
+  })
+  expect(warningTransition.property).toContain('grid-template-rows')
+  expect(warningTransition.duration).not.toBe('0s')
+  await expect(warningContent).toHaveAttribute('aria-hidden', 'true')
+  await expect(warningContent).toHaveAttribute('inert', '')
 
   await navigation
     .getByRole('button', {
@@ -116,4 +168,6 @@ test('settings keep one category list open and collapse content sections', async
     .click()
   await expect(warningToggle).toHaveAttribute('title', collapseWarningLabel)
   await expect(warningToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(warningContent).toHaveAttribute('aria-hidden', 'false')
+  await expect(warningContent).not.toHaveAttribute('inert', '')
 })

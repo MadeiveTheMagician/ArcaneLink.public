@@ -16,7 +16,6 @@ export function registerIgnoredRealtimeEvents(connection: signalR.HubConnection)
     'ServerSpacesChanged',
     'SpaceMessagesChanged',
     'PrivateSpaceMessagesChanged',
-    'UserProfileChanged',
     'UserProfileSettingsChanged',
     'UserPresenceChanged',
     'UserAssetsChanged',

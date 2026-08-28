@@ -9,6 +9,7 @@ import type {
 import { communityCopy } from '../../src/system/shared/copy/community.ru'
 import {
   formatPrivateSpaceMuteRemaining,
+  filterPrivateSpacesByConversationQuery,
   getDefaultPrivateSpaceGroupTitle,
   getPrivateSpaceOtherMember,
   getPrivateSpacePresenceStatus,
@@ -139,6 +140,32 @@ function createAsset(): SpaceMessageAssetResponse {
 }
 
 test.describe('direct message model', () => {
+  test('filters the conversation list by effective direct and group titles', () => {
+    const direct = createSpace(
+      [createMember('current', 'Current'), createMember('friend-1', 'Astra')],
+      { spaceId: 'direct-1' },
+    )
+    const group = createSpace(
+      [createMember('current', 'Current'), createMember('friend-2', 'Boris')],
+      { spaceId: 'group-1', kind: 'group', title: 'Учебная группа' },
+    )
+
+    expect(
+      filterPrivateSpacesByConversationQuery(
+        [direct, group],
+        'current',
+        '  ГРУППА ',
+      ).map((space) => space.spaceId),
+    ).toEqual(['group-1'])
+    expect(
+      filterPrivateSpacesByConversationQuery(
+        [direct, group],
+        'current',
+        'astra',
+      ).map((space) => space.spaceId),
+    ).toEqual(['direct-1'])
+  })
+
   test('uses the other member name for an explicit Direct space', () => {
     const directSpace = createSpace([
       createMember('current', 'Current'),

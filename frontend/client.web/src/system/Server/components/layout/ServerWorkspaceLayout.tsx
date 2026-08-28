@@ -11,7 +11,11 @@ type ServerWorkspaceLayoutProps = {
   detail: ReactNode
   hasSelectedDetail: boolean
   isMembersPanelCollapsed: boolean
-  membersPanel: ReactElement<{ className?: string; hidden?: boolean }>
+  membersPanel: ReactElement<{
+    className?: string
+    id: string
+    isCollapsed?: boolean
+  }>
   pinnedSpaceMessagePreview: string | null
   visibleChannel: Extract<ServerDetail, { type: 'channel' }> | null
   visibleDetail: ServerDetail | null
@@ -34,9 +38,32 @@ export function ServerWorkspaceLayout({
   onCloseDetail,
   onStartPaneResize,
 }: ServerWorkspaceLayoutProps) {
+  function handleStartPaneResize(
+    pane: 'spaces' | 'members',
+    event: PointerEvent<HTMLButtonElement>,
+  ) {
+    const workspace = event.currentTarget.closest<HTMLElement>(
+      '[data-server-workspace]',
+    )
+
+    workspace?.setAttribute('data-pane-resizing', 'true')
+
+    const finishResize = () => {
+      workspace?.removeAttribute('data-pane-resizing')
+      window.removeEventListener('pointerup', finishResize)
+      window.removeEventListener('pointercancel', finishResize)
+    }
+
+    window.addEventListener('pointerup', finishResize)
+    window.addEventListener('pointercancel', finishResize)
+    onStartPaneResize(pane, event)
+  }
+
   return (
     <section
+      data-server-workspace="true"
       data-members-panel-collapsed={isMembersPanelCollapsed ? 'true' : 'false'}
+      tabIndex={-1}
       className={`${styles.workspace} ui-panel ${
         hasSelectedDetail ? styles.withDetail : styles.spacesOnly
       }`}
@@ -53,7 +80,9 @@ export function ServerWorkspaceLayout({
         className={`${chromeStyles.resizer} ${chromeStyles.spaceResizer}`}
         type="button"
         aria-label="Resize spaces panel"
-        onPointerDown={(event) => onStartPaneResize('spaces', event)}
+        aria-hidden="true"
+        tabIndex={-1}
+        onPointerDown={(event) => handleStartPaneResize('spaces', event)}
       />
 
       <section
@@ -112,13 +141,16 @@ export function ServerWorkspaceLayout({
 
       <button
         className={`${chromeStyles.resizer} ${chromeStyles.memberResizer}`}
+        data-members-resizer="true"
         type="button"
         aria-label="Resize members panel"
-        onPointerDown={(event) => onStartPaneResize('members', event)}
+        aria-hidden="true"
+        tabIndex={-1}
+        onPointerDown={(event) => handleStartPaneResize('members', event)}
       />
 
       {cloneElement(membersPanel, {
-        hidden: isMembersPanelCollapsed,
+        isCollapsed: isMembersPanelCollapsed,
         className: [membersPanel.props.className, chromeStyles.memberPanelSlot]
           .filter(Boolean)
           .join(' '),

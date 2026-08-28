@@ -6,6 +6,9 @@ import type {
 import type { ServerCoreTab } from './serverWorkspaceModel'
 
 type SettingsAccess = {
+  canManageServerProfile?: boolean
+  canManageServerSettings?: boolean
+  canDeleteServer?: boolean
   canInviteMembers: boolean
   canViewInvites?: boolean
   canManageJoinRequests?: boolean
@@ -19,6 +22,15 @@ export function resolveAccessibleServerCoreTab(
   requestedTab: ServerCoreTab,
   access: SettingsAccess,
 ): ServerCoreTab {
+  if (
+    requestedTab === 'general' &&
+    !access.canManageServerProfile &&
+    !access.canManageServerSettings &&
+    !access.canDeleteServer
+  ) {
+    return 'spaces'
+  }
+
   if (
     requestedTab === 'invites' &&
     !(access.canViewInvites ?? access.canInviteMembers)

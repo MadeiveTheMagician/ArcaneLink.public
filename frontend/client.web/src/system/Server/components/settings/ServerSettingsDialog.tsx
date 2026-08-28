@@ -30,6 +30,7 @@ import styles from './ServerGovernance.module.css'
 import { ServerModerationPanel } from '../../../Moderation/components/ServerModerationPanel'
 import { moderationCopy } from '../../../Moderation/moderationCopy.ru'
 import { ServerRolesSettings } from './roles/ServerRolesSettings'
+import { ServerGeneralSettings } from './ServerGeneralSettings'
 
 const serverSettingsCloseDurationMs = 200
 const modalFocusableSelector = [
@@ -71,7 +72,9 @@ export function ServerSettingsDialog({
   canManageBans,
   canManageInvites,
   canManageRoles,
+  canManageServerProfile,
   canManageServerSettings,
+  canDeleteServer,
   canManageReports,
   canViewAuditLog,
   isLoadingGovernance,
@@ -80,6 +83,7 @@ export function ServerSettingsDialog({
   onOpenServerCoreTab,
   onCreateServerInvite,
   onUpdateServer,
+  onDeleteServer,
   onRevokeServerInvite,
   onLoadMoreServerJoinRequests,
   onApproveServerJoinRequest,
@@ -112,7 +116,9 @@ export function ServerSettingsDialog({
   canManageBans: boolean
   canManageInvites: boolean
   canManageRoles: boolean
+  canManageServerProfile: boolean
   canManageServerSettings: boolean
+  canDeleteServer: boolean
   canManageReports: boolean
   canViewAuditLog: boolean
   isLoadingGovernance: boolean
@@ -125,6 +131,7 @@ export function ServerSettingsDialog({
   onUpdateServer: (
     request: UpdateServerRequest,
   ) => Promise<ServerResponse | null>
+  onDeleteServer: () => Promise<void>
   onRevokeServerInvite: (inviteId: string) => void
   onLoadMoreServerJoinRequests: () => void
   onApproveServerJoinRequest: (requestId: string) => void
@@ -137,6 +144,8 @@ export function ServerSettingsDialog({
 }) {
   const [isSavingSpaces, setIsSavingSpaces] = useState(false)
   const [isRoleEditorOpen, setIsRoleEditorOpen] = useState(false)
+  const [isGeneralNestedOverlayOpen, setIsGeneralNestedOverlayOpen] =
+    useState(false)
   const settingsDialogRef = useRef<HTMLElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const restoreFocusRef = useRef<HTMLElement | null>(
@@ -154,6 +163,9 @@ export function ServerSettingsDialog({
     .filter((space) => space.typeCode === 'text_room')
     .sort(compareSpaces)
   const visibleServerCoreTab = resolveAccessibleServerCoreTab(serverCoreTab, {
+    canManageServerProfile,
+    canManageServerSettings,
+    canDeleteServer,
     canInviteMembers,
     canViewInvites,
     canManageJoinRequests,
@@ -162,8 +174,10 @@ export function ServerSettingsDialog({
     canManageRoles,
     canViewAuditLog,
   })
+  const isNestedOverlayOpen =
+    isRoleEditorOpen || isGeneralNestedOverlayOpen
   useDismissableLayer({
-    isOpen: !isClosing && !isRoleEditorOpen,
+    isOpen: !isClosing && !isNestedOverlayOpen,
     layerRef: settingsDialogRef,
     onDismiss: closeSettings,
   })
@@ -269,8 +283,8 @@ export function ServerSettingsDialog({
         data-server-settings-dialog=""
         aria-modal="true"
         aria-labelledby="server-settings-title"
-        aria-hidden={isRoleEditorOpen || undefined}
-        inert={isRoleEditorOpen || undefined}
+        aria-hidden={isNestedOverlayOpen || undefined}
+        inert={isNestedOverlayOpen || undefined}
         tabIndex={-1}
       >
         <header className={settingsDialogStyles.heading}>
@@ -291,6 +305,17 @@ export function ServerSettingsDialog({
 
         <div className={settingsDialogStyles.shell}>
           <nav className={settingsDialogStyles.tabs}>
+            {(canManageServerProfile ||
+              canManageServerSettings ||
+              canDeleteServer) && (
+              <button
+                className={visibleServerCoreTab === 'general' ? settingsDialogStyles.activeTab : ''}
+                type="button"
+                onClick={() => onOpenServerCoreTab('general')}
+              >
+                {serverCopy.settings.general}
+              </button>
+            )}
             <button
               className={visibleServerCoreTab === 'spaces' ? settingsDialogStyles.activeTab : ''}
               type="button"
@@ -364,6 +389,19 @@ export function ServerSettingsDialog({
           </nav>
 
           <div className={settingsDialogStyles.content}>
+            {visibleServerCoreTab === 'general' && (
+              <ServerGeneralSettings
+                accessToken={accessToken}
+                server={server}
+                canManageProfile={canManageServerProfile}
+                canManageSettings={canManageServerSettings}
+                canDelete={canDeleteServer}
+                onUpdateServer={onUpdateServer}
+                onDeleteServer={onDeleteServer}
+                onNestedOverlayChange={setIsGeneralNestedOverlayOpen}
+              />
+            )}
+
             {visibleServerCoreTab === 'spaces' && (
               <section className={settingsDialogStyles.settingsSection}>
                 <header>

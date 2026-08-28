@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { SystemIcon } from '../../../shared/icons/SystemIcon'
 import { notificationCopy } from '../../../shared/copy'
 import { HubServerInvitePreview } from './HubServerInvitePreview'
 import type { WebNotificationItem } from './webNotificationModel'
 import type { NotificationPreferences } from './notificationPreferences'
 import styles from './WebNotificationStack.module.css'
+import type { NotificationTarget } from './notificationNavigation'
 
 type WebNotificationStackProps = {
   notifications: WebNotificationItem[]
@@ -12,10 +13,13 @@ type WebNotificationStackProps = {
   onAcceptInvite: (inviteId: string) => Promise<void> | void
   onDeclineInvite: (inviteId: string) => Promise<void> | void
   onDismiss: (id: string) => void
+  onMarkStoredRead: (notificationId: string) => Promise<void> | void
   onOpenPrivateSpace: (spaceId: string) => void
+  onOpenTarget: (target: NotificationTarget) => void
   onPause: () => void
   onResume: () => void
   placement: NotificationPreferences['placement']
+  bottomOffsetPx?: number
 }
 
 const iconByKind = {
@@ -23,6 +27,7 @@ const iconByKind = {
   mention: 'message',
   'server-invite': 'user-plus',
   'private-space-invite': 'user-plus',
+  'friend-request': 'user-plus',
   system: 'server',
 } as const
 
@@ -32,10 +37,13 @@ export function WebNotificationStack({
   onAcceptInvite,
   onDeclineInvite,
   onDismiss,
+  onMarkStoredRead,
   onOpenPrivateSpace,
+  onOpenTarget,
   onPause,
   onResume,
   placement,
+  bottomOffsetPx = 24,
 }: WebNotificationStackProps) {
   const [selectedInvite, setSelectedInvite] =
     useState<WebNotificationItem | null>(null)
@@ -59,6 +67,7 @@ export function WebNotificationStack({
       }`}
       aria-label={notificationCopy.popup.notificationsLabel}
       aria-live="polite"
+      style={{ '--notification-stack-bottom': `${bottomOffsetPx}px` } as CSSProperties}
       onMouseEnter={onPause}
       onMouseLeave={onResume}
     >
@@ -86,7 +95,8 @@ export function WebNotificationStack({
             </span>
           ) : (notification.kind === 'private-message' ||
               notification.kind === 'mention' ||
-              notification.kind === 'private-space-invite') &&
+              notification.kind === 'private-space-invite' ||
+              notification.kind === 'friend-request') &&
           notification.senderAvatarAssetId ? (
             <span className={`${styles.icon} ${styles.avatar}`}>
               <img
@@ -151,15 +161,64 @@ export function WebNotificationStack({
             <SystemIcon name="close" size="small" />
           </button>
           {(notification.kind === 'private-message' ||
-            notification.kind === 'private-space-invite' ||
-            (notification.kind === 'mention' && !notification.serverId)) &&
+            notification.kind === 'private-space-invite') &&
           notification.spaceId ? (
             <button
               className={styles.openOverlay}
               type="button"
               aria-label={notificationCopy.actions.openPrivateSpace}
               onClick={() => {
+                if (notification.storedNotificationId) {
+                  void onMarkStoredRead(notification.storedNotificationId)
+                }
                 onOpenPrivateSpace(notification.spaceId!)
+                onDismiss(notification.id)
+              }}
+            />
+          ) : null}
+          {notification.kind === 'mention' &&
+          notification.spaceId &&
+          notification.messageId ? (
+            <button
+              className={styles.openOverlay}
+              type="button"
+              aria-label={notificationCopy.actions.openMention}
+              onClick={() => {
+                if (notification.storedNotificationId) {
+                  void onMarkStoredRead(notification.storedNotificationId)
+                }
+                onOpenTarget(
+                  notification.serverId
+                    ? {
+                        kind: 'server-message',
+                        serverId: notification.serverId,
+                        spaceId: notification.spaceId!,
+                        messageId: notification.messageId!,
+                        createdAt:
+                          notification.messageCreatedAt ?? notification.createdAt,
+                      }
+                    : {
+                        kind: 'private-message',
+                        spaceId: notification.spaceId!,
+                        messageId: notification.messageId!,
+                        createdAt:
+                          notification.messageCreatedAt ?? notification.createdAt,
+                      },
+                )
+                onDismiss(notification.id)
+              }}
+            />
+          ) : null}
+          {notification.kind === 'friend-request' ? (
+            <button
+              className={styles.openOverlay}
+              type="button"
+              aria-label={notificationCopy.actions.openFriendRequests}
+              onClick={() => {
+                if (notification.storedNotificationId) {
+                  void onMarkStoredRead(notification.storedNotificationId)
+                }
+                onOpenTarget({ kind: 'friend-requests' })
                 onDismiss(notification.id)
               }}
             />

@@ -13,7 +13,7 @@ import {
 } from '../../../shared/voice/audioOutput'
 import {
   clampVoiceParticipantVolume,
-  createVoiceSpatialAudioEngine,
+  createVoicePlaybackAudioEngine,
 } from '../../../shared/voice/voiceSpatialAudio'
 import type {
   VoiceSpatialAudioEngine,
@@ -28,6 +28,15 @@ import {
   resolveEffectiveVoiceSpatialAudioMode,
   subscribeVoiceSettings,
 } from '../../../shared/voice/voiceSettings'
+import {
+  requestVoicePlaybackUnlock,
+  subscribeVoicePlaybackUnlock,
+} from '../../../shared/voice/voicePlaybackUnlock'
+import { requiresVoiceParticipantGain } from '../../../shared/voice/voiceParticipantVolume'
+import {
+  canStartVoiceAudioPlayback,
+  resolveVoiceAudioTrackPlaybackState,
+} from '../../../shared/voice/voiceAudioPlaybackModel'
 
 type HubVoiceAudioSinksProps = {
   audioSettingsByUserId: Record<string, VoiceUserAudioSettings>
@@ -93,6 +102,26 @@ export function HubVoiceAudioSinks({
     : null
   const isPlaybackDeafened =
     voice.isDeafened || localParticipant?.isServerDeafened === true
+  const participantGainRequired = useMemo(
+    () => Object.keys(voice.remoteStreamsByParticipantId).some(
+      (participantId) => {
+        const userId = resolveVoicePlaybackUserId(
+          participantId,
+          userIdByParticipantId,
+        )
+        return requiresVoiceParticipantGain(
+          userId
+            ? audioSettingsByUserId[userId]?.volume ?? 1
+            : 1,
+        )
+      },
+    ),
+    [
+      audioSettingsByUserId,
+      userIdByParticipantId,
+      voice.remoteStreamsByParticipantId,
+    ],
+  )
 
   useEffect(
     () => subscribeVoiceSettings(setVoiceSettings),
@@ -104,18 +133,45 @@ export function HubVoiceAudioSinks({
     [],
   )
 
+  useEffect(
+    () => subscribeVoicePlaybackUnlock(() => {
+      setUnlockToken((current) => current + 1)
+      void spatialAudioEngine?.resume()
+    }),
+    [spatialAudioEngine],
+  )
+
   useEffect(() => {
-    const engine = createVoiceSpatialAudioEngine(
+    function retryForegroundPlayback() {
+      if (document.visibilityState !== 'visible') {
+        return
+      }
+
+      setUnlockToken((current) => current + 1)
+      void spatialAudioEngine?.resume()
+    }
+
+    window.addEventListener('pageshow', retryForegroundPlayback)
+    document.addEventListener('visibilitychange', retryForegroundPlayback)
+    return () => {
+      window.removeEventListener('pageshow', retryForegroundPlayback)
+      document.removeEventListener('visibilitychange', retryForegroundPlayback)
+    }
+  }, [spatialAudioEngine])
+
+  useEffect(() => {
+    const engine = createVoicePlaybackAudioEngine(
       resolveEffectiveVoiceSpatialAudioMode(
         voiceSettings.spatialAudioMode,
       ),
+      participantGainRequired,
     )
     setSpatialAudioEngine(engine)
 
     return () => {
       engine?.dispose()
     }
-  }, [voiceSettings.spatialAudioMode])
+  }, [participantGainRequired, voiceSettings.spatialAudioMode])
 
   const updatePlaybackState = useCallback(
     (participantId: string, state: VoicePlaybackState) => {
@@ -187,10 +243,10 @@ export function HubVoiceAudioSinks({
       {blockedParticipantIds.size > 0 && (
         <button
           type="button"
-          onClick={() => setUnlockToken((current) => current + 1)}
+          onClick={() => requestVoicePlaybackUnlock()}
           style={unlockButtonStyle}
         >
-          {voiceCopy.controls.deafenedOff}
+          {voiceCopy.controls.playbackUnlock}
         </button>
       )}
     </>
@@ -289,10 +345,13 @@ function VoiceAudioSink({
       return
     }
 
-    const stream = audio.srcObject
+    const playbackStream = audio.srcObject
+    const sourceTrackState = resolveVoiceAudioTrackPlaybackState(
+      stream.getAudioTracks(),
+    )
     if (
-      !(stream instanceof MediaStream) ||
-      !hasPlayableAudioTrack(stream)
+      !(playbackStream instanceof MediaStream) ||
+      !canStartVoiceAudioPlayback(sourceTrackState)
     ) {
       onPlaybackStateChange(participantId, 'silent')
       return
@@ -317,7 +376,13 @@ function VoiceAudioSink({
         return
       }
 
-      onPlaybackStateChange(participantId, 'playing')
+      const settledTrackState = resolveVoiceAudioTrackPlaybackState(
+        stream.getAudioTracks(),
+      )
+      onPlaybackStateChange(
+        participantId,
+        settledTrackState === 'available' ? 'playing' : 'silent',
+      )
       const spatialTelemetry = spatialAudioPathRef.current?.getTelemetry()
       voiceAudioDebug('play-ok', {
         participantId,
@@ -327,6 +392,7 @@ function VoiceAudioSink({
         spatialMode: spatialTelemetry?.activeMode ?? 'off',
         spatialPosition: spatialTelemetry?.position ?? null,
         spatialContextState: spatialTelemetry?.contextState ?? 'not-required',
+        sourceTrackState: settledTrackState,
       })
     } catch {
       if (
@@ -343,6 +409,7 @@ function VoiceAudioSink({
     onPlaybackStateChange,
     participantId,
     spatialAudioEngine,
+    stream,
   ])
 
   useEffect(() => {
@@ -489,8 +556,10 @@ function VoiceAudioSink({
 
     function updateTrackState() {
       const tracks = stream.getAudioTracks()
+      const trackPlaybackState = resolveVoiceAudioTrackPlaybackState(tracks)
       voiceAudioDebug('track-state', {
         participantId,
+        playbackState: trackPlaybackState,
         tracks: tracks.map((track) => ({
           id: track.id,
           enabled: track.enabled,
@@ -499,12 +568,24 @@ function VoiceAudioSink({
         })),
       })
 
-      if (!hasPlayableAudioTrack(stream)) {
+      if (!canStartVoiceAudioPlayback(trackPlaybackState)) {
         playbackGenerationRef.current += 1
         onPlaybackStateChange(participantId, 'silent')
         return
       }
 
+      if (trackPlaybackState === 'pending') {
+        onPlaybackStateChange(participantId, 'silent')
+      }
+      void playAudio()
+    }
+
+    function retryPlayback(event: Event) {
+      voiceAudioDebug('media-ready', {
+        participantId,
+        event: event.type,
+        readyState: (event.currentTarget as HTMLAudioElement).readyState,
+      })
       void playAudio()
     }
 
@@ -514,6 +595,8 @@ function VoiceAudioSink({
       track.addEventListener('unmute', updateTrackState)
       track.addEventListener('ended', updateTrackState)
     })
+    audio.addEventListener('loadedmetadata', retryPlayback)
+    audio.addEventListener('canplay', retryPlayback)
     updateTrackState()
 
     return () => {
@@ -523,6 +606,8 @@ function VoiceAudioSink({
         track.removeEventListener('unmute', updateTrackState)
         track.removeEventListener('ended', updateTrackState)
       })
+      audio.removeEventListener('loadedmetadata', retryPlayback)
+      audio.removeEventListener('canplay', retryPlayback)
       if (audio.srcObject === playbackStream) {
         audio.pause()
         audio.srcObject = null
@@ -562,13 +647,6 @@ const defaultVoiceUserAudioSettings: VoiceUserAudioSettings = {
   volume: 1,
   isMuted: false,
   isVideoHidden: false,
-}
-
-function hasPlayableAudioTrack(stream: MediaStream) {
-  const tracks = stream.getAudioTracks()
-  return tracks.some(
-    (track) => track.readyState === 'live' && !track.muted,
-  )
 }
 
 function voiceAudioDebug(event: string, details?: unknown) {

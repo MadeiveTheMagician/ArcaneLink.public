@@ -94,6 +94,13 @@ namespace ArcaneLink.Middleware
                         .ToArray());
             }
 
+            if (exception is EmailNotConfirmedException)
+            {
+                return new ErrorResponse(
+                    message,
+                    [new ErrorDetail("email_not_confirmed", message)]);
+            }
+
             return new ErrorResponse(message);
         }
 
@@ -104,6 +111,8 @@ namespace ArcaneLink.Middleware
                 LoginAlreadyExistsException => StatusCodes.Status409Conflict,
                 EmailAlreadyExistsException => StatusCodes.Status409Conflict,
                 UserWasBannedException => StatusCodes.Status403Forbidden,
+                EmailNotConfirmedException => StatusCodes.Status403Forbidden,
+                InvalidCurrentPasswordException => StatusCodes.Status400BadRequest,
                 DirectMessagePrivacyDeniedException => StatusCodes.Status403Forbidden,
                 LoginSystemException => StatusCodes.Status401Unauthorized,
                 AuthSystemException => StatusCodes.Status401Unauthorized,

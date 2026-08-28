@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { apiJson } from '../../../../shared/api/api'
+import { apiJson, apiNoContent } from '../../../../shared/api/api'
 import type {
   ServerInviteResponse,
   SpaceMessageResponse,
@@ -179,6 +179,21 @@ export function useWebNotifications({
   const resumeNotifications = useCallback(() => {
     timerSchedulerRef.current?.resume()
   }, [])
+
+  const markStoredNotificationRead = useCallback(
+    async (notificationId: string) => {
+      try {
+        await apiNoContent(`/api/notifications/${notificationId}/read`, {
+          accessToken,
+          method: 'POST',
+        })
+      } catch {
+        // Keep navigation responsive. The unread record remains available in
+        // the notification center if the acknowledgement cannot be persisted.
+      }
+    },
+    [accessToken],
+  )
 
   useEffect(
     () => () => {
@@ -466,6 +481,7 @@ export function useWebNotifications({
     notifications,
     closingNotificationIds,
     dismissNotification,
+    markStoredNotificationRead,
     placement: preferences.placement,
     pauseNotifications,
     resumeNotifications,

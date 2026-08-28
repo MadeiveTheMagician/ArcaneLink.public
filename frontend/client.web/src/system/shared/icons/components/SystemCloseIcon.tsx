@@ -8,8 +8,8 @@ type SystemCloseIconProps = {
 
 const closeIconSizes: Record<NonNullable<SystemCloseIconProps['size']>, number> = {
   small: 16,
-  medium: 32,
-  large: 64,
+  medium: 22,
+  large: 38,
 }
 
 export function SystemCloseIcon({
@@ -21,7 +21,7 @@ export function SystemCloseIcon({
       className={`${styles.icon} ${styles[size]} ${className}`}
       name="close"
       size={closeIconSizes[size]}
-      glow
+      monochrome
     />
   )
 }

@@ -1,21 +1,12 @@
 import type { ServerMemberResponse } from '../../../shared/types'
-import type {
-  ServerSettingsAccess,
-  ServerSettingsSection,
-} from '../../Server/components/dialogs/ServerDialog'
 import type { ContextMenuItem } from '../../shared/components/context-menu/contextMenuTypes'
 import { serverCopy } from '../../shared/copy/server.ru'
 
 type BuildServerContextMenuItemsOptions = {
   membership: ServerMemberResponse | null
   currentUserId: string
-  onOpenServerSettings: (
-    membership: ServerMemberResponse,
-    section: ServerSettingsSection,
-    access: ServerSettingsAccess,
-  ) => void
-  canManageServerProfile?: boolean
-  canManageServerSettings?: boolean
+  onOpenServerSettings: (membership: ServerMemberResponse) => void
+  canOpenFullServerSettings?: boolean
   onLeaveServer: () => Promise<void> | void
   onCopyServerId?: (serverId: string) => void
 }
@@ -24,8 +15,7 @@ export function buildServerContextMenuItems({
   membership,
   currentUserId,
   onOpenServerSettings,
-  canManageServerProfile = false,
-  canManageServerSettings = false,
+  canOpenFullServerSettings = false,
   onLeaveServer,
   onCopyServerId = (serverId) => {
     void navigator.clipboard?.writeText(serverId)
@@ -37,13 +27,7 @@ export function buildServerContextMenuItems({
 
   const copyServerId = () => onCopyServerId(membership.server.id)
   const isOwner = membership.server.ownerUserId === currentUserId
-  const settingsAccess: ServerSettingsAccess = {
-    canManageProfile: isOwner || canManageServerProfile,
-    canManageSettings: isOwner || canManageServerSettings,
-    canDelete: isOwner,
-  }
-  const canOpenServerSettings =
-    settingsAccess.canManageProfile || settingsAccess.canManageSettings
+  const canOpenServerSettings = isOwner || canOpenFullServerSettings
 
   if (!canOpenServerSettings) {
     return [
@@ -69,24 +53,7 @@ export function buildServerContextMenuItems({
       type: 'item',
       label: serverCopy.context.serverSettings,
       icon: 'settings',
-      onSelect: () => onOpenServerSettings(membership, 'all', settingsAccess),
-      submenu: [
-        {
-          type: 'item',
-          label: serverCopy.context.editServer,
-          icon: 'edit',
-          onSelect: () =>
-            onOpenServerSettings(membership, 'edit', settingsAccess),
-        },
-        ...(isOwner ? [{
-          type: 'item' as const,
-          label: serverCopy.context.deleteServer,
-          icon: 'trash' as const,
-          danger: true,
-          onSelect: () =>
-            onOpenServerSettings(membership, 'delete', settingsAccess),
-        }] : []),
-      ],
+      onSelect: () => onOpenServerSettings(membership),
     },
     {
       type: 'item',
@@ -94,19 +61,8 @@ export function buildServerContextMenuItems({
       icon: 'copy',
       onSelect: copyServerId,
     },
-    ...(isOwner
-      ? ([
-          { type: 'separator' },
-          {
-            type: 'item',
-            label: serverCopy.context.deleteServer,
-            icon: 'trash',
-            danger: true,
-            onSelect: () =>
-              onOpenServerSettings(membership, 'delete', settingsAccess),
-          },
-        ] satisfies ContextMenuItem[])
-      : [
+    ...(!isOwner
+      ? [
           { type: 'separator' as const },
           {
             type: 'item' as const,
@@ -115,6 +71,7 @@ export function buildServerContextMenuItems({
             danger: true,
             onSelect: () => void onLeaveServer(),
           },
-        ]),
+        ]
+      : []),
   ]
 }

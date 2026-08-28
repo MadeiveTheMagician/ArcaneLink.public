@@ -4,6 +4,7 @@ export type ContextMenuIcon =
   | 'call'
   | 'copy'
   | 'edit'
+  | 'folder'
   | 'friend'
   | 'report'
   | 'invite'

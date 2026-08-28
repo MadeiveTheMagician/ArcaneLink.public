@@ -1,0 +1,124 @@
+.accountForm {
+  gap: 14px;
+}
+
+.backButton {
+  justify-self: center;
+  border: 0;
+  padding: 5px 8px;
+  color: var(--auth-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.backButton:hover,
+.backButton:focus-visible {
+  color: #fff;
+}
+
+.flowMessage {
+  margin: 0;
+  border-left: 2px solid var(--theme-accent-light);
+  padding: 9px 12px;
+  color: var(--auth-muted);
+  background: color-mix(in srgb, var(--theme-accent), transparent 92%);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.flowMessage[data-status='success'] {
+  border-left-color: var(--color-success);
+  color: #8fffc1;
+}
+
+.flowMessage[data-status='error'] {
+  border-left-color: #ff7182;
+  color: #ff9ca7;
+}
+
+.passwordRequirements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin: 0;
+  padding: 4px 2px;
+  color: #ff9ca7;
+  list-style: none;
+  font-size: 10px;
+}
+
+.passwordRequirements li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.passwordRequirements li[data-met='true'] {
+  color: #8fffc1;
+}
+
+.actionState {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 28px 0;
+  text-align: center;
+}
+
+.actionState p {
+  max-width: 430px;
+  margin: 0;
+  color: var(--auth-muted);
+  line-height: 1.55;
+}
+
+.actionState button {
+  width: min(100%, 360px);
+}
+
+.statusMark {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 50%;
+  color: var(--theme-accent-light);
+  background: var(--theme-hover-bg);
+}
+
+.statusMark[data-status='loading'] svg {
+  animation: account-status-spin 1s linear infinite;
+}
+
+.statusMark[data-status='success'] {
+  border-color: color-mix(in srgb, var(--color-success), transparent 30%);
+  color: var(--color-success);
+}
+
+.statusMark[data-status='error'] {
+  border-color: rgba(255, 113, 130, 0.68);
+  color: #ff7182;
+}
+
+@keyframes account-status-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 620px) {
+  .accountForm {
+    height: 100%;
+  }
+
+  .passwordRequirements {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusMark[data-status='loading'] svg {
+    animation: none;
+  }
+}

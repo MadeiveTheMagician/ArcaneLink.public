@@ -481,10 +481,10 @@ fi
 
 case "$TURN_MODE" in
   auto)
-    if [ -f "$TURN_ENV_FILE" ]; then
+    if [ "${app_environment,,}" = production ]; then
+      [ -f "$TURN_ENV_FILE" ] || \
+        die "Production deployment requires $TURN_ENV_FILE and the bundled TURN service"
       TURN_MODE=on
-    elif [ "${app_environment,,}" = production ]; then
-      die "Production deployment requires $TURN_ENV_FILE and the bundled TURN service"
     else
       TURN_MODE=off
     fi

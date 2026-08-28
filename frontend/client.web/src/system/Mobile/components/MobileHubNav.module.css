@@ -1,4 +1,4 @@
-﻿.nav {
+.nav {
   display: none;
 }
 
@@ -20,10 +20,10 @@
     padding: 5px;
     background:
       radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--theme-accent), transparent 92%), transparent 62%),
-      linear-gradient(180deg, #0d1635 0%, #071024 100%);
+      linear-gradient(180deg, var(--theme-frame-bg-strong), var(--theme-control-bg-strong));
     box-shadow:
       0 12px 28px rgba(0, 0, 0, 0.34),
-      0 0 14px rgba(91, 68, 205, 0.16),
+      0 0 14px var(--theme-glow),
       inset 0 1px 0 rgba(255, 255, 255, 0.035);
     backdrop-filter: none;
     transform: translateY(0);

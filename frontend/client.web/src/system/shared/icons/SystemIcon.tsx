@@ -8,6 +8,7 @@ export type { SystemIconName, SystemIconSize } from './SystemIcon.types'
 type SystemIconProps = {
   className?: string
   glow?: boolean
+  monochrome?: boolean
   name: SystemIconName
   size?: SystemIconSize
   title?: string
@@ -27,6 +28,7 @@ function getIconSize(size: SystemIconSize) {
 export function SystemIcon({
   className = '',
   glow = false,
+  monochrome = false,
   name,
   size = 'medium',
   title,
@@ -40,8 +42,10 @@ export function SystemIcon({
   const isCompact = pixelSize <= 24
   const style = {
     '--system-icon-size': `${pixelSize}px`,
-    '--system-icon-fill': `url(#${fillId})`,
-    '--system-icon-fill-box': `url(#${boxFillId})`,
+    '--system-icon-fill': monochrome ? 'currentColor' : `url(#${fillId})`,
+    '--system-icon-fill-box': monochrome
+      ? 'currentColor'
+      : `url(#${boxFillId})`,
     '--system-icon-glow': `url(#${glowId})`,
   } as CSSProperties
 
@@ -64,20 +68,23 @@ export function SystemIcon({
             y2="21"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stopColor="#f7efff" />
-            <stop offset=".26" stopColor="#d9baff" />
-            <stop offset=".62" stopColor="#a978ef" />
-            <stop offset="1" stopColor="#7650cf" />
+            <stop stopColor="var(--theme-icon-gradient-start)" />
+            <stop offset=".26" stopColor="var(--theme-icon-gradient-middle)" />
+            <stop offset=".62" stopColor="var(--theme-accent-light)" />
+            <stop offset="1" stopColor="var(--theme-icon-gradient-end)" />
           </linearGradient>
           <linearGradient id={boxFillId} x1="0" y1="0" x2="1" y2="1">
-            <stop stopColor="#f7efff" />
-            <stop offset=".26" stopColor="#d9baff" />
-            <stop offset=".62" stopColor="#a978ef" />
-            <stop offset="1" stopColor="#7650cf" />
+            <stop stopColor="var(--theme-icon-gradient-start)" />
+            <stop offset=".26" stopColor="var(--theme-icon-gradient-middle)" />
+            <stop offset=".62" stopColor="var(--theme-accent-light)" />
+            <stop offset="1" stopColor="var(--theme-icon-gradient-end)" />
           </linearGradient>
           <filter id={glowId} x="-45%" y="-45%" width="190%" height="190%">
             <feGaussianBlur stdDeviation=".34" result="blur" />
-            <feFlood floodColor="#d9a8ff" floodOpacity=".58" />
+            <feFlood
+              floodColor="var(--theme-icon-glow-color)"
+              floodOpacity=".58"
+            />
             <feComposite in2="blur" operator="in" />
             <feMerge>
               <feMergeNode />

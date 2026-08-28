@@ -640,7 +640,7 @@ function DeviceSelect({
         id={id}
         value={value}
         disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
+        onValueChange={onChange}
       >
         <option value="default">
           {settingsCopy.voice.systemDefaultDevice}

@@ -1,4 +1,4 @@
-﻿.governancePanel {
+.governancePanel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
@@ -9,7 +9,7 @@
   padding: 16px;
   color: var(--color-text);
   background:
-    linear-gradient(180deg, rgba(9, 17, 41, 0.74), rgba(4, 9, 22, 0.82)),
+    linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong)),
     var(--profile-surface-control);
 }
 
@@ -57,7 +57,7 @@
   border: 1px solid var(--profile-border-control);
   border-radius: 8px;
   padding: 10px;
-  background: rgba(4, 9, 24, 0.64);
+  background: var(--theme-control-bg);
 }
 
 .governanceList small {
@@ -76,7 +76,7 @@
   overflow: hidden;
   border: 1px solid var(--profile-border-accent);
   border-radius: 11px;
-  color: var(--theme-accent-light);
+  color: var(--theme-accent-contrast);
   background: var(--theme-surface-accent);
   font-size: 15px;
   font-weight: 900;

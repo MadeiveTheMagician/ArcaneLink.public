@@ -14,4 +14,19 @@ test.describe('voice peer recovery policy', () => {
     expect(resolveVoicePeerRecoveryDelayMs('connecting', false)).toBeNull()
     expect(resolveVoicePeerRecoveryDelayMs('closed', true)).toBeNull()
   })
+
+  test('recovers mobile route changes reported only by ICE state', () => {
+    expect(
+      resolveVoicePeerRecoveryDelayMs('connected', false, 'disconnected'),
+    ).toBe(8_000)
+    expect(
+      resolveVoicePeerRecoveryDelayMs('connected', false, 'failed'),
+    ).toBe(0)
+    expect(
+      resolveVoicePeerRecoveryDelayMs('connected', false, 'connected'),
+    ).toBeNull()
+    expect(
+      resolveVoicePeerRecoveryDelayMs('connected', true, 'completed'),
+    ).toBeNull()
+  })
 })

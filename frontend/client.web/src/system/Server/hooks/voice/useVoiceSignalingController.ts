@@ -5,6 +5,10 @@ import type {
   VoiceSignalPayload,
 } from './voiceChannelTypes'
 import { normalizeUserId, shouldCreateOffer } from './voiceChannelUtils'
+import {
+  flushVoiceLocalOffer,
+  isVoicePeerMakingLocalOffer,
+} from './voiceLocalOfferGuard'
 
 type UseVoiceSignalingControllerOptions = {
   getChannel: () => ConnectedVoiceChannel | null
@@ -126,22 +130,28 @@ export function useVoiceSignalingController({
     if (signal.kind === 'offer' || signal.kind === 'renegotiate-offer') {
       const offer = JSON.parse(signal.payload) as RTCSessionDescriptionInit
       const localParticipantId = getLocalParticipantId()
-      const hasOfferCollision = peer.signalingState !== 'stable'
+      const isMakingLocalOffer = isVoicePeerMakingLocalOffer(peer)
+      const hasOfferCollision =
+        isMakingLocalOffer || peer.signalingState !== 'stable'
 
       if (hasOfferCollision) {
         if (localParticipantId && shouldCreateOffer(localParticipantId, fromParticipantId)) {
           voiceDebug('offer:collision-ignored', {
             fromParticipantId,
+            isMakingLocalOffer,
             signalingState: peer.signalingState,
           })
           return
         }
 
-        await peer.setLocalDescription({ type: 'rollback' })
-        voiceDebug('offer:collision-rollback', {
-          fromParticipantId,
-          signalingState: peer.signalingState,
-        })
+        if (peer.signalingState !== 'stable') {
+          await peer.setLocalDescription({ type: 'rollback' })
+          voiceDebug('offer:collision-rollback', {
+            fromParticipantId,
+            isMakingLocalOffer,
+            signalingState: peer.signalingState,
+          })
+        }
       }
 
       await peer.setRemoteDescription(offer)
@@ -165,6 +175,13 @@ export function useVoiceSignalingController({
       }
 
       await peer.setLocalDescription(answer)
+      if (
+        !isCurrentVoiceOperation(operationId) ||
+        getChannel()?.spaceId !== signal.spaceId
+      ) {
+        closePeerIfCurrent(fromParticipantId, peer)
+        return
+      }
       voiceDebug('answer:created', {
         targetParticipantId: fromParticipantId,
         signalingState: peer.signalingState,
@@ -176,6 +193,7 @@ export function useVoiceSignalingController({
         signal.kind === 'renegotiate-offer' ? 'renegotiate-answer' : 'answer',
         answer,
       )
+      flushVoiceLocalOffer(peer)
       return
     }
 
@@ -197,6 +215,7 @@ export function useVoiceSignalingController({
           signalingState: peer.signalingState,
         })
         updatePeerStatus(fromParticipantId)
+        flushVoiceLocalOffer(peer)
       }
       return
     }

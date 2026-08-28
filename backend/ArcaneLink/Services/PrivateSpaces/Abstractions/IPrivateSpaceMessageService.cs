@@ -77,5 +77,11 @@ namespace ArcaneLink.Services.PrivateSpaces.Abstractions
             Guid spaceId,
             Guid messageId,
             CancellationToken cancellationToken = default);
+
+        Task<bool> UnpinMessageAsync(
+            Guid currentUserId,
+            Guid spaceId,
+            Guid messageId,
+            CancellationToken cancellationToken = default);
     }
 }

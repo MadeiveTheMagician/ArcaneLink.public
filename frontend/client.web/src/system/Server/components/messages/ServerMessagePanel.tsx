@@ -38,6 +38,10 @@ import {
   type MessageComposerMentionInsertionRequest,
 } from './MessageComposer'
 import type { MessageAttachmentDraft } from './messageAttachmentDraft'
+import {
+  getAdjacentMessagePreviewAsset,
+  type MessageAssetPreviewDirection,
+} from './messageAssetPreviewModel'
 import { getScrollToBottomPlacement } from './messageAttachmentLayoutModel'
 import {
   canDeleteMessage,
@@ -60,6 +64,12 @@ import { ServerMessageTimeline } from './ServerMessageTimeline'
 import { useMessageAssetDrop } from './useMessageAssetDrop'
 import { useMessageFeedNavigation } from './useMessageFeedNavigation'
 import { useMessageReadMarker } from './useMessageReadMarker'
+import type { OlderMessageLoadResult } from '../../hooks/messages/messagePaginationModel'
+import {
+  getFirstUnreadNavigationTarget,
+  getLatestUnreadMessageId,
+  shouldHoldInitialUnreadPosition,
+} from './messageUnreadNavigationModel'
 import {
   getAttachmentDownloadWarning,
   triggerAssetDownload,
@@ -105,6 +115,7 @@ export type ServerMessagePanelProps = {
   currentUserId: string
   canManageMessages: boolean
   canSendMessages: boolean
+  autoFocusComposer?: boolean
   mentionUsers: readonly MentionUserCandidate[]
   mentionRoles: readonly MentionRoleCandidate[]
   mentionInsertionRequest?: MessageComposerMentionInsertionRequest | null
@@ -125,6 +136,7 @@ export type ServerMessagePanelProps = {
     files: File[]
   } | null
   messages: SpaceMessageResponse[]
+  unreadCount?: number
   pinnedMessages: SpaceMessageResponse[]
   isLoading: boolean
   isLoadingOlderMessages?: boolean
@@ -147,6 +159,7 @@ export type ServerMessagePanelProps = {
     scope?: PrivateMessageDeletionScope,
   ) => Promise<boolean>
   onPinMessage: (messageId: string) => Promise<SpaceMessageResponse | null>
+  onUnpinMessage: (messageId: string) => Promise<boolean>
   onSetMessageReaction: (
     messageId: string,
     emojiCode: string,
@@ -155,7 +168,11 @@ export type ServerMessagePanelProps = {
   onMarkRead?: (
     throughMessageId: string,
   ) => Promise<SpaceReadStateResponse | null>
-  onLoadOlderMessages?: () => Promise<boolean>
+  onLoadOlderMessages?: () => Promise<OlderMessageLoadResult>
+  onLoadMessageWindow?: (
+    messageId: string,
+    createdAt: string,
+  ) => Promise<boolean>
   onPendingDroppedFilesConsumed?: (id: string) => void
   focusedMessageId?: string | null
   isReadingHistory?: boolean
@@ -177,6 +194,7 @@ export function ServerMessagePanel({
   currentUserId,
   canManageMessages,
   canSendMessages,
+  autoFocusComposer = false,
   mentionUsers,
   mentionRoles,
   mentionInsertionRequest,
@@ -191,6 +209,7 @@ export function ServerMessagePanel({
   privateMessageTrash,
   pendingDroppedFiles,
   messages,
+  unreadCount = 0,
   pinnedMessages,
   isLoading,
   isLoadingPinnedMessages,
@@ -202,9 +221,11 @@ export function ServerMessagePanel({
   onUpdateMessage,
   onDeleteMessage,
   onPinMessage,
+  onUnpinMessage,
   onSetMessageReaction,
   onMarkRead,
   onLoadOlderMessages,
+  onLoadMessageWindow,
   onPendingDroppedFilesConsumed,
   focusedMessageId,
   isReadingHistory = false,
@@ -238,7 +259,13 @@ export function ServerMessagePanel({
     useState<DownloadWarningState | null>(null)
   const [isPinnedPanelOpen, setIsPinnedPanelOpen] = useState(false)
   const [isTrashPanelOpen, setIsTrashPanelOpen] = useState(false)
+  const [handledUnreadTarget, setHandledUnreadTarget] = useState<{
+    feedKey: string
+    messageId: string
+    unreadCount: number
+  } | null>(null)
   const [isPreparingSubmit, setIsPreparingSubmit] = useState(false)
+  const [composerFocusRequestId, setComposerFocusRequestId] = useState(0)
   const [trashNow, setTrashNow] = useState(() => Date.now())
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const trashToggleRef = useRef<HTMLButtonElement | null>(null)
@@ -268,6 +295,44 @@ export function ServerMessagePanel({
     () => new Set(displayedMessages.map((message) => message.id)),
     [displayedMessages],
   )
+  const [unreadBoundaryLoadFailedFeedKey, setUnreadBoundaryLoadFailedFeedKey] =
+    useState<string | null>(null)
+  const unreadBoundaryRequestKeyRef = useRef<string | null>(null)
+  const messageJumpRequestVersionRef = useRef(0)
+  const pendingMessageJumpRef = useRef<{
+    feedKey: string
+    messageId: string
+    requestVersion: number
+  } | null>(null)
+  const hasUnreadBoundaryLoadFailure =
+    unreadBoundaryLoadFailedFeedKey === feedKey
+  const firstUnreadNavigationTarget = useMemo(
+    () =>
+      getFirstUnreadNavigationTarget(
+        displayedMessages,
+        currentUserId,
+        unreadCount,
+        hasOlderMessages,
+      ),
+    [
+      currentUserId,
+      displayedMessages,
+      hasOlderMessages,
+      unreadCount,
+    ],
+  )
+  const firstUnreadMessageId = firstUnreadNavigationTarget.messageId
+  const latestUnreadMessageId = useMemo(
+    () => getLatestUnreadMessageId(displayedMessages, currentUserId, unreadCount),
+    [currentUserId, displayedMessages, unreadCount],
+  )
+  const shouldPrepareInitialUnreadPosition = shouldHoldInitialUnreadPosition({
+    hasFocusedMessage: Boolean(focusedMessageId),
+    unreadCount,
+    isLoading,
+    isLoadingOlderMessages,
+    needsOlderMessages: firstUnreadNavigationTarget.needsOlderMessages,
+  })
   const activeTrashMessages = useMemo(
     () =>
       privateTrashMessages?.filter((deletion) =>
@@ -320,6 +385,62 @@ export function ServerMessagePanel({
   }, [activeTrashMessages.length, isTrashPanelOpen])
 
   useEffect(() => {
+    unreadBoundaryRequestKeyRef.current = null
+    setUnreadBoundaryLoadFailedFeedKey(null)
+  }, [feedKey])
+
+  useEffect(() => {
+    if (
+      focusedMessageId ||
+      isLoading ||
+      isLoadingOlderMessages ||
+      hasUnreadBoundaryLoadFailure ||
+      !firstUnreadNavigationTarget.needsOlderMessages ||
+      !onLoadOlderMessages
+    ) {
+      return undefined
+    }
+
+    const requestKey = `${feedKey}:${displayedMessages[0]?.id ?? 'empty'}:${unreadCount}`
+    if (unreadBoundaryRequestKeyRef.current === requestKey) {
+      return undefined
+    }
+
+    unreadBoundaryRequestKeyRef.current = requestKey
+    void onLoadOlderMessages()
+      .then((result) => {
+        if (
+          result === 'failed' &&
+          unreadBoundaryRequestKeyRef.current === requestKey
+        ) {
+          setUnreadBoundaryLoadFailedFeedKey(feedKey)
+        }
+      })
+      .catch(() => {
+        if (unreadBoundaryRequestKeyRef.current === requestKey) {
+          setUnreadBoundaryLoadFailedFeedKey(feedKey)
+        }
+      })
+  }, [
+    displayedMessages,
+    feedKey,
+    firstUnreadNavigationTarget.needsOlderMessages,
+    focusedMessageId,
+    hasUnreadBoundaryLoadFailure,
+    isLoading,
+    isLoadingOlderMessages,
+    onLoadOlderMessages,
+    unreadCount,
+  ])
+
+  const retryUnreadBoundaryLoad = useCallback(() => {
+    unreadBoundaryRequestKeyRef.current = null
+    setUnreadBoundaryLoadFailedFeedKey((current) =>
+      current === feedKey ? null : current,
+    )
+  }, [feedKey])
+
+  useEffect(() => {
     if (
       editingMessage &&
       !displayedMessageIds.has(editingMessage.id)
@@ -343,6 +464,7 @@ export function ServerMessagePanel({
   const {
     feedRef,
     canScrollToBottom,
+    hasPositionedCurrentFeed,
     isNearBottom,
     highlightedMessageId,
     jumpToMessage,
@@ -353,16 +475,97 @@ export function ServerMessagePanel({
     feedKey,
     messageCount: displayedMessages.length,
     focusedMessageId,
+    initialMessageId: focusedMessageId ? null : firstUnreadMessageId,
+    isInitialPositionPending: shouldPrepareInitialUnreadPosition,
     hasOlderMessages,
     isLoadingOlderMessages,
     onLoadOlderMessages,
   })
+  const requestJumpToMessage = useCallback((
+    messageId: string,
+    createdAt?: string | null,
+  ) => {
+    if (displayedMessageIds.has(messageId)) {
+      messageJumpRequestVersionRef.current += 1
+      pendingMessageJumpRef.current = null
+      jumpToMessage(messageId)
+      return
+    }
+
+    if (!createdAt || !onLoadMessageWindow) {
+      return
+    }
+
+    const requestVersion = messageJumpRequestVersionRef.current + 1
+    messageJumpRequestVersionRef.current = requestVersion
+    pendingMessageJumpRef.current = {
+      feedKey,
+      messageId,
+      requestVersion,
+    }
+
+    void onLoadMessageWindow(messageId, createdAt).then((didLoad) => {
+      const pending = pendingMessageJumpRef.current
+      if (
+        pending?.requestVersion !== requestVersion ||
+        pending.feedKey !== feedKey
+      ) {
+        return
+      }
+
+      if (!didLoad) {
+        pendingMessageJumpRef.current = null
+      }
+    })
+  }, [
+    displayedMessageIds,
+    feedKey,
+    jumpToMessage,
+    onLoadMessageWindow,
+  ])
+
+  useEffect(() => {
+    const pending = pendingMessageJumpRef.current
+    if (
+      !pending ||
+      pending.feedKey !== feedKey ||
+      !displayedMessageIds.has(pending.messageId)
+    ) {
+      return undefined
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      const latestPending = pendingMessageJumpRef.current
+      if (
+        latestPending?.requestVersion !== pending.requestVersion ||
+        latestPending.feedKey !== feedKey
+      ) {
+        return
+      }
+
+      pendingMessageJumpRef.current = null
+      jumpToMessage(pending.messageId)
+    })
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [displayedMessageIds, feedKey, jumpToMessage])
+
+  useEffect(() => {
+    messageJumpRequestVersionRef.current += 1
+    pendingMessageJumpRef.current = null
+  }, [feedKey])
+  const handledUnreadMessageId =
+    unreadCount > 0 &&
+    handledUnreadTarget?.feedKey === feedKey &&
+    handledUnreadTarget.unreadCount === unreadCount
+      ? handledUnreadTarget.messageId
+      : null
   useMessageReadMarker({
     feedKey,
     messages: displayedMessages,
     isLoading,
     isNearBottom,
-    isReadingHistory: isReadingHistory || Boolean(focusedMessageId),
+    isReadingHistory:
+      isReadingHistory || Boolean(focusedMessageId) || !hasPositionedCurrentFeed,
     onMarkRead,
   })
   const {
@@ -458,6 +661,7 @@ export function ServerMessagePanel({
               setEditingMessage(null)
             }
           }
+          setComposerFocusRequestId((current) => current + 1)
         }
 
         return
@@ -489,6 +693,7 @@ export function ServerMessagePanel({
         }
         stickToBottom()
         scrollMessagesToBottom('smooth')
+        setComposerFocusRequestId((current) => current + 1)
       }
     } finally {
       isPreparingSubmitRef.current = false
@@ -562,10 +767,48 @@ export function ServerMessagePanel({
     setPreviewAsset({ asset, message })
   }, [])
 
+  const navigateMessagePreview = useCallback((
+    direction: MessageAssetPreviewDirection,
+  ) => {
+    setPreviewAsset((current) => {
+      if (!current) return current
+
+      const adjacentAsset = getAdjacentMessagePreviewAsset(
+        current.message.assets,
+        current.asset.assetId,
+        direction,
+      )
+      return adjacentAsset
+        ? { ...current, asset: adjacentAsset }
+        : current
+    })
+  }, [])
+
   const scrollTimelineToBottom = useCallback(() => {
+    if (
+      latestUnreadMessageId &&
+      handledUnreadMessageId !== latestUnreadMessageId
+    ) {
+      setHandledUnreadTarget({
+        feedKey,
+        messageId: latestUnreadMessageId,
+        unreadCount,
+      })
+      jumpToMessage(latestUnreadMessageId)
+      return
+    }
+
     stickToBottom()
     scrollMessagesToBottom('smooth')
-  }, [scrollMessagesToBottom, stickToBottom])
+  }, [
+    handledUnreadMessageId,
+    feedKey,
+    jumpToMessage,
+    latestUnreadMessageId,
+    scrollMessagesToBottom,
+    stickToBottom,
+    unreadCount,
+  ])
 
   function startEditingMessage(message: SpaceMessageResponse) {
     if (!canEditMessage(message, currentUserId, canSendMessages)) {
@@ -611,6 +854,9 @@ export function ServerMessagePanel({
     const privateDeletionScopes = privateMessageTrash
       ? getPrivateMessageDeletionScopes(message, currentUserId)
       : []
+    const isPinned = displayedPinnedMessages.some(
+      (pinnedMessage) => pinnedMessage.id === message.id,
+    )
 
     const items: ContextMenuItem[] = [
       {
@@ -674,10 +920,16 @@ export function ServerMessagePanel({
       },
       {
         type: 'item',
-        label: serverCopy.messages.contextPin,
+        label: isPinned
+          ? serverCopy.messages.contextUnpin
+          : serverCopy.messages.contextPin,
         icon: 'space',
         disabled: isDeleted || !canPinMessages,
-        onSelect: () => void onPinMessage(message.id),
+        onSelect: () => void (
+          isPinned
+            ? onUnpinMessage(message.id)
+            : onPinMessage(message.id)
+        ),
       },
     )
 
@@ -789,7 +1041,13 @@ export function ServerMessagePanel({
           canScrollToBottom={canScrollToBottom}
           onScroll={updateScrollState}
           onScrollToBottom={scrollTimelineToBottom}
-          onJumpToMessage={jumpToMessage}
+          scrollToBottomLabel={
+            latestUnreadMessageId &&
+            handledUnreadMessageId !== latestUnreadMessageId
+              ? serverCopy.messages.scrollLatestUnread
+              : serverCopy.messages.scrollBottom
+          }
+          onJumpToMessage={requestJumpToMessage}
           onOpenPreview={openMessagePreview}
           onRequestDownload={requestAssetDownload}
           onContextMenu={openMessageContextMenu}
@@ -830,6 +1088,8 @@ export function ServerMessagePanel({
           hasComposerContent={hasComposerContent}
           isSending={isComposerBusy}
           canSendMessages={canUseComposer}
+          autoFocusOnMount={autoFocusComposer}
+          focusRequestId={composerFocusRequestId}
           replyTarget={replyTarget}
           selectedAttachments={selectedAttachments}
           onAddSelectedFiles={addSelectedFiles}
@@ -841,14 +1101,25 @@ export function ServerMessagePanel({
           onSetDraftMentions={setDraftMentions}
           onSubmitMessage={submitMessage}
         />
-        {error && <p className={styles.textError}>{error}</p>}
+        {(error || hasUnreadBoundaryLoadFailure) && (
+          <div className={styles.messageLoadError} role="status">
+            <p className={styles.textError}>
+              {error ?? serverCopy.messages.loadFailed}
+            </p>
+            {hasUnreadBoundaryLoadFailure && (
+              <button type="button" onClick={retryUnreadBoundaryLoad}>
+                {serverCopy.browser.retry}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <PinnedMessagesPanel
         isOpen={isPinnedPanelOpen}
         isLoading={isLoadingPinnedMessages}
         messages={displayedPinnedMessages}
-        onJumpToMessage={jumpToMessage}
+        onJumpToMessage={requestJumpToMessage}
         onRequestDownload={requestAssetDownload}
         onClose={() => setIsPinnedPanelOpen(false)}
       />
@@ -889,6 +1160,7 @@ export function ServerMessagePanel({
         }
         onCloseMessageContextMenu={() => setMessageContextMenu(null)}
         onClosePreview={() => setPreviewAsset(null)}
+        onNavigatePreview={navigateMessagePreview}
         onCloseDownloadWarning={() => setDownloadWarning(null)}
         onCloseReport={() => setReportRequest(null)}
         onConfirmAssetDownload={confirmAssetDownload}

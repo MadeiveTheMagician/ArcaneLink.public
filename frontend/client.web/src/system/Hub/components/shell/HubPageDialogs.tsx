@@ -116,7 +116,6 @@ export function HubPageDialogs({
     serverForm,
     serverNotice,
     isSavingServer,
-    isServerDeleteSectionOpen,
     setIsServerIconLibraryOpen,
     setServerDialog,
     updateServerForm,
@@ -127,19 +126,15 @@ export function HubPageDialogs({
     cancelServerIconChange,
     confirmServerIconChange,
     submitServerForm,
-    deleteServer,
-    setIsServerDeleteSectionOpen,
   } = serverDialogState
 
   return (
     <Suspense fallback={null}>
       {serverDialog && (
         <ServerDialog
-          dialog={serverDialog}
           form={serverForm}
           notice={serverNotice}
           isSaving={isSavingServer}
-          isDeleteSectionOpen={isServerDeleteSectionOpen}
           iconInputRef={serverIconInputRef}
           onSubmit={submitServerForm}
           onClose={() => setServerDialog(null)}
@@ -147,10 +142,6 @@ export function HubPageDialogs({
           onChooseIconFile={selectServerIconFile}
           onShowIconLibrary={showServerIconLibrary}
           onClearIcon={clearServerIcon}
-          onToggleDeleteSection={() =>
-            setIsServerDeleteSectionOpen((current) => !current)
-          }
-          onDeleteServer={(membership) => void deleteServer(membership)}
         />
       )}
 

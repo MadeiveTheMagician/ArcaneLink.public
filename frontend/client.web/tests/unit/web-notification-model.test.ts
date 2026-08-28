@@ -14,7 +14,7 @@ function notification(
     id: 'notification-id',
     kind: 'mention',
     title: 'Упоминание',
-    body: 'Вас упомянули',
+    body: 'Вас упомянули в #general на сервере «Сервер»',
     detail: 'Текст сообщения',
     actorUserId: 'actor-id',
     actorDisplayName: 'Автор',
@@ -31,6 +31,7 @@ function notification(
     spaceId: 'space-id',
     spaceTitle: 'general',
     messageId: 'message-id',
+    messageCreatedAt: '2026-07-26T09:59:59.000Z',
     inviteId: null,
     createdAt: '2026-07-26T10:00:00.000Z',
     readAt: null,
@@ -43,7 +44,8 @@ test.describe('stored web notification mapping', () => {
     expect(mapStoredWebNotification(notification({}))).toMatchObject({
       id: 'mention:notification-id',
       kind: 'mention',
-      body: 'Автор',
+      title: 'Автор · Упоминание',
+      body: 'Вас упомянули в #general на сервере «Сервер»',
       detail: 'Текст сообщения',
       messageId: 'message-id',
       serverId: 'server-id',
@@ -72,6 +74,25 @@ test.describe('stored web notification mapping', () => {
       ),
     ).toBeNull()
     expect(mapStoredWebNotification(notification({ kind: 'system' }))).toBeNull()
+  })
+
+  test('maps a persistent friend-request record to an actor notification', () => {
+    expect(
+      mapStoredWebNotification(
+        notification({
+          kind: 'friend-request',
+          serverId: null,
+          spaceId: null,
+          messageId: null,
+        }),
+      ),
+    ).toMatchObject({
+      id: 'friend-request:notification-id',
+      storedNotificationId: 'notification-id',
+      kind: 'friend-request',
+      body: 'Вас упомянули в #general на сервере «Сервер»',
+      senderAvatarAssetId: 'avatar-id',
+    })
   })
 
   test('gives mention priority over an ordinary private message', () => {

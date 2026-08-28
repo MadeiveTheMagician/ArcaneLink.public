@@ -1,6 +1,6 @@
 import type { AssetResponse } from '../../../../shared/types'
 import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon'
-import { profileCopy } from '../../../shared/index'
+import { profileCopy, SystemSelect } from '../../../shared/index'
 import dialogStyles from '../../../shared/styles/Dialog.module.css'
 import styles from './AssetLibraryDialog.module.css'
 
@@ -70,14 +70,15 @@ export function AssetLibraryDialog({
 
         <label className={styles.filter}>
           <span>{profileCopy.assets.sort}</span>
-          <select
+          <SystemSelect
             name="assetSort"
+            aria-label={profileCopy.assets.sort}
             value={sort}
-            onChange={(event) => onSortChange(event.target.value as AvatarSort)}
+            onValueChange={(value) => onSortChange(value as AvatarSort)}
           >
             <option value="newest">{profileCopy.assets.sortNewest}</option>
             <option value="oldest">{profileCopy.assets.sortOldest}</option>
-          </select>
+          </SystemSelect>
         </label>
 
         <div

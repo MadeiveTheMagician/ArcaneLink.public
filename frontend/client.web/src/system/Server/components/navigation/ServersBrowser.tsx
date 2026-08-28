@@ -191,8 +191,8 @@ export function ServersBrowser({
               name="serverDirectorySort"
               value={sort}
               aria-label={serverCopy.browser.sortLabel}
-              onChange={(event) =>
-                setSort(event.target.value as ServerDirectorySort)
+              onValueChange={(value) =>
+                setSort(value as ServerDirectorySort)
               }
             >
               <option value="active">{serverCopy.browser.sortActive}</option>

@@ -2,11 +2,12 @@
   position: fixed;
   z-index: 1400;
   right: 24px;
-  bottom: 24px;
+  bottom: var(--notification-stack-bottom, 24px);
   display: grid;
   width: min(390px, calc(100vw - 48px));
   gap: 10px;
   pointer-events: none;
+  transition: bottom 180ms ease;
 }
 
 .bottomLeft {
@@ -27,8 +28,8 @@
   padding: 14px;
   color: var(--color-text);
   background:
-    linear-gradient(110deg, color-mix(in srgb, var(--notification-accent), #0a1022 92%), #0a1022 58%),
-    #0a1022;
+    linear-gradient(110deg, color-mix(in srgb, var(--notification-accent), var(--theme-frame-bg-strong) 92%), var(--theme-frame-bg-strong) 58%),
+    var(--theme-frame-bg-strong);
   box-shadow:
     0 18px 46px color-mix(in srgb, #000, transparent 40%),
     -4px 0 10px color-mix(in srgb, var(--notification-accent), transparent 42%),
@@ -43,11 +44,11 @@
 }
 
 .private-message {
-  --notification-accent: #9b64ff;
+  --notification-accent: var(--theme-accent-light);
 }
 
 .mention {
-  --notification-accent: #c77dff;
+  --notification-accent: var(--theme-accent);
 }
 
 .server-invite {
@@ -75,7 +76,7 @@
 
 .avatar {
   overflow: hidden;
-  background: #080d1d;
+  background: var(--theme-avatar-bg);
 }
 
 .avatar img {

@@ -539,7 +539,7 @@ export function ServerInviteDialog({
                     <SystemSelect
                       name="inviteExpiration"
                       value={expiration}
-                      onChange={(event) => setExpiration(event.target.value)}
+                      onValueChange={setExpiration}
                       disabled={
                         isLoading ||
                         !canInviteMembers ||
@@ -560,7 +560,7 @@ export function ServerInviteDialog({
                     <SystemSelect
                       name="inviteMaxUses"
                       value={maxUses}
-                      onChange={(event) => setMaxUses(event.target.value)}
+                      onValueChange={setMaxUses}
                       disabled={
                         isLoading ||
                         !canInviteMembers ||

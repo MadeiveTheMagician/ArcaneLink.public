@@ -1,11 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
+using ArcaneLink.DataBase._Data;
+using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Messages;
 using ArcaneLink.DataBase.DTOs.Notifications;
 using ArcaneLink.DataBase.DTOs.Spaces;
 using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.Services.Messages;
 using ArcaneLink.Tests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ArcaneLink.Tests.PrivateSpaces;
 
@@ -172,6 +176,15 @@ public sealed class PrivateMessageMentionIntegrationTests
             });
         registerResponse.EnsureSuccessStatusCode();
         var user = (await registerResponse.Content.ReadFromJsonAsync<UserResponse>())!;
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var registeredUser = await db.Users.SingleAsync(x => x.Id == user.Id);
+            registeredUser.StatusId = UserStatusIds.Active;
+            registeredUser.EmailConfirmedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
 
         client.AuthorizeWith(await client.LoginAsync("owner"));
         using var spaceResponse = await client.PostAsJsonAsync(

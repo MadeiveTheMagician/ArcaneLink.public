@@ -7,7 +7,7 @@
   border: 0;
   border-radius: 0;
   padding: 0;
-  color: #eef2ff;
+  color: var(--color-text);
   background: transparent;
   box-shadow: none;
   cursor: pointer;
@@ -45,7 +45,7 @@
 }
 
 .arcane-detached-control-button[data-active="true"] .arcane-detached-control-glyph {
-  filter: drop-shadow(0 0 8px rgba(159, 123, 255, 0.48));
+  filter: drop-shadow(0 0 8px var(--theme-icon-glow-color));
 }
 
 .arcane-detached-control-button[data-danger="true"] .arcane-detached-control-glyph {
@@ -54,8 +54,8 @@
 
 .arcane-detached-control-button:not([data-danger="true"]):hover .arcane-detached-control-glyph {
   filter:
-    drop-shadow(0 0 10px rgba(159, 123, 255, 0.82))
-    drop-shadow(0 0 18px rgba(103, 69, 240, 0.44));
+    drop-shadow(0 0 10px var(--theme-icon-glow-color))
+    drop-shadow(0 0 18px var(--theme-glow-strong));
 }
 
 .arcane-detached-control-button[data-danger="true"]:hover .arcane-detached-control-glyph {
@@ -63,7 +63,7 @@
 }
 
 .arcane-detached-control-button:focus-visible {
-  outline: 1px solid rgba(211, 224, 255, 0.64);
+  outline: 1px solid var(--theme-border-accent);
   outline-offset: 2px;
 }
 
@@ -92,13 +92,13 @@
 
 .arcane-icon-button:hover span {
   filter:
-    drop-shadow(0 0 10px rgba(159, 123, 255, 0.82))
-    drop-shadow(0 0 18px rgba(103, 69, 240, 0.44));
+    drop-shadow(0 0 10px var(--theme-icon-glow-color))
+    drop-shadow(0 0 18px var(--theme-glow-strong));
 }
 
 .arcane-icon-button:focus-visible {
   outline: 0;
-  box-shadow: 0 0 18px rgba(159, 123, 255, 0.34);
+  box-shadow: 0 0 18px var(--theme-glow-strong);
   outline-offset: 2px;
 }
 
@@ -107,5 +107,5 @@
   width: 17px;
   height: 17px;
   opacity: 0.92;
-  filter: drop-shadow(0 0 8px rgba(159, 123, 255, 0.22));
+  filter: drop-shadow(0 0 8px var(--theme-icon-glow-color));
 }

@@ -37,7 +37,8 @@ type ServerMessageTimelineProps = {
   canScrollToBottom: boolean
   onScroll: () => void
   onScrollToBottom: () => void
-  onJumpToMessage: (messageId: string) => void
+  scrollToBottomLabel: string
+  onJumpToMessage: (messageId: string, createdAt?: string | null) => void
   onOpenPreview: (
     asset: SpaceMessageAssetResponse,
     message: SpaceMessageResponse,
@@ -77,6 +78,7 @@ export const ServerMessageTimeline = memo(function ServerMessageTimeline({
   canScrollToBottom,
   onScroll,
   onScrollToBottom,
+  scrollToBottomLabel,
   onJumpToMessage,
   onOpenPreview,
   onRequestDownload,
@@ -143,15 +145,19 @@ export const ServerMessageTimeline = memo(function ServerMessageTimeline({
               ? getMessageDayKey(previous.createdAt)
               : null
             const startsNewDay = currentDay !== previousDay
+            const currentIsEvent = message.messageTypeCode === 'event'
+            const previousIsEvent = previous?.messageTypeCode === 'event'
             const startsNewAuthor =
               startsNewDay ||
+              currentIsEvent ||
+              previousIsEvent ||
               previous?.senderUserId !== message.senderUserId ||
               Boolean(message.replyTo) ||
               Boolean(message.mentions?.length)
             const startsNewBubbleSequence = startsMessageBubbleSequence(
               message.senderUserId,
-              previous?.senderUserId ?? null,
-              startsNewDay,
+              previousIsEvent ? null : previous?.senderUserId ?? null,
+              startsNewDay || currentIsEvent,
             )
 
             return (
@@ -196,7 +202,7 @@ export const ServerMessageTimeline = memo(function ServerMessageTimeline({
           type="button"
           onClick={onScrollToBottom}
         >
-          {serverCopy.messages.scrollBottom}
+          {scrollToBottomLabel}
         </button>
       ) : null}
     </>

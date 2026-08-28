@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { OlderMessageLoadResult } from '../../hooks/messages/messagePaginationModel'
 
 export function useMessageFeedNavigation({
   feedKey,
   messageCount,
   focusedMessageId,
+  initialMessageId,
+  isInitialPositionPending = false,
   hasOlderMessages = false,
   isLoadingOlderMessages = false,
   onLoadOlderMessages,
@@ -11,9 +14,11 @@ export function useMessageFeedNavigation({
   feedKey: string
   messageCount: number
   focusedMessageId?: string | null
+  initialMessageId?: string | null
+  isInitialPositionPending?: boolean
   hasOlderMessages?: boolean
   isLoadingOlderMessages?: boolean
-  onLoadOlderMessages?: () => Promise<boolean>
+  onLoadOlderMessages?: () => Promise<OlderMessageLoadResult>
 }) {
   const feedRef = useRef<HTMLDivElement | null>(null)
   const shouldStickToBottomRef = useRef(true)
@@ -28,6 +33,7 @@ export function useMessageFeedNavigation({
     onLoadOlderMessages,
   })
   const [canScrollToBottom, setCanScrollToBottom] = useState(false)
+  const [positionedFeedKey, setPositionedFeedKey] = useState<string | null>(null)
   const [highlightedMessageId, setHighlightedMessageId] = useState<
     string | null
   >(null)
@@ -121,8 +127,8 @@ export function useMessageFeedNavigation({
     const previousScrollTop = feed.scrollTop
 
     void loadOlder()
-      .then((didLoad) => {
-        if (!didLoad || paginationRef.current.feedKey !== paginationFeedKey) {
+      .then((result) => {
+        if (result !== 'loaded' || paginationRef.current.feedKey !== paginationFeedKey) {
           return
         }
 
@@ -165,20 +171,52 @@ export function useMessageFeedNavigation({
       activeFeedKeyRef.current = feedKey
       shouldStickToBottomRef.current = true
       hasPositionedCurrentFeedRef.current = false
+      setPositionedFeedKey(null)
       setCanScrollToBottom(false)
+    }
+
+    const isInitialPosition = !hasPositionedCurrentFeedRef.current
+
+    if (isInitialPosition && isInitialPositionPending) {
+      return
+    }
+
+    if (isInitialPosition && initialMessageId) {
+      const feed = feedRef.current
+      const target = feed?.querySelector<HTMLElement>(
+        `[data-message-id="${initialMessageId}"]`,
+      )
+
+      if (!feed || !target) {
+        return
+      }
+
+      shouldStickToBottomRef.current = false
+      target.scrollIntoView({ behavior: 'auto', block: 'center' })
+      updateScrollPositionState(feed)
+      hasPositionedCurrentFeedRef.current = true
+      setPositionedFeedKey(feedKey)
+      return
     }
 
     if (!shouldStickToBottomRef.current) {
       return
     }
 
-    const isInitialPosition = !hasPositionedCurrentFeedRef.current
     scrollMessagesToBottom(isInitialPosition ? 'auto' : 'smooth')
 
     if (messageCount > 0) {
       hasPositionedCurrentFeedRef.current = true
+      setPositionedFeedKey(feedKey)
     }
-  }, [feedKey, messageCount, scrollMessagesToBottom])
+  }, [
+    feedKey,
+    initialMessageId,
+    isInitialPositionPending,
+    messageCount,
+    scrollMessagesToBottom,
+    updateScrollPositionState,
+  ])
 
   useEffect(() => {
     if (!focusedMessageId || messageCount === 0) return
@@ -189,6 +227,7 @@ export function useMessageFeedNavigation({
   return {
     feedRef,
     canScrollToBottom,
+    hasPositionedCurrentFeed: positionedFeedKey === feedKey,
     isNearBottom: !canScrollToBottom,
     highlightedMessageId,
     jumpToMessage,

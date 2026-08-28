@@ -124,8 +124,12 @@ export const communityCopy = {
     removeFriend: 'Удалить из друзей',
     block: 'Заблокировать',
     unblock: 'Разблокировать',
+    blockStatusLoadFailed:
+      'Не удалось проверить статус блокировки. Откройте меню участника ещё раз.',
     blockFailed: 'Не удалось заблокировать пользователя.',
     unblockFailed: 'Не удалось разблокировать пользователя.',
+    inviteTargetsLoadFailed:
+      'Не удалось загрузить список серверов для приглашения. Откройте меню участника ещё раз.',
     userFallback: 'Пользователь',
     userUnblockedNotice: (displayName: string) =>
       `${displayName} удалён из чёрного списка.`,
@@ -151,6 +155,7 @@ export const communityCopy = {
     messageUpdateFailed: 'Не удалось изменить сообщение.',
     messageDeleteFailed: 'Не удалось удалить сообщение.',
     messagePinFailed: 'Не удалось закрепить сообщение.',
+    messageUnpinFailed: 'Не удалось открепить сообщение.',
     deleteForMe: 'Удалить у меня',
     deleteForEveryone: 'Удалить у всех',
     deletedForMe: 'Удалено только у вас',

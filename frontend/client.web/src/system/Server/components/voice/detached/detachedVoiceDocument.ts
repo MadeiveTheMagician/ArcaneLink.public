@@ -4,6 +4,7 @@ import detachedVoiceOverlaysCss from './detachedVoiceOverlays.css?raw'
 import detachedVoiceCardsCss from './detachedVoiceCards.css?raw'
 import detachedVoiceControlsCss from './detachedVoiceControls.css?raw'
 import { getSystemIconCss } from '../../../../shared/index'
+import { SYSTEM_THEME_VARIABLE_NAMES } from '../../../../../styles/systemThemeTokens'
 
 const detachedVoiceStyleElementId = 'arcanelink-detached-voice-styles'
 const detachedApplicationStyleMarkerId = 'arcanelink-detached-application-styles'
@@ -24,6 +25,7 @@ export function prepareDetachedVoiceDocument(document: Document) {
   document.body.classList.add('arcane-detached-body')
 
   mirrorApplicationStyles(document)
+  mirrorApplicationTheme(document)
 
   if (document.getElementById(detachedVoiceStyleElementId)) {
     return
@@ -39,6 +41,40 @@ export function prepareDetachedVoiceDocument(document: Document) {
     detachedVoiceControlsCss,
   ].join('\n')
   document.head.append(style)
+}
+
+function mirrorApplicationTheme(targetDocument: Document) {
+  const sourceDocument = globalThis.document
+  if (!sourceDocument || sourceDocument === targetDocument) {
+    return
+  }
+
+  const sourceRoot = sourceDocument.documentElement
+  const targetRoot = targetDocument.documentElement
+  const copyTheme = () => {
+    const computed = sourceDocument.defaultView?.getComputedStyle(sourceRoot)
+    if (!computed) return
+
+    SYSTEM_THEME_VARIABLE_NAMES.forEach((name) => {
+      const value = computed.getPropertyValue(name).trim()
+      if (value) targetRoot.style.setProperty(name, value)
+    })
+    targetRoot.dataset.systemTheme = sourceRoot.dataset.systemTheme ?? ''
+    targetRoot.dataset.systemThemeAssets =
+      sourceRoot.dataset.systemThemeAssets ?? ''
+  }
+
+  copyTheme()
+  const observer = new MutationObserver(copyTheme)
+  observer.observe(sourceRoot, {
+    attributes: true,
+    attributeFilter: ['style', 'data-system-theme', 'data-system-theme-assets'],
+  })
+  targetDocument.defaultView?.addEventListener(
+    'unload',
+    () => observer.disconnect(),
+    { once: true },
+  )
 }
 
 export function createDetachedVoiceShell(document: Document, title: string) {

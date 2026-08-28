@@ -3,6 +3,8 @@ import type {
   PrivateSpaceResponse,
 } from '../../../../shared/types'
 import { communityCopy } from '../../../shared/copy/community.ru'
+import { serverCopy } from '../../../shared/copy/server.ru'
+import { getMessagePinnedEvent } from '../../../shared/messages/messageEventModel'
 
 type PrivateSpaceMuteSettings = Pick<
   PrivateSpaceResponse['viewerSettings'],
@@ -76,6 +78,23 @@ export function getPrivateSpaceTitle(
   }
 
   return space.title?.trim() || getDefaultPrivateSpaceGroupTitle(space.members)
+}
+
+export function filterPrivateSpacesByConversationQuery(
+  spaces: readonly PrivateSpaceResponse[],
+  currentUserId: string,
+  query: string,
+) {
+  const normalizedQuery = query.trim().toLocaleLowerCase('ru-RU')
+  if (!normalizedQuery) {
+    return [...spaces]
+  }
+
+  return spaces.filter((space) =>
+    getPrivateSpaceTitle(space, currentUserId)
+      .toLocaleLowerCase('ru-RU')
+      .includes(normalizedQuery),
+  )
 }
 
 export function getPrivateSpaceTooltipModel(
@@ -169,6 +188,12 @@ export function getPrivateSpacePresenceStatus(
 }
 
 export function getPrivateSpacePreview(space: PrivateSpaceResponse) {
+  if (space.lastMessage && getMessagePinnedEvent(space.lastMessage)) {
+    return serverCopy.messages.pinnedMessageEvent(
+      space.lastMessage.senderDisplayName,
+    )
+  }
+
   const body = space.lastMessage?.body?.trim()
 
   if (body) {

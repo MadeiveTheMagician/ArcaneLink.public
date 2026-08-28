@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { normalizeUserId } from './voiceChannelUtils'
+import type { VoiceVideoTrackKind } from './voiceVideoTrackKinds'
 
-export type VoiceVideoSenderKind = 'camera' | 'screen'
+export type VoiceVideoSenderKind = VoiceVideoTrackKind
 
 export function useVoiceVideoSenders() {
   const videoSendersRef = useRef<

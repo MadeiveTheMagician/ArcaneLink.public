@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.Constants;
+using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.Models.UsersModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -52,6 +52,12 @@ namespace ArcaneLink.DataBase.Configurations.UsersConfigurations
                     Id = UserStatusIds.Deleted,
                     Code = "deleted",
                     Title = "Deleted"
+                },
+                new UserStatus
+                {
+                    Id = UserStatusIds.PendingEmailVerification,
+                    Code = "pending_email_verification",
+                    Title = "Pending email verification"
                 }
                 
             );

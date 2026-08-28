@@ -10,12 +10,18 @@ import {
 import {
   isVoiceAccessLeasePayloadForChannel,
   invokeGetVoiceChannelState,
+  invokeGetIncomingPrivateCalls,
+  invokeGetPrivateCallState,
+  invokeRefreshCurrentVoiceIdentity,
   invokeJoinVoiceChannel,
   renewVoiceAccessLeaseWithTimeout,
   runVoiceAccessLeaseCheck,
 } from './voiceHubCommands'
 import type {
   ConnectedVoiceChannel,
+  PrivateCallState,
+  VoiceAccessRevokedPayload,
+  VoiceConnectionReplacedPayload,
   VoiceLifecycleState,
   VoiceParticipant,
   VoiceParticipantMovedPayload,
@@ -23,6 +29,11 @@ import type {
   VoiceStatePayload,
 } from './voiceChannelTypes'
 import { normalizeUserId } from './voiceChannelUtils'
+import {
+  applyVoiceAccessRevocationEvent,
+  applyVoiceConnectionReplacementEvent,
+} from './voiceConnectionReplacementModel'
+import { createVoiceSignalHandlingQueue } from './voiceSignalHandlingQueue'
 
 const voiceAccessLeaseIntervalMs = 8_000
 const voiceAccessLeaseTimeoutMs = 4_000
@@ -41,6 +52,10 @@ type VoiceHubConnectionLifecycleOptions = {
   connectionRef: RefObject<signalR.HubConnection | null>
   connectedChannelRef: RefObject<ConnectedVoiceChannel | null>
   localParticipantIdRef: RefObject<string | null>
+  pendingConnectionReplacementsRef: RefObject<
+    VoiceConnectionReplacedPayload[]
+  >
+  pendingVoiceAccessRevocationsRef: RefObject<VoiceAccessRevokedPayload[]>
   sanitizeVoiceParticipants: (
     spaceId: string,
     participants: VoiceParticipant[],
@@ -65,6 +80,7 @@ type VoiceHubConnectionLifecycleOptions = {
   removeCurrentUserFromSpace: (spaceId: string) => void
   closeAllPeers: () => void
   setConnectedChannel: Dispatch<SetStateAction<ConnectedVoiceChannel | null>>
+  getCurrentVoiceOperationId: () => number
   isCurrentVoiceOperation: (operationId: number) => boolean
   setVoiceLifecycle: (nextState: VoiceLifecycleState) => void
   getLocalVoiceState: () => LocalVoiceState
@@ -74,8 +90,12 @@ type VoiceHubConnectionLifecycleOptions = {
     canShareScreen: boolean
   }) => Promise<void>
   setLocalVoiceParticipantId: (participantId: string | null) => void
+  acceptLocalVoiceParticipantId: (participantId: string) => Promise<boolean>
   invalidateVoiceOperations: () => void
   stopLocalStream: () => void
+  onPrivateCallState: (call: PrivateCallState) => void
+  onIncomingPrivateCallsSnapshot: (calls: PrivateCallState[]) => void
+  onLocalPrivateCallRestored: (call: PrivateCallState) => void
 }
 
 export function useVoiceHubConnectionLifecycle({
@@ -84,6 +104,8 @@ export function useVoiceHubConnectionLifecycle({
   connectionRef,
   connectedChannelRef,
   localParticipantIdRef,
+  pendingConnectionReplacementsRef,
+  pendingVoiceAccessRevocationsRef,
   sanitizeVoiceParticipants,
   setParticipantsBySpaceId,
   syncPeers,
@@ -97,19 +119,52 @@ export function useVoiceHubConnectionLifecycle({
   removeCurrentUserFromSpace,
   closeAllPeers,
   setConnectedChannel,
+  getCurrentVoiceOperationId,
   isCurrentVoiceOperation,
   setVoiceLifecycle,
   getLocalVoiceState,
   enforceServerMediaCapabilities,
   setLocalVoiceParticipantId,
+  acceptLocalVoiceParticipantId,
   invalidateVoiceOperations,
   stopLocalStream,
+  onPrivateCallState,
+  onIncomingPrivateCallsSnapshot,
+  onLocalPrivateCallRestored,
 }: VoiceHubConnectionLifecycleOptions) {
   useEffect(() => {
     let isDisposed = false
     let leaseTimerId: number | null = null
     let isLeaseRenewalInFlight = false
     let rejoinTimerId: number | null = null
+    let identityRefreshTimerId: number | null = null
+    const voiceSignalHandlingQueue = createVoiceSignalHandlingQueue()
+    let voiceSignalGenerationChannel = connectedChannelRef.current
+    let voiceSignalGenerationOperationId = getCurrentVoiceOperationId()
+    let voiceSignalGeneration = {}
+
+    function invalidateVoiceSignalGeneration() {
+      voiceSignalHandlingQueue.invalidate()
+      voiceSignalGenerationChannel = connectedChannelRef.current
+      voiceSignalGenerationOperationId = getCurrentVoiceOperationId()
+      voiceSignalGeneration = {}
+    }
+
+    function resolveVoiceSignalGeneration() {
+      const channel = connectedChannelRef.current
+      const operationId = getCurrentVoiceOperationId()
+      if (
+        voiceSignalGenerationChannel !== channel ||
+        voiceSignalGenerationOperationId !== operationId
+      ) {
+        invalidateVoiceSignalGeneration()
+      }
+      return {
+        channel,
+        operationId,
+        generation: voiceSignalGeneration,
+      }
+    }
 
     function applyVoiceState(payload?: VoiceStatePayload) {
       if (!payload?.spaceId) {
@@ -238,6 +293,7 @@ export function useVoiceHubConnectionLifecycle({
               spaceId: channel.spaceId,
               channelScope: channel.channelScope,
             })
+            invalidateVoiceSignalGeneration()
             const operationId = beginVoiceOperation('leaving')
             await disconnectLocalVoiceSession(operationId, 'idle')
           },
@@ -293,14 +349,31 @@ export function useVoiceHubConnectionLifecycle({
       }
 
       stopVoiceRejoinRetry()
+      invalidateVoiceSignalGeneration()
       const operationId = beginVoiceOperation('reconnecting')
       closeAllPeers()
       setLocalVoiceParticipantId(null)
+      pendingConnectionReplacementsRef.current = []
+      pendingVoiceAccessRevocationsRef.current = []
       const localVoiceState = getLocalVoiceState()
       let wasAccessDenied = false
       voiceDebug('signalr:reconnected', channel)
       configureVoiceConnectionTimeout(connection, channel.channelScope)
-      void invokeJoinVoiceChannel(connection, channel, localVoiceState)
+      const verifyPrivateCall = channel.channelScope === 'private'
+        ? invokeGetPrivateCallState(connection, channel.spaceId)
+        : Promise.resolve(null)
+      void verifyPrivateCall
+        .then((privateCall) => {
+          if (channel.channelScope === 'private') {
+            if (!privateCall || privateCall.phase === 'ended') {
+              wasAccessDenied = true
+              throw new Error(voiceCopy.errors.joinFailed)
+            }
+            onPrivateCallState(privateCall)
+            onLocalPrivateCallRestored(privateCall)
+          }
+          return invokeJoinVoiceChannel(connection, channel, localVoiceState)
+        })
         .then((participantId?: string | null) => {
           if (!isCurrentVoiceOperation(operationId)) {
             return
@@ -311,11 +384,19 @@ export function useVoiceHubConnectionLifecycle({
             throw new Error(voiceCopy.errors.joinFailed)
           }
 
-          setLocalVoiceParticipantId(participantId)
-          return invokeGetVoiceChannelState(connection, channel)
+          return acceptLocalVoiceParticipantId(participantId).then(
+            async (wasReplaced) => {
+              if (wasReplaced) {
+                return false
+              }
+
+              await invokeGetVoiceChannelState(connection, channel)
+              return true
+            },
+          )
         })
-        .then(() => {
-          if (!isCurrentVoiceOperation(operationId)) {
+        .then((didRejoin) => {
+          if (!didRejoin || !isCurrentVoiceOperation(operationId)) {
             return
           }
 
@@ -363,39 +444,95 @@ export function useVoiceHubConnectionLifecycle({
           fromParticipantId: normalizeUserId(payload.fromParticipantId),
           payloadLength: payload.payload.length,
         })
-        void handleVoiceSignal(payload).catch((error) => {
-          voiceDebug('signal:error', {
-            message: error instanceof Error ? error.message : String(error),
+        const generation = resolveVoiceSignalGeneration()
+        if (!generation.channel || generation.channel.spaceId !== payload.spaceId) {
+          return
+        }
+
+        const peerId =
+          normalizeUserId(payload.fromParticipantId) ||
+          normalizeUserId(payload.fromUserId)
+        const isCurrentGeneration = () =>
+          !isDisposed &&
+          voiceSignalGeneration === generation.generation &&
+          connectedChannelRef.current === generation.channel &&
+          getCurrentVoiceOperationId() === generation.operationId
+        void voiceSignalHandlingQueue
+          .enqueue({
+            generation: generation.generation,
+            peerId,
+            isCurrent: isCurrentGeneration,
+            handle: () => handleVoiceSignal(payload),
           })
-          setVoiceError(
-            error instanceof Error ? error.message : voiceCopy.errors.signalFailed,
-          )
-        })
+          .catch((error) => {
+            if (!isCurrentGeneration()) {
+              return
+            }
+            voiceDebug('signal:error', {
+              message: error instanceof Error ? error.message : String(error),
+            })
+            setVoiceError(
+              error instanceof Error
+                ? error.message
+                : voiceCopy.errors.signalFailed,
+            )
+          })
       },
-      onConnectionReplaced: () => {
+      onConnectionReplaced: (payload) => {
+        const replacement = applyVoiceConnectionReplacementEvent(
+          pendingConnectionReplacementsRef.current,
+          payload,
+          localParticipantIdRef.current,
+        )
+        pendingConnectionReplacementsRef.current = replacement.pending
+        if (!replacement.shouldDisconnect) {
+          voiceDebug(
+            localParticipantIdRef.current
+              ? 'channel:replacement-ignored'
+              : 'channel:replacement-deferred',
+            {
+              replacedParticipantId: payload?.participantId,
+              localParticipantId: localParticipantIdRef.current,
+            },
+          )
+          return
+        }
+
+        pendingConnectionReplacementsRef.current = []
+        invalidateVoiceSignalGeneration()
         stopVoiceAccessLeaseHeartbeat()
         stopVoiceRejoinRetry()
-        voiceDebug('channel:replaced')
+        voiceDebug('channel:replaced', {
+          participantId: payload?.participantId,
+        })
         const operationId = beginVoiceOperation('leaving')
         void disconnectLocalVoiceSession(operationId, 'idle')
       },
       onAccessRevoked: (payload) => {
         const channel = connectedChannelRef.current
-        const connectedServerId = channel?.serverId
-        const revokedServerId = payload?.serverId
-        if (
-          !channel ||
-          channel.channelScope !== 'server' ||
-          !connectedServerId ||
-          (revokedServerId &&
-            normalizeUserId(revokedServerId) !== normalizeUserId(connectedServerId))
-        ) {
+        const revocation = applyVoiceAccessRevocationEvent(
+          pendingVoiceAccessRevocationsRef.current,
+          payload,
+          channel,
+          localParticipantIdRef.current,
+        )
+        pendingVoiceAccessRevocationsRef.current = revocation.pending
+        if (!revocation.shouldDisconnect) {
+          voiceDebug('channel:access-revoked-ignored', {
+            revokedParticipantId: payload?.participantId,
+            localParticipantId: localParticipantIdRef.current,
+          })
           return
         }
 
+        pendingVoiceAccessRevocationsRef.current = []
+        invalidateVoiceSignalGeneration()
         stopVoiceAccessLeaseHeartbeat()
         stopVoiceRejoinRetry()
-        voiceDebug('channel:access-revoked', { serverId: revokedServerId })
+        voiceDebug('channel:access-revoked', {
+          serverId: payload?.serverId,
+          participantId: payload?.participantId,
+        })
         const operationId = beginVoiceOperation('leaving')
         void disconnectLocalVoiceSession(operationId, 'idle')
       },
@@ -412,6 +549,7 @@ export function useVoiceHubConnectionLifecycle({
           return
         }
 
+        invalidateVoiceSignalGeneration()
         const previousChannel = connectedChannelRef.current
         const nextChannel: ConnectedVoiceChannel = {
           serverId: payload.serverId,
@@ -449,15 +587,50 @@ export function useVoiceHubConnectionLifecycle({
           setVoiceLifecycle('reconnecting')
         }
       },
+      onIncomingPrivateCall: (payload?: PrivateCallState) => {
+        if (payload) onPrivateCallState(payload)
+      },
+      onPrivateCallStateChanged: (payload?: PrivateCallState) => {
+        if (payload) onPrivateCallState(payload)
+      },
+      onUserProfileChanged: () => {
+        if (!connectedChannelRef.current || identityRefreshTimerId !== null) {
+          return
+        }
+
+        identityRefreshTimerId = window.setTimeout(() => {
+          identityRefreshTimerId = null
+          if (
+            isDisposed ||
+            !connectedChannelRef.current ||
+            connection.state !== signalR.HubConnectionState.Connected
+          ) {
+            return
+          }
+
+          void invokeRefreshCurrentVoiceIdentity(connection).catch((error) => {
+            voiceDebug('identity:refresh-failed', {
+              message: error instanceof Error ? error.message : String(error),
+            })
+          })
+        }, 150)
+      },
       onReconnecting: () => {
+        invalidateVoiceSignalGeneration()
         stopVoiceAccessLeaseHeartbeat()
         stopVoiceRejoinRetry()
         if (connectedChannelRef.current) {
           beginVoiceOperation('reconnecting')
         }
       },
-      onReconnected: rejoinVoiceChannel,
+      onReconnected: () => {
+        void invokeGetIncomingPrivateCalls(connection)
+          .then(onIncomingPrivateCallsSnapshot)
+          .catch(() => undefined)
+        rejoinVoiceChannel()
+      },
       onClose: () => {
+        invalidateVoiceSignalGeneration()
         stopVoiceAccessLeaseHeartbeat()
         stopVoiceRejoinRetry()
         if (!connectedChannelRef.current) {
@@ -476,6 +649,9 @@ export function useVoiceHubConnectionLifecycle({
       .then(() => {
         voiceDebug('signalr:connected')
         scheduleVoiceAccessLeaseHeartbeat()
+        return invokeGetIncomingPrivateCalls(connection)
+          .then(onIncomingPrivateCallsSnapshot)
+          .catch(() => undefined)
       })
       .catch((error) => {
         voiceDebug('signalr:start-failed', {
@@ -485,8 +661,13 @@ export function useVoiceHubConnectionLifecycle({
 
     return () => {
       isDisposed = true
+      invalidateVoiceSignalGeneration()
       stopVoiceAccessLeaseHeartbeat()
       stopVoiceRejoinRetry()
+      if (identityRefreshTimerId !== null) {
+        window.clearTimeout(identityRefreshTimerId)
+        identityRefreshTimerId = null
+      }
       invalidateVoiceOperations()
       connectedChannelRef.current = null
       connectionRef.current = null

@@ -33,6 +33,10 @@ export function useHubServerActions({
     void loadServerGovernance(serverCoreTab)
   }
 
+  function openServerSettingsMenuWithoutReload() {
+    setIsServerSettingsMenuOpen(true)
+  }
+
   function closeServerSettingsMenu() {
     setIsServerSettingsMenuOpen(false)
   }
@@ -58,6 +62,7 @@ export function useHubServerActions({
   return {
     isServerSettingsMenuOpen,
     openServerSettingsMenu,
+    openServerSettingsMenuWithoutReload,
     closeServerSettingsMenu,
     updateServerSettings,
   }

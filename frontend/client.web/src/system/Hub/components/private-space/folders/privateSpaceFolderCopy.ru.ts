@@ -20,7 +20,7 @@ export const privateSpaceFolderCopy = {
   noColor: 'Без цвета',
   conversations: 'Переписки в папке',
   conversationSearch: 'Поиск переписок',
-  panelSearch: 'Поиск переписок и сообщений',
+  panelSearch: 'Поиск переписок и групп',
   emptyConversations: 'Личных переписок пока нет.',
   noSearchResults: 'Переписки с таким названием не найдены.',
   readAll: 'Прочитать все',
@@ -29,4 +29,8 @@ export const privateSpaceFolderCopy = {
   limitReached: 'Достигнут лимит папок для текущего тарифа.',
   invalidFolder: 'Не удалось сохранить папку.',
   dropHint: 'Добавить переписку в папку',
+  addToFolder: 'Добавить в папку',
+  addToFolderLabel: (folderName: string) => `Добавить в папку «${folderName}»`,
+  removeFromFolder: (folderName: string) =>
+    `Удалить из папки «${folderName}»`,
 } as const

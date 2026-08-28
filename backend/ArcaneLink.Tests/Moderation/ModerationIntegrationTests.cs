@@ -737,6 +737,9 @@ public sealed class ModerationIntegrationTests
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTime.UtcNow;
+        var registeredUser = await db.Users.SingleAsync(x => x.Id == userId);
+        registeredUser.StatusId = UserStatusIds.Active;
+        registeredUser.EmailConfirmedAt = now;
         db.ServerMembers.Add(new ServerMember
         {
             Id = Guid.NewGuid(),

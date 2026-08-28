@@ -134,6 +134,21 @@ namespace ArcaneLink.Services.Messages
                 cancellationToken);
         }
 
+        public Task<bool> UnpinMessageAsync(
+            Guid currentUserId,
+            Guid serverId,
+            Guid spaceId,
+            Guid messageId,
+            CancellationToken cancellationToken = default)
+        {
+            return _commands.UnpinMessageAsync(
+                currentUserId,
+                serverId,
+                spaceId,
+                messageId,
+                cancellationToken);
+        }
+
         public Task<IReadOnlyList<SpaceMessageResponse>?> GetPinnedMessagesAsync(
             Guid currentUserId,
             Guid serverId,

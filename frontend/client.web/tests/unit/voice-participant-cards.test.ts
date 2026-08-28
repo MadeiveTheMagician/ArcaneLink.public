@@ -6,6 +6,12 @@ import {
   createVoiceParticipantCards,
   getActiveVoiceParticipantAudioStatuses,
 } from '../../src/system/Server/components/voice/participants/voiceParticipantCards'
+import {
+  selectParticipantVideoTracks,
+} from '../../src/system/Server/components/voice/participants/voiceMediaTracks'
+import {
+  registerVoiceVideoReceiverTrack,
+} from '../../src/system/Server/hooks/voice/voiceVideoTrackKinds'
 
 const remoteParticipant: VoiceParticipant = {
   participantId: 'remote-user',
@@ -183,5 +189,35 @@ test.describe('voice participant cards model', () => {
         Reflect.deleteProperty(globalThis, 'MediaStream')
       }
     }
+  })
+
+  test('keeps camera and screen receivers distinct when only screen is shared', () => {
+    const cameraTrack = {
+      enabled: true,
+      kind: 'video',
+      muted: true,
+      readyState: 'live',
+    } as MediaStreamTrack
+    const screenTrack = {
+      enabled: true,
+      kind: 'video',
+      muted: false,
+      readyState: 'live',
+    } as MediaStreamTrack
+    registerVoiceVideoReceiverTrack(cameraTrack, 'camera')
+    registerVoiceVideoReceiverTrack(screenTrack, 'screen')
+    const stream = {
+      getVideoTracks: () => [cameraTrack, screenTrack],
+    } as MediaStream
+
+    expect(
+      selectParticipantVideoTracks(stream, {
+        isCameraEnabled: false,
+        isScreenSharing: true,
+      }),
+    ).toEqual({
+      camera: null,
+      screen: screenTrack,
+    })
   })
 })

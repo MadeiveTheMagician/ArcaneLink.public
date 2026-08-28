@@ -102,7 +102,7 @@
 
 .settingsButton:hover {
   border-color: transparent;
-  color: #fff;
+  color: var(--color-text);
   background-color: transparent;
 }
 
@@ -156,7 +156,7 @@
   :global(.profile-page.is-server-mode) .inviteButton {
     border-color: transparent;
     background:
-      radial-gradient(circle at 50% 50%, rgba(142, 112, 255, 0.2), transparent 62%),
+      radial-gradient(circle at 50% 50%, var(--theme-glow), transparent 62%),
       transparent;
     box-shadow: none;
   }
@@ -175,13 +175,13 @@
   }
 
   :global(.profile-page.is-server-mode) .mobileReorderButton:hover {
-    color: rgba(235, 239, 255, 0.88);
+    color: var(--theme-text-soft);
     background: transparent;
     box-shadow: none;
   }
 
   :global(.profile-page.is-server-mode) .mobileReorderButtonActive {
-    color: rgba(245, 241, 255, 0.96);
+    color: var(--color-text);
     background:
       radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--theme-accent), transparent 64%), transparent 64%);
     box-shadow:
@@ -198,7 +198,7 @@
     border-radius: 13px;
     padding: 4px;
     background:
-      linear-gradient(180deg, rgba(14, 25, 57, 0.94), rgba(6, 13, 31, 0.96));
+      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
     box-shadow:
       inset 0 0 0 1px rgba(255, 255, 255, 0.02),
       0 12px 28px rgba(0, 0, 0, 0.18);
@@ -212,7 +212,7 @@
     border: 0;
     border-radius: 9px;
     padding: 0 8px;
-    color: rgba(187, 198, 236, 0.74);
+    color: var(--theme-text-faint);
     background: transparent;
     font-size: 12px;
     font-weight: 900;
@@ -229,10 +229,8 @@
   }
 
   :global(.profile-page.is-server-mode) .mobileServerTabs .mobileServerTabActive {
-    color: rgba(242, 245, 255, 0.96);
-    background:
-      radial-gradient(circle at 50% 20%, rgba(151, 111, 255, 0.3), transparent 58%),
-      linear-gradient(135deg, rgba(98, 73, 212, 0.68), rgba(38, 88, 168, 0.54));
+    color: var(--theme-accent-contrast);
+    background: var(--theme-surface-accent);
     box-shadow:
       inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 76%),
       0 0 18px color-mix(in srgb, var(--theme-accent), transparent 84%);

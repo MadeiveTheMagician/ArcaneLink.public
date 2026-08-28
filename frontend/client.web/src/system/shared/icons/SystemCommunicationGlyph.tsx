@@ -132,6 +132,13 @@ export function renderCommunicationGlyph(name: CommunicationIconName): ReactElem
           />
         </g>
       )
+    case 'smile':
+      return (
+        <>
+          <circle {...pathProps()} cx="12" cy="12" r="8.5" />
+          <path {...pathProps()} d="M8.8 10h.01M15.2 10h.01M8.5 14a4.8 4.8 0 0 0 7 0" />
+        </>
+      )
     case 'speaker':
       return (
         <g className={styles.arcaneGlyph}>

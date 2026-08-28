@@ -64,7 +64,8 @@ namespace ArcaneLink.Services.Users
                 SubscriptionType = ToSubscriptionTypeResponse(user.SubscriptionType),
                 CreatedAt = user.CreatedAt,
                 PresenceStatus = presence.PresenceStatus,
-                LastSeenAt = presence.LastSeenAt
+                LastSeenAt = presence.LastSeenAt,
+                EmailConfirmedAt = user.EmailConfirmedAt
             };
         }
 

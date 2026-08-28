@@ -2,11 +2,21 @@ import { expect, test } from '@playwright/test'
 import type { HubConnection } from '@microsoft/signalr'
 import {
   isVoiceAccessLeasePayloadForChannel,
+  invokeAcceptPrivateCall,
+  invokeCancelPrivateCall,
+  invokeDeclinePrivateCall,
+  invokeGetIncomingPrivateCalls,
+  invokeGetPrivateCallState,
+  invokeRefreshCurrentVoiceIdentity,
   invokeDisconnectVoiceParticipant,
   invokeGetVoiceChannelState,
   invokeJoinVoiceChannel,
+  leavePreviousVoiceChannelAfterFailedSwitch,
+  leaveStaleVoiceJoin,
   invokeRenewVoiceAccessLease,
+  invokeStartPrivateCall,
   invokeUpdateVoiceParticipantModeration,
+  prepareVoiceJoinMedia,
   renewVoiceAccessLeaseWithTimeout,
   runVoiceAccessLeaseCheck,
 } from '../../src/system/Server/hooks/voice/voiceHubCommands'
@@ -55,6 +65,59 @@ test.describe('voice hub commands', () => {
     ])
   })
 
+  test('refreshes the current voice identity through the bounded hub command', async () => {
+    const { connection, calls } = createConnectionSpy()
+
+    await invokeRefreshCurrentVoiceIdentity(connection)
+
+    expect(calls).toEqual([['RefreshCurrentVoiceIdentity']])
+  })
+
+  test('starts local media before waiting for the hub transport', async () => {
+    let resolveConnection: ((value: string) => void) | null = null
+    const connectionPromise = new Promise<string>((resolve) => {
+      resolveConnection = resolve
+    })
+    const calls: string[] = []
+
+    const pending = prepareVoiceJoinMedia(
+      () => {
+        calls.push('connection')
+        return connectionPromise
+      },
+      async () => {
+        calls.push('media')
+        return {} as MediaStream
+      },
+    )
+
+    expect(calls).toEqual(['connection', 'media'])
+    resolveConnection?.('connected')
+    await expect(pending).resolves.toEqual({
+      connection: 'connected',
+      error: null,
+    })
+  })
+
+  test('preserves a connected transport when microphone capture rejects', async () => {
+    const captureError = new DOMException(
+      'Microphone denied',
+      'NotAllowedError',
+    )
+
+    await expect(
+      prepareVoiceJoinMedia(
+        async () => 'connected',
+        async () => {
+          throw captureError
+        },
+      ),
+    ).resolves.toEqual({
+      connection: 'connected',
+      error: captureError,
+    })
+  })
+
   test('uses private-scoped commands without a server identifier', async () => {
     const { connection, calls } = createConnectionSpy()
     const channel: ConnectedVoiceChannel = {
@@ -72,6 +135,115 @@ test.describe('voice hub commands', () => {
       ['JoinPrivateVoiceChannel', 'private-1', true, false, true, false],
       ['GetPrivateVoiceChannelState', 'private-1'],
       ['RenewPrivateVoiceChannelAccessLease', 'private-1'],
+    ])
+  })
+
+  test('leaves the previous voice space when a channel switch fails', async () => {
+    const { connection, calls } = createConnectionSpy()
+    const previousChannel: ConnectedVoiceChannel = {
+      serverId: 'server-1',
+      spaceId: 'server-voice-1',
+      title: 'Server voice',
+      channelScope: 'server',
+    }
+    const nextChannel: ConnectedVoiceChannel = {
+      serverId: null,
+      spaceId: 'private-1',
+      title: 'Private call',
+      channelScope: 'private',
+    }
+
+    await expect(
+      leavePreviousVoiceChannelAfterFailedSwitch(
+        connection,
+        previousChannel,
+        nextChannel,
+      ),
+    ).resolves.toBe(true)
+    await expect(
+      leavePreviousVoiceChannelAfterFailedSwitch(
+        connection,
+        previousChannel,
+        { ...nextChannel, spaceId: 'SERVER-VOICE-1' },
+      ),
+    ).resolves.toBe(false)
+
+    const failedConnection = {
+      invoke: () => Promise.reject(new Error('transport unavailable')),
+    } as unknown as HubConnection
+    await expect(
+      leavePreviousVoiceChannelAfterFailedSwitch(
+        failedConnection,
+        previousChannel,
+        nextChannel,
+      ),
+    ).resolves.toBe(false)
+
+    expect(calls).toEqual([['LeaveVoiceChannel', 'server-voice-1']])
+  })
+
+  test('cleans a stale completed join for either server or private scope', async () => {
+    const invocations: unknown[][] = []
+    const connection = {
+      invoke: async (...args: unknown[]) => {
+        invocations.push(args)
+      },
+    } as unknown as HubConnection
+    const serverChannel = {
+      serverId: 'server-1',
+      spaceId: 'server-space-new',
+      title: 'Server voice',
+      channelScope: 'server' as const,
+    }
+    const privateChannel = {
+      serverId: null,
+      spaceId: 'private-space-new',
+      title: 'Private voice',
+      channelScope: 'private' as const,
+    }
+
+    await expect(leaveStaleVoiceJoin(connection, serverChannel)).resolves.toBe(
+      true,
+    )
+    await expect(leaveStaleVoiceJoin(connection, privateChannel)).resolves.toBe(
+      true,
+    )
+    expect(invocations).toEqual([
+      ['LeaveVoiceChannel', 'server-space-new'],
+      ['LeaveVoiceChannel', 'private-space-new'],
+    ])
+  })
+
+  test('uses call lifecycle commands on the voice hub connection', async () => {
+    const { connection, calls } = createConnectionSpy()
+
+    await invokeStartPrivateCall(connection, 'private-1', localState)
+    await invokeAcceptPrivateCall(
+      connection,
+      'private-1',
+      'call-1',
+      localState,
+    )
+    await invokeDeclinePrivateCall(connection, 'private-1', 'call-1')
+    await invokeCancelPrivateCall(connection, 'private-1', 'call-1')
+    await invokeGetPrivateCallState(connection, 'private-1')
+    await invokeGetIncomingPrivateCalls(connection)
+
+    expect(calls).toEqual([
+      ['StartPrivateCall', 'private-1', true, false, true, false],
+      [
+        'AcceptPrivateCall',
+        'private-1',
+        'call-1',
+        true,
+        false,
+        true,
+        false,
+      ],
+      ['DeclinePrivateCall', 'private-1', 'call-1'],
+      ['CancelPrivateCall', 'private-1', 'call-1'],
+      ['GetPrivateCallState', 'private-1'],
+      ['GetIncomingPrivateCalls'],
     ])
   })
 

@@ -1,25 +1,20 @@
 import {
   useEffect,
   useState,
-  type Dispatch,
   type FormEvent,
-  type SetStateAction,
 } from 'react'
 import type { ImageCrop } from '../../../../shared/media/ImageCropEditor'
-import { apiJson, apiNoContent } from '../../../../shared/api/api'
+import { apiJson } from '../../../../shared/api/api'
 import type {
   AssetResponse,
   CreateServerRequest,
   ServerMemberResponse,
   ServerResponse,
-  UpdateServerRequest,
 } from '../../../../shared/types'
 import { useAssetImagePicker } from '../../../Profile/hooks/useAssetImagePicker'
 import type {
   ServerDialogState,
   ServerFormState,
-  ServerSettingsAccess,
-  ServerSettingsSection,
 } from '../../components/dialogs/ServerDialog'
 import { serverCopy } from '../../../shared/index'
 
@@ -39,8 +34,6 @@ type UseServerDialogOptions = {
   accessToken: string
   assetSort: AssetSort
   loadServers: () => Promise<ServerMemberResponse[] | undefined>
-  updateServerMembership: (server: ServerResponse) => void
-  setServerMemberships: Dispatch<SetStateAction<ServerMemberResponse[]>>
   onContextMenuClose: () => void
 }
 
@@ -60,8 +53,6 @@ export function useServerDialog({
   accessToken,
   assetSort,
   loadServers,
-  updateServerMembership,
-  setServerMemberships,
   onContextMenuClose,
 }: UseServerDialogOptions) {
   const serverIconPicker = useAssetImagePicker({
@@ -72,8 +63,6 @@ export function useServerDialog({
   const [serverDialog, setServerDialog] = useState<ServerDialogState | null>(
     null,
   )
-  const [isServerDeleteSectionOpen, setIsServerDeleteSectionOpen] =
-    useState(false)
   const [serverForm, setServerForm] =
     useState<ServerFormState>(emptyServerForm)
   const [serverNotice, setServerNotice] = useState<string | null>(null)
@@ -91,41 +80,7 @@ export function useServerDialog({
     setServerForm(emptyServerForm)
     setServerNotice(null)
     onContextMenuClose()
-    setIsServerDeleteSectionOpen(false)
     setServerDialog({ mode: 'create' })
-  }
-
-  function openServerSettings(
-    membership: ServerMemberResponse,
-    section: ServerSettingsSection = 'all',
-    access: ServerSettingsAccess = {
-      canManageProfile: true,
-      canManageSettings: true,
-      canDelete: true,
-    },
-  ) {
-    setServerForm({
-      title: membership.server.title,
-      description: membership.server.description ?? '',
-      accessMode: membership.server.accessMode,
-      iconAssetId: membership.server.iconAssetId,
-      iconPreviewUrl: membership.server.iconAssetId
-        ? `/api/assets/${membership.server.iconAssetId}/content`
-        : null,
-      iconPreviewIsObjectUrl: false,
-      iconCropOffsetX: membership.server.iconCropOffsetX,
-      iconCropOffsetY: membership.server.iconCropOffsetY,
-      iconCropZoom: membership.server.iconCropZoom,
-    })
-    setServerNotice(null)
-    onContextMenuClose()
-    setIsServerDeleteSectionOpen(section === 'delete')
-    setServerDialog({
-      mode: 'settings',
-      membership,
-      section,
-      access,
-    })
   }
 
   function updateServerForm(nextForm: Partial<ServerFormState>) {
@@ -220,103 +175,31 @@ export function useServerDialog({
     setServerNotice(null)
 
     try {
-      const canManageProfile =
-        serverDialog.mode === 'create' ||
-        serverDialog.access.canManageProfile
-      const iconAssetId = canManageProfile
-        ? await uploadServerIconAsset()
-        : serverForm.iconAssetId
-
-      if (serverDialog.mode === 'create') {
-        const request: CreateServerRequest = {
-          title: serverForm.title,
-          description: serverForm.description || null,
-          iconAssetId,
-          iconCropOffsetX: serverForm.iconCropOffsetX,
-          iconCropOffsetY: serverForm.iconCropOffsetY,
-          iconCropZoom: serverForm.iconCropZoom,
-          accessMode: serverForm.accessMode,
-        }
-
-        await apiJson<ServerResponse>('/api/servers', {
-          method: 'POST',
-          accessToken,
-          body: request,
-        })
-        await loadServers()
-        clearServerIcon()
-        setServerDialog(null)
-        return
+      const iconAssetId = await uploadServerIconAsset()
+      const request: CreateServerRequest = {
+        title: serverForm.title,
+        description: serverForm.description || null,
+        iconAssetId,
+        iconCropOffsetX: serverForm.iconCropOffsetX,
+        iconCropOffsetY: serverForm.iconCropOffsetY,
+        iconCropZoom: serverForm.iconCropZoom,
+        accessMode: serverForm.accessMode,
       }
 
-      const request: UpdateServerRequest = {}
-      if (serverDialog.access.canManageProfile) {
-        Object.assign(request, {
-          title: serverForm.title,
-          description: serverForm.description || null,
-          iconAssetId,
-          iconCropOffsetX: serverForm.iconCropOffsetX,
-          iconCropOffsetY: serverForm.iconCropOffsetY,
-          iconCropZoom: serverForm.iconCropZoom,
-          clearIconAsset: !iconAssetId && !serverForm.iconFile,
-        })
-      }
-      if (serverDialog.access.canManageSettings) {
-        request.accessMode = serverForm.accessMode
-      }
-      const updatedServer = await apiJson<ServerResponse>(
-        `/api/servers/${serverDialog.membership.serverId}`,
-        {
-          method: 'PATCH',
-          accessToken,
-          body: request,
-        },
-      )
-      updateServerMembership(updatedServer)
-      updateServerForm({
-        iconAssetId: updatedServer.iconAssetId,
-        iconPreviewUrl: updatedServer.iconAssetId
-          ? `/api/assets/${updatedServer.iconAssetId}/content`
-          : null,
-        iconPreviewIsObjectUrl: false,
-        iconFile: undefined,
-        iconCropOffsetX: updatedServer.iconCropOffsetX,
-        iconCropOffsetY: updatedServer.iconCropOffsetY,
-        iconCropZoom: updatedServer.iconCropZoom,
+      await apiJson<ServerResponse>('/api/servers', {
+        method: 'POST',
+        accessToken,
+        body: request,
       })
-      setServerDialog({
-        ...serverDialog,
-        membership: {
-          ...serverDialog.membership,
-          server: updatedServer,
-        },
-      })
-      setServerNotice(serverCopy.dialog.updated)
+      await loadServers()
+      clearServerIcon()
+      setServerDialog(null)
     } catch (error) {
       setServerNotice(
         error instanceof Error
           ? error.message
           : serverCopy.assets.iconSaveFailed,
       )
-    } finally {
-      setIsSavingServer(false)
-    }
-  }
-
-  async function deleteServer(membership: ServerMemberResponse) {
-    setIsSavingServer(true)
-    setServerNotice(null)
-
-    try {
-      await apiNoContent(`/api/servers/${membership.serverId}`, {
-        method: 'DELETE',
-        accessToken,
-      })
-
-      setServerMemberships((current) =>
-        current.filter((item) => item.serverId !== membership.serverId),
-      )
-      setServerDialog(null)
     } finally {
       setIsSavingServer(false)
     }
@@ -334,11 +217,9 @@ export function useServerDialog({
     serverForm,
     serverNotice,
     isSavingServer,
-    isServerDeleteSectionOpen,
     setIsServerIconLibraryOpen: serverIconPicker.setIsLibraryOpen,
     setServerDialog,
     openCreateServerDialog,
-    openServerSettings,
     updateServerForm,
     selectServerIconFile,
     clearServerIcon,
@@ -347,8 +228,6 @@ export function useServerDialog({
     cancelServerIconChange,
     confirmServerIconChange,
     submitServerForm,
-    deleteServer,
-    setIsServerDeleteSectionOpen,
   }
 }
 

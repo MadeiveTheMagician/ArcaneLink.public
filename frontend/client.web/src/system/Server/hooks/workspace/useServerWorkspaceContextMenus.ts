@@ -44,6 +44,7 @@ export type MemberContextMenuState = {
   x: number
   y: number
   member: ServerMemberDetailsResponse
+  focusTarget: HTMLElement | null
 }
 
 export type SpaceContextMenuState = {
@@ -57,6 +58,7 @@ export type VoiceParticipantContextMenuState = {
   y: number
   participant: VoiceParticipant
   sourceSpaceId: string
+  focusTarget: HTMLElement | null
   onOpenDetachedParticipant?: () => void
   showParticipantsWithoutVideo?: boolean
   onToggleParticipantsWithoutVideo?: () => void
@@ -97,7 +99,10 @@ type UseServerWorkspaceContextMenusOptions = {
   onCreateSpace: (typeCode: SpaceTypeCode, parentSpaceId: string | null) => void
   onEditSpace: (space: SpaceResponse) => void
   onDeleteSpace: (space: SpaceResponse) => void
-  onSelectMember: (memberId: string) => void
+  onOpenMemberProfile: (
+    member: ServerMemberDetailsResponse,
+    focusTarget?: HTMLElement | null,
+  ) => void
   onOpenDirectSpace: (userId: string) => void
   onStartDirectVoice: (user: { id: string; displayName: string }) => void
   onSendFriendRequest: (userId: string) => void
@@ -161,7 +166,7 @@ export function useServerWorkspaceContextMenus({
   onCreateSpace,
   onEditSpace,
   onDeleteSpace,
-  onSelectMember,
+  onOpenMemberProfile,
   onOpenDirectSpace,
   onStartDirectVoice,
   onSendFriendRequest,
@@ -271,6 +276,7 @@ export function useServerWorkspaceContextMenus({
       x: event.clientX,
       y: event.clientY,
       member,
+      focusTarget: event.currentTarget,
     })
 
     if (member.userId !== userId) {
@@ -298,6 +304,7 @@ export function useServerWorkspaceContextMenus({
       ...anchor,
       participant,
       sourceSpaceId,
+      focusTarget: event.currentTarget,
       onOpenDetachedParticipant:
         workspaceActions?.onOpenDetachedParticipant,
       showParticipantsWithoutVideo:
@@ -368,7 +375,8 @@ export function useServerWorkspaceContextMenus({
         mutatingDirectMessageBlockUserId != null,
       isUserBlockStatusResolved: blockStatus != null,
       isUserBlocked: blockStatus?.isBlocked === true,
-      onSelectMember,
+      onOpenMemberProfile: (targetMember) =>
+        onOpenMemberProfile(targetMember, memberContextMenu.focusTarget),
       onOpenDirectSpace,
       onSendFriendRequest,
       onToggleUserBlock: (targetUserId) => {
@@ -402,6 +410,7 @@ export function useServerWorkspaceContextMenus({
     const {
       participant,
       sourceSpaceId,
+      focusTarget,
       onOpenDetachedParticipant,
       showParticipantsWithoutVideo,
       onToggleParticipantsWithoutVideo,
@@ -455,7 +464,9 @@ export function useServerWorkspaceContextMenus({
         mutatingDirectMessageBlockUserId != null,
       isUserBlockStatusResolved: blockStatus != null,
       isUserBlocked: blockStatus?.isBlocked === true,
-      onSelectMember,
+      onOpenMemberProfile: member
+        ? (targetMember) => onOpenMemberProfile(targetMember, focusTarget)
+        : undefined,
       onMentionUser: onMentionVoiceParticipant,
       onOpenDirectSpace,
       onStartCall: () => onStartDirectVoice({

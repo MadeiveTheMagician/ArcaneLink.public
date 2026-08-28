@@ -8,10 +8,7 @@
   grid-template-columns: minmax(150px, 0.45fr) minmax(220px, 1fr);
   align-items: center;
   gap: 12px;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 7px;
-  padding: 14px;
-  background: var(--theme-control-bg);
+  padding: 6px 2px;
 }
 
 .profileSelect > span {
@@ -29,10 +26,9 @@
 
 .profileEditor,
 .deleteConfirmation {
-  border: 1px solid var(--theme-section-border);
   border-radius: 7px;
   padding: 12px;
-  background: color-mix(in srgb, var(--theme-control-bg), transparent 4%);
+  background: color-mix(in srgb, var(--theme-control-bg), transparent 28%);
 }
 
 .profileEditor input {

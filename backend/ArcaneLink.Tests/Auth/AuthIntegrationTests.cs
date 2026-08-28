@@ -6,15 +6,19 @@ using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Login;
 using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.Tests.Infrastructure;
+using ArcaneLink.DataBase._Data;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ArcaneLink.Tests.Auth;
 
 public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
 {
     private readonly HttpClient _client;
+    private readonly ArcaneLinkApiFactory _factory;
 
     public AuthIntegrationTests(ArcaneLinkApiFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -31,6 +35,15 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
                 Password = ArcaneLinkApiFactory.Password
             });
         await ApiClientExtensions.EnsureSuccessWithBodyAsync(registerResponse);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var registeredUser = db.Users.Single(x => x.LoginNorm == "NEWUSER");
+            registeredUser.EmailConfirmedAt = DateTime.UtcNow;
+            registeredUser.StatusId = UserStatusIds.Active;
+            await db.SaveChangesAsync();
+        }
 
         var loginResponse = await _client.PostAsJsonAsync(
             "/api/auth/login",
@@ -69,6 +82,42 @@ public sealed class AuthIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
         var response = await _client.GetAsync("/api/users/me");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_VerifiesPasswordBeforeRevealingBannedStatus()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var user = db.Users.Single(x => x.Id == ArcaneLinkApiFactory.OutsiderUserId);
+            user.StatusId = UserStatusIds.Banned;
+            await db.SaveChangesAsync();
+        }
+
+        var wrongPassword = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest
+            {
+                LoginOrEmail = "outsider",
+                Password = "WrongPassword123!"
+            });
+        Assert.Equal(HttpStatusCode.Unauthorized, wrongPassword.StatusCode);
+
+        var correctPassword = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest
+            {
+                LoginOrEmail = "outsider",
+                Password = ArcaneLinkApiFactory.Password
+            });
+        Assert.Equal(HttpStatusCode.Forbidden, correctPassword.StatusCode);
+
+        using var restoreScope = _factory.Services.CreateScope();
+        var restoreDb = restoreScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var restoreUser = restoreDb.Users.Single(x => x.Id == ArcaneLinkApiFactory.OutsiderUserId);
+        restoreUser.StatusId = UserStatusIds.Active;
+        await restoreDb.SaveChangesAsync();
     }
 
     [Fact]

@@ -7,6 +7,10 @@ export type VoiceParticipant = {
   userId: string
   login: string
   displayName: string
+  avatarAssetId?: string | null
+  avatarCropOffsetX?: number
+  avatarCropOffsetY?: number
+  avatarCropZoom?: number
   isMuted: boolean
   isDeafened: boolean
   isServerMuted?: boolean
@@ -83,6 +87,15 @@ export type VoiceParticipantMovedPayload = {
   participantId: string
 }
 
+export type VoiceConnectionReplacedPayload = {
+  serverId?: string | null
+  spaceId?: string
+  channelScope?: VoiceChannelScope
+  participantId?: string
+}
+
+export type VoiceAccessRevokedPayload = VoiceConnectionReplacedPayload
+
 export type ConnectedVoiceChannel = {
   serverId: string | null
   spaceId: string
@@ -100,3 +113,33 @@ export type VoiceLifecycleState =
   | 'reconnecting'
   | 'leaving'
   | 'error'
+
+export type PrivateCallPhase = 'ringing' | 'active' | 'ended'
+
+export type PrivateCallUser = {
+  userId: string
+  login: string
+  displayName: string
+}
+
+export type PrivateCallState = {
+  callId: string
+  spaceId: string
+  phase: PrivateCallPhase
+  revision: number
+  caller: PrivateCallUser
+  startedAt: string
+  answeredAt: string | null
+  endedAt: string | null
+  participantUserIds: string[]
+  ringingUserIds: string[]
+  declinedUserIds: string[]
+  endReason: string | null
+}
+
+export type PrivateCallJoinResult = {
+  callId: string
+  participantId: string
+  phase: PrivateCallPhase
+  call: PrivateCallState
+}

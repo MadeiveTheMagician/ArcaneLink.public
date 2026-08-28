@@ -327,7 +327,7 @@ export function SystemSettingsDialog({
             disabled={isClosing}
             onClick={closeSettings}
           >
-            <SystemCloseIcon size="large" />
+            <SystemCloseIcon size="medium" />
           </button>
           {isSaving && (
             <em className={styles.savingState}>{settingsCopy.root.saving}</em>
@@ -359,7 +359,16 @@ export function SystemSettingsDialog({
                     />
                   </button>
 
-                  {isExpanded && (
+                  <div
+                    className={`${styles.sectionListDisclosure} ${
+                      isExpanded
+                        ? styles.sectionListDisclosureExpanded
+                        : ''
+                    }`}
+                    data-settings-category-sections={tab.id}
+                    aria-hidden={!isExpanded}
+                    inert={!isExpanded ? true : undefined}
+                  >
                     <ol
                       className={styles.sectionList}
                       aria-label={`${tab.label}: разделы`}
@@ -400,7 +409,7 @@ export function SystemSettingsDialog({
                         )
                       })}
                     </ol>
-                  )}
+                  </div>
                 </div>
               )
             })}

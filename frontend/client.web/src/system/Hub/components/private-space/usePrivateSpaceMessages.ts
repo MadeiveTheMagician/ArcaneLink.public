@@ -16,6 +16,10 @@ import { communityCopy, serverCopy } from '../../../shared'
 import { createRealtimeRefreshCoalescer } from '../../../shared/hooks/realtimeRefreshCoalescer'
 import type { MessageFocusRequest } from '../../../shared/messages/messageFocusModel'
 import { isVisiblePrivateMessage } from '../../../shared/messages/privateMessageDeletionModel'
+import {
+  getMessageWindowCursor,
+  type OlderMessageLoadResult,
+} from '../../../Server/hooks/messages/messagePaginationModel'
 
 type PrivateSpaceMessagesChangedPayload = {
   spaceId?: string | null
@@ -85,9 +89,15 @@ export function usePrivateSpaceMessages(
   async function loadMessages(
     silent = false,
     before?: { createdAt: string; id: string } | null,
-  ) {
+  ): Promise<SpaceMessageResponse[] | null> {
     const requestId = ++messagesRequestIdRef.current
+    ++olderMessagesRequestIdRef.current
     const requestedSpaceId = spaceId
+
+    setIsLoadingOlderMessages(false)
+    if (!silent) {
+      setHasOlderMessages(false)
+    }
 
     if (!requestedSpaceId) {
       setMessages([])
@@ -103,7 +113,7 @@ export function usePrivateSpaceMessages(
       setHasOlderDeletedMessages(false)
       setTrashError(null)
       setMessageError(null)
-      return
+      return null
     }
 
     if (!silent) {
@@ -125,7 +135,7 @@ export function usePrivateSpaceMessages(
         )
 
       if (messagesRequestIdRef.current !== requestId) {
-        return
+        return null
       }
 
       setMessages((current) =>
@@ -137,14 +147,16 @@ export function usePrivateSpaceMessages(
         setHasOlderMessages(loadedMessages.length === messagePageSize)
       }
       setLoadedMessagesSpaceId(requestedSpaceId)
+      return loadedMessages
     } catch {
       if (messagesRequestIdRef.current !== requestId) {
-        return
+        return null
       }
 
       setMessageError(communityCopy.direct.messagesLoadFailed)
       setMessages([])
       setLoadedMessagesSpaceId(requestedSpaceId)
+      return null
     } finally {
       if (!silent && messagesRequestIdRef.current === requestId) {
         setIsLoadingMessages(false)
@@ -152,17 +164,36 @@ export function usePrivateSpaceMessages(
     }
   }
 
-  async function loadOlderMessages() {
+  async function loadMessageWindow(messageId: string, createdAt: string) {
+    const cursor = getMessageWindowCursor(messageId, createdAt)
+    if (!cursor) {
+      return false
+    }
+
+    const loadedMessages = await loadMessages(false, cursor)
+    return Boolean(
+      loadedMessages?.some((message) => message.id === messageId),
+    )
+  }
+
+  async function loadOlderMessages(): Promise<OlderMessageLoadResult> {
     const requestedSpaceId = spaceId
     const oldestMessage =
       loadedMessagesSpaceId === requestedSpaceId ? messages[0] : null
     if (
       !requestedSpaceId ||
-      !oldestMessage ||
-      !hasOlderMessages ||
       isLoadingOlderMessages
     ) {
-      return false
+      return 'stale'
+    }
+
+    if (!hasOlderMessages) {
+      return 'exhausted'
+    }
+
+    if (!oldestMessage) {
+      setHasOlderMessages(false)
+      return 'exhausted'
     }
 
     const requestId = ++olderMessagesRequestIdRef.current
@@ -182,17 +213,25 @@ export function usePrivateSpaceMessages(
         olderMessagesRequestIdRef.current !== requestId ||
         activeSpaceIdRef.current !== requestedSpaceId
       ) {
-        return false
+        return 'stale'
       }
 
       setMessages((current) => mergeMessagePages(olderMessages, current))
       setHasOlderMessages(olderMessages.length === messagePageSize)
-      return olderMessages.length > 0
+      return olderMessages.length > 0 ? 'loaded' : 'exhausted'
     } catch {
-      if (activeSpaceIdRef.current === requestedSpaceId) {
+      if (
+        olderMessagesRequestIdRef.current === requestId &&
+        activeSpaceIdRef.current === requestedSpaceId
+      ) {
         setMessageError(communityCopy.direct.messagesLoadFailed)
       }
-      return false
+      return (
+        olderMessagesRequestIdRef.current === requestId &&
+        activeSpaceIdRef.current === requestedSpaceId
+          ? 'failed'
+          : 'stale'
+      )
     } finally {
       if (olderMessagesRequestIdRef.current === requestId) {
         setIsLoadingOlderMessages(false)
@@ -559,7 +598,10 @@ export function usePrivateSpaceMessages(
         return message
       }
 
-      await loadPinnedMessages(true)
+      await Promise.all([
+        loadMessages(true),
+        loadPinnedMessages(true),
+      ])
       return message
     } catch {
       if (activeSpaceIdRef.current !== requestedSpaceId) {
@@ -568,6 +610,35 @@ export function usePrivateSpaceMessages(
 
       setMessageError(communityCopy.direct.messagePinFailed)
       return null
+    }
+  }
+
+  async function unpinMessage(messageId: string) {
+    const requestedSpaceId = spaceId
+    if (!requestedSpaceId) {
+      return false
+    }
+
+    try {
+      setMessageError(null)
+      await apiNoContent(
+        `/api/private-spaces/${requestedSpaceId}/messages/${messageId}/pin`,
+        {
+          method: 'DELETE',
+          accessToken,
+        },
+      )
+      if (activeSpaceIdRef.current === requestedSpaceId) {
+        setPinnedMessages((current) =>
+          current.filter((message) => message.id !== messageId),
+        )
+      }
+      return true
+    } catch {
+      if (activeSpaceIdRef.current === requestedSpaceId) {
+        setMessageError(communityCopy.direct.messageUnpinFailed)
+      }
+      return false
     }
   }
 
@@ -737,6 +808,7 @@ export function usePrivateSpaceMessages(
     messageError,
     trashError,
     loadMessages,
+    loadMessageWindow,
     loadOlderMessages,
     loadPinnedMessages,
     loadDeletedMessages,
@@ -747,6 +819,7 @@ export function usePrivateSpaceMessages(
     deleteMessage,
     restoreMessage,
     pinMessage,
+    unpinMessage,
     setMessageReaction,
     markMessagesRead,
   }

@@ -1,4 +1,12 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react'
 import { MobileHubNav } from '../../../Mobile/components/MobileHubNav'
 import { MobileMenuTab } from '../../../Mobile/components/MobileMenuTab'
 import { ServerRail } from '../../../Server/components/navigation/ServerRail'
@@ -23,7 +31,10 @@ import { useServers } from '../../../Server/hooks/workspace/useServers'
 import { useServerSpaces } from '../../../Server/hooks/workspace/useServerSpaces'
 import { useVoiceChannel } from '../../../Server/hooks/voice/useVoiceChannel'
 import { rememberRecentServerDetail } from '../../../Server/utils/serverRecentSpace'
-import { resolveServerWorkspacePermissionCapabilities } from '../../../Server/utils/serverEffectivePermissions'
+import {
+  canAccessServerSettings,
+  resolveServerWorkspacePermissionCapabilities,
+} from '../../../Server/utils/serverEffectivePermissions'
 import { usePrivateSpaces } from '../private-space/usePrivateSpaces'
 import { useHubDirectActions } from '../direct-messages/useHubDirectActions'
 import { useHubServerInvites } from '../utility/useHubServerInvites'
@@ -38,6 +49,8 @@ import { useVoicePlaybackPreferences } from '../settings/useVoicePlaybackPrefere
 import { useCurrentHubUser } from './useCurrentHubUser'
 import { WebNotificationStack } from '../notifications/WebNotificationStack'
 import { useWebNotifications } from '../notifications/useWebNotifications'
+import type { NotificationTarget } from '../notifications/notificationNavigation'
+import { PrivateCallNotificationStack } from '../private-space/PrivateCallNotificationStack'
 import { useHubProfileLifecycle } from './useHubProfileLifecycle'
 import { useHubWorkspaceRestore } from './useHubWorkspaceRestore'
 import { SystemErrorBoundary } from '../../../shared/errors/SystemErrorBoundary'
@@ -45,18 +58,26 @@ import { WorkspaceTransitionSurface } from '../../../shared/ui/WorkspaceTransiti
 import {
   clearUserDataCache,
 } from '../../../../shared/cache/clientCache'
+import { apiJson } from '../../../../shared/api/api'
 import {
   DEFAULT_SYSTEM_THEME_CODE,
 } from '../../../../styles/systemThemes'
 import { buildServerContextMenuItems } from '../../utils/serverContextMenuItems'
+import { openServerSettingsForMembership } from '../../utils/serverSettingsOpenModel'
 import { buildHubProfileStyle } from '../../utils/hubProfileStyle'
 import { resolveWorkspaceTransitionKey } from './workspaceTransitionModel'
-import type { ProfileSession } from '../../../../shared/types'
+import type {
+  ProfileSession,
+  ServerEffectivePermissionsResponse,
+  ServerMemberResponse,
+} from '../../../../shared/types'
 import {
   subscribeToSystemSettingsNavigation,
   type SystemSettingsNavigationRequest,
 } from '../../../shared/navigation/systemSettingsNavigation'
 import styles from './HubPage.module.css'
+import type { MessageFocusRequest } from '../../../shared/messages/messageFocusModel'
+import type { CommunityNavigationRequest } from '../community/communityTypes'
 
 const ServerWorkspace = lazy(() =>
   import('../../../Server/components/shell/ServerWorkspace').then((module) => ({
@@ -137,6 +158,11 @@ export function HubPage({ session, onLogout }: HubPageProps) {
   } = useProfileSettings(session.accessToken, initialProfileSettings)
   const [systemSettingsNavigationRequest, setSystemSettingsNavigationRequest] =
     useState<SystemSettingsNavigationRequest | null>(null)
+  const [serverContextSettingsAccess, setServerContextSettingsAccess] =
+    useState<{
+      serverId: string
+      canOpen: boolean | null
+    } | null>(null)
 
   useEffect(
     () =>
@@ -188,6 +214,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     loadServerMembers,
     loadMoreServerMembers,
     leaveServer,
+    deleteServer,
     removeServerMember,
     updateServerMembership,
     reorderServerMemberships,
@@ -210,6 +237,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     showInvitesWorkspace,
     openPrivateSpace,
     openPrivateSearchResult,
+    openPrivateMessage,
     closeServerContextMenu,
     leaveServerFromContextMenu,
   } = useHubWorkspace({
@@ -225,6 +253,12 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     initialIsServerPanelOpen: layoutCache?.isServerPanelOpen,
     initialActiveServerId: layoutCache?.activeServerId,
   })
+  const [notificationMessageFocus, setNotificationMessageFocus] =
+    useState<MessageFocusRequest | null>(null)
+  const [communityNavigationRequest, setCommunityNavigationRequest] =
+    useState<CommunityNavigationRequest | null>(null)
+  const communityNavigationSequenceRef = useRef(0)
+  const notificationNavigationSequenceRef = useRef(0)
   const {
     mobileTab,
     isMobilePageTransitioning,
@@ -233,6 +267,8 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     openMobileServers,
     openMobileMessages,
     openMobileProfile,
+    openMobilePrivateWorkspace,
+    openMobileProfileWorkspace,
     openMobileMenu,
     closeMobilePrivateChat,
   } = useMobileHubNavigation({
@@ -241,6 +277,47 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     showProfileWorkspace,
     showServersWorkspace,
   })
+
+  async function openNotificationTarget(target: NotificationTarget) {
+    const navigationRequestId =
+      ++notificationNavigationSequenceRef.current
+
+    if (target.kind === 'friend-requests') {
+      communityNavigationSequenceRef.current += 1
+      setCommunityNavigationRequest({
+        id: communityNavigationSequenceRef.current,
+        tab: 'friends',
+      })
+      openMobileProfileWorkspace(showFriendsWorkspace)
+      return
+    }
+
+    const messageFocus: MessageFocusRequest = {
+      spaceId: target.spaceId,
+      messageId: target.messageId,
+      createdAt: target.createdAt,
+    }
+    if (target.kind === 'private-message') {
+      openMobilePrivateWorkspace(() => openPrivateMessage(messageFocus))
+      return
+    }
+
+    const membership =
+      serverMemberships.find((item) => item.serverId === target.serverId) ??
+      (await loadServers())?.find(
+        (item) => item.serverId === target.serverId,
+      )
+    if (
+      !membership ||
+      notificationNavigationSequenceRef.current !== navigationRequestId
+    ) {
+      return
+    }
+
+    openMobileServers()
+    setNotificationMessageFocus(messageFocus)
+    await openServerWorkspace(membership)
+  }
   useHubProfileLifecycle({
     isServerRailPinned: profileSettings.isServerRailPinned,
     selectedThemeCode: profileSettings.selectedThemeCode,
@@ -313,7 +390,6 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     serverRoles,
     serverPermissions,
     serverEffectivePermissions,
-    memberRoles,
     serverAuditLogs,
     serverBans,
     serverJoinRequests,
@@ -327,6 +403,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     reloadServerRoles,
     loadDirectServerInvites,
     openServerCoreTab,
+    selectServerCoreTab,
     createServerInvite,
     revokeServerInvite,
     loadMoreServerJoinRequests,
@@ -349,6 +426,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
   const {
     isServerSettingsMenuOpen,
     openServerSettingsMenu,
+    openServerSettingsMenuWithoutReload,
     closeServerSettingsMenu,
     updateServerSettings,
   } = useHubServerActions({
@@ -369,6 +447,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     notifications: webNotifications,
     closingNotificationIds: closingWebNotificationIds,
     dismissNotification: dismissWebNotification,
+    markStoredNotificationRead,
     placement: webNotificationPlacement,
     pauseNotifications: pauseWebNotifications,
     resumeNotifications: resumeWebNotifications,
@@ -395,8 +474,6 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     accessToken: session.accessToken,
     assetSort: avatarSort,
     loadServers,
-    updateServerMembership,
-    setServerMemberships,
     onContextMenuClose: closeServerContextMenu,
   })
   const {
@@ -405,8 +482,93 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     serverDialog,
     setServerDialog,
     openCreateServerDialog,
-    openServerSettings,
   } = serverDialogState
+
+  async function openFullServerSettingsFromContext(
+    membership: ServerMemberResponse,
+  ) {
+    closeServerContextMenu()
+    selectServerCoreTab('general')
+    await openServerSettingsForMembership({
+      membership,
+      selectedServerId: selectedServerMembership?.serverId ?? null,
+      selectServer: openServerWorkspace,
+      openSettings: openServerSettingsMenuWithoutReload,
+    })
+  }
+
+  function openServerContextMenuWithPermissions(
+    event: MouseEvent<HTMLButtonElement>,
+    membership: ServerMemberResponse,
+  ) {
+    openServerContextMenu(event, membership)
+
+    if (membership.server.ownerUserId === user.id) {
+      setServerContextSettingsAccess({
+        serverId: membership.serverId,
+        canOpen: true,
+      })
+      return
+    }
+
+    if (
+      membership.serverId === selectedServerMembership?.serverId &&
+      serverEffectivePermissions?.serverId === membership.serverId
+    ) {
+      setServerContextSettingsAccess({
+        serverId: membership.serverId,
+        canOpen: canAccessServerSettings(
+          resolveServerWorkspacePermissionCapabilities(
+            serverEffectivePermissions,
+            false,
+            membership.serverId,
+          ),
+        ),
+      })
+      return
+    }
+
+    const serverId = membership.serverId
+    setServerContextSettingsAccess({ serverId, canOpen: null })
+    void apiJson<ServerEffectivePermissionsResponse>(
+      `/api/servers/${serverId}/members/me/effective-permissions`,
+      { accessToken: session.accessToken },
+    )
+      .then((effectivePermissions) => {
+        setServerContextSettingsAccess((current) =>
+          current?.serverId === serverId
+            ? {
+                serverId,
+                canOpen: canAccessServerSettings(
+                  resolveServerWorkspacePermissionCapabilities(
+                    effectivePermissions,
+                    false,
+                    serverId,
+                  ),
+                ),
+              }
+            : current,
+        )
+      })
+      .catch(() => {
+        setServerContextSettingsAccess((current) =>
+          current?.serverId === serverId
+            ? { serverId, canOpen: false }
+            : current,
+        )
+      })
+  }
+
+  async function deleteSelectedServer() {
+    const membership = selectedServerMembership
+    if (!membership || membership.server.ownerUserId !== user.id) {
+      return
+    }
+
+    await deleteServer(membership)
+    closeServerSettingsMenu()
+    showServersWorkspace()
+  }
 
   useMobileBrowserHistory({
     tab: mobileTab,
@@ -495,25 +657,15 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     void onLogout()
   }
 
-  const selectedServerPermissionCapabilities =
-    resolveServerWorkspacePermissionCapabilities(
-      serverEffectivePermissions,
-      selectedServerMembership?.server.ownerUserId === user.id,
-      selectedServerMembership?.serverId,
-    )
-  const serverContextTargetsSelectedServer =
-    serverContextMenu?.membership.serverId ===
-    selectedServerMembership?.serverId
   const serverContextItems = buildServerContextMenuItems({
     membership: serverContextMenu?.membership ?? null,
     currentUserId: user.id,
-    canManageServerProfile:
-      serverContextTargetsSelectedServer &&
-      selectedServerPermissionCapabilities.canManageServerProfile,
-    canManageServerSettings:
-      serverContextTargetsSelectedServer &&
-      selectedServerPermissionCapabilities.canManageServerSettings,
-    onOpenServerSettings: openServerSettings,
+    canOpenFullServerSettings:
+      serverContextSettingsAccess?.serverId ===
+        serverContextMenu?.membership.serverId &&
+      serverContextSettingsAccess?.canOpen === true,
+    onOpenServerSettings: (membership) =>
+      void openFullServerSettingsFromContext(membership),
     onLeaveServer: leaveServerFromContextMenu,
   })
 
@@ -548,8 +700,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     if (!channel) return
 
     if (channel.channelScope === 'private') {
-      openMobileMessages()
-      openPrivateSpace(channel.spaceId)
+      openMobilePrivateWorkspace(() => openPrivateSpace(channel.spaceId))
       return
     }
 
@@ -594,12 +745,37 @@ export function HubPage({ session, onLogout }: HubPageProps) {
         notifications={webNotifications}
         closingNotificationIds={closingWebNotificationIds}
         onDismiss={dismissWebNotification}
-        onOpenPrivateSpace={openPrivateSpace}
+        onMarkStoredRead={markStoredNotificationRead}
+        onOpenPrivateSpace={(spaceId) =>
+          openMobilePrivateWorkspace(() => openPrivateSpace(spaceId))
+        }
+        onOpenTarget={(target) => void openNotificationTarget(target)}
         onAcceptInvite={acceptDirectServerInvite}
         onDeclineInvite={declineDirectServerInvite}
         onPause={pauseWebNotifications}
         onResume={resumeWebNotifications}
         placement={webNotificationPlacement}
+        bottomOffsetPx={
+          webNotificationPlacement === 'bottom-right'
+            ? 24 + voice.incomingPrivateCalls.length * 174
+            : 24
+        }
+      />
+      <PrivateCallNotificationStack
+        calls={voice.incomingPrivateCalls}
+        currentUserId={user.id}
+        privateSpaces={privateSpaces}
+        onAccept={async (call, title) => {
+          await voice.acceptPrivateCall({
+            callId: call.callId,
+            spaceId: call.spaceId,
+            title,
+          })
+          openMobilePrivateWorkspace(() => openPrivateSpace(call.spaceId))
+        }}
+        onDecline={(call) =>
+          voice.declinePrivateCall(call.callId, call.spaceId)
+        }
       />
       <ServerRail
         avatarSrc={avatarSrc}
@@ -611,7 +787,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
         selectedServerVoiceParticipants={selectedServerVoiceParticipants}
         onOpenProfile={showProfileWorkspace}
         onOpenServer={(membership) => void openServerWorkspace(membership)}
-        onOpenContextMenu={openServerContextMenu}
+        onOpenContextMenu={openServerContextMenuWithPermissions}
         onReorderServers={reorderServerMemberships}
         onCreateServer={openCreateServerDialog}
         onShowAllServers={showServersWorkspace}
@@ -746,6 +922,15 @@ export function HubPage({ session, onLogout }: HubPageProps) {
             onDeclineDirectServerInvite={(inviteId) =>
               void declineDirectServerInvite(inviteId)
             }
+            onOpenNotificationTarget={(target) =>
+              void openNotificationTarget(target)
+            }
+            communityNavigationRequest={communityNavigationRequest}
+            onCommunityNavigationRequestConsumed={(requestId) =>
+              setCommunityNavigationRequest((current) =>
+                current?.id === requestId ? null : current,
+              )
+            }
             onFriendSearchQueryChange={setSearchQuery}
             onSendFriendRequest={(userId) => void sendFriendRequest(userId)}
             onAcceptFriendRequest={(requestId) =>
@@ -800,7 +985,6 @@ export function HubPage({ session, onLogout }: HubPageProps) {
               spacePermissions={spacePermissions}
               serverPermissions={serverPermissions}
               serverEffectivePermissions={serverEffectivePermissions}
-              memberRoles={memberRoles}
               serverAuditLogs={serverAuditLogs}
               serverBans={serverBans}
               serverJoinRequests={serverJoinRequests}
@@ -830,6 +1014,11 @@ export function HubPage({ session, onLogout }: HubPageProps) {
               loadExternalMediaPreviews={profileSettings.loadExternalMediaPreviews}
               horizontalVideoCardSize={profileSettings.horizontalVideoCardSize}
               verticalVideoCardSize={profileSettings.verticalVideoCardSize}
+              selectedThemeCode={profileSettings.selectedThemeCode}
+              profileColor={profileSettings.profileColor}
+              applySystemThemeToOtherProfiles={
+                profileSettings.applySystemThemeToOtherProfiles
+              }
               messageDisplayFormat={profileSettings.serverMessageDisplayFormat}
               messageBubbleAlignment={
                 profileSettings.serverMessageBubbleAlignment
@@ -837,6 +1026,10 @@ export function HubPage({ session, onLogout }: HubPageProps) {
               messageBubbleWidth={profileSettings.serverMessageBubbleWidth}
               isSettingsOpen={isServerSettingsMenuOpen}
               voice={voice}
+              externalMessageFocus={notificationMessageFocus}
+              onExternalMessageFocusConsumed={() =>
+                setNotificationMessageFocus(null)
+              }
               voiceAudioSettingsByUserId={
                 voiceAudioSettingsByUserId
               }
@@ -852,6 +1045,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
               }}
               onCreateServerInvite={createServerInvite}
               onUpdateServer={updateServerSettings}
+              onDeleteServer={deleteSelectedServer}
               onRevokeServerInvite={(inviteId) => void revokeServerInvite(inviteId)}
               onLoadMoreServerJoinRequests={() =>
                 void loadMoreServerJoinRequests()

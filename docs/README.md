@@ -1,8 +1,9 @@
 # ArcaneLink
 
-**Release candidate:** `1.0.0-rc.1`  
-**Official website:** [arcane-link.ru](https://arcane-link.ru)  
-**Repository status:** private academic-review source tree
+**Current release:** `1.0.1`<br>
+**Official website:** [arcane-link.ru](https://arcane-link.ru)<br>
+**Repository status:** publicly visible, source-available academic-review tree
+(not open source)
 
 [Русская версия](README.ru.md)
 
@@ -11,7 +12,7 @@ combines servers and spaces, direct and group conversations, files,
 reactions, moderation, granular role permissions, and real-time voice, video,
 and screen sharing in a single product.
 
-This repository is a deployable release-candidate monorepo. It contains the
+This repository is a deployable monorepo. It contains the
 ASP.NET Core backend, PostgreSQL migrations, the React web client, desktop and
 mobile wrappers, infrastructure definitions, automated tests, and operating
 documentation. Runtime data, credentials, signing material, and production
@@ -88,11 +89,13 @@ The reference topology uses one backend service and one PostgreSQL database;
 multi-node high availability is not claimed for this release candidate.
 
 See [Architecture](ARCHITECTURE.md) and [Release status](RELEASE_STATUS.md) for
-the exact boundaries of `1.0.0-rc.1`.
+the exact boundaries of `1.0.1`.
 
 ## Documentation
 
 - [Architecture](ARCHITECTURE.md)
+- [Server API and ownership map](API.md) ([RU](API.ru.md))
+- [Account email lifecycle](ACCOUNT_EMAIL_LIFECYCLE.md) ([RU](ACCOUNT_EMAIL_LIFECYCLE.ru.md))
 - [Database and migrations](DATABASE.md)
 - [Configuration](CONFIGURATION.md)
 - [Development](DEVELOPMENT.md)
@@ -108,7 +111,10 @@ the exact boundaries of `1.0.0-rc.1`.
 
 ## License
 
-This private review repository is **not open source**. It is provided under
-the repository-root Academic Review License. Third-party dependencies remain
-under their own licenses. Do not redistribute the source or deploy a public
-copy without written authorization.
+This publicly visible source tree is **source-available, not open source**. It
+remains under the repository-root Academic Review License. Public visibility
+does not itself constitute authorization or grant permission. Any use beyond
+the License's express review permissions—including modification,
+redistribution, or operation as a public service—requires prior written
+permission from the copyright holder. Third-party components remain under
+their own licenses.

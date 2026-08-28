@@ -7,6 +7,7 @@ import {
   getPasswordRequirements,
 } from './AuthPageValidation'
 import type { RegisterForm } from '../model/AuthPageModel'
+import { AuthPasswordField } from '../fields/AuthPasswordField'
 import formStyles from '../login/AuthFormControls.module.css'
 import styles from './AuthRegisterForm.module.css'
 
@@ -45,12 +46,33 @@ export function getRegisterStepRequirements(
 export function RegisterWizardField({
   stepKey,
   registerForm,
+  isPasswordVisible,
   onChange,
+  onPasswordVisibilityChange,
 }: {
   stepKey: keyof RegisterForm
   registerForm: RegisterForm
+  isPasswordVisible: boolean
   onChange: (form: RegisterForm) => void
+  onPasswordVisibilityChange: (isVisible: boolean) => void
 }) {
+  if (stepKey === 'password') {
+    return (
+      <AuthPasswordField
+        name="password"
+        autoComplete="new-password"
+        isVisible={isPasswordVisible}
+        label={authCopy.fields.password}
+        placeholder={authCopy.fields.password}
+        value={registerForm.password}
+        onChange={(event) =>
+          onChange({ ...registerForm, password: event.target.value })
+        }
+        onVisibilityChange={onPasswordVisibilityChange}
+      />
+    )
+  }
+
   const field = {
     login: {
       icon: 'user' as const,
@@ -72,13 +94,6 @@ export function RegisterWizardField({
       autoComplete: 'email',
       placeholder: 'Email',
       type: 'email',
-    },
-    password: {
-      icon: 'lock' as const,
-      label: authCopy.fields.password,
-      autoComplete: 'new-password',
-      placeholder: authCopy.fields.password,
-      type: 'password',
     },
   }[stepKey]
 

@@ -162,7 +162,7 @@ function options(
     isMutatingDirectMessageBlock: false,
     isUserBlockStatusResolved: true,
     isUserBlocked: false,
-    onSelectMember: () => undefined,
+    onOpenMemberProfile: () => undefined,
     onMentionUser: () => undefined,
     onOpenDirectSpace: () => undefined,
     onSendFriendRequest: () => undefined,
@@ -228,7 +228,7 @@ test.describe('voice participant context menu', () => {
     expect(items.at(-1)?.type).not.toBe('separator')
   })
 
-  test('exposes persistent 0-200 percent playback controls for another user', () => {
+  test('exposes persistent 0-400 percent playback controls in one-percent steps', () => {
     const patches: Array<{
       volume?: number
       isMuted?: boolean
@@ -255,9 +255,10 @@ test.describe('voice participant context menu', () => {
     expect(volume?.type).toBe('range')
     if (volume?.type === 'range') {
       expect(volume.min).toBe(0)
-      expect(volume.max).toBe(200)
+      expect(volume.max).toBe(400)
+      expect(volume.step).toBe(1)
       expect(volume.value).toBe(135)
-      volume.onChange(175)
+      volume.onChange(347)
     }
     expect(localMute?.type).toBe('item')
     if (localMute?.type === 'item') {
@@ -270,7 +271,7 @@ test.describe('voice participant context menu', () => {
       hideVideo.onSelect?.()
     }
     expect(patches).toEqual([
-      { volume: 1.75 },
+      { volume: 3.47 },
       { isMuted: false },
       { isVideoHidden: true },
     ])

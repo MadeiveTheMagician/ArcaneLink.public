@@ -17,6 +17,40 @@ namespace ArcaneLink.Tests.Users;
 
 public sealed class UserPresenceIntegrationTests
 {
+    [Theory]
+    [InlineData("graphite", "41000000-0000-0000-0000-000000000008")]
+    [InlineData("snow", "41000000-0000-0000-0000-000000000009")]
+    public async Task ProfileSettings_NewSystemThemes_CanBeSelectedAndPersisted(
+        string themeCode,
+        string expectedThemeId)
+    {
+        using var factory = new ArcaneLinkApiFactory();
+        using var client = factory.CreateClient();
+        client.AuthorizeWith(await client.LoginAsync("owner"));
+
+        using var response = await client.PatchAsJsonAsync(
+            "/api/users/me/profile/settings",
+            new UpdateUserProfileSettingsRequest
+            {
+                SelectedThemeCode = $" {themeCode.ToUpperInvariant()} "
+            });
+        await ApiClientExtensions.EnsureSuccessWithBodyAsync(response);
+        var updated = await response.Content
+            .ReadFromJsonAsync<UserProfileSettingsResponse>();
+
+        Assert.NotNull(updated);
+        Assert.Equal(themeCode, updated.SelectedThemeCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var settings = await db.UserProfileSettings
+            .Include(row => row.SelectedTheme)
+            .SingleAsync(row => row.UserId == ArcaneLinkApiFactory.OwnerUserId);
+
+        Assert.Equal(Guid.Parse(expectedThemeId), settings.SelectedThemeId);
+        Assert.Equal(themeCode, settings.SelectedTheme?.Code);
+    }
+
     [Fact]
     public async Task ProfileSettings_DefaultUpdateAndStrictValidation_AreStable()
     {

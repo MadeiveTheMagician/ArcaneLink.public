@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.DTOs.Messages;
 using ArcaneLink.DataBase.DTOs.Spaces;
@@ -14,6 +15,74 @@ namespace ArcaneLink.Tests.PrivateSpaces;
 
 public sealed class PrivateSpaceIntegrationTests
 {
+    [Fact]
+    public async Task Members_CanPinAndUnpinMessage_WithPersistedTimelineEvent()
+    {
+        using var factory = new ArcaneLinkApiFactory();
+        using var client = factory.CreateClient();
+        client.AuthorizeWith(await client.LoginAsync("owner"));
+        var space = await CreatePrivateSpaceAsync(
+            client,
+            ArcaneLinkApiFactory.MemberUserId);
+        var messagesPath = $"{SpacePath(space.SpaceId)}/messages";
+        var message = await CreateMessageAsync(
+            client,
+            messagesPath,
+            "private pin lifecycle target");
+
+        using (var pinResponse = await client.PostAsync(
+                   $"{messagesPath}/{message.Id}/pin",
+                   null))
+        {
+            await ApiClientExtensions.EnsureSuccessWithBodyAsync(pinResponse);
+        }
+        using (var repeatedPinResponse = await client.PostAsync(
+                   $"{messagesPath}/{message.Id}/pin",
+                   null))
+        {
+            await ApiClientExtensions.EnsureSuccessWithBodyAsync(repeatedPinResponse);
+        }
+
+        var pinned = await client.GetFromJsonAsync<List<SpaceMessageResponse>>(
+            $"{messagesPath}/pinned");
+        Assert.Contains(pinned!, candidate => candidate.Id == message.Id);
+
+        var messages = await client.GetFromJsonAsync<List<SpaceMessageResponse>>(
+            messagesPath);
+        var pinEvent = Assert.Single(
+            messages!,
+            candidate =>
+                candidate.MessageTypeCode == "event" &&
+                candidate.ReplyToMessageId == message.Id);
+        using (var payload = JsonDocument.Parse(Assert.IsType<string>(pinEvent.Payload)))
+        {
+            Assert.Equal(
+                "message_pinned",
+                payload.RootElement.GetProperty("kind").GetString());
+            Assert.Equal(
+                message.Id,
+                payload.RootElement.GetProperty("messageId").GetGuid());
+        }
+
+        client.AuthorizeWith(await client.LoginAsync("member"));
+        using (var unpinResponse = await client.DeleteAsync(
+                   $"{messagesPath}/{message.Id}/pin"))
+        {
+            Assert.Equal(HttpStatusCode.NoContent, unpinResponse.StatusCode);
+        }
+        var afterUnpin = await client.GetFromJsonAsync<List<SpaceMessageResponse>>(
+            $"{messagesPath}/pinned");
+        Assert.DoesNotContain(afterUnpin!, candidate => candidate.Id == message.Id);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var pinRecord = await db.SpacePinnedMessages
+            .AsNoTracking()
+            .SingleAsync(record => record.MessageId == message.Id);
+        Assert.NotNull(pinRecord.UnpinnedAt);
+        Assert.Equal(ArcaneLinkApiFactory.MemberUserId, pinRecord.UnpinnedByUserId);
+    }
+
     [Fact]
     public async Task Trash_SupportsPersonalAndGlobalRestore_AndPurgesExpiredGlobalMessages()
     {

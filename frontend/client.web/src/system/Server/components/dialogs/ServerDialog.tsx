@@ -1,30 +1,12 @@
 import type { FormEvent, RefObject } from 'react'
-import type {
-  ServerAccessMode,
-  ServerMemberResponse,
-} from '../../../../shared/types'
+import type { ServerAccessMode } from '../../../../shared/types'
 import { serverCopy } from '../../../shared'
 import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon'
 import buttonStyles from '../../../shared/styles/Button.module.css'
 import dialogStyles from '../../../shared/styles/Dialog.module.css'
 import styles from './ServerDialog.module.css'
 
-export type ServerSettingsSection = 'all' | 'edit' | 'delete'
-
-export type ServerSettingsAccess = {
-  canManageProfile: boolean
-  canManageSettings: boolean
-  canDelete: boolean
-}
-
-export type ServerDialogState =
-  | { mode: 'create' }
-  | {
-      mode: 'settings'
-      membership: ServerMemberResponse
-      section: ServerSettingsSection
-      access: ServerSettingsAccess
-    }
+export type ServerDialogState = { mode: 'create' }
 
 export type ServerFormState = {
   title: string
@@ -40,11 +22,9 @@ export type ServerFormState = {
 }
 
 type ServerDialogProps = {
-  dialog: ServerDialogState
   form: ServerFormState
   notice: string | null
   isSaving: boolean
-  isDeleteSectionOpen: boolean
   iconInputRef: RefObject<HTMLInputElement | null>
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onClose: () => void
@@ -52,8 +32,6 @@ type ServerDialogProps = {
   onChooseIconFile: (file: File | undefined) => void
   onShowIconLibrary: () => void
   onClearIcon: () => void
-  onToggleDeleteSection: () => void
-  onDeleteServer: (membership: ServerMemberResponse) => void
 }
 
 const accessModes: ServerAccessMode[] = [
@@ -63,11 +41,9 @@ const accessModes: ServerAccessMode[] = [
 ]
 
 export function ServerDialog({
-  dialog,
   form,
   notice,
   isSaving,
-  isDeleteSectionOpen,
   iconInputRef,
   onSubmit,
   onClose,
@@ -75,23 +51,7 @@ export function ServerDialog({
   onChooseIconFile,
   onShowIconLibrary,
   onClearIcon,
-  onToggleDeleteSection,
-  onDeleteServer,
 }: ServerDialogProps) {
-  const canShowProfile =
-    dialog.mode === 'create' || dialog.access.canManageProfile
-  const canShowSettings =
-    dialog.mode === 'create' || dialog.access.canManageSettings
-  const canShowForm =
-    (dialog.mode === 'create' ||
-      dialog.section === 'all' ||
-      dialog.section === 'edit') &&
-    (canShowProfile || canShowSettings)
-  const canShowDelete =
-    dialog.mode === 'settings' &&
-    dialog.access.canDelete &&
-    (dialog.section === 'all' || dialog.section === 'delete')
-
   return (
     <div className={dialogStyles.backdrop} role="presentation">
       <section
@@ -102,17 +62,13 @@ export function ServerDialog({
       >
         <div className={styles.header}>
           <h2 id="server-dialog-title">
-            {dialog.mode === 'create'
-              ? serverCopy.dialog.createTitle
-              : serverCopy.dialog.settingsTitle}
+            {serverCopy.dialog.createTitle}
           </h2>
-          {dialog.mode === 'settings' && <p>@{dialog.membership.server.slug}</p>}
           {notice && <p>{notice}</p>}
         </div>
 
-        {canShowForm && (
-          <form className={styles.form} onSubmit={onSubmit}>
-            {canShowProfile && <div className={styles.iconField}>
+        <form className={styles.form} onSubmit={onSubmit}>
+            <div className={styles.iconField}>
               <button
                 className={styles.iconPicker}
                 type="button"
@@ -182,8 +138,8 @@ export function ServerDialog({
                 accept="image/png,image/jpeg,image/webp"
                 onChange={(event) => onChooseIconFile(event.target.files?.[0])}
               />
-            </div>}
-            {canShowProfile && <label>
+            </div>
+            <label>
               <span>{serverCopy.dialog.name}</span>
               <input
                 className="ui-field-control"
@@ -198,8 +154,8 @@ export function ServerDialog({
                 maxLength={128}
                 required
               />
-            </label>}
-            {canShowProfile && <label>
+            </label>
+            <label>
               <span>{serverCopy.dialog.description}</span>
               <textarea
                 className="ui-field-control"
@@ -212,8 +168,8 @@ export function ServerDialog({
                 }
                 maxLength={512}
               />
-            </label>}
-            {canShowSettings && <fieldset className={styles.accessModeFieldset}>
+            </label>
+            <fieldset className={styles.accessModeFieldset}>
               <legend>{serverCopy.dialog.accessModeLabel}</legend>
               <p>{serverCopy.dialog.accessModeDescription}</p>
               <div className={styles.accessModeGrid}>
@@ -243,7 +199,7 @@ export function ServerDialog({
                   )
                 })}
               </div>
-            </fieldset>}
+            </fieldset>
             <div className={`${dialogStyles.actions} ${styles.actions}`}>
               <button
                 className={`${buttonStyles.button} ${buttonStyles.ghost} ${styles.actionButton}`}
@@ -264,49 +220,6 @@ export function ServerDialog({
               </button>
             </div>
           </form>
-        )}
-
-        {canShowDelete && (
-          <div className={styles.dangerZone}>
-            <button
-              className={styles.dangerToggle}
-              type="button"
-              onClick={onToggleDeleteSection}
-              aria-expanded={isDeleteSectionOpen}
-            >
-              <span>{serverCopy.dialog.deleteTitle}</span>
-              <strong>{isDeleteSectionOpen ? '-' : '+'}</strong>
-            </button>
-            {isDeleteSectionOpen && (
-              <div className={styles.dangerContent}>
-                <p>{serverCopy.dialog.deleteDescription}</p>
-                <div className={`${dialogStyles.actions} ${styles.actions}`}>
-                  <button
-                    className={`${buttonStyles.button} ${buttonStyles.ghost} ${styles.actionButton}`}
-                    type="button"
-                    onClick={onClose}
-                    disabled={isSaving}
-                  >
-                    {serverCopy.dialog.cancel}
-                  </button>
-                  <button
-                    className={`${buttonStyles.button} ${buttonStyles.danger} ${styles.actionButton}`}
-                    type="button"
-                    onClick={() =>
-                      dialog.mode === 'settings' &&
-                      onDeleteServer(dialog.membership)
-                    }
-                    disabled={isSaving}
-                  >
-                    {isSaving
-                      ? serverCopy.dialog.deleting
-                      : serverCopy.dialog.delete}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </section>
     </div>
   )

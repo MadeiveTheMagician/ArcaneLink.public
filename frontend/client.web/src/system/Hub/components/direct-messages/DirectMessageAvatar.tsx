@@ -97,7 +97,13 @@ export function UserAvatar({
   title,
 }: {
   className: string
-  user?: FriendUserResponse
+  user?: Pick<
+    FriendUserResponse,
+    | 'avatarAssetId'
+    | 'avatarCropOffsetX'
+    | 'avatarCropOffsetY'
+    | 'avatarCropZoom'
+  >
   title: string
 }) {
   const avatarUrl = user?.avatarAssetId

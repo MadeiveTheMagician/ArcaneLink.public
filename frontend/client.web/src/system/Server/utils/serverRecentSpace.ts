@@ -47,7 +47,7 @@ export function rememberRecentServerDetail(
   now = Date.now(),
   storage = getSessionStorage(),
 ) {
-  if (!storage || detail.type === 'member') return
+  if (!storage) return
 
   const snapshot = readStorage(storage)
   snapshot[serverId] = {

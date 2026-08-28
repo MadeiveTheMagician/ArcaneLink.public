@@ -40,15 +40,19 @@ namespace ArcaneLink.Services.Realtime
                 return;
             }
 
-            foreach (var userId in result.RemovedConnections
-                .Select(connection => connection.UserId)
-                .Distinct())
+            foreach (var connection in result.RemovedConnections)
             {
-                await _realtime.NotifyUserBestEffortAsync(
+                await _realtime.NotifyConnectionBestEffortAsync(
                     _logger,
-                    userId,
+                    connection.ConnectionId,
                     RealtimeEventNames.VoiceAccessRevoked,
-                    new { serverId },
+                    new
+                    {
+                        connection.ServerId,
+                        connection.SpaceId,
+                        connection.ChannelScope,
+                        connection.ParticipantId
+                    },
                     CancellationToken.None);
             }
 

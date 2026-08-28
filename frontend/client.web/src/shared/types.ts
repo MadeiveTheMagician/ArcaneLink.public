@@ -22,6 +22,8 @@ export type UserResponse = {
   login: string
   displayName: string
   email: string
+  emailConfirmedAt?: string | null
+  requiresEmailConfirmation?: boolean
   subscriptionType: SubscriptionTypeResponse
   createdAt: string
   presenceStatus: PresenceStatus
@@ -224,6 +226,7 @@ export type UserNotificationResponse = {
   spaceId: string | null
   spaceTitle: string | null
   messageId: string | null
+  messageCreatedAt: string | null
   inviteId: string | null
   createdAt: string
   readAt: string | null
@@ -723,6 +726,31 @@ export type ServerMemberProfileInheritanceResponse = {
   about: boolean
 }
 
+export type ServerMemberProfileRoleResponse = {
+  id: string
+  title: string
+  color: string | null
+}
+
+export type ServerMemberProfileMutualFriendResponse = {
+  userId: string
+  login: string
+  displayName: string
+  avatarAssetId: string | null
+  avatarCropOffsetX: number
+  avatarCropOffsetY: number
+  avatarCropZoom: number
+}
+
+export type ServerMemberProfileMutualServerResponse = {
+  serverId: string
+  title: string
+  iconAssetId: string | null
+  iconCropOffsetX: number
+  iconCropOffsetY: number
+  iconCropZoom: number
+}
+
 export type ServerMemberProfileResponse = {
   serverId: string
   userId: string
@@ -737,6 +765,19 @@ export type ServerMemberProfileResponse = {
   statusText: string | null
   updatedAt: string
   inheritance: ServerMemberProfileInheritanceResponse
+}
+
+export type ServerMemberViewerProfileResponse = ServerMemberProfileResponse & {
+  memberId: string
+  joinedAt: string
+  profileThemeCode: string
+  profileColor: string | null
+  profileBackgroundAssetId: string | null
+  roles: ServerMemberProfileRoleResponse[]
+  mutualFriendCount: number
+  mutualServerCount: number
+  mutualFriends: ServerMemberProfileMutualFriendResponse[]
+  mutualServers: ServerMemberProfileMutualServerResponse[]
 }
 
 export type OwnServerMemberProfileResponse = ServerMemberProfileResponse & {

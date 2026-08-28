@@ -177,6 +177,30 @@ export function usePrivateSpaceFolders(
     }
   }
 
+  async function removeSpaceFromFolder(folderId: string, spaceId: string) {
+    const folder = folders.find((item) => item.id === folderId)
+    if (!folder || folder.isSystem || !folder.spaceIds.includes(spaceId)) return
+
+    const previousFolders = folders
+    setFolders((current) => current.map((item) => item.id === folderId
+      ? {
+          ...item,
+          spaceIds: item.spaceIds.filter((id) => id !== spaceId),
+          pinnedSpaceIds: item.pinnedSpaceIds.filter((id) => id !== spaceId),
+        }
+      : item))
+
+    try {
+      await apiNoContent(
+        `/api/private-space-folders/${folderId}/spaces/${spaceId}`,
+        { method: 'DELETE', accessToken },
+      )
+    } catch (reason) {
+      setFolders(previousFolders)
+      throw reason
+    }
+  }
+
   async function reorderFolders(
     activeFolderId: string,
     overFolderId: string,
@@ -334,6 +358,7 @@ export function usePrivateSpaceFolders(
     updateFolder,
     deleteFolder,
     addSpaceToFolder,
+    removeSpaceFromFolder,
     reorderFolders,
     reorderSpaces,
     setPinned,

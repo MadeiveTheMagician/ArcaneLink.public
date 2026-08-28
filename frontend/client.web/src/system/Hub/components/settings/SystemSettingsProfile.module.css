@@ -14,10 +14,7 @@
   grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
   align-items: center;
   gap: 16px;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 7px;
-  padding: 14px;
-  background: var(--theme-control-bg);
+  padding: 7px 2px;
 }
 
 .identityField > span {

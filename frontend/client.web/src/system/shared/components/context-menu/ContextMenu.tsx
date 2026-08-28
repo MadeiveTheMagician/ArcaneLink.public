@@ -12,6 +12,10 @@ import {
   resolveContextMenuHeight,
   resolveContextMenuPlacement,
 } from '../../services/contextMenuPositioning'
+import {
+  contextMenuBoundaryAttributes,
+  isEventInsideContextMenuBoundary,
+} from '../../services/contextMenuEventBoundary'
 import { SystemIcon, type SystemIconName } from '../../icons/SystemIcon'
 import {
   getContextMenuItemKey,
@@ -40,6 +44,7 @@ const menuIconNames: Record<ContextMenuIcon, SystemIconName> = {
   call: 'phone-call',
   copy: 'copy',
   edit: 'edit',
+  folder: 'folder',
   friend: 'user-plus',
   invite: 'user-plus',
   leave: 'leave',
@@ -303,6 +308,7 @@ function ContextMenuRow({
           id={submenuId}
           role="group"
           aria-label={item.label}
+          {...contextMenuBoundaryAttributes}
           data-context-menu-submenu-root="true"
           className={`${styles.submenu} ${
             item.submenuLayout === 'grid' ? styles.submenuGrid : ''
@@ -477,13 +483,7 @@ export function ContextMenu({
 
   useEffect(() => {
     function closeFromOutside(event: PointerEvent | MouseEvent) {
-      if (
-        event.target instanceof Node && (
-          menuRef.current?.contains(event.target) ||
-          (event.target instanceof Element &&
-            event.target.closest('[data-context-menu-submenu-root="true"]'))
-        )
-      ) {
+      if (isEventInsideContextMenuBoundary(event)) {
         return
       }
 
@@ -585,6 +585,7 @@ export function ContextMenu({
       }`}
       data-context-row={position.row}
       data-context-column={position.column}
+      {...contextMenuBoundaryAttributes}
       data-context-menu-root="true"
       style={style}
       onClick={(event) => event.stopPropagation()}

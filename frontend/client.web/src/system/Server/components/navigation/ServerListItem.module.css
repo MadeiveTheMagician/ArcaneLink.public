@@ -1,4 +1,4 @@
-﻿.item {
+.item {
   display: flex;
   width: 100%;
   align-items: center;
@@ -21,9 +21,8 @@
   height: 42px;
   border: 1px solid var(--theme-section-border);
   border-radius: 12px;
-  color: var(--theme-accent-contrast);
-  background:
-    linear-gradient(135deg, #223466 0%, #4c67d3 100%);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
   box-shadow: none;
   flex: 0 0 auto;
   font-weight: 900;
@@ -116,8 +115,7 @@
     height: 62px;
     border: 1px solid var(--theme-section-border);
     border-radius: 16px;
-    background:
-      linear-gradient(135deg, #223466 0%, #4c67d3 100%);
+    background: var(--theme-avatar-bg);
     box-shadow: none;
   }
 

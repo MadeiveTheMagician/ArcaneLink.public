@@ -13,6 +13,17 @@ namespace ArcaneLink.Services.Realtime
             _hubContext = hubContext;
         }
 
+        public async Task NotifyConnectionAsync(
+            string connectionId,
+            string eventName,
+            object? payload = null,
+            CancellationToken cancellationToken = default)
+        {
+            await _hubContext.Clients
+                .Client(connectionId)
+                .SendAsync(eventName, payload, cancellationToken);
+        }
+
         public async Task NotifyUserAsync(
             Guid userId,
             string eventName,

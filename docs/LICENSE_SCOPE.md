@@ -19,9 +19,10 @@ those components and must preserve their notices.
 User-uploaded content, environment secrets, TLS certificates, signing keys and
 production data are not repository content and are not licensed by this file.
 
-## Future publication
+## Repository visibility
 
-If a public client repository is created later, its license must be selected
-and declared independently. Moving a file to a public repository does not
-automatically change the license of this private source tree.
+Public visibility or moving a file to another repository does not relicense it.
+Unless a file or component carries a different explicit notice, the
+repository-root Academic Review License continues to apply. Visibility or
+technical access alone does not constitute authorization.
 

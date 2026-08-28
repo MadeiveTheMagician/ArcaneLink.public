@@ -2,14 +2,13 @@ import { useMemo } from 'react'
 import type {
   ServerMemberDetailsResponse,
   ServerEffectivePermissionsResponse,
-  ServerMemberRoleResponse,
   ServerMemberResponse,
-  ServerRoleResponse,
   SpaceResponse,
   UserResponse,
 } from '../../../../shared/types'
 import { compareSpaces, type ServerDetail } from '../../utils/serverWorkspaceModel'
 import {
+  canAccessServerSettings,
   canAccessServerRoleSettings,
   resolveServerWorkspacePermissionCapabilities,
 } from '../../utils/serverEffectivePermissions'
@@ -18,8 +17,6 @@ type UseServerWorkspaceStateOptions = {
   selectedServerMembership: ServerMemberResponse
   user: UserResponse
   serverMembers: ServerMemberDetailsResponse[]
-  memberRoles: ServerMemberRoleResponse[]
-  serverRoles: ServerRoleResponse[]
   serverSpaces: SpaceResponse[]
   activeDetail: ServerDetail | null
   effectivePermissions: ServerEffectivePermissionsResponse | null
@@ -47,8 +44,6 @@ export function useServerWorkspaceState({
   selectedServerMembership,
   user,
   serverMembers,
-  memberRoles,
-  serverRoles,
   serverSpaces,
   activeDetail,
   effectivePermissions,
@@ -66,6 +61,9 @@ export function useServerWorkspaceState({
   const canManageRoles = canAccessServerRoleSettings(
     permissionCapabilities,
   )
+  const canOpenServerSettings = canAccessServerSettings(
+    permissionCapabilities,
+  )
   const rootSpaces = useMemo(
     () =>
       serverSpaces
@@ -80,15 +78,12 @@ export function useServerWorkspaceState({
         .sort(compareSpaces),
     [serverSpaces],
   )
-  const activeMemberExists =
-    activeDetail?.type !== 'member' ||
-    serverMembers.some((member) => member.id === activeDetail.memberId)
   const activeChannelExists =
     activeDetail?.type !== 'channel' ||
     activeDetail.spaceId === null ||
     serverSpaces.some((space) => space.id === activeDetail.spaceId)
   const visibleDetail: ServerDetail | null =
-    activeDetail && activeMemberExists && activeChannelExists
+    activeDetail && activeChannelExists
       ? activeDetail
       : null
   const hasSelectedDetail = Boolean(visibleDetail)
@@ -96,23 +91,6 @@ export function useServerWorkspaceState({
     visibleDetail?.type === 'channel' ? visibleDetail : null
   const activeTextSpaceId =
     visibleChannel?.kind === 'text' ? visibleChannel.spaceId : null
-  const selectedMember =
-    visibleDetail?.type === 'member'
-      ? serverMembers.find((member) => member.id === visibleDetail.memberId) ??
-        null
-      : null
-  const selectedMemberRoles = selectedMember
-    ? memberRoles
-        .filter(
-          (assignment) =>
-            assignment.memberId === selectedMember.id && !assignment.revokedAt,
-        )
-        .map((assignment) =>
-          serverRoles.find((role) => role.id === assignment.roleId),
-        )
-        .filter((role): role is ServerRoleResponse => Boolean(role))
-    : []
-
   return {
     activeTextSpaceId,
     canAssignRoles: permissionCapabilities.canAssignRoles,
@@ -130,6 +108,7 @@ export function useServerWorkspaceState({
     canManageServer,
     canManageServerProfile: permissionCapabilities.canManageServerProfile,
     canManageServerSettings: permissionCapabilities.canManageServerSettings,
+    canOpenServerSettings,
     canMoveVoiceParticipants: permissionCapabilities.canMoveVoiceMembers,
     canMuteVoiceMembers: permissionCapabilities.canMuteVoiceMembers,
     canViewAuditLog: permissionCapabilities.canViewAuditLog,
@@ -139,8 +118,6 @@ export function useServerWorkspaceState({
     hasSelectedDetail,
     isOwner,
     rootSpaces,
-    selectedMember,
-    selectedMemberRoles,
     server,
     textSpaces,
     visibleChannel,

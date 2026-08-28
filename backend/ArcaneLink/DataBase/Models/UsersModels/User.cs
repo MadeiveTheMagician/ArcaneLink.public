@@ -14,6 +14,8 @@ namespace ArcaneLink.DataBase.Models.UsersModels
         public required string Email { get; set; }
         public required string EmailNorm { get; set; }
 
+        public DateTime? EmailConfirmedAt { get; set; }
+
         public required string PasswordHash { get; set; }
 
         public Guid StatusId { get; set; }
@@ -34,6 +36,7 @@ namespace ArcaneLink.DataBase.Models.UsersModels
         public ICollection<UserVoiceLayoutPreset> VoiceLayoutPresets { get; set; } = [];
         public ICollection<UserDeviceSession> DeviceSessions { get; set; } = [];
         public ICollection<UserRefreshToken> RefreshTokens { get; set; } = [];
+        public ICollection<UserAccountActionToken> AccountActionTokens { get; set; } = [];
         public ICollection<Asset> Assets { get; set; } = [];
         public ICollection<ServerMember> ServerMemberships { get; set; } = [];
         public ICollection<FriendRequest> SentFriendRequests { get; set; } = [];

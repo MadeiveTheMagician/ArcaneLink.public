@@ -30,7 +30,7 @@ The signaling and authorization path is always centralized. The official
 production policy relays media through Coturn to avoid direct peer candidate
 use; local development may use direct connectivity. Authenticated clients
 obtain short-lived HMAC credentials from the backend, while the shared Coturn
-secret remains server-side. Media is not server-mixed in `1.0.0-rc.1`: a TURN
+secret remains server-side. Media is not server-mixed in `1.0.1`: a TURN
 relay transports encrypted WebRTC packets but is not an SFU.
 
 ## Backend

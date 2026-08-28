@@ -5,10 +5,12 @@ export type WebNotificationKind =
   | 'mention'
   | 'server-invite'
   | 'private-space-invite'
+  | 'friend-request'
   | 'system'
 
 export type WebNotificationItem = {
   id: string
+  storedNotificationId?: string
   kind: WebNotificationKind
   title: string
   body: string
@@ -17,6 +19,7 @@ export type WebNotificationItem = {
   spaceId?: string
   serverId?: string
   messageId?: string
+  messageCreatedAt?: string
   inviteId?: string
   persistent?: boolean
   senderAvatarAssetId?: string | null
@@ -60,14 +63,18 @@ export function mapStoredWebNotification(
   if (notification.kind === 'mention') {
     return {
       id: `mention:${notification.id}`,
+      storedNotificationId: notification.id,
       kind: 'mention',
-      title: notification.title,
-      body: notification.actorDisplayName ?? notification.body,
-      detail: notification.detail ?? notification.body,
+      title: notification.actorDisplayName
+        ? `${notification.actorDisplayName} · ${notification.title}`
+        : notification.title,
+      body: notification.body,
+      detail: notification.detail,
       createdAt: notification.createdAt,
       spaceId: notification.spaceId ?? undefined,
       serverId: notification.serverId ?? undefined,
       messageId: notification.messageId ?? undefined,
+      messageCreatedAt: notification.messageCreatedAt ?? undefined,
       senderAvatarAssetId: notification.actorAvatarAssetId,
       senderAvatarCropOffsetX: notification.actorAvatarCropOffsetX,
       senderAvatarCropOffsetY: notification.actorAvatarCropOffsetY,
@@ -81,6 +88,7 @@ export function mapStoredWebNotification(
   ) {
     return {
       id: `private-space-invite:${notification.id}`,
+      storedNotificationId: notification.id,
       kind: 'private-space-invite',
       title: notification.title,
       body: notification.actorDisplayName ?? notification.body,
@@ -90,6 +98,21 @@ export function mapStoredWebNotification(
           : notification.detail,
       createdAt: notification.createdAt,
       spaceId: notification.spaceId,
+      senderAvatarAssetId: notification.actorAvatarAssetId,
+      senderAvatarCropOffsetX: notification.actorAvatarCropOffsetX,
+      senderAvatarCropOffsetY: notification.actorAvatarCropOffsetY,
+      senderAvatarCropZoom: notification.actorAvatarCropZoom,
+    }
+  }
+
+  if (notification.kind === 'friend-request') {
+    return {
+      id: `friend-request:${notification.id}`,
+      storedNotificationId: notification.id,
+      kind: 'friend-request',
+      title: notification.title,
+      body: notification.body,
+      createdAt: notification.createdAt,
       senderAvatarAssetId: notification.actorAvatarAssetId,
       senderAvatarCropOffsetX: notification.actorAvatarCropOffsetX,
       senderAvatarCropOffsetY: notification.actorAvatarCropOffsetY,

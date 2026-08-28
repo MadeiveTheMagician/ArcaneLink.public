@@ -1,73 +1,55 @@
-# Release status: 1.0.0-rc.1
+# Release status: 1.0.1
 
-`1.0.0-rc.1` is the first repository-wide release candidate. The version means
-that the intended 1.0 feature set and data model are present, while final
-deployment rehearsal, signing, operational observation and review feedback may
-still produce compatible fixes before `1.0.0`.
+`1.0.1` is the current repository-wide source baseline. It combines the
+sanitized public topology with the current backend, web, desktop and Android
+implementation.
 
 ## Included
 
-- deployable backend and PostgreSQL migration history;
-- web client and automated browser/unit checks;
-- Electron and Capacitor Android packaging projects;
+- ASP.NET Core API, SignalR hub and complete PostgreSQL migration history;
+- account registration, verified email, password recovery and session control;
+- servers, spaces, private conversations, messaging, moderation and assets;
+- WebRTC signaling with short-lived TURN credentials and relay-only production
+  policy;
+- React web client, Electron desktop wrapper and Capacitor Android wrapper;
 - Docker Compose, Nginx and Coturn reference infrastructure;
-- granular server and resource authorization;
-- messaging, assets, moderation and realtime functionality;
-- voice, video and screen-sharing signaling;
-- sanitized examples and operating documentation.
+- automated backend, frontend, migration and browser test projects;
+- sanitized environment templates and bilingual API ownership documentation.
 
-## Release gates before 1.0.0
+## Current boundaries
 
-- reproduce a clean deployment from this repository and empty volumes;
-- reproduce an upgrade from the last deployed database backup;
-- verify backup and restore, not only backup creation;
-- run backend, frontend, migration and browser suites in CI;
-- rotate all environment credentials used before repository sanitization;
-- sign desktop and Android release artifacts outside the repository;
-- observe the candidate under realistic realtime and media load;
-- record known limitations in the final release notes.
+- WebRTC uses peer connections; no SFU or server-side media mixing is included.
+- The reference topology contains one backend node and one PostgreSQL primary.
+- Production requires external TLS certificates, SMTP delivery, TURN routing,
+  signing identities and independently managed secrets.
+- Upload retention is included; an external malware scanner is not bundled.
+- Desktop and Android release artifacts remain unsigned until a controlled
+  release job supplies external signing credentials.
 
-## Candidate verification snapshot
+## Local verification snapshot (2026-08-26)
 
-- backend Release build completed without warnings; 470 tests passed and four
-  opt-in PostgreSQL migration tests were skipped outside their isolated
-  database fixture;
-- web lint, typecheck and production build passed, with 418 unit tests;
-- an unsigned x64 NSIS installer was built and its packaged application/version
-  inspected;
-- Android debug and unsigned release APKs were built with JDK 21 and SDK 36;
-- clean-container migration, readiness and web smoke checks passed;
-- short-lived TURN credential backend/frontend contract tests passed, and the
-  pinned Coturn image completed an authenticated allocation health probe.
+- .NET SDK `10.0.400` Release build: 0 warnings, 0 errors;
+- backend tests: 511 passed, 4 isolated PostgreSQL migration tests skipped;
+- web lint, typecheck and Vite production build: passed;
+- frontend unit tests: 554 passed;
+- base plus TURN Docker Compose configuration: valid;
+- release-tree secret, authorship, local-path and generated-artifact checks:
+  passed.
 
-## Known candidate limitations
+Container deployment, PostgreSQL migration fixtures, browser E2E suites and
+signed client packages remain environment-specific release gates.
 
-- WebRTC media uses peer connections and the official topology requires TURN
-  relay; no SFU is included.
-- The official topology requires Coturn for voice and issues short-lived TURN
-  REST credentials at runtime. Without the credential service, production
-  voice intentionally fails closed rather than exposing direct candidates.
-- The reference deployment is a single application node and PostgreSQL
-  primary.
-- Content Security Policy is enabled in report-only mode while the final policy
-  is observed and tightened.
-- Upload validation and retention are implemented, but an external malware
-  scanner is not bundled.
-- Desktop and Android outputs are unsigned until the controlled release job
-  supplies external signing credentials.
-- The packaged clients have not yet completed a signed installation and
-  connected-device acceptance test.
-- Android microphone and camera support depends on device WebView permission
-  handling; screen sharing is not claimed until a MediaProjection flow is
-  validated on supported Android versions.
+## Required release gates
+
+1. Deploy from an empty database and migrate a restored production-like backup.
+2. Run backend, frontend, migration and browser suites in the target CI image.
+3. Exercise SMTP verification, password reset and email-change flows end to end.
+4. Validate authenticated TURN allocation and representative media sessions.
+5. Sign and install desktop and Android artifacts outside the repository.
+6. Review configuration, logs, backups and retained uploads before exposure.
 
 ## Versioning policy
 
-ArcaneLink follows Semantic Versioning for repository releases:
-
-- patch: compatible fixes and security hardening;
-- minor: backward-compatible features;
-- major: incompatible API, persistence or deployment contract changes.
-
-Database migrations remain forward-only in normal operation. A release tag
-identifies source, schema expectations and client build together.
+ArcaneLink follows Semantic Versioning. Database migrations are forward-only
+in normal operation; a release identifies source, schema expectations and
+client packages together.

@@ -1,14 +1,21 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { PointerEvent } from 'react'
 
 export const defaultSidePanelWidth = 300
 export const defaultMemberPanelWidth = 300
+export const responsiveMemberPanelCompactMaxWidth = 1200
 
 const sidePanelMinWidth = 250
 const sidePanelMaxWidth = 520
 const memberPanelMinWidth = 54
 const memberPanelMaxWidth = 520
 const memberPanelCompactWidth = 100
+
+export function shouldUseResponsiveMemberPanelCompact(
+  viewportWidth: number,
+) {
+  return viewportWidth <= responsiveMemberPanelCompactMaxWidth
+}
 
 type PanelResizeOptions = {
   initialSidePanelWidth?: number
@@ -28,8 +35,36 @@ export function usePanelResize({
   const [memberPanelWidth, setMemberPanelWidth] = useState(
     initialMemberPanelWidth,
   )
+  const [isResponsiveMemberPanelCompact, setIsResponsiveMemberPanelCompact] =
+    useState(() =>
+      typeof window === 'undefined'
+        ? false
+        : shouldUseResponsiveMemberPanelCompact(window.innerWidth),
+    )
 
-  const isMemberPanelCompact = memberPanelWidth <= memberPanelCompactWidth
+  const isMemberPanelCompact =
+    memberPanelWidth <= memberPanelCompactWidth ||
+    isResponsiveMemberPanelCompact
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+
+    const mediaQuery = window.matchMedia(
+      `(max-width: ${responsiveMemberPanelCompactMaxWidth}px)`,
+    )
+    const updateResponsiveCompactState = () => {
+      setIsResponsiveMemberPanelCompact(mediaQuery.matches)
+    }
+
+    updateResponsiveCompactState()
+    mediaQuery.addEventListener('change', updateResponsiveCompactState)
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateResponsiveCompactState)
+    }
+  }, [])
 
   function startPaneResize(
     pane: 'spaces' | 'members' | 'hub',

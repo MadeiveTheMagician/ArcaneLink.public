@@ -33,9 +33,16 @@ export function VoiceParticipantAvatar({
   className: string
   onAccentChange?: (accent: string) => void
 }) {
-  const avatarUrl = member?.user.avatarAssetId
-    ? `/api/assets/${member.user.avatarAssetId}/content`
+  const avatarAssetId = member?.user.avatarAssetId ?? participant.avatarAssetId
+  const avatarUrl = avatarAssetId
+    ? `/api/assets/${avatarAssetId}/content`
     : null
+  const avatarCropOffsetX =
+    member?.user.avatarCropOffsetX ?? participant.avatarCropOffsetX ?? 0
+  const avatarCropOffsetY =
+    member?.user.avatarCropOffsetY ?? participant.avatarCropOffsetY ?? 0
+  const avatarCropZoom =
+    member?.user.avatarCropZoom ?? participant.avatarCropZoom ?? 1
 
   function handleAvatarLoad(event: SyntheticEvent<HTMLImageElement>) {
     if (!onAccentChange) {
@@ -58,9 +65,9 @@ export function VoiceParticipantAvatar({
           alt=""
           draggable={false}
           style={{
-            transform: `translate(${(member?.user.avatarCropOffsetX ?? 0) * 100}%, ${
-              (member?.user.avatarCropOffsetY ?? 0) * 100
-            }%) scale(${member?.user.avatarCropZoom ?? 1})`,
+            transform: `translate(${avatarCropOffsetX * 100}%, ${
+              avatarCropOffsetY * 100
+            }%) scale(${avatarCropZoom})`,
           }}
           onLoad={onAccentChange ? handleAvatarLoad : undefined}
           onError={

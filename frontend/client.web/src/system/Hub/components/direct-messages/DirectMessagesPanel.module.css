@@ -1,4 +1,4 @@
-﻿.panel {
+.panel {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 14px;
@@ -12,10 +12,6 @@
   font-family: var(--profile-fantasy-font);
 }
 
-.searchMode {
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
 .search {
   display: none;
   position: relative;
@@ -25,17 +21,12 @@
 
 .desktopSearchControl {
   display: block;
+  min-width: 0;
 }
 
 @media (min-width: 761px) {
   .panel {
     gap: 7px;
-  }
-
-  .desktopSearchControl {
-    position: relative;
-    top: -10px;
-    margin-bottom: -10px;
   }
 }
 
@@ -43,10 +34,39 @@
   display: contents;
 }
 
+.conversationSearchRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.conversationSearchInput {
+  grid-template-columns: 15px minmax(0, 1fr);
+  gap: 5px;
+  min-width: 0;
+  min-height: 24px;
+  height: 24px;
+  border-radius: 6px;
+  padding: 0 7px;
+  font-size: 12px;
+}
+
+.conversationSearchInput input {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+}
+
 .searchActions {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .searchActions button {
@@ -75,78 +95,6 @@
 
 .mobileContent {
   display: none;
-}
-
-.searchFilters {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  z-index: 12;
-  display: none;
-  gap: 8px;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 8px;
-  padding: 10px;
-  background: var(--theme-surface-raised);
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
-}
-
-.search:focus-within .searchFilters {
-  display: grid;
-}
-
-.searchFilters label {
-  display: grid;
-  gap: 4px;
-}
-
-.searchFilters label > span {
-  color: var(--theme-text-faint);
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.searchFilters select {
-  min-width: 0;
-  min-height: 30px;
-  border: 1px solid var(--theme-border-control);
-  border-radius: 7px;
-  padding: 0 8px;
-  color: var(--color-text);
-  background: var(--theme-control-bg);
-  font-size: 12px;
-  outline: 0;
-}
-
-.searchIcon {
-  position: absolute;
-  z-index: 1;
-  left: 16px;
-  top: 50%;
-  width: 19px;
-  height: 19px;
-  pointer-events: none;
-  transform: translateY(-50%);
-  color: var(--theme-text-soft);
-}
-
-.search input {
-  min-width: 0;
-  height: 28px;
-  border: 1px solid var(--theme-border-control);
-  border-radius: 9px;
-  padding: 0 18px 0 46px;
-  color: var(--color-text);
-  background: var(--theme-control-bg);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
-  font-size: 15px;
-  outline: none;
-}
-
-.search input::placeholder {
-  color: var(--theme-text-faint);
 }
 
 .heading button {
@@ -301,7 +249,8 @@
 }
 
 .folderDragging {
-  opacity: 0;
+  pointer-events: none;
+  animation: collapsePrivateSpaceDragSource 180ms cubic-bezier(0.2, 0.76, 0.24, 1) both;
 }
 
 .reorderBefore::after,
@@ -329,12 +278,15 @@
 }
 
 .dragOverlayItem {
-  grid-template-columns: 42px minmax(0, 1fr);
-  column-gap: 10px;
+  box-sizing: border-box;
+  grid-template-columns: 26px minmax(0, 1fr);
+  column-gap: 6px;
   width: 100%;
-  min-height: 62px;
+  height: 100%;
+  min-height: 36px;
   overflow: hidden;
-  padding: 9px 10px 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent), transparent 46%);
+  padding: 2px 7px;
   color: var(--color-text);
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 80%), color-mix(in srgb, var(--theme-accent), transparent 92%)),
@@ -345,20 +297,70 @@
   opacity: 0.96;
   pointer-events: none;
   cursor: grabbing;
-  animation: compactPrivateSpaceDrag 190ms cubic-bezier(0.2, 0.76, 0.24, 1) both;
+  transform-origin: center;
+  will-change: opacity, transform, filter;
+  animation: compactPrivateSpaceDrag 210ms cubic-bezier(0.2, 0.76, 0.24, 1) both;
 }
 
 .dragOverlayItem .avatar {
-  width: 42px;
-  height: 42px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+
+.dragOverlayItem .body {
+  gap: 0;
+}
+
+.dragOverlayItem .titleRow {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.dragOverlayItem .titleIdentity {
+  gap: 3px;
+}
+
+.dragOverlayItem strong {
+  font-size: 10px;
+}
+
+.dragOverlayItem .previewRow,
+.dragOverlayItem .titleMeta,
+.dragOverlayItem::before {
+  display: none;
 }
 
 @keyframes compactPrivateSpaceDrag {
   from {
-    opacity: 0.72;
+    opacity: 0.58;
+    filter: saturate(0.82) blur(0.35px);
+    transform: scale(
+      var(--private-space-drag-entry-scale-x, 1),
+      var(--private-space-drag-entry-scale-y, 1)
+    );
+  }
+  72% {
+    opacity: 0.94;
+    filter: saturate(1) blur(0);
+    transform: scale(0.96);
   }
   to {
     opacity: 0.96;
+    filter: saturate(1) blur(0);
+    transform: scale(1);
+  }
+}
+
+@keyframes collapsePrivateSpaceDragSource {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.92);
   }
 }
 
@@ -378,8 +380,13 @@
     animation: none;
   }
 
-  .dragOverlayItem {
+  .dragOverlayItem,
+  .folderDragging {
     animation: none;
+  }
+
+  .folderDragging {
+    opacity: 0;
   }
 
   .folderToggle svg,
@@ -459,9 +466,8 @@
   place-items: center;
   border: 1px solid var(--theme-section-border);
   border-radius: 12px;
-  color: var(--theme-accent-contrast);
-  background:
-    linear-gradient(135deg, #223466 0%, #4c67d3 100%);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
   box-shadow: none;
   font-size: 14px;
   font-weight: 900;
@@ -607,7 +613,7 @@
 .createDialog h2 {
   margin: 0;
   overflow: hidden;
-  color: rgba(238, 241, 255, 0.94);
+  color: var(--color-text);
   font-size: 15px;
   font-weight: 900;
   text-overflow: ellipsis;
@@ -701,19 +707,18 @@
     margin: 0 18px 8px;
   }
 
-  :global(.profile-page.is-mobile-tab-messages) .searchIcon {
-    left: 14px;
-  }
-
-  :global(.profile-page.is-mobile-tab-messages) .search input {
+  :global(.profile-page.is-mobile-tab-messages) .search > label {
     box-sizing: border-box;
     width: 100%;
     height: 100%;
     border-color: color-mix(in srgb, var(--theme-border-control), transparent 28%);
     border-radius: 10px;
-    padding-left: 38px;
     background:
-      linear-gradient(180deg, #0c1735 0%, #071024 100%);
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--theme-control-bg), var(--theme-accent) 4%),
+        var(--theme-control-bg-strong)
+      );
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.025),
       0 8px 18px rgba(0, 0, 0, 0.12);
@@ -775,7 +780,7 @@
     border-radius: 10px;
     padding: 4px;
     background:
-      linear-gradient(180deg, #0d1635 0%, #071024 100%);
+      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
   }
 
   :global(.profile-page.is-mobile-tab-messages) .mobileFolderRail span {
@@ -853,8 +858,7 @@
     height: 62px;
     border: 1px solid var(--theme-section-border);
     border-radius: 16px;
-    background:
-      linear-gradient(135deg, #223466 0%, #4c67d3 100%);
+    background: var(--theme-avatar-bg);
     box-shadow: none;
     font-size: 20px;
   }
@@ -886,8 +890,7 @@
     border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 48%);
     border-radius: 12px;
     color: var(--theme-accent-light);
-    background:
-      linear-gradient(135deg, #223466 0%, #4c67d3 100%);
+    background: var(--theme-surface-accent);
     box-shadow:
       0 10px 24px rgba(0, 0, 0, 0.34),
       0 0 18px color-mix(in srgb, var(--theme-accent), transparent 76%);

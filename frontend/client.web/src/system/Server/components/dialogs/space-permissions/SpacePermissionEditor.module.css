@@ -36,11 +36,6 @@
   font-weight: 750;
 }
 
-.controls select {
-  width: 100%;
-  min-height: 38px;
-}
-
 .saveButton {
   min-height: 40px;
   align-self: end;

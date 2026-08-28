@@ -1,6 +1,6 @@
 {
   "name": "arcanelink-desktop",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.1",
   "private": true,
   "description": "ArcaneLink desktop shell built with Electron",
   "author": "ArcaneLink",

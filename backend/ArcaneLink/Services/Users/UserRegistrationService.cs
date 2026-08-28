@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase._Data;
+using ArcaneLink.DataBase._Data;
 using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.DataBase.Models.UsersModels;
@@ -6,6 +6,7 @@ using ArcaneLink.Exceptions;
 using ArcaneLink.Exceptions.UsersExceptions;
 using ArcaneLink.Services.Users.Abstractions;
 using ArcaneLink.Services.Validators;
+using ArcaneLink.Services.Auth.Abstraction;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -27,17 +28,20 @@ namespace ArcaneLink.Services.Users
         private readonly IUserValidationService _validationService;
         private readonly IUserPasswordService _passwordService;
         private readonly PasswordValidator _passwordValidator;
+        private readonly IAccountLifecycleService _accountLifecycleService;
 
         public UserRegistrationService(
             AppDbContext db,
             IUserValidationService validationService,
             IUserPasswordService passwordService,
-            PasswordValidator passwordValidator)
+            PasswordValidator passwordValidator,
+            IAccountLifecycleService accountLifecycleService)
         {
             _db = db;
             _validationService = validationService;
             _passwordService = passwordService;
             _passwordValidator = passwordValidator;
+            _accountLifecycleService = accountLifecycleService;
         }
 
         public async Task<UserResponse> RegisterAsync(
@@ -93,10 +97,6 @@ namespace ArcaneLink.Services.Users
                 email,
                 cancellationToken);
 
-            // Транзакция нужна, чтобы User и UserProfile создавались атомарно.
-            await using var transaction = await _db.Database
-                .BeginTransactionAsync(cancellationToken);
-
             var user = new User
             {
                 Id = Guid.NewGuid(),
@@ -109,7 +109,7 @@ namespace ArcaneLink.Services.Users
 
                 PasswordHash = string.Empty,
 
-                StatusId = UserStatusIds.Active,
+                StatusId = UserStatusIds.PendingEmailVerification,
                 SubscriptionTypeId = SubscriptionTypeIds.Free,
 
                 CreatedAt = DateTime.UtcNow
@@ -174,6 +174,11 @@ namespace ArcaneLink.Services.Users
 
             try
             {
+                // Транзакция нужна, чтобы User, Profile и Settings
+                // создавались атомарно вместе с одноразовым токеном и
+                // зашифрованной outbox-записью письма.
+                await using var transaction = await _db.Database
+                    .BeginTransactionAsync(cancellationToken);
                 // Важный момент:
                 //
                 // Даже если предварительная проверка прошла,
@@ -182,6 +187,10 @@ namespace ArcaneLink.Services.Users
                 //
                 // Поэтому уникальные индексы БД остаются последней защитой.
                 await _db.SaveChangesAsync(cancellationToken);
+
+                await _accountLifecycleService.QueueRegistrationVerificationAsync(
+                    user.Id,
+                    cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
             }
@@ -218,7 +227,8 @@ namespace ArcaneLink.Services.Users
                 },
                 CreatedAt = user.CreatedAt,
                 PresenceStatus = PresenceStatusCodes.Offline,
-                LastSeenAt = null
+                LastSeenAt = null,
+                EmailConfirmedAt = null
             };
         }
 

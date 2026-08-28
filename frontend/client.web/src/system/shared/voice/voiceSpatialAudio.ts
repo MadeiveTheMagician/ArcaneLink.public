@@ -1,4 +1,10 @@
 import type { VoiceSpatialAudioMode } from './voiceSettings'
+import {
+  clampVoiceParticipantVolume,
+  defaultVoiceParticipantVolume,
+} from './voiceParticipantVolume'
+
+export { clampVoiceParticipantVolume } from './voiceParticipantVolume'
 
 export type { VoiceSpatialAudioMode } from './voiceSettings'
 
@@ -61,23 +67,10 @@ type AudioContextWithOutputLatency = AudioContext & {
   outputLatency?: number
 }
 
-const minimumParticipantVolume = 0
-const maximumParticipantVolume = 2
 const singleParticipantPan = 0.32
 const balancedSpread = 0.72
 const singleParticipantAngle = Math.PI * 0.12
 const immersiveHalfArc = Math.PI * 0.36
-
-export function clampVoiceParticipantVolume(volume: number) {
-  if (!Number.isFinite(volume)) {
-    return 1
-  }
-
-  return Math.min(
-    maximumParticipantVolume,
-    Math.max(minimumParticipantVolume, volume),
-  )
-}
 
 export function resolveVoiceSpatialPosition(
   participantId: string,
@@ -190,9 +183,30 @@ export function createVoiceSpatialAudioEngine(
   requestedMode: VoiceSpatialAudioMode,
   createAudioContext: (() => AudioContext) | null = resolveAudioContextFactory(),
 ): VoiceSpatialAudioEngine | null {
-  // Off is a true bypass: an extra AudioContext can remain suspended under
-  // autoplay policy and turn an otherwise healthy remote stream into silence.
-  if (requestedMode === 'off') {
+  return createVoiceAudioEngine(requestedMode, false, createAudioContext)
+}
+
+export function createVoicePlaybackAudioEngine(
+  requestedMode: VoiceSpatialAudioMode,
+  participantGainRequired: boolean,
+  createAudioContext: (() => AudioContext) | null = resolveAudioContextFactory(),
+): VoiceSpatialAudioEngine | null {
+  return createVoiceAudioEngine(
+    requestedMode,
+    participantGainRequired,
+    createAudioContext,
+  )
+}
+
+function createVoiceAudioEngine(
+  requestedMode: VoiceSpatialAudioMode,
+  participantGainRequired: boolean,
+  createAudioContext: (() => AudioContext) | null,
+): VoiceSpatialAudioEngine | null {
+  // Keep the ordinary off-mode path on the native media element. An extra
+  // AudioContext can remain suspended under mobile autoplay policies. Web
+  // Audio is only required here when a participant is boosted above 100%.
+  if (requestedMode === 'off' && !participantGainRequired) {
     return null
   }
 
@@ -240,7 +254,7 @@ export function createVoiceSpatialAudioEngine(
   function attachParticipant(
     participantId: string,
     stream: MediaStream,
-    participantVolume = 1,
+    participantVolume = defaultVoiceParticipantVolume,
   ): VoiceSpatialAudioPath {
     if (isDisposed || audioContext.state === 'closed') {
       throw new Error('The spatial audio engine has already been disposed.')
@@ -248,6 +262,7 @@ export function createVoiceSpatialAudioEngine(
 
     const source = audioContext.createMediaStreamSource(stream)
     const participantGain = audioContext.createGain()
+    const limiter = createVoicePlaybackLimiter(audioContext)
     const outputGain = audioContext.createGain()
     const destination = audioContext.createMediaStreamDestination()
     let position = resolveVoiceSpatialPosition(participantId)
@@ -275,14 +290,20 @@ export function createVoiceSpatialAudioEngine(
     participantGain.channelCountMode = 'explicit'
     participantGain.channelInterpretation = 'speakers'
     participantGain.gain.value = normalizedVolume
+    setVoicePlaybackLimiterThreshold(
+      limiter,
+      normalizedVolume,
+      audioContext.currentTime,
+    )
     outputGain.gain.value = normalizedOutputVolume
     source.connect(participantGain)
     if (graph.node) {
       participantGain.connect(graph.node)
-      graph.node.connect(outputGain)
+      graph.node.connect(limiter)
     } else {
-      participantGain.connect(outputGain)
+      participantGain.connect(limiter)
     }
+    limiter.connect(outputGain)
     outputGain.connect(destination)
 
     const path: VoiceSpatialAudioPath = {
@@ -296,6 +317,7 @@ export function createVoiceSpatialAudioEngine(
         const now = audioContext.currentTime
         participantGain.gain.cancelScheduledValues(now)
         participantGain.gain.setTargetAtTime(normalizedVolume, now, 0.012)
+        setVoicePlaybackLimiterThreshold(limiter, normalizedVolume, now)
       },
       setOutputVolume(volume) {
         if (isPathDisposed) {
@@ -336,6 +358,7 @@ export function createVoiceSpatialAudioEngine(
         source.disconnect()
         participantGain.disconnect()
         graph.node?.disconnect()
+        limiter.disconnect()
         outputGain.disconnect()
         destination.disconnect()
         destination.stream.getTracks().forEach((track) => track.stop())
@@ -384,6 +407,28 @@ export function createVoiceSpatialAudioEngine(
       void audioContext.close()
     },
   }
+}
+
+function createVoicePlaybackLimiter(audioContext: AudioContext) {
+  const limiter = audioContext.createDynamicsCompressor()
+  limiter.threshold.value = 0
+  limiter.knee.value = 6
+  limiter.ratio.value = 12
+  limiter.attack.value = 0.003
+  limiter.release.value = 0.18
+  return limiter
+}
+
+function setVoicePlaybackLimiterThreshold(
+  limiter: DynamicsCompressorNode,
+  participantVolume: number,
+  now: number,
+) {
+  // At normal volume the limiter is effectively transparent. Boosted voices
+  // get peak protection to reduce hard clipping at the 400% upper range.
+  const threshold = participantVolume > 1 ? -3 : 0
+  limiter.threshold.cancelScheduledValues(now)
+  limiter.threshold.setTargetAtTime(threshold, now, 0.012)
 }
 
 function createSpatialGraph(

@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase._Data;
+using ArcaneLink.DataBase._Data;
 using ArcaneLink.Configuration;
 using ArcaneLink.Extensions;
 using ArcaneLink.Hubs;
@@ -10,6 +10,8 @@ using ArcaneLink.Services.Assets.Storage;
 using ArcaneLink.Services.Assets.Storage.Abstractions;
 using ArcaneLink.Services.Auth;
 using ArcaneLink.Services.Auth.Abstraction;
+using ArcaneLink.Services.Email;
+using ArcaneLink.Services.Email.Abstractions;
 using ArcaneLink.Services.JwtService;
 using ArcaneLink.Services.JwtService.Abstariction;
 using ArcaneLink.Services.Login;
@@ -112,6 +114,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services
+    .AddOptions<EmailDeliveryOptions>()
+    .Bind(builder.Configuration.GetSection(EmailDeliveryOptions.SectionName))
+    .Validate(static options => options.IsValid(), "Email delivery configuration is invalid.")
+    .ValidateOnStart();
+builder.Services
+    .AddOptions<EmailOutboxOptions>()
+    .Bind(builder.Configuration.GetSection(EmailOutboxOptions.SectionName))
+    .Validate(static options => options.IsValid(), "Email outbox configuration is invalid.")
+    .ValidateOnStart();
 ProductionConfigurationValidator.Validate(builder.Configuration, builder.Environment);
 builder.Services
     .AddHealthChecks()
@@ -170,6 +182,11 @@ builder.Services.AddScoped<PasswordValidator>();
 builder.Services.AddScoped<IUserRegistrationService, UserRegistrationService>();
 builder.Services.AddScoped<IJwtTokenService, JwtService>();
 builder.Services.AddScoped<IAuthTokenService, AuthTokenService>();
+builder.Services.AddScoped<IAccountLifecycleService, AccountLifecycleService>();
+builder.Services.AddScoped<IEmailSender, MailKitEmailSender>();
+builder.Services.AddScoped<IEmailOutboxQueue, EmailOutboxQueue>();
+builder.Services.AddScoped<EmailOutboxProcessor>();
+builder.Services.AddSingleton<IEmailTemplateRenderer, FileEmailTemplateRenderer>();
 builder.Services.AddScoped<IUserDeviceSessionService, UserDeviceSessionService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<IAssetAccessPolicy, AssetAccessPolicy>();
@@ -239,6 +256,7 @@ builder.Services.AddScoped<IModerationService, ModerationService>();
 builder.Services.AddScoped<IUserNotificationService, UserNotificationService>();
 builder.Services.AddHostedService<AssetCleanupHostedService>();
 builder.Services.AddHostedService<PrivateMessageTrashCleanupHostedService>();
+builder.Services.AddHostedService<EmailOutboxHostedService>();
 
 // ----------------------- Scoped services END ---------------------- //
 
@@ -247,6 +265,10 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 
 var app = builder.Build();
+
+// Validate the packaged Russian email copy before the application begins
+// accepting registrations or account-recovery requests.
+_ = app.Services.GetRequiredService<IEmailTemplateRenderer>();
 
 app.UseForwardedHeaders();
 app.UseMiddleware<SecurityHeadersMiddleware>();

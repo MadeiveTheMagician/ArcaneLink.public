@@ -334,6 +334,42 @@ export function useServers(accessToken: string, userId: string) {
     }
   }
 
+  async function deleteServer(membership: ServerMemberResponse) {
+    setIsMutatingServerMember(true)
+
+    try {
+      await apiNoContent(`/api/servers/${membership.serverId}`, {
+        method: 'DELETE',
+        accessToken,
+      })
+
+      setServerMemberships((current) => {
+        const nextMemberships = current.filter(
+          (item) => item.serverId !== membership.serverId,
+        )
+
+        writeServerOrder(userId, nextMemberships)
+        void writeUserDataCache(userId, 'serverMemberships', nextMemberships)
+
+        return nextMemberships
+      })
+
+      if (selectedServerMembership?.serverId === membership.serverId) {
+        serverMemberRequestVersionRef.current += 1
+        serverMembersServerIdRef.current = null
+        serverMemberCursorRef.current = null
+        isLoadingMoreServerMembersRef.current = false
+        setSelectedServerMembership(null)
+        setServerMembers([])
+        setServerMemberCount(0)
+        setHasMoreServerMembers(false)
+        setIsLoadingMoreServerMembers(false)
+      }
+    } finally {
+      setIsMutatingServerMember(false)
+    }
+  }
+
   async function removeServerMember(member: ServerMemberDetailsResponse) {
     if (!selectedServerMembership) {
       return
@@ -420,6 +456,7 @@ export function useServers(accessToken: string, userId: string) {
     loadServerMembers,
     loadMoreServerMembers,
     leaveServer,
+    deleteServer,
     removeServerMember,
     updateServerMembership,
     reorderServerMemberships,

@@ -1,4 +1,6 @@
 import {
+  useEffect,
+  useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
@@ -9,6 +11,7 @@ import type {
   PrivateSpaceResponse,
   ServerInviteResponse,
   ServerMemberResponse,
+  SpaceMessageResponse,
   UserFriendResponse,
 } from '../../../../shared/types'
 import { ServersBrowser } from '../../../Server/components/navigation/ServersBrowser'
@@ -20,9 +23,13 @@ import type {
 import type { FocusPrivateMessageRequest } from '../private-space/usePrivateSpaceMessages'
 import type { HubWorkspace } from '../shell/useHubWorkspace'
 import { CommunityView } from '../community/CommunityView'
-import type { CommunityTab } from '../community/communityTypes'
+import type {
+  CommunityNavigationRequest,
+  CommunityTab,
+} from '../community/communityTypes'
 import { PrivateSpaceWorkspace } from '../private-space/PrivateSpaceWorkspace'
 import { NotificationCenter } from '../notifications/NotificationCenter'
+import type { NotificationTarget } from '../notifications/notificationNavigation'
 import {
   defaultMessageBubbleAlignment,
   defaultMessageBubbleWidth,
@@ -80,8 +87,15 @@ type HubUtilityViewProps = {
   onOpenServer: (membership: ServerMemberResponse) => void
   onOpenDirectSpace: (userId: string) => void
   onStartDirectVoice: (user: FriendUserResponse) => void
+  onLoadInviteTargetServers: (
+    targetUserId: string,
+  ) => Promise<ServerMemberResponse[]>
+  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void
   onAcceptDirectServerInvite: (inviteId: string) => void
   onDeclineDirectServerInvite: (inviteId: string) => void
+  onOpenNotificationTarget: (target: NotificationTarget) => void
+  communityNavigationRequest: CommunityNavigationRequest | null
+  onCommunityNavigationRequestConsumed: (requestId: number) => void
   onFriendSearchQueryChange: (query: string) => void
   onSendFriendRequest: (userId: string) => void
   onAcceptFriendRequest: (requestId: string) => void
@@ -92,6 +106,7 @@ type HubUtilityViewProps = {
   onStartPrivateInfoResize: (event: ReactPointerEvent<HTMLButtonElement>) => void
   onReturnToDirectMessages: () => void
   focusedPrivateMessage?: FocusPrivateMessageRequest | null
+  onOpenPrivateSearchResult: (message: SpaceMessageResponse) => void
 }
 
 export function HubUtilityView({
@@ -132,8 +147,13 @@ export function HubUtilityView({
   onOpenServer,
   onOpenDirectSpace,
   onStartDirectVoice,
+  onLoadInviteTargetServers,
+  onCreateDirectServerInvite,
   onAcceptDirectServerInvite,
   onDeclineDirectServerInvite,
+  onOpenNotificationTarget,
+  communityNavigationRequest,
+  onCommunityNavigationRequestConsumed,
   onFriendSearchQueryChange,
   onSendFriendRequest,
   onAcceptFriendRequest,
@@ -144,8 +164,28 @@ export function HubUtilityView({
   onStartPrivateInfoResize,
   onReturnToDirectMessages,
   focusedPrivateMessage,
+  onOpenPrivateSearchResult,
 }: HubUtilityViewProps) {
   const [communityTab, setCommunityTab] = useState<CommunityTab>('friends')
+  const handledCommunityNavigationRequestRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (
+      !communityNavigationRequest ||
+      handledCommunityNavigationRequestRef.current ===
+        communityNavigationRequest.id
+    ) {
+      return
+    }
+
+    handledCommunityNavigationRequestRef.current =
+      communityNavigationRequest.id
+    setCommunityTab(communityNavigationRequest.tab)
+    onCommunityNavigationRequestConsumed(communityNavigationRequest.id)
+  }, [
+    communityNavigationRequest,
+    onCommunityNavigationRequestConsumed,
+  ])
 
   if (activeWorkspace === 'private-space') {
     return (
@@ -155,7 +195,10 @@ export function HubUtilityView({
         currentUserId={currentUserId}
         privateSpaces={privateSpaces}
         friends={friends}
+        friendUserIds={friendUserIds}
+        pendingOutgoingUserIds={pendingOutgoingUserIds}
         isLoadingFriends={isLoadingFriends}
+        isMutatingFriends={isMutatingFriends}
         isMutatingPrivateSpaces={isMutatingPrivateSpaces}
         voice={voice}
         voiceAudioSettingsByUserId={voiceAudioSettingsByUserId}
@@ -170,7 +213,14 @@ export function HubUtilityView({
         messageBubbleWidth={privateMessageBubbleWidth}
         pendingDroppedFiles={pendingPrivateSpaceDroppedFiles}
         focusedMessage={focusedPrivateMessage}
+        onOpenSearchResult={onOpenPrivateSearchResult}
         onAddMember={onAddPrivateSpaceMember}
+        onOpenDirectSpace={onOpenDirectSpace}
+        onStartDirectVoice={onStartDirectVoice}
+        onLoadInviteTargetServers={onLoadInviteTargetServers}
+        onCreateDirectServerInvite={onCreateDirectServerInvite}
+        onSendFriendRequest={onSendFriendRequest}
+        onRemoveFriend={onRemoveFriend}
         onChangeVoiceAudioSettings={onChangeVoiceAudioSettings}
         onPendingDroppedFilesConsumed={
           onPendingPrivateSpaceDroppedFilesConsumed
@@ -219,6 +269,7 @@ export function HubUtilityView({
         directServerInvites={directServerInvites}
         onAcceptDirectServerInvite={onAcceptDirectServerInvite}
         onDeclineDirectServerInvite={onDeclineDirectServerInvite}
+        onOpenTarget={onOpenNotificationTarget}
       />
     )
   }

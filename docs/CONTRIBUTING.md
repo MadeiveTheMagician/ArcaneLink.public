@@ -1,6 +1,7 @@
 # Contributing
 
-This is a private academic-review repository. Contributions require explicit
+This is a publicly visible, source-available academic-review repository, not
+an open-source contribution project. Contributions require explicit
 authorization from the repository owner.
 
 ## Workflow

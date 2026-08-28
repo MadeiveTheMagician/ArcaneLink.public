@@ -4,6 +4,36 @@ namespace ArcaneLink.Services.Realtime
 {
     internal static class RealtimeNotificationExtensions
     {
+        public static async Task NotifyConnectionBestEffortAsync(
+            this IRealtimeNotificationService realtime,
+            ILogger logger,
+            string connectionId,
+            string eventName,
+            object? payload = null,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await realtime.NotifyConnectionAsync(
+                    connectionId,
+                    eventName,
+                    payload,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(
+                    exception,
+                    "Realtime connection notification failed after the database operation completed. ConnectionId={ConnectionId} EventName={EventName}",
+                    connectionId,
+                    eventName);
+            }
+        }
+
         public static async Task NotifyUserBestEffortAsync(
             this IRealtimeNotificationService realtime,
             ILogger logger,

@@ -4,12 +4,13 @@ const repeatedPeerRecoveryDelayMs = 10_000
 export function resolveVoicePeerRecoveryDelayMs(
   state: RTCPeerConnectionState,
   hasAttemptedRecovery: boolean,
+  iceState?: RTCIceConnectionState,
 ) {
-  if (state === 'failed') {
+  if (state === 'failed' || iceState === 'failed') {
     return hasAttemptedRecovery ? repeatedPeerRecoveryDelayMs : 0
   }
 
-  if (state === 'disconnected') {
+  if (state === 'disconnected' || iceState === 'disconnected') {
     return hasAttemptedRecovery
       ? repeatedPeerRecoveryDelayMs
       : initialPeerRecoveryDelayMs

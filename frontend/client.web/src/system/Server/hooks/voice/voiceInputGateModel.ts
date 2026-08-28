@@ -7,6 +7,7 @@ export type VoiceInputGateState = {
   pushToTalkKeyCode: string | null
   isPushToTalkPressed: boolean
   isVoiceActive: boolean
+  isVoiceActivityAvailable: boolean
 }
 
 export type SpeakingWhileMutedWarningState = {
@@ -18,9 +19,27 @@ export type VoiceInputAvailabilityState = {
   unavailableSinceMs: number | null
 }
 
+export type VoiceInputAvailabilityStatus =
+  | 'available'
+  | 'silent'
+  | 'unavailable'
+  | 'grace'
+  | 'ignored'
+
+export type VoiceInputVadAvailabilityState = {
+  isAvailable: boolean
+  recoverySampleCount: number
+}
+
+export type VoiceInputBackgroundState = {
+  isPushToTalkPressed: boolean
+  isVoiceActive: boolean
+}
+
 const speakingWhileMutedDelayMs = 1500
 const speakingWhileMutedCooldownMs = 30_000
 const inputUnavailableGraceMs = 8000
+export const voiceInputVadRecoverySampleCount = 6
 
 export function resolveVoiceInputGateOpen(state: VoiceInputGateState) {
   if (state.isMuted || state.isDeafened) {
@@ -35,7 +54,71 @@ export function resolveVoiceInputGateOpen(state: VoiceInputGateState) {
     return state.isPushToTalkPressed
   }
 
-  return state.isVoiceActive
+  return state.isVoiceActivityAvailable ? state.isVoiceActive : true
+}
+
+export function resolveVoiceInputBackgroundState(
+  state: VoiceInputBackgroundState,
+): VoiceInputBackgroundState {
+  return {
+    isPushToTalkPressed: false,
+    // Visibility releases a held PTT key. The hook treats background VAD as
+    // unavailable (fail-open), while explicit mute/deafen remain authoritative.
+    isVoiceActive: state.isVoiceActive,
+  }
+}
+
+export function resolveVoiceInputVadGateAvailable(options: {
+  documentVisibility: DocumentVisibilityState
+  isAudioContextReady: boolean
+  isSignalAvailable: boolean
+}) {
+  return (
+    options.documentVisibility === 'visible' &&
+    options.isAudioContextReady &&
+    options.isSignalAvailable
+  )
+}
+
+export function createVoiceInputVadAvailabilityState(): VoiceInputVadAvailabilityState {
+  return {
+    isAvailable: true,
+    recoverySampleCount: 0,
+  }
+}
+
+export function updateVoiceInputVadAvailability(
+  state: VoiceInputVadAvailabilityState,
+  status: VoiceInputAvailabilityStatus,
+): VoiceInputVadAvailabilityState {
+  if (status === 'silent' || status === 'unavailable') {
+    return {
+      isAvailable: false,
+      recoverySampleCount: 0,
+    }
+  }
+
+  if (state.isAvailable) {
+    return state
+  }
+
+  if (status !== 'available') {
+    return {
+      isAvailable: false,
+      recoverySampleCount: 0,
+    }
+  }
+
+  const recoverySampleCount = state.recoverySampleCount + 1
+  return recoverySampleCount >= voiceInputVadRecoverySampleCount
+    ? {
+        isAvailable: true,
+        recoverySampleCount: 0,
+      }
+    : {
+        isAvailable: false,
+        recoverySampleCount,
+      }
 }
 
 export function resolveToggledMuteState(state: {
@@ -117,7 +200,9 @@ export function updateVoiceInputAvailability(
     state: { unavailableSinceMs },
     status:
       options.nowMs - unavailableSinceMs >= inputUnavailableGraceMs
-        ? 'unavailable' as const
+        ? options.isTrackLive
+          ? 'silent' as const
+          : 'unavailable' as const
         : 'grace' as const,
   }
 }

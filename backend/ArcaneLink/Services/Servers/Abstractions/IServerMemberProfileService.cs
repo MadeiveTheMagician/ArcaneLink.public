@@ -4,7 +4,7 @@ namespace ArcaneLink.Services.Servers.Abstractions
 {
     public interface IServerMemberProfileService
     {
-        Task<ServerMemberProfileResponse?> GetAsync(
+        Task<ServerMemberViewerProfileResponse?> GetAsync(
             Guid currentUserId,
             Guid serverId,
             Guid targetUserId,

@@ -29,7 +29,11 @@
   border-color: color-mix(in srgb, #ffca72, transparent 48%);
   color: #ffe1a6;
   background:
-    linear-gradient(110deg, rgba(180, 111, 24, 0.24), rgba(24, 25, 53, 0.94));
+    linear-gradient(
+      110deg,
+      rgba(180, 111, 24, 0.24),
+      var(--theme-control-bg-strong)
+    );
 }
 
 .tag[data-mention-kind="role"] {

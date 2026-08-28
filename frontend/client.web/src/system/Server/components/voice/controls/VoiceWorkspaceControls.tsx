@@ -139,6 +139,7 @@ export function VoiceWorkspaceControls({
           </label>
           <div className={styles.voiceWorkspaceSettingsActions}>
             <button
+              className={styles.voiceWorkspaceSettingsAction}
               type="button"
               disabled={!hasParticipantCards}
               onClick={() => {
@@ -149,6 +150,7 @@ export function VoiceWorkspaceControls({
               {voiceCopy.channel.detachWorkspaceTitle}
             </button>
             <button
+              className={styles.voiceWorkspaceSettingsAction}
               type="button"
               onClick={() => {
                 setIsViewSettingsOpen(false)

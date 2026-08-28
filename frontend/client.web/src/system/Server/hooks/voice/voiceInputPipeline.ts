@@ -11,6 +11,10 @@ import type {
   VoiceNoiseSuppressionRuntime,
   VoiceNoiseSuppressionRuntimeRequest,
 } from './voiceNoiseSuppressionRuntime'
+import {
+  resolveVoiceAudioContext,
+  resumeVoiceAudioContext,
+} from './voiceAudioContextRecovery'
 
 export type VoiceInputPipeline = {
   transportMode: VoiceInputTransportMode
@@ -63,10 +67,10 @@ export async function createVoiceInputPipeline(
     return createDirectVoiceInputPipeline(rawStream, rawTrack)
   }
 
-  const audioContext =
-    existingAudioContext?.state === 'closed'
-      ? new AudioContext()
-      : existingAudioContext ?? new AudioContext()
+  const audioContext = resolveVoiceAudioContext(
+    existingAudioContext,
+    () => new AudioContext(),
+  )
   const source = audioContext.createMediaStreamSource(rawStream)
   const noiseSuppressionRuntime = options.noiseSuppression
     ? await createVoiceNoiseSuppressionRuntime(
@@ -143,21 +147,7 @@ export async function resumeVoiceInputPipeline(
     return isDirectVoiceInputStreamReady(pipeline.outboundStream)
   }
 
-  const audioContext = pipeline?.audioContext
-  if (!audioContext || audioContext.state === 'closed') {
-    return false
-  }
-  if (audioContext.state === 'running') {
-    return true
-  }
-
-  try {
-    await audioContext.resume()
-  } catch {
-    return false
-  }
-
-  return (audioContext.state as AudioContextState) === 'running'
+  return resumeVoiceAudioContext(pipeline?.audioContext ?? null)
 }
 
 export function setVoiceInputGain(

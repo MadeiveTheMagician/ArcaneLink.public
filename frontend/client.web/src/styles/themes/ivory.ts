@@ -56,14 +56,20 @@ export const ivoryTheme: SystemTheme = {
     '--color-surface-strong': 'rgba(255, 250, 239, 0.96)',
     '--color-border': '#d9c9a9',
     '--color-text': '#2d261a',
-    '--color-muted': '#786a54',
+    '--color-muted': '#6f624f',
     '--color-sapphire': '#b68d4c',
-    '--color-sapphire-light': '#d0a95f',
+    '--color-sapphire-light': '#72501f',
     '--color-violet': '#c28c5a',
     '--color-rune': '#7c5e2d',
     '--color-danger': '#b84254',
-    '--color-success': '#3b8f5b',
+    '--color-success': '#287447',
     '--theme-accent-contrast': '#2d261a',
+    '--theme-text-soft': '#554a3a',
+    '--theme-text-faint': '#6f624f',
+    '--theme-surface-accent':
+      'linear-gradient(135deg, #c49c5b, #b68d4c)',
+    '--theme-surface-accent-strong':
+      'linear-gradient(180deg, #c49c5b, #b68d4c)',
     '--shadow-sapphire': '0 26px 80px rgba(144, 106, 45, 0.2)',
   },
 }

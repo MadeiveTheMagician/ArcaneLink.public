@@ -1,6 +1,7 @@
 import type { SpaceResponse, SpaceTypeCode } from '../../../shared/types'
 
 export type ServerCoreTab =
+  | 'general'
   | 'spaces'
   | 'invites'
   | 'join-requests'
@@ -12,7 +13,6 @@ export type ServerCoreTab =
 export type ServerDetail =
   | { type: 'overview' }
   | { type: 'channel'; spaceId: string | null; title: string; kind: 'text' | 'voice' }
-  | { type: 'member'; memberId: string }
 
 export function toChannelDetail(space: SpaceResponse): ServerDetail {
   return {

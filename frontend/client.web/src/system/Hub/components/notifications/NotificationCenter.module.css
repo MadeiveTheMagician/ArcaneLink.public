@@ -18,6 +18,7 @@
     minmax(150px, 1fr)
     minmax(220px, 340px)
     max-content
+    42px
     42px;
   gap: 10px;
   align-items: center;
@@ -41,7 +42,7 @@
   border-radius: 8px;
   padding: 0 42px 0 13px;
   color: var(--color-text);
-  background: color-mix(in srgb, var(--theme-control-bg), #02050e 18%);
+  background: var(--theme-control-bg-strong);
   outline: none;
 }
 
@@ -153,7 +154,7 @@
 
 .masterToggle input:checked + i {
   border-color: color-mix(in srgb, var(--theme-accent), white 8%);
-  background: color-mix(in srgb, var(--theme-accent), #171b39 22%);
+  background: var(--theme-surface-accent);
   box-shadow: 0 0 14px color-mix(in srgb, var(--theme-glow), transparent 40%);
 }
 
@@ -231,7 +232,7 @@
   border-left: 2px solid var(--theme-accent);
   border-radius: 9px;
   padding: 13px 16px 13px 10px;
-  background: color-mix(in srgb, var(--theme-frame-bg), #030610 18%);
+  background: var(--theme-frame-bg-strong);
   box-shadow: inset 12px 0 28px color-mix(in srgb, var(--theme-accent), transparent 94%);
   transition:
     border-color 150ms ease,
@@ -243,6 +244,15 @@
   border-color: color-mix(in srgb, var(--theme-accent), transparent 55%);
   background: var(--theme-control-bg);
   transform: translateY(-1px);
+}
+
+.actionable {
+  cursor: pointer;
+}
+
+.actionable:focus-visible {
+  outline: 2px solid var(--theme-accent-light);
+  outline-offset: 2px;
 }
 
 .row.read {
@@ -371,7 +381,11 @@
 .actions .accept {
   border-color: color-mix(in srgb, var(--color-success), transparent 35%);
   color: white;
-  background: color-mix(in srgb, var(--color-success), #10233a 34%);
+  background: color-mix(
+    in srgb,
+    var(--color-success),
+    var(--theme-control-bg-strong) 34%
+  );
 }
 
 .empty {
@@ -400,7 +414,7 @@
   }
 
   .header {
-    grid-template-columns: minmax(0, 1fr) 40px;
+    grid-template-columns: minmax(0, 1fr) 40px 40px;
   }
 
   .search {
@@ -410,6 +424,16 @@
 
   .heading {
     grid-column: 1;
+  }
+
+  .markReadButton {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .clearHistoryButton {
+    grid-column: 3;
+    grid-row: 1;
   }
 
   .masterToggle {

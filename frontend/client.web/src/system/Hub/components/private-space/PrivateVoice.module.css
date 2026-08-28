@@ -217,6 +217,10 @@
     0 0 16px color-mix(in srgb, var(--color-success), transparent 58%);
 }
 
+.privateVoiceScreenParticipant {
+  border-color: var(--theme-border-accent);
+}
+
 .privateVoiceParticipant > div,
 .privateVoiceAvatar {
   position: relative;
@@ -269,66 +273,6 @@
   object-fit: cover;
 }
 
-.privateVoiceMenu {
-  position: fixed;
-  z-index: 80;
-  display: grid;
-  gap: 12px;
-  width: 280px;
-  border: 1px solid var(--theme-border-soft);
-  border-radius: 8px;
-  padding: 12px;
-  color: var(--color-text);
-  background:
-    radial-gradient(circle at 20% 0%, var(--theme-section-border), transparent 32%),
-    var(--theme-surface-raised);
-  box-shadow:
-    0 20px 44px rgba(0, 0, 0, 0.46),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.privateVoiceMenu header,
-.privateVoiceMenu label {
-  display: grid;
-  min-width: 0;
-  gap: 8px;
-}
-
-.privateVoiceMenu header strong,
-.privateVoiceMenu header small,
-.privateVoiceMenu p {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.privateVoiceMenu header small,
-.privateVoiceMenu p {
-  color: var(--color-muted);
-  font-size: 12px;
-}
-
-.privateVoiceMenu label:first-of-type {
-  grid-template-columns: 18px minmax(0, 1fr);
-  align-items: center;
-}
-
-.privateVoiceVolume {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.privateVoiceVolume input {
-  grid-column: 1 / -1;
-  width: 100%;
-}
-
-.privateVoiceMenu button {
-  min-height: 32px;
-  border-radius: 7px;
-}
-
-
 .privateHeaderAction {
   display: grid;
   width: 24px;
@@ -369,8 +313,8 @@
   overflow: hidden;
   border: 1px solid var(--theme-section-border);
   border-radius: 8px;
-  color: var(--color-text);
-  background: var(--theme-control-bg);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
   font-size: 13px;
   font-weight: 900;
 }
@@ -413,8 +357,7 @@
     min-width: 34px;
     max-width: 34px;
     border-radius: 10px;
-    background:
-      linear-gradient(135deg, #223466 0%, #4c67d3 100%);
+    background: var(--theme-avatar-bg);
     box-shadow: none;
     font-size: 14px;
   }

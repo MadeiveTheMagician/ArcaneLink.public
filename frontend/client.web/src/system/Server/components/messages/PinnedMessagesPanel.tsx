@@ -1,4 +1,4 @@
-﻿import { useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useState, type MouseEvent as ReactMouseEvent } from 'react'
 import type {
   SpaceMessageAssetResponse,
   SpaceMessageResponse,
@@ -21,7 +21,7 @@ export function PinnedMessagesPanel({
   isOpen: boolean
   isLoading: boolean
   messages: SpaceMessageResponse[]
-  onJumpToMessage: (messageId: string) => void
+  onJumpToMessage: (messageId: string, createdAt?: string | null) => void
   onRequestDownload: (asset: SpaceMessageAssetResponse) => void
   onClose: () => void
 }) {
@@ -79,11 +79,11 @@ export function PinnedMessagesPanel({
                 className={styles.pinnedCard}
                 role="button"
                 tabIndex={0}
-                onClick={() => onJumpToMessage(message.id)}
+                onClick={() => onJumpToMessage(message.id, message.createdAt)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    onJumpToMessage(message.id)
+                    onJumpToMessage(message.id, message.createdAt)
                   }
                 }}
               >

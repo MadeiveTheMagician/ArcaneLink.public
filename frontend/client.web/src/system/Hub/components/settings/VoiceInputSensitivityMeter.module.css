@@ -3,10 +3,10 @@
   gap: 11px;
   min-width: 0;
   margin-top: 2px;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 7px;
-  padding: 14px;
-  background: var(--theme-control-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 7px 2px;
+  background: transparent;
 }
 
 .header {
@@ -36,10 +36,10 @@
   display: inline-flex;
   flex: 0 0 auto;
   gap: 3px;
-  border: 1px solid var(--theme-section-border);
+  border: 0;
   border-radius: 7px;
   padding: 3px;
-  background: var(--theme-control-bg-strong);
+  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 26%);
 }
 
 .modeSelector label {

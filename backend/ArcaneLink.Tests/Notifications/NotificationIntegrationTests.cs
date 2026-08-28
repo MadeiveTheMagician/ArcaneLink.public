@@ -5,6 +5,8 @@ using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Messages;
 using ArcaneLink.DataBase.DTOs.Notifications;
 using ArcaneLink.DataBase.DTOs.Servers;
+using ArcaneLink.DataBase.DTOs.Users;
+using ArcaneLink.DataBase.Models.NotificationsModels;
 using ArcaneLink.Services.Notifications;
 using ArcaneLink.Services.Notifications.Abstractions;
 using ArcaneLink.Services.Realtime;
@@ -46,6 +48,10 @@ public sealed class NotificationIntegrationTests
             notification => notification.MessageId == message.Id);
 
         Assert.Equal("mention", mention.Kind);
+        Assert.Equal("Test Server", mention.ServerTitle);
+        Assert.Equal("general", mention.SpaceTitle);
+        Assert.Contains("#general", mention.Body);
+        Assert.Contains("Test Server", mention.Body);
         Assert.NotNull(mention.Detail);
         Assert.Equal(240, mention.Detail.Length);
         Assert.StartsWith("@member ", mention.Detail);
@@ -53,6 +59,224 @@ public sealed class NotificationIntegrationTests
 
         var messages = await client.GetFromJsonAsync<List<SpaceMessageResponse>>(MessagesPath());
         Assert.Single(messages ?? [], candidate => candidate.Id == message.Id);
+    }
+
+    [Fact]
+    public async Task SendFriendRequest_CreatesOnePersistentNotificationForReceiver()
+    {
+        using var factory = new ArcaneLinkApiFactory();
+        using var client = factory.CreateClient();
+        client.AuthorizeWith(await client.LoginAsync("owner"));
+
+        var request = new CreateFriendRequestRequest
+        {
+            ToUserId = ArcaneLinkApiFactory.OutsiderUserId
+        };
+        using var firstResponse = await client.PostAsJsonAsync(
+            "/api/friends/requests",
+            request);
+        await ApiClientExtensions.EnsureSuccessWithBodyAsync(firstResponse);
+        using var repeatedResponse = await client.PostAsJsonAsync(
+            "/api/friends/requests",
+            request);
+        await ApiClientExtensions.EnsureSuccessWithBodyAsync(repeatedResponse);
+        var friendRequest = await firstResponse.Content
+            .ReadFromJsonAsync<FriendRequestResponse>();
+        Assert.NotNull(friendRequest);
+
+        client.AuthorizeWith(await client.LoginAsync("outsider"));
+        var notification = Assert.Single(
+            await GetNotificationsAsync(client),
+            candidate => candidate.Kind == "friend-request");
+
+        Assert.Equal("Новая заявка в друзья", notification.Title);
+        Assert.Equal("Owner хочет добавить вас в друзья", notification.Body);
+        Assert.Equal(ArcaneLinkApiFactory.OwnerUserId, notification.ActorUserId);
+        Assert.Equal("Owner", notification.ActorDisplayName);
+        Assert.Null(notification.ReadAt);
+
+        using var declineResponse = await client.PostAsync(
+            $"/api/friends/requests/{friendRequest.Id}/decline",
+            null);
+        await ApiClientExtensions.EnsureSuccessWithBodyAsync(declineResponse);
+        var closedNotification = Assert.Single(
+            await GetNotificationsAsync(client),
+            candidate => candidate.Kind == "friend-request");
+        Assert.NotNull(closedNotification.ReadAt);
+    }
+
+    [Fact]
+    public async Task ConcurrentSendFriendRequest_CreatesOnePendingRequestAndNotification()
+    {
+        using var factory = new ArcaneLinkApiFactory();
+        using var client = factory.CreateClient();
+        client.AuthorizeWith(await client.LoginAsync("owner"));
+
+        var responses = await Task.WhenAll(
+            Enumerable.Range(0, 2).Select(_ =>
+                client.PostAsJsonAsync(
+                    "/api/friends/requests",
+                    new CreateFriendRequestRequest
+                    {
+                        ToUserId = ArcaneLinkApiFactory.OutsiderUserId
+                    })));
+
+        try
+        {
+            foreach (var response in responses)
+            {
+                await ApiClientExtensions.EnsureSuccessWithBodyAsync(response);
+            }
+
+            var requests = await Task.WhenAll(
+                responses.Select(response => response.Content
+                    .ReadFromJsonAsync<FriendRequestResponse>()));
+            Assert.All(requests, request => Assert.NotNull(request));
+            Assert.Single(requests.Select(request => request!.Id).Distinct());
+        }
+        finally
+        {
+            foreach (var response in responses)
+            {
+                response.Dispose();
+            }
+        }
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Equal(
+                1,
+                await db.FriendRequests
+                    .AsNoTracking()
+                    .CountAsync(request =>
+                        request.FromUserId == ArcaneLinkApiFactory.OwnerUserId &&
+                        request.ToUserId == ArcaneLinkApiFactory.OutsiderUserId &&
+                        request.StatusId == FriendRequestStatusIds.Pending));
+            Assert.Equal(
+                1,
+                await db.UserNotifications
+                    .AsNoTracking()
+                    .CountAsync(notification =>
+                        notification.UserId == ArcaneLinkApiFactory.OutsiderUserId &&
+                        notification.Kind == "friend-request"));
+        }
+    }
+
+    [Fact]
+    public async Task ConcurrentReverseFriendRequests_AutoAcceptOneRequestAndCloseItsNotification()
+    {
+        using var factory = new ArcaneLinkApiFactory();
+        using var ownerClient = factory.CreateClient();
+        using var outsiderClient = factory.CreateClient();
+        ownerClient.AuthorizeWith(await ownerClient.LoginAsync("owner"));
+        outsiderClient.AuthorizeWith(await outsiderClient.LoginAsync("outsider"));
+
+        var responses = await Task.WhenAll(
+            ownerClient.PostAsJsonAsync(
+                "/api/friends/requests",
+                new CreateFriendRequestRequest
+                {
+                    ToUserId = ArcaneLinkApiFactory.OutsiderUserId
+                }),
+            outsiderClient.PostAsJsonAsync(
+                "/api/friends/requests",
+                new CreateFriendRequestRequest
+                {
+                    ToUserId = ArcaneLinkApiFactory.OwnerUserId
+                }));
+
+        try
+        {
+            foreach (var response in responses)
+            {
+                await ApiClientExtensions.EnsureSuccessWithBodyAsync(response);
+            }
+
+            var requests = await Task.WhenAll(
+                responses.Select(response => response.Content
+                    .ReadFromJsonAsync<FriendRequestResponse>()));
+            Assert.All(requests, request => Assert.NotNull(request));
+            Assert.Single(requests.Select(request => request!.Id).Distinct());
+        }
+        finally
+        {
+            foreach (var response in responses)
+            {
+                response.Dispose();
+            }
+        }
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var requestsInDatabase = await db.FriendRequests
+            .AsNoTracking()
+            .Where(request =>
+                (request.FromUserId == ArcaneLinkApiFactory.OwnerUserId &&
+                 request.ToUserId == ArcaneLinkApiFactory.OutsiderUserId) ||
+                (request.FromUserId == ArcaneLinkApiFactory.OutsiderUserId &&
+                 request.ToUserId == ArcaneLinkApiFactory.OwnerUserId))
+            .ToListAsync();
+        var notification = Assert.Single(await db.UserNotifications
+            .AsNoTracking()
+            .Where(item => item.Kind == "friend-request")
+            .ToListAsync());
+
+        Assert.Single(requestsInDatabase);
+        Assert.Equal(
+            FriendRequestStatusIds.Accepted,
+            requestsInDatabase[0].StatusId);
+        Assert.NotNull(notification.ReadAt);
+        Assert.Equal(
+            2,
+            await db.UserFriends
+                .AsNoTracking()
+                .CountAsync(friend =>
+                    (friend.UserId == ArcaneLinkApiFactory.OwnerUserId &&
+                     friend.FriendUserId == ArcaneLinkApiFactory.OutsiderUserId) ||
+                    (friend.UserId == ArcaneLinkApiFactory.OutsiderUserId &&
+                     friend.FriendUserId == ArcaneLinkApiFactory.OwnerUserId)));
+    }
+
+    [Fact]
+    public async Task FriendRequestPostCommitPushFailure_StillReturnsPersistedRequest()
+    {
+        using var baseFactory = new ArcaneLinkApiFactory();
+        using var factory = baseFactory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IRealtimeNotificationService>();
+                services.AddSingleton<
+                    IRealtimeNotificationService,
+                    ThrowingRealtimeNotificationService>();
+            });
+        });
+        using var client = factory.CreateClient();
+        client.AuthorizeWith(await client.LoginAsync("owner"));
+
+        using var response = await client.PostAsJsonAsync(
+            "/api/friends/requests",
+            new CreateFriendRequestRequest
+            {
+                ToUserId = ArcaneLinkApiFactory.OutsiderUserId
+            });
+        await ApiClientExtensions.EnsureSuccessWithBodyAsync(response);
+        var request = await response.Content.ReadFromJsonAsync<FriendRequestResponse>();
+        Assert.NotNull(request);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.True(await db.FriendRequests
+            .AsNoTracking()
+            .AnyAsync(candidate =>
+                candidate.Id == request.Id &&
+                candidate.StatusId == FriendRequestStatusIds.Pending));
+        Assert.True(await db.UserNotifications
+            .AsNoTracking()
+            .AnyAsync(notification =>
+                notification.UserId == ArcaneLinkApiFactory.OutsiderUserId &&
+                notification.Kind == "friend-request"));
     }
 
     [Fact]
@@ -143,6 +367,57 @@ public sealed class NotificationIntegrationTests
             candidate.ServerId == ArcaneLinkApiFactory.ServerId &&
             candidate.UserId == ArcaneLinkApiFactory.OutsiderUserId &&
             candidate.StatusId == ServerMemberStatusIds.Active));
+    }
+
+    [Fact]
+    public async Task ClearHistory_DeletesOnlyTheCurrentUsersReadNotifications()
+    {
+        using var factory = new ArcaneLinkApiFactory();
+        var currentUsersReadId = Guid.NewGuid();
+        var currentUsersUnreadId = Guid.NewGuid();
+        var otherUsersReadId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        using (var seedScope = factory.Services.CreateScope())
+        {
+            var db = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.UserNotifications.AddRange(
+                Notification(
+                    currentUsersReadId,
+                    ArcaneLinkApiFactory.MemberUserId,
+                    now.AddMinutes(-3),
+                    now.AddMinutes(-2)),
+                Notification(
+                    currentUsersUnreadId,
+                    ArcaneLinkApiFactory.MemberUserId,
+                    now.AddMinutes(-1)),
+                Notification(
+                    otherUsersReadId,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    now.AddMinutes(-3),
+                    now.AddMinutes(-2)));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = factory.CreateClient();
+        client.AuthorizeWith(await client.LoginAsync("member"));
+        using var response = await client.DeleteAsync("/api/notifications/history");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var assertScope = factory.Services.CreateScope();
+        var assertDb = assertScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var remainingIds = await assertDb.UserNotifications
+            .AsNoTracking()
+            .Where(notification =>
+                notification.Id == currentUsersReadId ||
+                notification.Id == currentUsersUnreadId ||
+                notification.Id == otherUsersReadId)
+            .Select(notification => notification.Id)
+            .ToListAsync();
+
+        Assert.DoesNotContain(currentUsersReadId, remainingIds);
+        Assert.Contains(currentUsersUnreadId, remainingIds);
+        Assert.Contains(otherUsersReadId, remainingIds);
     }
 
     [Fact]
@@ -241,6 +516,15 @@ public sealed class NotificationIntegrationTests
                 TargetUserId = ArcaneLinkApiFactory.OutsiderUserId
             });
         Assert.Equal(HttpStatusCode.InternalServerError, inviteResponse.StatusCode);
+        using var friendRequestResponse = await client.PostAsJsonAsync(
+            "/api/friends/requests",
+            new CreateFriendRequestRequest
+            {
+                ToUserId = ArcaneLinkApiFactory.OutsiderUserId
+            });
+        Assert.Equal(
+            HttpStatusCode.InternalServerError,
+            friendRequestResponse.StatusCode);
 
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -252,6 +536,11 @@ public sealed class NotificationIntegrationTests
             .AnyAsync(invite =>
                 invite.ServerId == ArcaneLinkApiFactory.ServerId &&
                 invite.TargetUserId == ArcaneLinkApiFactory.OutsiderUserId));
+        Assert.False(await db.FriendRequests
+            .AsNoTracking()
+            .AnyAsync(request =>
+                request.FromUserId == ArcaneLinkApiFactory.OwnerUserId &&
+                request.ToUserId == ArcaneLinkApiFactory.OutsiderUserId));
     }
 
     [Theory]
@@ -329,6 +618,24 @@ public sealed class NotificationIntegrationTests
             "/api/notifications") ?? [];
     }
 
+    private static UserNotification Notification(
+        Guid id,
+        Guid userId,
+        DateTime createdAt,
+        DateTime? readAt = null)
+    {
+        return new UserNotification
+        {
+            Id = id,
+            UserId = userId,
+            Kind = "system",
+            Title = "Test notification",
+            Body = "Notification history test",
+            CreatedAt = createdAt,
+            ReadAt = readAt
+        };
+    }
+
     private static string BuildMentionBody(int messageLength)
     {
         const string mention = "@member ";
@@ -384,6 +691,9 @@ public sealed class NotificationIntegrationTests
                 RealtimeEventNames.UserNotificationsChanged or
                 RealtimeEventNames.SpaceMessagesChanged or
                 RealtimeEventNames.PrivateMessageReceived or
+                RealtimeEventNames.FriendRequestReceived or
+                RealtimeEventNames.FriendRequestUpdated or
+                RealtimeEventNames.FriendListChanged or
                 RealtimeEventNames.ServerGovernanceChanged or
                 RealtimeEventNames.ServerInviteReceived or
                 RealtimeEventNames.ServerInviteAccepted or
@@ -416,6 +726,13 @@ public sealed class NotificationIntegrationTests
             return Task.CompletedTask;
         }
 
+        public Task<int> ClearHistoryAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(0);
+        }
+
         public Task<bool> StageInviteReadAsync(
             Guid userId,
             Guid inviteId,
@@ -444,6 +761,23 @@ public sealed class NotificationIntegrationTests
         {
             return Task.FromException(
                 new InvalidOperationException("Injected notification write failure."));
+        }
+
+        public Task StageFriendRequestAsync(
+            Guid targetUserId,
+            Guid actorUserId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromException(
+                new InvalidOperationException("Injected notification write failure."));
+        }
+
+        public Task<bool> StageFriendRequestReadAsync(
+            Guid targetUserId,
+            Guid actorUserId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(false);
         }
 
         public Task<IReadOnlyList<Guid>> StageMentionsAsync(
@@ -523,6 +857,13 @@ public sealed class NotificationIntegrationTests
             return _inner.MarkAllReadAsync(userId, cancellationToken);
         }
 
+        public Task<int> ClearHistoryAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            return _inner.ClearHistoryAsync(userId, cancellationToken);
+        }
+
         public Task<bool> StageInviteReadAsync(
             Guid userId,
             Guid inviteId,
@@ -559,6 +900,28 @@ public sealed class NotificationIntegrationTests
                 actorUserId,
                 spaceId,
                 spaceTitle,
+                cancellationToken);
+        }
+
+        public Task StageFriendRequestAsync(
+            Guid targetUserId,
+            Guid actorUserId,
+            CancellationToken cancellationToken = default)
+        {
+            return _inner.StageFriendRequestAsync(
+                targetUserId,
+                actorUserId,
+                cancellationToken);
+        }
+
+        public Task<bool> StageFriendRequestReadAsync(
+            Guid targetUserId,
+            Guid actorUserId,
+            CancellationToken cancellationToken = default)
+        {
+            return _inner.StageFriendRequestReadAsync(
+                targetUserId,
+                actorUserId,
                 cancellationToken);
         }
 
@@ -622,4 +985,5 @@ public sealed class NotificationIntegrationTests
                 cancellationToken);
         }
     }
+
 }

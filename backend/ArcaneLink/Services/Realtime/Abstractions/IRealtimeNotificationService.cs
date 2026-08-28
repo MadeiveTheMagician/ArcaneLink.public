@@ -2,6 +2,15 @@ namespace ArcaneLink.Services.Realtime.Abstractions
 {
     public interface IRealtimeNotificationService
     {
+        Task NotifyConnectionAsync(
+            string connectionId,
+            string eventName,
+            object? payload = null,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
         Task NotifyUserAsync(
             Guid userId,
             string eventName,

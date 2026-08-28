@@ -16,6 +16,10 @@ import type {
   VoiceThresholdMode,
 } from './voiceActivityModel'
 import { normalizeUserId } from './voiceChannelUtils'
+import {
+  resolveVoiceAudioContext,
+  resumeVoiceAudioContext,
+} from './voiceAudioContextRecovery'
 
 export type VoiceActivitySample = {
   rawLevelDb: number
@@ -24,6 +28,7 @@ export type VoiceActivitySample = {
   thresholdDb: number
   isSpeaking: boolean
   isTrackLive: boolean
+  isAudioContextRunning: boolean
 }
 
 export type VoiceActivityMonitorOptions = {
@@ -73,29 +78,16 @@ export function useVoiceActivityMonitor() {
   }, [])
 
   function getAudioContext() {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext()
-    }
+    audioContextRef.current = resolveVoiceAudioContext(
+      audioContextRef.current,
+      () => new AudioContext(),
+    )
 
     return audioContextRef.current
   }
 
   async function resumeVoiceActivityAudioContext() {
-    const audioContext = audioContextRef.current
-    if (!audioContext || audioContext.state === 'closed') {
-      return false
-    }
-    if (audioContext.state === 'running') {
-      return true
-    }
-
-    try {
-      await audioContext.resume()
-    } catch {
-      return false
-    }
-
-    return (audioContext.state as AudioContextState) === 'running'
+    return resumeVoiceAudioContext(getAudioContext())
   }
 
   function setSpeakingState(participantId: string, isSpeaking: boolean) {
@@ -163,9 +155,10 @@ export function useVoiceActivityMonitor() {
       }
       const rawLevelDb = rmsToDecibels(calculateVoiceRms(monitor.data))
       const levelDb = applyVoiceGainToLevelDb(rawLevelDb, levelGain)
+      const isAudioContextRunning = audioContext.state === 'running'
       const isTrackLive = audioTracks.some(
         (track) => track.enabled && !track.muted && track.readyState === 'live',
-      ) && audioContext.state === 'running'
+      ) && isAudioContextRunning
       monitor.automaticThreshold = updateAutomaticVoiceThreshold(
         monitor.automaticThreshold,
         levelDb,
@@ -200,6 +193,7 @@ export function useVoiceActivityMonitor() {
           thresholdDb,
           isSpeaking,
           isTrackLive,
+          isAudioContextRunning,
         })
       }
 

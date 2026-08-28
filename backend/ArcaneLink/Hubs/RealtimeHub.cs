@@ -86,6 +86,18 @@ namespace ArcaneLink.Hubs
                     await _presenceCoordinator.ConnectionRegisteredAsync(
                         registration,
                         CancellationToken.None);
+
+                    var incomingCalls = await _voiceConnections
+                        .GetIncomingPrivateCallsAsync(
+                            userId.Value,
+                            CancellationToken.None);
+                    foreach (var incomingCall in incomingCalls)
+                    {
+                        await Clients.Caller.SendAsync(
+                            RealtimeEventNames.IncomingPrivateCall,
+                            incomingCall,
+                            CancellationToken.None);
+                    }
                 }
 
                 _logger.LogInformation(
@@ -210,30 +222,26 @@ namespace ArcaneLink.Hubs
                 return null;
             }
 
-            await JoinServer(serverId);
-            foreach (var replaced in result.ReplacedConnections)
+            await SynchronizeRemovedPrivateCallsAsync(
+                result.RemovedConnections.Concat(result.ReplacedConnections),
+                result.SpaceId,
+                "participant_moved");
+            await NotifyVoiceConnectionsReplacedBestEffortAsync(
+                result.ReplacedConnections);
+            await BroadcastVoiceJoinStatesBestEffortAsync(result);
+            try
             {
-                await Clients.Client(replaced.ConnectionId).SendAsync(
-                    "VoiceConnectionReplaced",
-                    new
-                    {
-                        replaced.ServerId,
-                        replaced.SpaceId,
-                        replaced.ParticipantId
-                    },
-                    Context.ConnectionAborted);
+                await JoinServer(serverId);
             }
-
-            foreach (var replacedSpace in result.RemovedConnections
-                         .Concat(result.ReplacedConnections)
-                         .Where(x => x.SpaceId != spaceId)
-                         .Select(x => new { x.ServerId, x.SpaceId })
-                         .Distinct())
+            catch (Exception exception)
             {
-                await BroadcastVoiceStateAsync(replacedSpace.ServerId, replacedSpace.SpaceId);
+                _logger.LogWarning(
+                    exception,
+                    "Server group join failed after committed voice join. ConnectionId={ConnectionId} ServerId={ServerId} SpaceId={SpaceId}",
+                    Context.ConnectionId,
+                    serverId,
+                    spaceId);
             }
-
-            await BroadcastVoiceStateAsync(serverId, spaceId);
             _logger.LogInformation(
                 ObservabilityEventIds.VoiceJoinSucceeded,
                 "Voice join succeeded. ConnectionId={ConnectionId} UserId={UserId} ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId} ReplacedConnections={ReplacedConnectionCount} RemovedConnections={RemovedConnectionCount}",
@@ -278,7 +286,52 @@ namespace ArcaneLink.Hubs
                 isCameraEnabled,
                 isScreenSharing);
 
-            var result = await _voiceConnections.JoinPrivateSpaceAsync(
+            if (await ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId))
+            {
+                return null;
+            }
+
+            var result = await _voiceConnections.RejoinPrivateCallAsync(
+                Context.ConnectionId,
+                userId.Value,
+                spaceId,
+                new VoiceStateUpdate(
+                    isMuted,
+                    isDeafened,
+                    isCameraEnabled,
+                    isScreenSharing),
+                Context.ConnectionAborted);
+            if (result == null)
+            {
+                await ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId);
+                return null;
+            }
+
+            await HandlePrivateVoiceJoinAsync(result.Voice);
+            var synchronized = await _voiceConnections.SynchronizePrivateCallAsync(
+                spaceId,
+                cancellationToken: CancellationToken.None);
+            if (synchronized != null)
+            {
+                await BroadcastPrivateCallTransitionAsync(synchronized);
+            }
+            return result.ParticipantId;
+        }
+
+        public async Task<PrivateCallJoinResult?> StartPrivateCall(
+            Guid spaceId,
+            bool isMuted = false,
+            bool isDeafened = false,
+            bool isCameraEnabled = false,
+            bool isScreenSharing = false)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return null;
+            }
+
+            var result = await _voiceConnections.StartPrivateCallAsync(
                 Context.ConnectionId,
                 userId.Value,
                 spaceId,
@@ -301,43 +354,146 @@ namespace ArcaneLink.Hubs
                 return null;
             }
 
-            foreach (var replaced in result.ReplacedConnections)
+            await HandlePrivateVoiceJoinAsync(result.Voice);
+            await BroadcastPrivateCallTransitionAsync(
+                new PrivateCallTransitionResult(result.Call, result.IncomingUserIds));
+            return result;
+        }
+
+        public async Task<PrivateCallJoinResult?> AcceptPrivateCall(
+            Guid spaceId,
+            Guid callId,
+            bool isMuted = false,
+            bool isDeafened = false,
+            bool isCameraEnabled = false,
+            bool isScreenSharing = false)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
             {
-                await Clients.Client(replaced.ConnectionId).SendAsync(
-                    "VoiceConnectionReplaced",
-                    new
-                    {
-                        replaced.ServerId,
-                        replaced.SpaceId,
-                        replaced.ChannelScope,
-                        replaced.ParticipantId
-                    },
+                return null;
+            }
+
+            if (await ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId))
+            {
+                return null;
+            }
+
+            var result = await _voiceConnections.AcceptPrivateCallAsync(
+                Context.ConnectionId,
+                userId.Value,
+                spaceId,
+                callId,
+                new VoiceStateUpdate(
+                    isMuted,
+                    isDeafened,
+                    isCameraEnabled,
+                    isScreenSharing),
+                Context.ConnectionAborted);
+            if (result == null)
+            {
+                await ReconcilePrivateCallPrivacyAndBroadcastAsync(spaceId);
+                return null;
+            }
+
+            await HandlePrivateVoiceJoinAsync(result.Voice);
+            await BroadcastPrivateCallTransitionAsync(
+                new PrivateCallTransitionResult(result.Call, []));
+            return result;
+        }
+
+        public async Task<bool> DeclinePrivateCall(Guid spaceId, Guid callId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return false;
+            }
+
+            var result = await _voiceConnections.DeclinePrivateCallAsync(
+                userId.Value,
+                spaceId,
+                callId,
+                Context.ConnectionAborted);
+            if (result == null)
+            {
+                return false;
+            }
+
+            await BroadcastPrivateCallTransitionAsync(result);
+            if (result.Call.Phase == PrivateCallPhases.Ended)
+            {
+                await BroadcastPrivateVoiceStateAsync(spaceId);
+            }
+            return true;
+        }
+
+        public async Task<bool> CancelPrivateCall(Guid spaceId, Guid callId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return false;
+            }
+
+            var result = await _voiceConnections.CancelPrivateCallAsync(
+                userId.Value,
+                spaceId,
+                callId,
+                Context.ConnectionAborted);
+            if (result == null)
+            {
+                return false;
+            }
+
+            await BroadcastPrivateCallTransitionAsync(
+                result,
+                CancellationToken.None);
+            await BroadcastPrivateVoiceStateAsync(
+                spaceId,
+                CancellationToken.None);
+            return true;
+        }
+
+        public Task<PrivateCallState?> GetPrivateCallState(Guid spaceId)
+        {
+            var userId = GetCurrentUserId();
+            return userId == null
+                ? Task.FromResult<PrivateCallState?>(null)
+                : _voiceConnections.GetPrivateCallStateAsync(
+                    userId.Value,
+                    spaceId,
                     Context.ConnectionAborted);
-            }
+        }
 
-            foreach (var replacedSpace in result.RemovedConnections
-                         .Concat(result.ReplacedConnections)
-                         .Where(x => x.SpaceId != spaceId)
-                         .Select(x => new { x.ServerId, x.SpaceId, x.ChannelScope })
-                         .Distinct())
-            {
-                await BroadcastVoiceStateAsync(
-                    replacedSpace.ServerId,
-                    replacedSpace.SpaceId,
-                    replacedSpace.ChannelScope);
-            }
+        public Task<IReadOnlyList<PrivateCallState>> GetIncomingPrivateCalls()
+        {
+            var userId = GetCurrentUserId();
+            return userId == null
+                ? Task.FromResult<IReadOnlyList<PrivateCallState>>([])
+                : _voiceConnections.GetIncomingPrivateCallsAsync(
+                    userId.Value,
+                    Context.ConnectionAborted);
+        }
 
-            await BroadcastPrivateVoiceStateAsync(spaceId);
+        private async Task HandlePrivateVoiceJoinAsync(VoiceJoinResult result)
+        {
+            await SynchronizeRemovedPrivateCallsAsync(
+                result.RemovedConnections.Concat(result.ReplacedConnections),
+                result.SpaceId,
+                "participant_moved");
+            await NotifyVoiceConnectionsReplacedBestEffortAsync(
+                result.ReplacedConnections);
+            await BroadcastVoiceJoinStatesBestEffortAsync(result);
             _logger.LogInformation(
                 ObservabilityEventIds.VoiceJoinSucceeded,
                 "Private voice join succeeded. ConnectionId={ConnectionId} UserId={UserId} SpaceId={SpaceId} ParticipantId={ParticipantId} ReplacedConnections={ReplacedConnectionCount} RemovedConnections={RemovedConnectionCount}",
                 Context.ConnectionId,
-                userId,
-                spaceId,
+                result.UserId,
+                result.SpaceId,
                 result.ParticipantId,
                 result.ReplacedConnections.Count,
                 result.RemovedConnections.Count);
-            return result.ParticipantId;
         }
 
         public async Task LeaveVoiceChannel(Guid spaceId)
@@ -349,10 +505,27 @@ namespace ArcaneLink.Hubs
 
             if (removed != null)
             {
-                await BroadcastVoiceStateAsync(
-                    removed.ServerId,
-                    removed.SpaceId,
-                    removed.ChannelScope);
+                await SynchronizeRemovedPrivateCallsAsync(
+                    [removed],
+                    retainedSpaceId: null,
+                    endReason: "participant_left");
+                try
+                {
+                    await BroadcastVoiceStateAsync(
+                        removed.ServerId,
+                        removed.SpaceId,
+                        removed.ChannelScope,
+                        CancellationToken.None);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogWarning(
+                        exception,
+                        "Voice roster broadcast failed after committed leave. ServerId={ServerId} SpaceId={SpaceId} ChannelScope={ChannelScope}",
+                        removed.ServerId,
+                        removed.SpaceId,
+                        removed.ChannelScope);
+                }
                 _logger.LogInformation(
                     ObservabilityEventIds.VoiceLeaveCompleted,
                     "Voice leave completed. ConnectionId={ConnectionId} ServerId={ServerId} SpaceId={SpaceId} ParticipantId={ParticipantId}",
@@ -360,15 +533,17 @@ namespace ArcaneLink.Hubs
                     removed.ServerId,
                     removed.SpaceId,
                     removed.ParticipantId);
+
             }
         }
 
-        public async Task UpdateVoiceState(
+        public async Task<bool> UpdateVoiceState(
             Guid spaceId,
             bool isMuted,
             bool isDeafened,
             bool isCameraEnabled = false,
-            bool isScreenSharing = false)
+            bool isScreenSharing = false,
+            Guid? participantId = null)
         {
             var result = await _voiceConnections.UpdateStateAsync(
                 Context.ConnectionId,
@@ -378,6 +553,7 @@ namespace ArcaneLink.Hubs
                     isDeafened,
                     isCameraEnabled,
                     isScreenSharing),
+                participantId,
                 Context.ConnectionAborted);
 
             if (result != null)
@@ -387,6 +563,7 @@ namespace ArcaneLink.Hubs
                     result.Connection.SpaceId,
                     result.Connection.ChannelScope);
             }
+            return result != null;
         }
 
         public async Task MoveVoiceParticipant(
@@ -703,6 +880,35 @@ namespace ArcaneLink.Hubs
                 CancellationToken.None);
         }
 
+        public async Task RefreshCurrentVoiceIdentity()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return;
+            }
+
+            var refreshedConnections = await _voiceConnections
+                .RefreshUserIdentityAsync(
+                    userId.Value,
+                    Context.ConnectionAborted);
+            foreach (var channel in refreshedConnections
+                         .Select(connection => new
+                         {
+                             connection.ServerId,
+                             connection.SpaceId,
+                             connection.ChannelScope
+                         })
+                         .Distinct())
+            {
+                await BroadcastVoiceStateAsync(
+                    channel.ServerId,
+                    channel.SpaceId,
+                    channel.ChannelScope,
+                    CancellationToken.None);
+            }
+        }
+
         public Task<object?> RenewPrivateVoiceChannelAccessLease(Guid spaceId)
         {
             return RenewVoiceAccessLeaseAsync(
@@ -719,6 +925,10 @@ namespace ArcaneLink.Hubs
 
             if (removed != null)
             {
+                await SynchronizeRemovedPrivateCallsAsync(
+                    [removed],
+                    retainedSpaceId: null,
+                    endReason: "connection_lost");
                 await BroadcastVoiceStateAsync(
                     removed.ServerId,
                     removed.SpaceId,
@@ -842,6 +1052,26 @@ namespace ArcaneLink.Hubs
                             spaceId,
                             channelScope);
                     }
+
+
+                    if (result.RemovedConnection.ChannelScope ==
+                        VoiceChannelScopes.Private)
+                    {
+                        var transition = await _voiceConnections
+                            .ReconcilePrivateCallPrivacyAsync(
+                                result.RemovedConnection.SpaceId,
+                                CancellationToken.None) ??
+                            await _voiceConnections.SynchronizePrivateCallAsync(
+                                result.RemovedConnection.SpaceId,
+                                "privacy_changed",
+                                CancellationToken.None);
+                        if (transition != null)
+                        {
+                            await BroadcastPrivateCallTransitionAsync(
+                                transition,
+                                CancellationToken.None);
+                        }
+                    }
                 }
 
                 return null;
@@ -893,6 +1123,182 @@ namespace ArcaneLink.Hubs
                     payload,
                     cancellationToken);
             }
+        }
+
+        private async Task BroadcastPrivateCallTransitionAsync(
+            PrivateCallTransitionResult transition,
+            CancellationToken cancellationToken = default)
+        {
+            var userIds = await _db.PrivateSpaceMembers
+                .AsNoTracking()
+                .Where(member =>
+                    member.SpaceId == transition.Call.SpaceId &&
+                    member.StatusId == PrivateSpaceIds.MemberStatusActive &&
+                    member.PrivateSpace.DeletedAt == null &&
+                    member.PrivateSpace.Space.DeletedAt == null &&
+                    member.User.DeletedAt == null &&
+                    member.User.StatusId == UserStatusIds.Active)
+                .Select(member => member.UserId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            await _realtime.NotifyUsersAsync(
+                userIds,
+                RealtimeEventNames.PrivateCallStateChanged,
+                transition.Call,
+                cancellationToken);
+            if (transition.IncomingUserIds.Count > 0)
+            {
+                var authorizedIncomingUserIds = transition.IncomingUserIds
+                    .Where(userIds.Contains)
+                    .ToList();
+                await _realtime.NotifyUsersAsync(
+                    authorizedIncomingUserIds,
+                    RealtimeEventNames.IncomingPrivateCall,
+                    transition.Call,
+                    cancellationToken);
+            }
+        }
+
+        private async Task SynchronizeRemovedPrivateCallsAsync(
+            IEnumerable<VoiceConnectionSnapshot> removedConnections,
+            Guid? retainedSpaceId,
+            string endReason)
+        {
+            var affectedSpaceIds = removedConnections
+                .Where(connection =>
+                    connection.ChannelScope == VoiceChannelScopes.Private &&
+                    connection.SpaceId != retainedSpaceId)
+                .Select(connection => connection.SpaceId)
+                .Distinct()
+                .ToList();
+            if (affectedSpaceIds.Count == 0)
+            {
+                return;
+            }
+
+            // The voice mutation has already committed by the time this helper is
+            // called. Reconcile every affected call before any client/group send so
+            // request cancellation or a failed notification cannot leave a ghost
+            // call generation behind.
+            var transitions = new List<PrivateCallTransitionResult>();
+            foreach (var affectedSpaceId in affectedSpaceIds)
+            {
+                var transition = await _voiceConnections
+                    .SynchronizePrivateCallAsync(
+                        affectedSpaceId,
+                        endReason,
+                        CancellationToken.None);
+                if (transition != null)
+                {
+                    transitions.Add(transition);
+                }
+            }
+
+            foreach (var transition in transitions)
+            {
+                try
+                {
+                    await BroadcastPrivateCallTransitionAsync(
+                        transition,
+                        CancellationToken.None);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogWarning(
+                        exception,
+                        "Private call transition broadcast failed after voice removal. SpaceId={SpaceId} CallId={CallId} EndReason={EndReason}",
+                        transition.Call.SpaceId,
+                        transition.Call.CallId,
+                        endReason);
+                }
+            }
+        }
+
+        private async Task NotifyVoiceConnectionsReplacedBestEffortAsync(
+            IEnumerable<VoiceConnectionSnapshot> replacedConnections)
+        {
+            foreach (var replaced in replacedConnections)
+            {
+                try
+                {
+                    await Clients.Client(replaced.ConnectionId).SendAsync(
+                        "VoiceConnectionReplaced",
+                        new
+                        {
+                            replaced.ServerId,
+                            replaced.SpaceId,
+                            replaced.ChannelScope,
+                            replaced.ParticipantId
+                        },
+                        CancellationToken.None);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogWarning(
+                        exception,
+                        "Voice replacement notification failed after voice join. ConnectionId={ConnectionId} SpaceId={SpaceId} ParticipantId={ParticipantId}",
+                        replaced.ConnectionId,
+                        replaced.SpaceId,
+                        replaced.ParticipantId);
+                }
+            }
+        }
+
+        private async Task BroadcastVoiceJoinStatesBestEffortAsync(
+            VoiceJoinResult result)
+        {
+            var affectedChannels = result.RemovedConnections
+                .Concat(result.ReplacedConnections)
+                .Select(connection => (
+                    connection.ServerId,
+                    connection.SpaceId,
+                    connection.ChannelScope))
+                .Append((result.ServerId, result.SpaceId, result.ChannelScope))
+                .Distinct()
+                .ToList();
+
+            foreach (var (serverId, spaceId, channelScope) in affectedChannels)
+            {
+                try
+                {
+                    await BroadcastVoiceStateAsync(
+                        serverId,
+                        spaceId,
+                        channelScope,
+                        CancellationToken.None);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogWarning(
+                        exception,
+                        "Voice roster broadcast failed after committed join. ServerId={ServerId} SpaceId={SpaceId} ChannelScope={ChannelScope}",
+                        serverId,
+                        spaceId,
+                        channelScope);
+                }
+            }
+        }
+
+        private async Task<bool> ReconcilePrivateCallPrivacyAndBroadcastAsync(
+            Guid spaceId)
+        {
+            var transition = await _voiceConnections
+                .ReconcilePrivateCallPrivacyAsync(
+                    spaceId,
+                    CancellationToken.None);
+            if (transition == null)
+            {
+                return false;
+            }
+
+            await BroadcastPrivateCallTransitionAsync(
+                transition,
+                CancellationToken.None);
+            await BroadcastPrivateVoiceStateAsync(
+                spaceId,
+                CancellationToken.None);
+            return true;
         }
 
         private Guid? GetCurrentUserId()

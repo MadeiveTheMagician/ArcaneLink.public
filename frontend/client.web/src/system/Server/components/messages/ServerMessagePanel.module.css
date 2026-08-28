@@ -12,7 +12,7 @@
       color-mix(in srgb, var(--theme-accent), transparent 76%),
       transparent 34%
     ),
-    rgba(3, 6, 18, 0.62);
+    rgba(0, 0, 0, 0.62);
   backdrop-filter: blur(10px);
 }
 

@@ -34,6 +34,7 @@ export function AuthRegisterForm({
     useState<ValidatedRegisterFieldKey | null>(null)
   const [mobileRegisterStep, setMobileRegisterStep] =
     useState(activeRegisterStep)
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const requirementsByField = {
     login: getLoginRequirements(registerForm.login),
     displayName: getDisplayNameRequirements(registerForm.displayName),
@@ -65,16 +66,20 @@ export function AuthRegisterForm({
         activeRequirementTitle={activeRequirementTitle}
         activeRequirementList={activeRequirementList}
         isLoading={isLoading}
+        isPasswordVisible={isPasswordVisible}
         onChange={onChange}
         onFocusRequirements={setActiveRequirements}
+        onPasswordVisibilityChange={setIsPasswordVisible}
       />
       <AuthMobileRegisterWizard
         registerForm={registerForm}
         registerProgress={registerProgress}
         mobileRegisterStep={mobileRegisterStep}
         isLoading={isLoading}
+        isPasswordVisible={isPasswordVisible}
         onChange={onChange}
         onChangeStep={changeMobileRegisterStep}
+        onPasswordVisibilityChange={setIsPasswordVisible}
       />
     </form>
   )

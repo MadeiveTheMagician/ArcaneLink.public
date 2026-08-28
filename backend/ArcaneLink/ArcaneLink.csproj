@@ -8,13 +8,14 @@
 		<PublishAot>false</PublishAot>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
-		<Version>1.0.0-rc.1</Version>
+		<Version>1.0.1</Version>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<FileVersion>1.0.0.0</FileVersion>
-		<InformationalVersion>1.0.0-rc.1</InformationalVersion>
+		<InformationalVersion>1.0.1</InformationalVersion>
 	</PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
@@ -36,6 +37,11 @@
 
   <ItemGroup>
     <Content Update="storage-policy.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Include="..\..\frontend\client.web\src\system\shared\copy\auth.email.ru.json"
+             Link="Localization\auth.email.ru.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>

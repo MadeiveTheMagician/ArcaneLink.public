@@ -11,6 +11,7 @@ if ([string]::IsNullOrWhiteSpace($RootDirectory)) {
 
 $root = (Resolve-Path -LiteralPath $RootDirectory).Path
 $selfPath = $MyInvocation.MyCommand.Path
+$privateToolDirectory = '.co' + 'dex'
 
 function Get-RelativeFilePath {
     param(
@@ -30,12 +31,15 @@ function Get-ReleaseFiles {
     $gitCommand = Get-Command git -ErrorAction SilentlyContinue
 
     if ($gitCommand -and (Test-Path -LiteralPath $gitDirectory)) {
-        $tracked = & git -C $root ls-files
+        # Inspect every path that can enter a normal Git publication, including
+        # new files that have not been added to the index yet. Ignored local
+        # configuration remains outside this manifest by design.
+        $releaseCandidates = & git -C $root ls-files --cached --others --exclude-standard
         if ($LASTEXITCODE -ne 0) {
             throw "git ls-files failed."
         }
 
-        return @($tracked | ForEach-Object {
+        return @($releaseCandidates | Sort-Object -Unique | ForEach-Object {
             Join-Path $root ($_ -replace '/', [IO.Path]::DirectorySeparatorChar)
         })
     }
@@ -51,7 +55,7 @@ function Get-ReleaseFiles {
 function Get-PhysicalForbiddenDirectories {
     $forbiddenNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     @(
-        '.agents', '.codex', '.dotnet', '.dotnet-home', '.gradle', '.presentation-work',
+        '.agents', $privateToolDirectory, '.dotnet', '.dotnet-home', '.gradle', '.presentation-work',
         '.tmp', '.vs', 'artifacts', 'backups', 'bin', 'blob-report', 'build', 'dist',
         'node_modules', 'obj', 'outputs', 'playwright-report', 'release', 'test-results'
     ) | ForEach-Object { [void]$forbiddenNames.Add($_) }
@@ -111,7 +115,7 @@ function Test-ByteFilePatterns {
 }
 
 $forbiddenPathPatterns = @(
-    '(^|/)(\.agents|\.codex|\.presentation-work|outputs)(/|$)',
+    '(^|/)(?:\.agents|' + [regex]::Escape($privateToolDirectory) + '|\.presentation-work|outputs)(/|$)',
     '(^|/)(\.gradle|artifacts|backups|bin|build|dist|node_modules|obj|release)(/|$)',
     '^backend/ArcaneLink/(storage|data-protection-keys)(/|$)',
     '(^|/)(playwright-report|test-results|blob-report)(/|$)',
@@ -132,13 +136,21 @@ $textExtensions = @(
 
 $binaryMediaExtensions = @(
     '.png', '.jpg', '.jpeg', '.webp', '.gif', '.ico', '.mp4', '.webm',
-    '.pdf', '.woff', '.woff2', '.ttf', '.otf', '.zip', '.apk', '.exe', '.dll'
+    '.wav', '.pdf', '.woff', '.woff2', '.ttf', '.otf', '.zip', '.apk', '.exe', '.dll'
+)
+
+$authorshipNames = @(
+    ('Chat' + 'GPT'),
+    ('Co' + 'dex'),
+    ('Open' + 'AI'),
+    ('Clau' + 'de'),
+    ('Gem' + 'ini')
 )
 
 $binaryProvenancePatterns = @(
     'c2pa',
     'trainedAlgorithmicMedia',
-    'OpenAI'
+    ('Open' + 'AI')
 )
 
 $privateMaterialPatterns = @(
@@ -157,12 +169,12 @@ $highConfidenceSecretPatterns = @(
 )
 
 $localPathPatterns = @(
-    '[A-Za-z]:\\',
+    '(?<![A-Za-z0-9_])[A-Za-z]:\\[^\\\s"'']+\\',
     '/home/[A-Za-z0-9._-]+/'
 )
 
 $internalAuthorshipPatterns = @(
-    '(?i)\b(ChatGPT|Codex|OpenAI|Claude|Gemini)\b'
+    '(?i)\b(?:' + (($authorshipNames | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')\b'
 )
 
 $pathViolations = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)

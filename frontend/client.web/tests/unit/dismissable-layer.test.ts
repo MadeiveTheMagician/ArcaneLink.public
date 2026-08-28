@@ -48,6 +48,21 @@ test.describe('dismissable layer pointer contract', () => {
       ),
     ).toBe(true)
   })
+
+  test('keeps a parent layer open for a portaled dismissable-layer branch', () => {
+    const layer = new EventTarget()
+    const branch = Object.assign(new EventTarget(), {
+      hasAttribute: (name: string) => name === 'data-dismissable-layer-branch',
+    })
+    const option = new EventTarget()
+
+    expect(
+      isPointerEventOutsideDismissableLayer(
+        eventWithPath([option, branch, new EventTarget()]),
+        layer,
+      ),
+    ).toBe(false)
+  })
 })
 
 test.describe('dismissable layer keyboard contract', () => {

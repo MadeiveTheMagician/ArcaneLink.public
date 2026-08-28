@@ -300,7 +300,7 @@ export function useServerGovernance({
       selectedServerMembership.serverId,
     )
 
-    if (tab === 'spaces' || tab === 'moderation') {
+    if (tab === 'general' || tab === 'spaces' || tab === 'moderation') {
       return
     }
 
@@ -377,6 +377,10 @@ export function useServerGovernance({
   function openServerCoreTab(tab: ServerCoreTab) {
     setServerCoreTab(tab)
     void loadServerGovernance(tab)
+  }
+
+  function selectServerCoreTab(tab: ServerCoreTab) {
+    setServerCoreTab(tab)
   }
 
   async function loadMoreServerJoinRequests() {
@@ -732,6 +736,7 @@ export function useServerGovernance({
     reloadServerRoles,
     loadDirectServerInvites,
     openServerCoreTab,
+    selectServerCoreTab,
     createServerInvite,
     revokeServerInvite,
     loadMoreServerJoinRequests,

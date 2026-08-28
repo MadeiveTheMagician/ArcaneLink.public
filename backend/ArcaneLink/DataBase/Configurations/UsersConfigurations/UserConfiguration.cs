@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.Models.UsersModels;
+using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.DataBase.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -71,6 +71,9 @@ namespace ArcaneLink.DataBase.Configurations.UsersConfigurations
             entity.HasIndex(u => u.EmailNorm)
                 .IsUnique()
                 .HasDatabaseName("UX_Users_EmailNorm");
+
+            entity.Property(u => u.EmailConfirmedAt)
+                .HasColumnName("email_confirmed_at");
 
             // Указываем имя столбца для свойства PasswordHash, максимальную длину и что оно обязательно
             // Важно: здесь хранится только хеш пароля, а не сырой пароль пользователя

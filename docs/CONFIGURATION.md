@@ -11,6 +11,20 @@ The repository contains no working production credentials.
   runtime credential issuer.
 - `.env` and `.env.turn` are local files and are ignored by Git.
 
+`.env` is the base environment file and must be created from exactly one
+template: `.env.local.example` for loopback development or `.env.example` for
+the official Production host. `.env.turn` is a separate TURN-only overlay; it
+is not another base environment. Plain `docker compose` does not load it. The
+guarded deployment script loads it automatically only in Production. Outside
+Production, TURN remains disabled unless `--with-turn` is supplied explicitly.
+This makes it safe to keep prepared TURN settings beside a local `.env`
+without exposing relay ports during an ordinary local run.
+
+The supplied Production template and guarded deployment script are pinned to
+`arcane-link.ru`. A differently named staging host requires its own base and
+TURN files plus equivalent Production validation; do not use the `Docker`
+environment merely to bypass Production checks.
+
 For local review, copy `.env.local.example` to `.env`. For the official
 deployment, copy `.env.example`. Replace every secret placeholder with a unique
 value. Never send the resulting files through chat, issue trackers or build
@@ -27,12 +41,15 @@ At minimum, provide:
 - `PUBLIC_ORIGIN`: the canonical HTTPS origin;
 - `TURN_REALM`, `TURN_PUBLIC_HOST`, a routable public IPv4
   `TURN_EXTERNAL_IP`, and a random `TURN_SHARED_SECRET` of at least 32 bytes.
+- `EMAIL_ENABLED=true`, SMTP host/port/TLS mode and relay credentials;
+- `EMAIL_FROM_ADDRESS`: an address authorized by the SMTP relay;
+- `EMAIL_PUBLIC_ORIGIN`: the canonical HTTPS origin used in account links.
 
 For a direct non-Compose backend launch, use the ASP.NET Core names
 `JwtSettings__SecretKey`, `AllowedHosts` and `DataProtection__KeysPath`.
 
 The reference host is `arcane-link.ru`. A review or staging environment should
-use its own host name and its own credentials.
+use its own host name, credentials and equivalent validation rules.
 
 ## Persistent paths
 
@@ -82,6 +99,17 @@ may use direct connectivity only through the explicit development switch.
 
 Relay-only transport prevents direct peer candidate use, but increases TURN
 bandwidth and does not turn Coturn into an SFU.
+
+## Account email delivery
+
+Production startup requires valid email delivery. Docker Compose maps the
+`EMAIL_*` variables from `.env` into the backend `EmailDelivery` section. Local
+development may keep `EMAIL_ENABLED=false`; account messages then remain in the
+durable outbox and are not silently discarded. Keep the Data Protection key
+volume stable because pending payloads are protected at rest.
+
+See [Account email lifecycle](ACCOUNT_EMAIL_LIFECYCLE.md) for token lifetimes,
+outbox retry behavior and operational checks.
 
 ## Secret rotation
 

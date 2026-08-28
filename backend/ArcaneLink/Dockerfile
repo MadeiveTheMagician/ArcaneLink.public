@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.300 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.400 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
@@ -7,6 +7,7 @@ WORKDIR /src
 COPY ["backend/ArcaneLink/ArcaneLink.csproj", "backend/ArcaneLink/"]
 RUN dotnet restore "backend/ArcaneLink/ArcaneLink.csproj"
 COPY ["backend/", "backend/"]
+COPY ["frontend/client.web/src/system/shared/copy/auth.email.ru.json", "frontend/client.web/src/system/shared/copy/"]
 
 WORKDIR /src/backend/ArcaneLink
 RUN dotnet build "ArcaneLink.csproj" \

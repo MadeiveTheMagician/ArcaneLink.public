@@ -8,10 +8,15 @@ import {
 } from '../../src/system/shared/voice/voicePlaybackPreferences'
 
 test.describe('voice playback preferences', () => {
-  test('normalizes individual gain to 0-200 percent', () => {
-    expect(normalizeVoiceUserAudioSettings({ volume: 4, isMuted: true })).toEqual({
-      volume: 2,
+  test('normalizes individual gain to 0-400 percent', () => {
+    expect(normalizeVoiceUserAudioSettings({ volume: 5, isMuted: true })).toEqual({
+      volume: 4,
       isMuted: true,
+      isVideoHidden: false,
+    })
+    expect(normalizeVoiceUserAudioSettings({ volume: 2 })).toEqual({
+      volume: 2,
+      isMuted: false,
       isVideoHidden: false,
     })
     expect(normalizeVoiceUserAudioSettings({ volume: -1 })).toEqual({

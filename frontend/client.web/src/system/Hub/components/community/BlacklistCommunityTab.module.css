@@ -73,7 +73,7 @@
   border: 1px solid var(--theme-border-accent);
   border-radius: 999px;
   padding: 0 9px;
-  color: var(--color-text);
+  color: var(--theme-accent-contrast);
   background: var(--theme-surface-accent);
   font-size: 13px;
   font-weight: 900;
@@ -169,8 +169,8 @@
   place-items: center;
   overflow: hidden;
   border-radius: 11px;
-  color: var(--theme-accent-contrast);
-  background: var(--theme-surface-accent);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
   font-weight: 900;
 }
 

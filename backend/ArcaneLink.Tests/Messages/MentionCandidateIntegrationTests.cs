@@ -53,6 +53,15 @@ public sealed class MentionCandidateIntegrationTests
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var now = DateTime.UtcNow;
+            var registeredIds = registeredUsers.Select(x => x.Id).ToArray();
+            var users = await db.Users
+                .Where(x => registeredIds.Contains(x.Id))
+                .ToListAsync();
+            foreach (var user in users)
+            {
+                user.StatusId = UserStatusIds.Active;
+                user.EmailConfirmedAt = now;
+            }
             db.ServerMembers.AddRange(registeredUsers.Select(user => new ServerMember
             {
                 Id = Guid.NewGuid(),

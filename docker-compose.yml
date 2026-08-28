@@ -11,6 +11,14 @@ x-backend-environment: &backend-environment
   AssetCleanup__RetentionDays: ${ASSET_CLEANUP_RETENTION_DAYS:-7}
   AssetCleanup__IntervalMinutes: ${ASSET_CLEANUP_INTERVAL_MINUTES:-60}
   AssetCleanup__BatchSize: ${ASSET_CLEANUP_BATCH_SIZE:-100}
+  EmailDelivery__Enabled: ${EMAIL_ENABLED:-false}
+  EmailDelivery__Host: ${EMAIL_SMTP_HOST:-}
+  EmailDelivery__Port: ${EMAIL_SMTP_PORT:-587}
+  EmailDelivery__UseSslOnConnect: ${EMAIL_SMTP_SSL_ON_CONNECT:-false}
+  EmailDelivery__Username: ${EMAIL_SMTP_USERNAME:-}
+  EmailDelivery__Password: ${EMAIL_SMTP_PASSWORD:-}
+  EmailDelivery__FromAddress: ${EMAIL_FROM_ADDRESS:-no-reply@arcane-link.ru}
+  EmailDelivery__PublicOrigin: ${EMAIL_PUBLIC_ORIGIN:-http://127.0.0.1:8080}
 
 services:
   postgres:

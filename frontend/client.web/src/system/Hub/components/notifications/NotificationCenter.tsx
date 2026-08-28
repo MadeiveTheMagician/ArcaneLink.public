@@ -15,11 +15,16 @@ import { useNotificationPreferences } from './notificationPreferences'
 import {
   applyAllNotificationsRead,
   applyNotificationRead,
+  clearReadNotificationHistory,
   rollbackAllNotificationsRead,
   rollbackNotificationRead,
   type NotificationReadRollback,
 } from './notificationCenterModel'
 import { NotificationListSkeleton } from './NotificationListSkeleton'
+import {
+  resolveNotificationTarget,
+  type NotificationTarget,
+} from './notificationNavigation'
 import styles from './NotificationCenter.module.css'
 
 type NotificationFilter = 'all' | 'unread' | 'mention' | 'invite' | 'system'
@@ -30,6 +35,7 @@ type NotificationCenterProps = {
   directServerInvites: ServerInviteResponse[]
   onAcceptDirectServerInvite: (inviteId: string) => void
   onDeclineDirectServerInvite: (inviteId: string) => void
+  onOpenTarget: (target: NotificationTarget) => void
 }
 
 const filters: { id: NotificationFilter; label: string }[] = [
@@ -46,6 +52,7 @@ export function NotificationCenter({
   directServerInvites,
   onAcceptDirectServerInvite,
   onDeclineDirectServerInvite,
+  onOpenTarget,
 }: NotificationCenterProps) {
   const [notifications, setNotifications] = useState<UserNotificationResponse[]>(
     [],
@@ -60,6 +67,7 @@ export function NotificationCenter({
     () => new Set(),
   )
   const [isMarkingAllRead, setIsMarkingAllRead] = useState(false)
+  const [isClearingHistory, setIsClearingHistory] = useState(false)
   const loadRequestIdRef = useRef(0)
   const pendingReadIdsRef = useRef(new Set<string>())
   const { preferences, updatePreferences } =
@@ -148,6 +156,7 @@ export function NotificationCenter({
   const hasUnreadStoredNotifications = notifications.some(
     (item) => !item.readAt,
   )
+  const hasReadStoredNotifications = notifications.some((item) => item.readAt)
   const isInitialLoading = isLoading && items.length === 0
   const initialLoadingSkeleton =
     useSystemSkeletonPresence(isInitialLoading)
@@ -157,7 +166,8 @@ export function NotificationCenter({
       item.id.startsWith('active-invite:') ||
       item.readAt ||
       pendingReadIdsRef.current.has(item.id) ||
-      isMarkingAllRead
+      isMarkingAllRead ||
+      isClearingHistory
     ) {
       return
     }
@@ -196,6 +206,7 @@ export function NotificationCenter({
   async function markAllRead() {
     if (
       isMarkingAllRead ||
+      isClearingHistory ||
       pendingReadIdsRef.current.size > 0 ||
       !hasUnreadStoredNotifications
     ) {
@@ -220,6 +231,33 @@ export function NotificationCenter({
       setMutationError(notificationCopy.center.updateError)
     } finally {
       setIsMarkingAllRead(false)
+    }
+  }
+
+  async function clearHistory() {
+    if (
+      isClearingHistory ||
+      isMarkingAllRead ||
+      pendingReadIdsRef.current.size > 0 ||
+      !hasReadStoredNotifications ||
+      !window.confirm(notificationCopy.center.clearHistoryConfirmation)
+    ) {
+      return
+    }
+
+    setMutationError(null)
+    setIsClearingHistory(true)
+
+    try {
+      await apiNoContent('/api/notifications/history', {
+        accessToken,
+        method: 'DELETE',
+      })
+      setNotifications(clearReadNotificationHistory)
+    } catch {
+      setMutationError(notificationCopy.center.clearHistoryError)
+    } finally {
+      setIsClearingHistory(false)
     }
   }
 
@@ -259,17 +297,33 @@ export function NotificationCenter({
           <i aria-hidden="true" />
         </label>
         <button
-          className={styles.iconButton}
+          className={`${styles.iconButton} ${styles.markReadButton}`}
           type="button"
           aria-label={notificationCopy.actions.markAllRead}
           disabled={
             isMarkingAllRead ||
+            isClearingHistory ||
             pendingReadIds.size > 0 ||
             !hasUnreadStoredNotifications
           }
           onClick={() => void markAllRead()}
         >
           <SystemIcon name="check" size={20} />
+        </button>
+        <button
+          className={`${styles.iconButton} ${styles.clearHistoryButton}`}
+          type="button"
+          aria-label={notificationCopy.actions.clearHistory}
+          title={notificationCopy.actions.clearHistory}
+          disabled={
+            isClearingHistory ||
+            isMarkingAllRead ||
+            pendingReadIds.size > 0 ||
+            !hasReadStoredNotifications
+          }
+          onClick={() => void clearHistory()}
+        >
+          <SystemIcon name="trash" size={20} />
         </button>
       </header>
 
@@ -340,6 +394,7 @@ export function NotificationCenter({
                         onDeclineDirectServerInvite(inviteId)
                       }}
                       onRead={() => void markRead(item)}
+                      onOpenTarget={onOpenTarget}
                     />
                   )
                 })}
@@ -358,20 +413,37 @@ function NotificationRow({
   onAccept,
   onDecline,
   onRead,
+  onOpenTarget,
 }: {
   item: UserNotificationResponse
   activeInvite: ServerInviteResponse | null | undefined
   onAccept: (inviteId: string) => void
   onDecline: (inviteId: string) => void
   onRead: () => void
+  onOpenTarget: (target: NotificationTarget) => void
 }) {
   const image = getNotificationImage(item, activeInvite)
+  const target = resolveNotificationTarget(item)
+  function activate() {
+    onRead()
+    if (target) {
+      onOpenTarget(target)
+    }
+  }
   return (
     <article
-      className={`${styles.row} ${styles[item.kind] ?? ''} ${
+      className={`${styles.row} ${target ? styles.actionable : ''} ${styles[item.kind] ?? ''} ${
         item.readAt ? styles.read : ''
       }`}
-      onClick={onRead}
+      onClick={activate}
+      onKeyDown={(event) => {
+        if (target && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault()
+          activate()
+        }
+      }}
+      role={target ? 'button' : undefined}
+      tabIndex={target ? 0 : undefined}
     >
       <span className={styles.kindIcon}>
         <SystemIcon name={iconForKind(item.kind)} size={24} glow />
@@ -454,6 +526,7 @@ function mergeActiveInvites(
       spaceId: null,
       spaceTitle: null,
       messageId: null,
+      messageCreatedAt: null,
       inviteId: invite.id,
       createdAt: invite.createdAt,
       readAt: null,
@@ -502,7 +575,9 @@ function iconForKind(kind: string) {
 }
 
 function isInviteKind(kind: string) {
-  return kind === 'invite' || kind === 'private-space-invite'
+  return kind === 'invite' ||
+    kind === 'private-space-invite' ||
+    kind === 'friend-request'
 }
 
 function groupByDay(items: UserNotificationResponse[]) {

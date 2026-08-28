@@ -20,6 +20,7 @@ import {
   type ModerationEvidenceTransferMode,
 } from '../models/moderationEvidenceAssetModel'
 import { useServerModeration } from '../hooks/useServerModeration'
+import { SystemSelect } from '../../shared/ui/SystemSelect'
 import styles from './ServerModerationPanel.module.css'
 
 export function ServerModerationPanel({
@@ -236,11 +237,12 @@ export function ServerModerationPanel({
         </div>
         <label>
           <span>{moderationCopy.cases.filter}</span>
-          <select
+          <SystemSelect
+            aria-label={moderationCopy.cases.filter}
             value={moderation.statusFilter}
-            onChange={(event) =>
+            onValueChange={(value) =>
               moderation.setStatusFilter(
-                event.target.value as ModerationCaseFilter,
+                value as ModerationCaseFilter,
               )
             }
           >
@@ -250,7 +252,7 @@ export function ServerModerationPanel({
                 {option.label}
               </option>
             ))}
-          </select>
+          </SystemSelect>
         </label>
       </header>
 
@@ -399,12 +401,13 @@ export function ServerModerationPanel({
               <form className={styles.decision} onSubmit={submitStatus}>
                 <label>
                   <span>{moderationCopy.cases.updateStatus}</span>
-                  <select
+                  <SystemSelect
+                    aria-label={moderationCopy.cases.updateStatus}
                     value={statusDraft}
                     disabled={moderation.isUpdatingCase}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       setStatusDraft(
-                        event.target.value as ModerationCaseStatus,
+                        value as ModerationCaseStatus,
                       )
                     }
                   >
@@ -413,7 +416,7 @@ export function ServerModerationPanel({
                         {option.label}
                       </option>
                     ))}
-                  </select>
+                  </SystemSelect>
                 </label>
                 <label>
                   <span>{moderationCopy.cases.decisionNote}</span>

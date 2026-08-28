@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { configureApiAuthSession, apiJson, apiRequest } from './shared/api/api'
 import { appCopy } from './shared/app.copy'
 import {
@@ -18,6 +18,29 @@ import type {
   UserProfileSettingsResponse,
   UserResponse,
 } from './shared/types'
+import {
+  clearAccountActionFromLocation,
+  resolveAuthAccountAction,
+} from './pages/Auth/account/accountActionModel'
+
+function captureAccountActionFromLocation() {
+  const action = resolveAuthAccountAction(
+    window.location.search,
+    window.location.hash,
+  )
+
+  if (action) {
+    window.history.replaceState(
+      {},
+      '',
+      clearAccountActionFromLocation(window.location),
+    )
+  }
+
+  return action
+}
+
+const initialAccountAction = captureAccountActionFromLocation()
 
 const AuthPage = lazy(() =>
   import('./pages/Auth/AuthPage').then((module) => ({
@@ -73,6 +96,8 @@ function AppLoading({ label = appCopy.loading.default }: { label?: string }) {
 function App() {
   const [session, setSession] = useState<ProfileSession | null>(null)
   const [currentPath, setCurrentPath] = useState(window.location.pathname)
+  const [accountAction, setAccountAction] = useState(initialAccountAction)
+  const initialAccountActionRef = useRef(accountAction)
   const [isRestoringSession, setIsRestoringSession] = useState(true)
   const inviteCode = currentPath.match(/^\/invite\/([^/]+)$/)?.[1] ?? null
 
@@ -98,14 +123,24 @@ function App() {
   useEffect(() => {
     function syncPath() {
       setCurrentPath(window.location.pathname)
+      setAccountAction(captureAccountActionFromLocation())
     }
 
     window.addEventListener('popstate', syncPath)
+    window.addEventListener('hashchange', syncPath)
 
-    return () => window.removeEventListener('popstate', syncPath)
+    return () => {
+      window.removeEventListener('popstate', syncPath)
+      window.removeEventListener('hashchange', syncPath)
+    }
   }, [])
 
   useEffect(() => {
+    if (initialAccountActionRef.current) {
+      setIsRestoringSession(false)
+      return
+    }
+
     void restoreAuthSession()
       .then((tokenPair) => loadProfileSession(tokenPair.accessToken))
       .then(setSession)
@@ -138,10 +173,30 @@ function App() {
   function navigateHome() {
     window.history.pushState({}, '', '/')
     setCurrentPath('/')
+    setAccountAction(null)
   }
 
   function handleInviteAccepted() {
     navigateHome()
+  }
+
+  function clearAccountActionUrl() {
+    window.history.replaceState(
+      {},
+      '',
+      clearAccountActionFromLocation(window.location),
+    )
+  }
+
+  function exitAccountAction() {
+    clearAccountActionUrl()
+    setAccountAction(null)
+  }
+
+  function requireAccountReauthentication() {
+    clearAccountActionUrl()
+    clearAuthSession()
+    setSession(null)
   }
 
   if (isRestoringSession) {
@@ -168,10 +223,16 @@ function App() {
 
   return (
     <Suspense fallback={<AppLoading />}>
-      {session ? (
+      {session && !accountAction ? (
         <HubPage session={session} onLogout={handleLogout} />
       ) : (
-        <AuthPage onAuthenticated={handleAuthenticated} />
+        <AuthPage
+          accountAction={accountAction}
+          onAuthenticated={handleAuthenticated}
+          onAccountActionSettled={clearAccountActionUrl}
+          onAccountActionExit={exitAccountAction}
+          onRequiresReauthentication={requireAccountReauthentication}
+        />
       )}
     </Suspense>
   )

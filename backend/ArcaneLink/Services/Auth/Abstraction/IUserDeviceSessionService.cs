@@ -19,6 +19,16 @@ namespace ArcaneLink.Services.Auth.Abstraction
         Task<bool> RevokeSessionAsync(
             Guid userId,
             Guid sessionId,
+            Guid currentDeviceSessionId,
+            CancellationToken cancellationToken = default);
+
+        Task<int> RevokeOtherSessionsAsync(
+            Guid userId,
+            Guid currentDeviceSessionId,
+            CancellationToken cancellationToken = default);
+
+        Task<int> RevokeAllSessionsAsync(
+            Guid userId,
             CancellationToken cancellationToken = default);
     }
 }

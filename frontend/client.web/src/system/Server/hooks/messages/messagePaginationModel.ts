@@ -2,6 +2,12 @@ import type { SpaceMessageResponse } from '../../../../shared/types'
 
 export const messageHistoryPageSize = 100
 
+export type OlderMessageLoadResult =
+  | 'loaded'
+  | 'exhausted'
+  | 'failed'
+  | 'stale'
+
 export type MessageHistoryCursor = {
   createdAt: string
   id: string
@@ -18,6 +24,21 @@ export function getOldestMessageCursor(
         id: oldestMessage.id,
       }
     : null
+}
+
+export function getMessageWindowCursor(
+  messageId: string,
+  createdAt: string,
+): MessageHistoryCursor | null {
+  const timestamp = Date.parse(createdAt)
+  if (!messageId || !Number.isFinite(timestamp)) {
+    return null
+  }
+
+  return {
+    createdAt: new Date(timestamp + 1).toISOString(),
+    id: messageId,
+  }
 }
 
 export function hasOlderMessagePage(

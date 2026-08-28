@@ -3,6 +3,7 @@ import type { ServerMemberDetailsResponse } from '../../../../shared/types'
 import { commonCopy, PresenceName, serverCopy } from '../../../shared'
 import { shouldLoadMoreServerMembers } from '../../hooks/workspace/serverMemberPaginationModel'
 import styles from './MobileServerMembersPanel.module.css'
+import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel'
 
 type MobileServerMembersPanelProps = {
   members: ServerMemberDetailsResponse[]
@@ -10,7 +11,11 @@ type MobileServerMembersPanelProps = {
   isOpen: boolean
   isLoadingMore: boolean
   hasMore: boolean
-  onSelectMember: (member: ServerMemberDetailsResponse) => void
+  onSelectMember: (
+    member: ServerMemberDetailsResponse,
+    anchor: ServerMemberProfileAnchor,
+    focusTarget: HTMLElement,
+  ) => void
   onLoadMore: () => Promise<boolean>
 }
 
@@ -37,6 +42,7 @@ export function MobileServerMembersPanel({
 
   return (
     <div
+      id="mobile-server-members-panel"
       className={[
         styles.panel,
         isOpen ? styles.open : '',
@@ -44,7 +50,11 @@ export function MobileServerMembersPanel({
       ]
         .filter(Boolean)
         .join(' ')}
+      data-state={isOpen ? 'expanded' : 'collapsed'}
+      aria-label={serverCopy.labels.members}
+      aria-hidden={!isOpen}
       aria-busy={isLoadingMore}
+      inert={!isOpen}
       onScroll={handleScroll}
     >
       {members.map((member) => {
@@ -57,7 +67,13 @@ export function MobileServerMembersPanel({
             key={member.id}
             className={selectedMemberId === member.id ? styles.active : ''}
             type="button"
-            onClick={() => onSelectMember(member)}
+            onClick={(event) =>
+              onSelectMember(
+                member,
+                event.currentTarget.getBoundingClientRect(),
+                event.currentTarget,
+              )
+            }
           >
             <span className={`${styles.avatar} ui-frame`}>
               {avatarUrl ? (

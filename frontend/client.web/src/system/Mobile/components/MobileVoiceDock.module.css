@@ -19,7 +19,7 @@
     padding: 8px 10px;
     background:
       radial-gradient(circle at 22% 0%, color-mix(in srgb, var(--theme-accent), transparent 82%), transparent 42%),
-      linear-gradient(180deg, #0d1737 0%, #071025 100%);
+      linear-gradient(180deg, var(--theme-frame-bg-strong), var(--theme-control-bg-strong));
     box-shadow:
       0 16px 34px rgba(0, 0, 0, 0.42),
       0 0 22px color-mix(in srgb, var(--theme-accent), transparent 86%),

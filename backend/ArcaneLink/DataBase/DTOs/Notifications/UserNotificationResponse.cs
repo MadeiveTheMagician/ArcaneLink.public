@@ -22,6 +22,7 @@ namespace ArcaneLink.DataBase.DTOs.Notifications
         public Guid? SpaceId { get; set; }
         public string? SpaceTitle { get; set; }
         public Guid? MessageId { get; set; }
+        public DateTime? MessageCreatedAt { get; set; }
         public Guid? InviteId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? ReadAt { get; set; }

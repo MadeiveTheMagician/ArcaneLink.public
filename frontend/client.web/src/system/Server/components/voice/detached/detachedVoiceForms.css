@@ -23,7 +23,7 @@ input[type="radio"]:checked {
   background:
     linear-gradient(135deg, var(--theme-accent-light), var(--theme-accent));
   box-shadow:
-    inset 0 0 0 3px rgba(5, 9, 24, 0.78),
+    inset 0 0 0 3px var(--theme-control-bg-strong),
     0 0 14px color-mix(in srgb, var(--theme-accent-light), transparent 56%);
 }
 input[type="checkbox"]:checked {
@@ -78,7 +78,7 @@ input:hover {
 }
 select:focus-visible,
 input:focus-visible {
-  outline: 2px solid rgba(159, 123, 255, 0.72);
+  outline: 2px solid var(--theme-border-accent);
   outline-offset: 2px;
 }
 
@@ -86,7 +86,7 @@ input:focus-visible {
   display: grid;
   min-width: 0;
   gap: 4px;
-  color: rgba(220, 228, 255, 0.68);
+  color: var(--theme-text-faint);
   font-size: 11px;
 }
 .arcane-detached-field-caption,
@@ -109,7 +109,7 @@ input:focus-visible {
   grid-template-columns: minmax(0, 1fr) 38px;
   align-items: center;
   column-gap: 8px;
-  color: rgba(238, 242, 255, 0.86);
+  color: var(--theme-text-soft);
   font-size: 13px;
 }
 .arcane-detached-checkbox-label[data-variant="inline"] {
@@ -136,10 +136,10 @@ input:focus-visible {
 }
 .arcane-detached-field[data-variant="slot"] {
   min-height: 34px;
-  border: 1px solid rgba(159, 123, 255, 0.26);
+  border: 1px solid var(--theme-border-control);
   border-radius: 8px;
-  color: #eef2ff;
-  background: rgba(11, 17, 38, 0.96);
+  color: var(--color-text);
+  background: var(--theme-control-bg-strong);
 }
 .arcane-detached-radio-group {
   display: grid;
@@ -152,7 +152,7 @@ input:focus-visible {
 .arcane-detached-radio-legend {
   margin: 0 0 2px;
   padding: 0;
-  color: rgba(220, 228, 255, 0.72);
+  color: var(--theme-text-faint);
   font-size: 12px;
 }
 .arcane-detached-radio-list {
@@ -166,14 +166,14 @@ input:focus-visible {
   align-items: center;
   gap: 6px;
   min-width: 0;
-  border: 1px solid rgba(159, 123, 255, 0.22);
+  border: 1px solid var(--theme-border-control);
   border-radius: 8px;
   padding: 7px 8px;
-  color: #eef2ff;
-  background: rgba(11, 17, 38, 0.72);
+  color: var(--color-text);
+  background: var(--theme-control-bg);
   font-size: 12px;
   cursor: pointer;
 }
 .arcane-detached-radio-option[data-active="true"] {
-  background: rgba(159, 123, 255, 0.18);
+  background: var(--theme-active-bg);
 }

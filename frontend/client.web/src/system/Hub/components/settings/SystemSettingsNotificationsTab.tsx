@@ -1,6 +1,7 @@
 import { SettingsSection, ToggleField } from './SystemSettingsControls'
 import { useNotificationPreferences } from '../notifications/notificationPreferences'
 import { notificationCopy } from '../../../shared/copy'
+import { SystemSelect } from '../../../shared/ui/SystemSelect'
 import styles from './SystemSettingsNotificationsTab.module.css'
 
 const notificationToggles = [
@@ -56,11 +57,12 @@ export function SystemSettingsNotificationsTab({
         <div className={styles.selectRow}>
           <label>
             <span>{notificationCopy.settings.placementLabel}</span>
-            <select
+            <SystemSelect
+              aria-label={notificationCopy.settings.placementLabel}
               value={preferences.placement}
-              onChange={(event) =>
+              onValueChange={(value) =>
                 updatePreferences({
-                  placement: event.target.value as typeof preferences.placement,
+                  placement: value as typeof preferences.placement,
                 })
               }
             >
@@ -70,7 +72,7 @@ export function SystemSettingsNotificationsTab({
               <option value="bottom-left">
                 {notificationCopy.settings.placementBottomLeft}
               </option>
-            </select>
+            </SystemSelect>
           </label>
         </div>
       </SettingsSection>

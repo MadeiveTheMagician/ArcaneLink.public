@@ -51,14 +51,24 @@ export function SettingsSection({
             />
           </button>
         </h3>
-        {description && isExpanded ? <p>{description}</p> : null}
       </header>
       <div
-        className={styles.sectionContent}
+        className={`${styles.sectionDisclosure} ${
+          isExpanded ? styles.sectionDisclosureExpanded : ''
+        }`}
         id={contentId}
-        hidden={!isExpanded}
+        data-settings-section-content
+        aria-hidden={!isExpanded}
+        inert={!isExpanded ? true : undefined}
       >
-        {children}
+        <div className={styles.sectionDisclosureClip}>
+          <div className={styles.sectionDisclosureBody}>
+            {description ? (
+              <p className={styles.sectionDescription}>{description}</p>
+            ) : null}
+            <div className={styles.sectionContent}>{children}</div>
+          </div>
+        </div>
       </div>
     </section>
   )

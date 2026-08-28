@@ -92,12 +92,24 @@ android/gradlew :app:assembleDebug :app:assembleRelease
 The Windows installer and Android release APK remain unsigned until a
 controlled release environment supplies the external signing identities.
 Never add keystores, certificates or signing passwords to this repository.
-Android `versionCode=1` identifies this first review candidate; increment the
-code for every distributed APK or AAB. The next distributed Android artifact
-must use at least `versionCode=2`, even if the display version changes only
-from RC to stable.
+Android `versionCode=2` identifies release `1.0.1`; increment the code for
+every distributed APK or AAB. The next distributed Android artifact must use
+at least `versionCode=3`, even if the display version changes only by a patch.
 
 ## Release verification
+
+Run the repository hygiene gate before packaging or reviewing a release:
+
+```text
+pwsh ./infrastructure/scripts/check-release-tree.ps1
+```
+
+In a Git worktree the gate checks both tracked files and untracked files that
+are not ignored, so a newly copied source file cannot bypass the scan merely
+because it has not been added to the index. Ignored local `.env` and
+`.env.turn` files remain outside the publication manifest; their values must
+never be printed or uploaded. Forbidden generated/private directories are
+checked against the physical tree.
 
 A release candidate is not accepted on build success alone. Verify:
 

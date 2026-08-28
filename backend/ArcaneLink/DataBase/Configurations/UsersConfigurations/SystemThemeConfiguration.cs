@@ -107,7 +107,23 @@ namespace ArcaneLink.DataBase.Configurations.UsersConfigurations
                     "#8ee957",
                     "{\"--color-bg\":\"#0f2111\",\"--color-text\":\"#f2ffe9\",\"--color-muted\":\"#add09c\",\"--color-accent\":\"#8ee957\"}",
                     false,
-                    6));
+                    6),
+                Create(
+                    SystemThemeIds.Graphite,
+                    "graphite",
+                    "Графитовая",
+                    "#313131",
+                    "{\"--color-bg\":\"#121212\",\"--color-text\":\"#f2f2f2\",\"--color-muted\":\"#b8b8b8\",\"--color-accent\":\"#666666\"}",
+                    false,
+                    7),
+                Create(
+                    SystemThemeIds.Snow,
+                    "snow",
+                    "Снежная",
+                    "#e4e7ec",
+                    "{\"--color-bg\":\"#f8fafc\",\"--color-text\":\"#1f2937\",\"--color-muted\":\"#5f6977\",\"--color-accent\":\"#647184\"}",
+                    false,
+                    8));
         }
 
         private static SystemTheme Create(

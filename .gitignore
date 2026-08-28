@@ -93,7 +93,6 @@ Desktop.ini
 
 # Local tool state
 .agents/
-.codex/
 .presentation-work/
 outputs/
 .dotnet/

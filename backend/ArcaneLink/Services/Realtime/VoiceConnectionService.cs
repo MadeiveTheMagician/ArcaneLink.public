@@ -6,6 +6,7 @@ using ArcaneLink.Services.Servers.Authorization;
 using ArcaneLink.Services.Servers.Authorization.Abstractions;
 using ArcaneLink.Services.Spaces;
 using ArcaneLink.Services.Spaces.Abstractions;
+using ArcaneLink.Services.Users.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArcaneLink.Services.Realtime
@@ -23,24 +24,29 @@ namespace ArcaneLink.Services.Realtime
         private const string DisconnectVoiceMembersPermission = "DISCONNECT_VOICE_MEMBERS";
 
         private static readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, VoiceConnectionState>> VoiceConnections = new();
+        private static readonly ConcurrentDictionary<Guid, PrivateCallLifecycleState> PrivateCalls = new();
         private static readonly ConcurrentDictionary<(Guid ServerId, Guid UserId), VoiceServerModerationState> ServerModerationStates = new();
         private static readonly SemaphoreSlim VoiceConnectionsGate = new(1, 1);
+        private static readonly SemaphoreSlim PrivateCallsGate = new(1, 1);
 
         private readonly AppDbContext _db;
         private readonly ISpaceAuthorizationService _spaceAuthorization;
         private readonly IServerAuthorizationRuntime? _serverAuthorization;
+        private readonly IDirectMessagePrivacyService? _directMessagePrivacy;
         private readonly ILogger<VoiceConnectionService> _logger;
 
         public VoiceConnectionService(
             AppDbContext db,
             ISpaceAuthorizationService spaceAuthorization,
             ILogger<VoiceConnectionService> logger,
-            IServerAuthorizationRuntime? serverAuthorization = null)
+            IServerAuthorizationRuntime? serverAuthorization = null,
+            IDirectMessagePrivacyService? directMessagePrivacy = null)
         {
             _db = db;
             _spaceAuthorization = spaceAuthorization;
             _logger = logger;
             _serverAuthorization = serverAuthorization;
+            _directMessagePrivacy = directMessagePrivacy;
         }
 
         public async Task<VoiceJoinResult?> JoinAsync(
@@ -138,6 +144,566 @@ namespace ArcaneLink.Services.Realtime
                 cancellationToken);
         }
 
+        public async Task<PrivateCallJoinResult?> StartPrivateCallAsync(
+            string connectionId,
+            Guid userId,
+            Guid spaceId,
+            VoiceStateUpdate state,
+            CancellationToken cancellationToken = default)
+        {
+            if (!await IsPrivateCallPrivacyAllowedAsync(
+                    spaceId,
+                    cancellationToken))
+            {
+                return null;
+            }
+
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (PrivateCalls.TryGetValue(spaceId, out var stale) &&
+                    stale.Phase == PrivateCallPhases.Ended)
+                {
+                    PrivateCalls.TryRemove(spaceId, out _);
+                }
+
+                if (PrivateCalls.TryGetValue(spaceId, out var existing))
+                {
+                    if (existing.Phase == PrivateCallPhases.Ringing &&
+                        existing.Caller.UserId != userId)
+                    {
+                        return null;
+                    }
+
+                    var existingParticipant = await GetPrivateVoiceConnectionAsync(
+                        spaceId,
+                        userId,
+                        cancellationToken);
+                    if (existingParticipant != null &&
+                        existingParticipant.ConnectionId != connectionId)
+                    {
+                        return null;
+                    }
+
+                    var existingVoice = await JoinPrivateSpaceAsync(
+                        connectionId,
+                        userId,
+                        spaceId,
+                        state,
+                        cancellationToken);
+                    if (existingVoice == null)
+                    {
+                        return null;
+                    }
+
+                    existing.JoinedUserIds.Add(userId);
+                    existing.Revision++;
+
+                    var existingCall = await BuildPrivateCallStateAsync(
+                        existing,
+                        cancellationToken: cancellationToken);
+                    return new PrivateCallJoinResult(
+                        existingCall.CallId,
+                        existingVoice.ParticipantId,
+                        existingCall.Phase,
+                        existingVoice,
+                        existingCall,
+                        []);
+                }
+
+                // Membership reconciliation and call creation share this gate. Re-read
+                // the authoritative roster here so a member removed while Start was
+                // waiting cannot become a stale ringing target (or caller).
+                var activeMembers = await GetActivePrivateSpaceMembersAsync(
+                    spaceId,
+                    cancellationToken);
+                var caller = activeMembers.FirstOrDefault(
+                    member => member.UserId == userId);
+                if (caller == null)
+                {
+                    return null;
+                }
+
+                var rosterBeforeStart = await GetPrivateVoiceParticipantUserIdsAsync(
+                    spaceId,
+                    cancellationToken);
+                var targets = rosterBeforeStart.Count == 0
+                    ? activeMembers
+                        .Where(member => member.UserId != userId)
+                        .Select(member => member.UserId)
+                        .ToHashSet()
+                    : [];
+                if (rosterBeforeStart.Count == 0 && targets.Count == 0)
+                {
+                    return null;
+                }
+
+                var voice = await JoinPrivateSpaceAsync(
+                    connectionId,
+                    userId,
+                    spaceId,
+                    state,
+                    cancellationToken);
+                if (voice == null)
+                {
+                    return null;
+                }
+
+                var lifecycle = new PrivateCallLifecycleState(
+                    Guid.NewGuid(),
+                    spaceId,
+                    new PrivateCallUser(
+                        caller.UserId,
+                        caller.Login,
+                        caller.DisplayName),
+                    DateTime.UtcNow,
+                    rosterBeforeStart.Count == 0
+                        ? PrivateCallPhases.Ringing
+                        : PrivateCallPhases.Active,
+                    targets);
+                PrivateCalls[spaceId] = lifecycle;
+                var call = await BuildPrivateCallStateAsync(
+                    lifecycle,
+                    cancellationToken: cancellationToken);
+                return new PrivateCallJoinResult(
+                    call.CallId,
+                    voice.ParticipantId,
+                    call.Phase,
+                    voice,
+                    call,
+                    targets.Order().ToList());
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
+        public async Task<PrivateCallJoinResult?> RejoinPrivateCallAsync(
+            string connectionId,
+            Guid userId,
+            Guid spaceId,
+            VoiceStateUpdate state,
+            CancellationToken cancellationToken = default)
+        {
+            if (!await IsPrivateCallPrivacyAllowedAsync(
+                    spaceId,
+                    cancellationToken))
+            {
+                return null;
+            }
+
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!PrivateCalls.TryGetValue(spaceId, out var lifecycle) ||
+                    lifecycle.Phase == PrivateCallPhases.Ended ||
+                    !lifecycle.JoinedUserIds.Contains(userId))
+                {
+                    return null;
+                }
+
+                var voice = await JoinPrivateSpaceAsync(
+                    connectionId,
+                    userId,
+                    spaceId,
+                    state,
+                    cancellationToken);
+                if (voice == null)
+                {
+                    return null;
+                }
+
+                lifecycle.Revision++;
+                var call = await BuildPrivateCallStateAsync(
+                    lifecycle,
+                    cancellationToken: cancellationToken);
+                return new PrivateCallJoinResult(
+                    call.CallId,
+                    voice.ParticipantId,
+                    call.Phase,
+                    voice,
+                    call,
+                    []);
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
+        public async Task<PrivateCallJoinResult?> AcceptPrivateCallAsync(
+            string connectionId,
+            Guid userId,
+            Guid spaceId,
+            Guid callId,
+            VoiceStateUpdate state,
+            CancellationToken cancellationToken = default)
+        {
+            if (!await IsPrivateCallPrivacyAllowedAsync(
+                    spaceId,
+                    cancellationToken))
+            {
+                return null;
+            }
+
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!PrivateCalls.TryGetValue(spaceId, out var lifecycle) ||
+                    lifecycle.CallId != callId)
+                {
+                    return null;
+                }
+
+                var existingParticipant = await GetPrivateVoiceConnectionAsync(
+                    spaceId,
+                    userId,
+                    cancellationToken);
+                if (existingParticipant != null)
+                {
+                    return null;
+                }
+
+                if (lifecycle.Phase == PrivateCallPhases.Ringing &&
+                    !lifecycle.RingingUserIds.Contains(userId))
+                {
+                    return null;
+                }
+
+                var voice = await JoinPrivateSpaceAsync(
+                    connectionId,
+                    userId,
+                    spaceId,
+                    state,
+                    cancellationToken);
+                if (voice == null)
+                {
+                    return null;
+                }
+
+                lifecycle.DeclinedUserIds.Remove(userId);
+                if (lifecycle.Phase == PrivateCallPhases.Ringing)
+                {
+                    lifecycle.AnsweredAt ??= DateTime.UtcNow;
+                    lifecycle.Phase = PrivateCallPhases.Active;
+                    lifecycle.RingingUserIds.Clear();
+                }
+
+                lifecycle.JoinedUserIds.Add(userId);
+                lifecycle.Revision++;
+
+                var call = await BuildPrivateCallStateAsync(
+                    lifecycle,
+                    cancellationToken: cancellationToken);
+                return new PrivateCallJoinResult(
+                    call.CallId,
+                    voice.ParticipantId,
+                    call.Phase,
+                    voice,
+                    call,
+                    []);
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
+        public async Task<PrivateCallTransitionResult?> DeclinePrivateCallAsync(
+            Guid userId,
+            Guid spaceId,
+            Guid callId,
+            CancellationToken cancellationToken = default)
+        {
+            if (!await CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
+            {
+                return null;
+            }
+
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!PrivateCalls.TryGetValue(spaceId, out var lifecycle) ||
+                    lifecycle.CallId != callId ||
+                    lifecycle.Phase != PrivateCallPhases.Ringing ||
+                    !lifecycle.RingingUserIds.Remove(userId))
+                {
+                    return null;
+                }
+
+                lifecycle.DeclinedUserIds.Add(userId);
+                lifecycle.Revision++;
+                if (lifecycle.RingingUserIds.Count == 0)
+                {
+                    await RemovePrivateVoiceConnectionsAsync(
+                        spaceId,
+                        CancellationToken.None);
+                    lifecycle.Phase = PrivateCallPhases.Ended;
+                    var ended = await BuildPrivateCallStateAsync(
+                        lifecycle,
+                        "declined",
+                        forceEnded: true,
+                        CancellationToken.None);
+                    PrivateCalls.TryRemove(spaceId, out _);
+                    return new PrivateCallTransitionResult(ended, []);
+                }
+
+                return new PrivateCallTransitionResult(
+                    await BuildPrivateCallStateAsync(
+                        lifecycle,
+                        cancellationToken: CancellationToken.None),
+                    []);
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
+        public async Task<PrivateCallTransitionResult?> CancelPrivateCallAsync(
+            Guid userId,
+            Guid spaceId,
+            Guid callId,
+            CancellationToken cancellationToken = default)
+        {
+            if (!await CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
+            {
+                return null;
+            }
+
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!PrivateCalls.TryGetValue(spaceId, out var lifecycle) ||
+                    lifecycle.CallId != callId ||
+                    lifecycle.Caller.UserId != userId ||
+                    lifecycle.Phase != PrivateCallPhases.Ringing)
+                {
+                    return null;
+                }
+
+                lifecycle.RingingUserIds.Clear();
+                lifecycle.Phase = PrivateCallPhases.Ended;
+                lifecycle.Revision++;
+                await RemovePrivateVoiceConnectionsAsync(
+                    spaceId,
+                    CancellationToken.None);
+                var ended = await BuildPrivateCallStateAsync(
+                    lifecycle,
+                    "cancelled_by_caller",
+                    forceEnded: true,
+                    CancellationToken.None);
+                PrivateCalls.TryRemove(spaceId, out _);
+                return new PrivateCallTransitionResult(
+                    ended,
+                    []);
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
+        public async Task<PrivateCallState?> GetPrivateCallStateAsync(
+            Guid userId,
+            Guid spaceId,
+            CancellationToken cancellationToken = default)
+        {
+            if (!await CanUsePrivateVoiceChannelAsync(userId, spaceId, cancellationToken))
+            {
+                return null;
+            }
+
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                return PrivateCalls.TryGetValue(spaceId, out var lifecycle)
+                    ? await BuildPrivateCallStateAsync(
+                        lifecycle,
+                        cancellationToken: cancellationToken)
+                    : null;
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
+        public async Task<IReadOnlyList<PrivateCallState>> GetIncomingPrivateCallsAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            List<PrivateCallState> calls;
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                calls = new List<PrivateCallState>();
+                foreach (var lifecycle in PrivateCalls.Values
+                             .Where(call =>
+                                 call.Phase == PrivateCallPhases.Ringing &&
+                                 call.RingingUserIds.Contains(userId)))
+                {
+                    calls.Add(await BuildPrivateCallStateAsync(
+                        lifecycle,
+                        cancellationToken: cancellationToken));
+                }
+                calls = calls
+                    .OrderBy(call => call.StartedAt)
+                    .ToList();
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+
+            if (calls.Count == 0)
+            {
+                return calls;
+            }
+
+            var authorizedSpaceIds = await _db.PrivateSpaceMembers
+                .AsNoTracking()
+                .Where(member =>
+                    member.UserId == userId &&
+                    member.StatusId == PrivateSpaceIds.MemberStatusActive &&
+                    member.PrivateSpace.DeletedAt == null &&
+                    member.PrivateSpace.Space.DeletedAt == null)
+                .Select(member => member.SpaceId)
+                .ToListAsync(cancellationToken);
+            var authorized = authorizedSpaceIds.ToHashSet();
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                return calls
+                    .Where(call =>
+                        authorized.Contains(call.SpaceId) &&
+                        PrivateCalls.TryGetValue(call.SpaceId, out var current) &&
+                        current.CallId == call.CallId &&
+                        current.Phase == PrivateCallPhases.Ringing &&
+                        current.RingingUserIds.Contains(userId))
+                    .ToList();
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
+        public async Task<PrivateCallTransitionResult?> SynchronizePrivateCallAsync(
+            Guid spaceId,
+            string? endReason = null,
+            CancellationToken cancellationToken = default)
+        {
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!PrivateCalls.TryGetValue(spaceId, out var lifecycle))
+                {
+                    return null;
+                }
+
+                var activeMemberIds = (await GetActivePrivateSpaceMembersAsync(
+                        spaceId,
+                        cancellationToken))
+                    .Select(member => member.UserId)
+                    .ToHashSet();
+                var membershipChanged = lifecycle.RingingUserIds.RemoveWhere(
+                                            userId => !activeMemberIds.Contains(userId)) > 0;
+                membershipChanged |= lifecycle.JoinedUserIds.RemoveWhere(
+                                         userId => !activeMemberIds.Contains(userId)) > 0;
+                if (membershipChanged)
+                {
+                    lifecycle.Revision++;
+                }
+
+                var participantUserIds = await GetPrivateVoiceParticipantUserIdsAsync(
+                    spaceId,
+                    cancellationToken);
+                if (participantUserIds.Count == 0)
+                {
+                    lifecycle.Phase = PrivateCallPhases.Ended;
+                    lifecycle.Revision++;
+                    var ended = await BuildPrivateCallStateAsync(
+                        lifecycle,
+                        endReason ?? "participants_left",
+                        forceEnded: true,
+                        cancellationToken);
+                    PrivateCalls.TryRemove(spaceId, out _);
+                    return new PrivateCallTransitionResult(ended, []);
+                }
+
+                if (lifecycle.Phase == PrivateCallPhases.Ringing &&
+                    (!participantUserIds.Contains(lifecycle.Caller.UserId) ||
+                     lifecycle.RingingUserIds.Count == 0))
+                {
+                    await RemovePrivateVoiceConnectionsAsync(
+                        spaceId,
+                        cancellationToken);
+                    lifecycle.RingingUserIds.Clear();
+                    lifecycle.Phase = PrivateCallPhases.Ended;
+                    lifecycle.Revision++;
+                    var ended = await BuildPrivateCallStateAsync(
+                        lifecycle,
+                        endReason ?? (participantUserIds.Contains(lifecycle.Caller.UserId)
+                            ? "unavailable"
+                            : "caller_left"),
+                        forceEnded: true,
+                        cancellationToken);
+                    PrivateCalls.TryRemove(spaceId, out _);
+                    return new PrivateCallTransitionResult(ended, []);
+                }
+
+                return new PrivateCallTransitionResult(
+                    await BuildPrivateCallStateAsync(
+                        lifecycle,
+                        endReason,
+                        cancellationToken: cancellationToken),
+                    []);
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
+        public async Task<PrivateCallTransitionResult?> ReconcilePrivateCallPrivacyAsync(
+            Guid spaceId,
+            CancellationToken cancellationToken = default)
+        {
+            if (await IsPrivateCallPrivacyAllowedAsync(spaceId, cancellationToken))
+            {
+                return null;
+            }
+
+            await PrivateCallsGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!PrivateCalls.TryGetValue(spaceId, out var lifecycle))
+                {
+                    return null;
+                }
+
+                lifecycle.RingingUserIds.Clear();
+                lifecycle.Phase = PrivateCallPhases.Ended;
+                lifecycle.Revision++;
+                await RemovePrivateVoiceConnectionsAsync(
+                    spaceId,
+                    CancellationToken.None);
+                var ended = await BuildPrivateCallStateAsync(
+                    lifecycle,
+                    "privacy_changed",
+                    forceEnded: true,
+                    CancellationToken.None);
+                PrivateCalls.TryRemove(spaceId, out _);
+                return new PrivateCallTransitionResult(ended, []);
+            }
+            finally
+            {
+                PrivateCallsGate.Release();
+            }
+        }
+
         private async Task<VoiceJoinResult> JoinAccessibleChannelAsync(
             string connectionId,
             ArcaneLink.DataBase.Models.UsersModels.User user,
@@ -169,6 +735,7 @@ namespace ArcaneLink.Services.Realtime
                 var serverModeration = serverId.HasValue
                     ? ServerModerationStates.GetValueOrDefault((serverId.Value, user.Id))
                     : null;
+                var avatar = ResolveAvatar(user, serverId);
 
                 channel[connectionId] = new VoiceConnectionState(
                     connectionId,
@@ -179,6 +746,10 @@ namespace ArcaneLink.Services.Realtime
                     user.Id,
                     user.Login,
                     ResolveDisplayName(user, serverId),
+                    avatar.AssetId,
+                    avatar.CropOffsetX,
+                    avatar.CropOffsetY,
+                    avatar.CropZoom,
                     state.IsMuted,
                     state.IsDeafened,
                     serverModeration?.IsServerMuted == true,
@@ -260,6 +831,29 @@ namespace ArcaneLink.Services.Realtime
                    user.Profile.DisplayName;
         }
 
+        private static VoiceParticipantAvatar ResolveAvatar(
+            ArcaneLink.DataBase.Models.UsersModels.User user,
+            Guid? serverId)
+        {
+            var serverAvatar = serverId.HasValue
+                ? user.ServerMemberships
+                    .FirstOrDefault(member => member.ServerId == serverId.Value)
+                    ?.ServerProfile
+                : null;
+
+            return serverAvatar?.AvatarAssetId != null
+                ? new VoiceParticipantAvatar(
+                    serverAvatar.AvatarAssetId,
+                    0,
+                    0,
+                    1)
+                : new VoiceParticipantAvatar(
+                    user.Profile.AvatarAssetId,
+                    user.Profile.AvatarCropOffsetX,
+                    user.Profile.AvatarCropOffsetY,
+                    user.Profile.AvatarCropZoom);
+        }
+
         public async Task<VoiceConnectionSnapshot?> LeaveAsync(
             string connectionId,
             Guid spaceId,
@@ -295,6 +889,7 @@ namespace ArcaneLink.Services.Realtime
             string connectionId,
             Guid spaceId,
             VoiceStateUpdate state,
+            Guid? expectedParticipantId = null,
             CancellationToken cancellationToken = default)
         {
             VoiceConnectionState? current;
@@ -314,12 +909,15 @@ namespace ArcaneLink.Services.Realtime
             }
 
             if (current == null ||
+                (expectedParticipantId.HasValue &&
+                    current.ParticipantId != expectedParticipantId.Value) ||
                 !await CanUseConnectionAsync(current, cancellationToken))
             {
                 _logger.LogDebug(
-                    "Voice state update ignored because connection is not in channel or no longer authorized. ConnectionId={ConnectionId} SpaceId={SpaceId}",
+                    "Voice state update ignored because connection generation is stale, is not in channel, or is no longer authorized. ConnectionId={ConnectionId} SpaceId={SpaceId} ExpectedParticipantId={ExpectedParticipantId}",
                     connectionId,
-                    spaceId);
+                    spaceId,
+                    expectedParticipantId);
                 return null;
             }
 
@@ -826,6 +1424,81 @@ namespace ArcaneLink.Services.Realtime
             }
         }
 
+        public async Task<IReadOnlyList<VoiceConnectionSnapshot>> RefreshUserIdentityAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            bool hasActiveVoiceConnection;
+            await VoiceConnectionsGate.WaitAsync(cancellationToken);
+            try
+            {
+                hasActiveVoiceConnection = VoiceConnections.Values
+                    .Any(channel => channel.Values.Any(connection =>
+                        connection.UserId == userId));
+            }
+            finally
+            {
+                VoiceConnectionsGate.Release();
+            }
+
+            if (!hasActiveVoiceConnection)
+            {
+                return [];
+            }
+
+            var user = await _db.Users
+                .AsNoTracking()
+                .Include(candidate => candidate.Profile)
+                .Include(candidate => candidate.ServerMemberships)
+                .ThenInclude(member => member.ServerProfile)
+                .FirstOrDefaultAsync(
+                    candidate =>
+                        candidate.Id == userId &&
+                        candidate.DeletedAt == null &&
+                        candidate.StatusId == UserStatusIds.Active,
+                    cancellationToken);
+            if (user == null)
+            {
+                return [];
+            }
+
+            var refreshed = new List<VoiceConnectionSnapshot>();
+            await VoiceConnectionsGate.WaitAsync(cancellationToken);
+            try
+            {
+                foreach (var channel in VoiceConnections.Values)
+                {
+                    foreach (var item in channel.ToArray())
+                    {
+                        var current = item.Value;
+                        if (current.UserId != userId)
+                        {
+                            continue;
+                        }
+
+                        var avatar = ResolveAvatar(user, current.ServerId);
+                        var updated = current with
+                        {
+                            Login = user.Login,
+                            DisplayName = ResolveDisplayName(user, current.ServerId),
+                            AvatarAssetId = avatar.AssetId,
+                            AvatarCropOffsetX = avatar.CropOffsetX,
+                            AvatarCropOffsetY = avatar.CropOffsetY,
+                            AvatarCropZoom = avatar.CropZoom
+                        };
+                        channel[item.Key] = updated;
+                        refreshed.Add(ToSnapshot(updated));
+                    }
+                }
+            }
+            finally
+            {
+                VoiceConnectionsGate.Release();
+            }
+
+            return refreshed;
+        }
+
         public async Task<VoiceConnectionSnapshot?> DisconnectAsync(
             string connectionId,
             CancellationToken cancellationToken = default)
@@ -1282,15 +1955,64 @@ namespace ArcaneLink.Services.Realtime
         {
             return connection.ChannelScope == VoiceChannelScopes.Private
                 ? await CanUsePrivateVoiceChannelAsync(
-                    connection.UserId,
-                    connection.SpaceId,
-                    cancellationToken)
+                      connection.UserId,
+                      connection.SpaceId,
+                      cancellationToken) &&
+                  await IsPrivateCallPrivacyAllowedAsync(
+                      connection.SpaceId,
+                      cancellationToken)
                 : connection.ServerId.HasValue &&
                   await CanUseVoiceChannelAsync(
                       connection.UserId,
                       connection.ServerId.Value,
                       connection.SpaceId,
                       cancellationToken);
+        }
+
+        private async Task<bool> IsPrivateCallPrivacyAllowedAsync(
+            Guid spaceId,
+            CancellationToken cancellationToken)
+        {
+            if (_directMessagePrivacy == null)
+            {
+                return true;
+            }
+
+            var direct = await _db.PrivateSpaces
+                .AsNoTracking()
+                .Where(space =>
+                    space.SpaceId == spaceId &&
+                    space.DeletedAt == null &&
+                    space.Space.DeletedAt == null)
+                .Select(space => new
+                {
+                    space.Kind,
+                    space.DirectUserLowId,
+                    space.DirectUserHighId
+                })
+                .SingleOrDefaultAsync(cancellationToken);
+            if (direct == null)
+            {
+                return false;
+            }
+            if (direct.Kind != PrivateSpaceKindCodes.Direct)
+            {
+                return true;
+            }
+            if (!direct.DirectUserLowId.HasValue ||
+                !direct.DirectUserHighId.HasValue)
+            {
+                return false;
+            }
+
+            return await _directMessagePrivacy.CanSendDirectMessageAsync(
+                       direct.DirectUserLowId.Value,
+                       spaceId,
+                       cancellationToken) &&
+                   await _directMessagePrivacy.CanSendDirectMessageAsync(
+                       direct.DirectUserHighId.Value,
+                       spaceId,
+                       cancellationToken);
         }
 
         private async Task<bool> CanModerateServerVoiceParticipantAsync(
@@ -1480,6 +2202,134 @@ namespace ArcaneLink.Services.Realtime
             return removedConnections;
         }
 
+        private Task<List<ActivePrivateSpaceMember>> GetActivePrivateSpaceMembersAsync(
+            Guid spaceId,
+            CancellationToken cancellationToken)
+        {
+            return _db.PrivateSpaceMembers
+                .AsNoTracking()
+                .Where(member =>
+                    member.SpaceId == spaceId &&
+                    member.StatusId == PrivateSpaceIds.MemberStatusActive &&
+                    member.PrivateSpace.DeletedAt == null &&
+                    member.PrivateSpace.Space.DeletedAt == null &&
+                    member.User.DeletedAt == null &&
+                    member.User.StatusId == UserStatusIds.Active)
+                .Select(member => new ActivePrivateSpaceMember(
+                    member.UserId,
+                    member.User.Login,
+                    member.User.Profile.DisplayName))
+                .ToListAsync(cancellationToken);
+        }
+
+        private static async Task<VoiceConnectionSnapshot?> GetPrivateVoiceConnectionAsync(
+            Guid spaceId,
+            Guid userId,
+            CancellationToken cancellationToken)
+        {
+            await VoiceConnectionsGate.WaitAsync(cancellationToken);
+            try
+            {
+                return VoiceConnections.TryGetValue(spaceId, out var channel)
+                    ? channel.Values
+                        .Where(connection =>
+                            connection.ChannelScope == VoiceChannelScopes.Private &&
+                            connection.ServerId == null &&
+                            connection.UserId == userId)
+                        .Select(ToSnapshot)
+                        .FirstOrDefault()
+                    : null;
+            }
+            finally
+            {
+                VoiceConnectionsGate.Release();
+            }
+        }
+
+        private static async Task<HashSet<Guid>> GetPrivateVoiceParticipantUserIdsAsync(
+            Guid spaceId,
+            CancellationToken cancellationToken)
+        {
+            await VoiceConnectionsGate.WaitAsync(cancellationToken);
+            try
+            {
+                return VoiceConnections.TryGetValue(spaceId, out var channel)
+                    ? channel.Values
+                    .Where(connection =>
+                        connection.ChannelScope == VoiceChannelScopes.Private &&
+                        connection.ServerId == null)
+                    .Select(connection => connection.UserId)
+                    .ToHashSet()
+                    : [];
+            }
+            finally
+            {
+                VoiceConnectionsGate.Release();
+            }
+        }
+
+        private static async Task RemovePrivateVoiceConnectionsAsync(
+            Guid spaceId,
+            CancellationToken cancellationToken)
+        {
+            await VoiceConnectionsGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (!VoiceConnections.TryGetValue(spaceId, out var channel))
+                {
+                    return;
+                }
+
+                foreach (var connection in channel.ToList())
+                {
+                    if (connection.Value.ChannelScope == VoiceChannelScopes.Private &&
+                        connection.Value.ServerId == null)
+                    {
+                        channel.TryRemove(connection.Key, out _);
+                    }
+                }
+
+                if (channel.IsEmpty)
+                {
+                    VoiceConnections.TryRemove(spaceId, out _);
+                }
+            }
+            finally
+            {
+                VoiceConnectionsGate.Release();
+            }
+        }
+
+        private static async Task<PrivateCallState> BuildPrivateCallStateAsync(
+            PrivateCallLifecycleState lifecycle,
+            string? endReason = null,
+            bool forceEnded = false,
+            CancellationToken cancellationToken = default)
+        {
+            var participants = (await GetPrivateVoiceParticipantUserIdsAsync(
+                    lifecycle.SpaceId,
+                    cancellationToken))
+                .Order()
+                .ToList();
+            var phase = forceEnded ? PrivateCallPhases.Ended : lifecycle.Phase;
+            DateTime? endedAt = phase == PrivateCallPhases.Ended
+                ? DateTime.UtcNow
+                : null;
+            return new PrivateCallState(
+                lifecycle.CallId,
+                lifecycle.SpaceId,
+                phase,
+                lifecycle.Revision,
+                lifecycle.Caller,
+                lifecycle.StartedAt,
+                lifecycle.AnsweredAt,
+                endedAt,
+                participants,
+                lifecycle.RingingUserIds.Order().ToList(),
+                lifecycle.DeclinedUserIds.Order().ToList(),
+                endReason);
+        }
+
         private static List<VoiceConnectionState> RemoveVoiceConnectionsForUser(
             Guid userId,
             string? exceptConnectionId = null)
@@ -1531,6 +2381,10 @@ namespace ArcaneLink.Services.Realtime
                         userId = x.UserId,
                         login = x.Login,
                         displayName = x.DisplayName,
+                        avatarAssetId = x.AvatarAssetId,
+                        avatarCropOffsetX = x.AvatarCropOffsetX,
+                        avatarCropOffsetY = x.AvatarCropOffsetY,
+                        avatarCropZoom = x.AvatarCropZoom,
                         isMuted = x.IsMuted || x.IsServerMuted,
                         isDeafened = x.IsDeafened || x.IsServerDeafened,
                         isServerMuted = x.IsServerMuted,
@@ -1574,6 +2428,10 @@ namespace ArcaneLink.Services.Realtime
             Guid UserId,
             string Login,
             string DisplayName,
+            Guid? AvatarAssetId,
+            double AvatarCropOffsetX,
+            double AvatarCropOffsetY,
+            double AvatarCropZoom,
             bool IsMuted,
             bool IsDeafened,
             bool IsServerMuted,
@@ -1584,6 +2442,48 @@ namespace ArcaneLink.Services.Realtime
             bool CanUseVideo,
             bool CanShareScreen,
             DateTime JoinedAt);
+
+        private sealed record VoiceParticipantAvatar(
+            Guid? AssetId,
+            double CropOffsetX,
+            double CropOffsetY,
+            double CropZoom);
+
+        private sealed record ActivePrivateSpaceMember(
+            Guid UserId,
+            string Login,
+            string DisplayName);
+
+        private sealed class PrivateCallLifecycleState
+        {
+            public PrivateCallLifecycleState(
+                Guid callId,
+                Guid spaceId,
+                PrivateCallUser caller,
+                DateTime startedAt,
+                string phase,
+                HashSet<Guid> ringingUserIds)
+            {
+                CallId = callId;
+                SpaceId = spaceId;
+                Caller = caller;
+                StartedAt = startedAt;
+                Phase = phase;
+                RingingUserIds = ringingUserIds;
+                JoinedUserIds.Add(caller.UserId);
+            }
+
+            public Guid CallId { get; }
+            public Guid SpaceId { get; }
+            public PrivateCallUser Caller { get; }
+            public DateTime StartedAt { get; }
+            public string Phase { get; set; }
+            public long Revision { get; set; } = 1;
+            public DateTime? AnsweredAt { get; set; }
+            public HashSet<Guid> RingingUserIds { get; }
+            public HashSet<Guid> DeclinedUserIds { get; } = [];
+            public HashSet<Guid> JoinedUserIds { get; } = [];
+        }
 
         private sealed record VoiceServerModerationState(
             bool IsServerMuted,

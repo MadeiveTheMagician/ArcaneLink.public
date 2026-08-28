@@ -24,12 +24,14 @@ type AssetPreviewOverlayProps = {
   asset: AssetPreviewItem
   author: AssetPreviewAuthor
   onClose: () => void
+  onNavigate?: (direction: 'previous' | 'next') => void
 }
 
 export function AssetPreviewOverlay({
   asset,
   author,
   onClose,
+  onNavigate,
 }: AssetPreviewOverlayProps) {
   const [isChromeVisible, setIsChromeVisible] = useState(true)
   const [isClosing, setIsClosing] = useState(false)
@@ -51,16 +53,36 @@ export function AssetPreviewOverlay({
   }, [onClose])
 
   useEffect(() => {
-    function closeOnEscape(event: KeyboardEvent) {
+    function handleKeyboardNavigation(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         requestClose()
+        return
+      }
+
+      if (
+        !onNavigate ||
+        isClosingRef.current ||
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        isNativeArrowKeyTarget(event.target)
+      ) {
+        return
+      }
+
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault()
+        onNavigate(event.key === 'ArrowLeft' ? 'previous' : 'next')
       }
     }
 
-    window.addEventListener('keydown', closeOnEscape)
+    window.addEventListener('keydown', handleKeyboardNavigation)
 
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [requestClose])
+    return () => window.removeEventListener('keydown', handleKeyboardNavigation)
+  }, [onNavigate, requestClose])
 
   useEffect(() => {
     return () => {
@@ -95,7 +117,13 @@ export function AssetPreviewOverlay({
         role="dialog"
         aria-modal="true"
         aria-label={asset.title}
-        onMouseDown={(event) => event.stopPropagation()}
+        aria-keyshortcuts={onNavigate ? 'ArrowLeft ArrowRight Escape' : 'Escape'}
+        onMouseDown={(event) => {
+          event.stopPropagation()
+          if (event.target === event.currentTarget) {
+            requestClose()
+          }
+        }}
         onClick={toggleMobileChrome}
       >
         <header
@@ -161,6 +189,14 @@ export function AssetPreviewOverlay({
       </section>
     </div>,
     document.body,
+  )
+}
+
+function isNativeArrowKeyTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false
+
+  return Boolean(
+    target.closest('video, input, textarea, select, [contenteditable="true"]'),
   )
 }
 

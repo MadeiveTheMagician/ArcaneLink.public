@@ -17,6 +17,58 @@ namespace ArcaneLink.Services.Realtime.Abstractions
             VoiceStateUpdate state,
             CancellationToken cancellationToken = default);
 
+        Task<PrivateCallJoinResult?> StartPrivateCallAsync(
+            string connectionId,
+            Guid userId,
+            Guid spaceId,
+            VoiceStateUpdate state,
+            CancellationToken cancellationToken = default);
+
+        Task<PrivateCallJoinResult?> RejoinPrivateCallAsync(
+            string connectionId,
+            Guid userId,
+            Guid spaceId,
+            VoiceStateUpdate state,
+            CancellationToken cancellationToken = default);
+
+        Task<PrivateCallJoinResult?> AcceptPrivateCallAsync(
+            string connectionId,
+            Guid userId,
+            Guid spaceId,
+            Guid callId,
+            VoiceStateUpdate state,
+            CancellationToken cancellationToken = default);
+
+        Task<PrivateCallTransitionResult?> DeclinePrivateCallAsync(
+            Guid userId,
+            Guid spaceId,
+            Guid callId,
+            CancellationToken cancellationToken = default);
+
+        Task<PrivateCallTransitionResult?> CancelPrivateCallAsync(
+            Guid userId,
+            Guid spaceId,
+            Guid callId,
+            CancellationToken cancellationToken = default);
+
+        Task<PrivateCallState?> GetPrivateCallStateAsync(
+            Guid userId,
+            Guid spaceId,
+            CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<PrivateCallState>> GetIncomingPrivateCallsAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default);
+
+        Task<PrivateCallTransitionResult?> SynchronizePrivateCallAsync(
+            Guid spaceId,
+            string? endReason = null,
+            CancellationToken cancellationToken = default);
+
+        Task<PrivateCallTransitionResult?> ReconcilePrivateCallPrivacyAsync(
+            Guid spaceId,
+            CancellationToken cancellationToken = default);
+
         Task<VoiceConnectionSnapshot?> LeaveAsync(
             string connectionId,
             Guid spaceId,
@@ -26,6 +78,7 @@ namespace ArcaneLink.Services.Realtime.Abstractions
             string connectionId,
             Guid spaceId,
             VoiceStateUpdate state,
+            Guid? expectedParticipantId = null,
             CancellationToken cancellationToken = default);
 
         Task<VoiceMoveResult?> MoveParticipantAsync(
@@ -63,6 +116,10 @@ namespace ArcaneLink.Services.Realtime.Abstractions
             Guid? serverId,
             Guid spaceId,
             string channelScope = VoiceChannelScopes.Server,
+            CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<VoiceConnectionSnapshot>> RefreshUserIdentityAsync(
+            Guid userId,
             CancellationToken cancellationToken = default);
 
         Task<VoiceConnectionSnapshot?> DisconnectAsync(
@@ -159,6 +216,44 @@ namespace ArcaneLink.Services.Realtime.Abstractions
         Guid SpaceId,
         string ChannelScope,
         Guid UserId);
+
+    public static class PrivateCallPhases
+    {
+        public const string Ringing = "ringing";
+        public const string Active = "active";
+        public const string Ended = "ended";
+    }
+
+    public sealed record PrivateCallUser(
+        Guid UserId,
+        string Login,
+        string DisplayName);
+
+    public sealed record PrivateCallState(
+        Guid CallId,
+        Guid SpaceId,
+        string Phase,
+        long Revision,
+        PrivateCallUser Caller,
+        DateTime StartedAt,
+        DateTime? AnsweredAt,
+        DateTime? EndedAt,
+        IReadOnlyList<Guid> ParticipantUserIds,
+        IReadOnlyList<Guid> RingingUserIds,
+        IReadOnlyList<Guid> DeclinedUserIds,
+        string? EndReason = null);
+
+    public sealed record PrivateCallJoinResult(
+        Guid CallId,
+        Guid ParticipantId,
+        string Phase,
+        VoiceJoinResult Voice,
+        PrivateCallState Call,
+        IReadOnlyList<Guid> IncomingUserIds);
+
+    public sealed record PrivateCallTransitionResult(
+        PrivateCallState Call,
+        IReadOnlyList<Guid> IncomingUserIds);
 
     public sealed record VoiceAccessReconciliationResult(
         IReadOnlyList<VoiceConnectionSnapshot> RemovedConnections,

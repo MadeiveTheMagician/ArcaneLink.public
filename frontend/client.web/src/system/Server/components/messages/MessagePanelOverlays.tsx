@@ -30,6 +30,10 @@ import {
   isVideoAsset,
   type DownloadWarningState,
 } from './messageUtils'
+import {
+  isPreviewableMessageAsset,
+  type MessageAssetPreviewDirection,
+} from './messageAssetPreviewModel'
 
 export type MessageAssetPreviewState = {
   asset: SpaceMessageAssetResponse
@@ -53,6 +57,7 @@ type MessagePanelOverlaysProps = {
   onCloseDownloadWarning: () => void
   onCloseMessageContextMenu: () => void
   onClosePreview: () => void
+  onNavigatePreview: (direction: MessageAssetPreviewDirection) => void
   onCloseReport: () => void
   onConfirmAssetDownload: () => void
 }
@@ -217,6 +222,7 @@ export function MessagePanelOverlays({
   onCloseDownloadWarning,
   onCloseMessageContextMenu,
   onClosePreview,
+  onNavigatePreview,
   onCloseReport,
   onConfirmAssetDownload,
 }: MessagePanelOverlaysProps) {
@@ -249,6 +255,12 @@ export function MessagePanelOverlays({
             avatarCropOffsetY: previewAsset.message.senderAvatarCropOffsetY,
             avatarCropZoom: previewAsset.message.senderAvatarCropZoom,
           }}
+          onNavigate={
+            previewAsset.message.assets.filter(isPreviewableMessageAsset)
+              .length > 1
+              ? onNavigatePreview
+              : undefined
+          }
           onClose={onClosePreview}
         />
       )}

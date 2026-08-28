@@ -14,6 +14,9 @@ namespace ArcaneLink.Services.Notifications.Abstractions
         Task MarkAllReadAsync(
             Guid userId,
             CancellationToken cancellationToken = default);
+        Task<int> ClearHistoryAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default);
         Task<bool> StageInviteReadAsync(
             Guid userId,
             Guid inviteId,
@@ -29,6 +32,14 @@ namespace ArcaneLink.Services.Notifications.Abstractions
             Guid actorUserId,
             Guid spaceId,
             string spaceTitle,
+            CancellationToken cancellationToken = default);
+        Task StageFriendRequestAsync(
+            Guid targetUserId,
+            Guid actorUserId,
+            CancellationToken cancellationToken = default);
+        Task<bool> StageFriendRequestReadAsync(
+            Guid targetUserId,
+            Guid actorUserId,
             CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Guid>> StageMentionsAsync(
             Guid actorUserId,

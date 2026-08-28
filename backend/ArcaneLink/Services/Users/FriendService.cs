@@ -4,8 +4,10 @@ using ArcaneLink.DataBase.DTOs.Users;
 using ArcaneLink.DataBase.Models.UsersModels;
 using ArcaneLink.Services.Realtime;
 using ArcaneLink.Services.Realtime.Abstractions;
+using ArcaneLink.Services.Notifications.Abstractions;
 using ArcaneLink.Services.Users.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ArcaneLink.Services.Users
 {
@@ -13,19 +15,25 @@ namespace ArcaneLink.Services.Users
     {
         private readonly AppDbContext _db;
         private readonly IRealtimeNotificationService _realtime;
+        private readonly IUserNotificationService _notifications;
         private readonly IUserPresencePolicyService _presencePolicy;
         private readonly IUserPresenceCoordinator _presenceCoordinator;
+        private readonly ILogger<FriendService> _logger;
 
         public FriendService(
             AppDbContext db,
             IRealtimeNotificationService realtime,
+            IUserNotificationService notifications,
             IUserPresencePolicyService presencePolicy,
-            IUserPresenceCoordinator presenceCoordinator)
+            IUserPresenceCoordinator presenceCoordinator,
+            ILogger<FriendService> logger)
         {
             _db = db;
             _realtime = realtime;
+            _notifications = notifications;
             _presencePolicy = presencePolicy;
             _presenceCoordinator = presenceCoordinator;
+            _logger = logger;
         }
 
         public async Task<IReadOnlyList<UserFriendResponse>> GetFriendsAsync(
@@ -121,100 +129,146 @@ namespace ArcaneLink.Services.Users
             CreateFriendRequestRequest request,
             CancellationToken cancellationToken = default)
         {
-            if (request.ToUserId == currentUserId ||
-                !await IsActiveUserAsync(currentUserId, cancellationToken) ||
-                !await IsActiveUserAsync(request.ToUserId, cancellationToken))
+            if (request.ToUserId == currentUserId)
             {
                 return null;
             }
 
-            if (await AreFriendsAsync(currentUserId, request.ToUserId, cancellationToken))
-            {
-                return null;
-            }
+            FriendRequestResponse? response = null;
+            FriendRequest? acceptedReverseRequest = null;
+            FriendRequest? createdRequest = null;
 
-            await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
-            var reverseRequest = await _db.FriendRequests
-                .FirstOrDefaultAsync(
-                    x => x.FromUserId == request.ToUserId &&
-                         x.ToUserId == currentUserId &&
-                         x.StatusId == FriendRequestStatusIds.Pending,
-                    cancellationToken);
+            // The process-local presence gates keep SQLite tests and a single
+            // instance serialized. PostgreSQL additionally locks both user rows
+            // in database GUID order, so A -> B and B -> A are serialized across
+            // every application instance before either pending-state check.
+            await _presenceCoordinator.ExecuteMutationAsync(
+                [currentUserId, request.ToUserId],
+                async token =>
+                {
+                    await using var transaction =
+                        await _db.Database.BeginTransactionAsync(token);
+                    await LockFriendMutationUsersAsync(
+                        currentUserId,
+                        request.ToUserId,
+                        token);
 
-            if (reverseRequest != null)
-            {
-                FriendRequestResponse? accepted = null;
-                await _presenceCoordinator.ExecuteMutationAsync(
-                    [reverseRequest.FromUserId, reverseRequest.ToUserId],
-                    async token =>
+                    if (!await IsActiveUserAsync(currentUserId, token) ||
+                        !await IsActiveUserAsync(request.ToUserId, token) ||
+                        await AreFriendsAsync(currentUserId, request.ToUserId, token))
                     {
-                        accepted = await AcceptRequestCoreAsync(
+                        return;
+                    }
+
+                    var reverseRequest = await _db.FriendRequests
+                        .FirstOrDefaultAsync(
+                            x => x.FromUserId == request.ToUserId &&
+                                 x.ToUserId == currentUserId &&
+                                 x.StatusId == FriendRequestStatusIds.Pending,
+                            token);
+
+                    if (reverseRequest != null)
+                    {
+                        response = await AcceptRequestCoreAsync(
                             currentUserId,
                             reverseRequest,
                             token);
                         await transaction.CommitAsync(token);
-                    },
-                    cancellationToken);
-                await _presenceCoordinator.AudienceChangedAsync(
-                    [reverseRequest.FromUserId, reverseRequest.ToUserId],
-                    CancellationToken.None);
-                await NotifyFriendRequestClosedAsync(reverseRequest, cancellationToken);
-                return accepted;
+                        acceptedReverseRequest = reverseRequest;
+                        return;
+                    }
+
+                    var existing = await _db.FriendRequests
+                        .Include(x => x.Status)
+                        .Include(x => x.FromUser).ThenInclude(x => x.Profile)
+                            .ThenInclude(x => x.Tags)
+                            .ThenInclude(x => x.Tag)
+                        .Include(x => x.ToUser).ThenInclude(x => x.Profile)
+                            .ThenInclude(x => x.Tags)
+                            .ThenInclude(x => x.Tag)
+                        .FirstOrDefaultAsync(
+                            x => x.FromUserId == currentUserId &&
+                                 x.ToUserId == request.ToUserId &&
+                                 x.StatusId == FriendRequestStatusIds.Pending,
+                            token);
+
+                    if (existing != null)
+                    {
+                        await transaction.CommitAsync(token);
+                        response = await ToRequestResponseAsync(
+                            currentUserId,
+                            existing,
+                            token);
+                        return;
+                    }
+
+                    var now = DateTime.UtcNow;
+                    var friendRequest = new FriendRequest
+                    {
+                        Id = Guid.NewGuid(),
+                        FromUserId = currentUserId,
+                        ToUserId = request.ToUserId,
+                        StatusId = FriendRequestStatusIds.Pending,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    };
+
+                    _db.FriendRequests.Add(friendRequest);
+                    await _notifications.StageFriendRequestAsync(
+                        friendRequest.ToUserId,
+                        friendRequest.FromUserId,
+                        token);
+                    await _db.SaveChangesAsync(token);
+                    response = await LoadRequestResponseAsync(
+                        currentUserId,
+                        friendRequest.Id,
+                        token);
+                    await transaction.CommitAsync(token);
+                    createdRequest = friendRequest;
+                },
+                cancellationToken);
+
+            if (acceptedReverseRequest != null)
+            {
+                await TryNotifyPostCommitAsync(
+                    acceptedReverseRequest.Id,
+                    "presence audience refresh",
+                    token => _presenceCoordinator.AudienceChangedAsync(
+                        [acceptedReverseRequest.FromUserId, acceptedReverseRequest.ToUserId],
+                        token));
+                await NotifyFriendRequestClosedAsync(acceptedReverseRequest);
+                return response;
             }
 
-            var existing = await _db.FriendRequests
-                .Include(x => x.Status)
-                .Include(x => x.FromUser).ThenInclude(x => x.Profile)
-                    .ThenInclude(x => x.Tags)
-                    .ThenInclude(x => x.Tag)
-                .Include(x => x.ToUser).ThenInclude(x => x.Profile)
-                    .ThenInclude(x => x.Tags)
-                    .ThenInclude(x => x.Tag)
-                .FirstOrDefaultAsync(
-                    x => x.FromUserId == currentUserId &&
-                         x.ToUserId == request.ToUserId &&
-                         x.StatusId == FriendRequestStatusIds.Pending,
-                    cancellationToken);
-
-            if (existing != null)
+            if (createdRequest == null)
             {
-                await transaction.CommitAsync(cancellationToken);
-                return await ToRequestResponseAsync(
+                return response;
+            }
+
+            await TryNotifyPostCommitAsync(
+                createdRequest.Id,
+                "notification-list refresh",
+                token => _notifications.NotifyChangedAsync(
+                    [createdRequest.ToUserId],
+                    token));
+            await TryNotifyPostCommitAsync(
+                createdRequest.Id,
+                "receiver friend-request event",
+                token => _realtime.NotifyUserAsync(
+                    createdRequest.ToUserId,
+                    RealtimeEventNames.FriendRequestReceived,
+                    new { requestId = createdRequest.Id, fromUserId = currentUserId },
+                    token));
+            await TryNotifyPostCommitAsync(
+                createdRequest.Id,
+                "sender friend-request event",
+                token => _realtime.NotifyUserAsync(
                     currentUserId,
-                    existing,
-                    cancellationToken);
-            }
+                    RealtimeEventNames.FriendRequestUpdated,
+                    new { requestId = createdRequest.Id, toUserId = createdRequest.ToUserId },
+                    token));
 
-            var now = DateTime.UtcNow;
-            var friendRequest = new FriendRequest
-            {
-                Id = Guid.NewGuid(),
-                FromUserId = currentUserId,
-                ToUserId = request.ToUserId,
-                StatusId = FriendRequestStatusIds.Pending,
-                CreatedAt = now,
-                UpdatedAt = now
-            };
-
-            _db.FriendRequests.Add(friendRequest);
-            await _db.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-
-            await _realtime.NotifyUserAsync(
-                friendRequest.ToUserId,
-                RealtimeEventNames.FriendRequestReceived,
-                new { requestId = friendRequest.Id, fromUserId = currentUserId },
-                cancellationToken);
-            await _realtime.NotifyUserAsync(
-                currentUserId,
-                RealtimeEventNames.FriendRequestUpdated,
-                new { requestId = friendRequest.Id, toUserId = friendRequest.ToUserId },
-                cancellationToken);
-
-            return await LoadRequestResponseAsync(
-                currentUserId,
-                friendRequest.Id,
-                cancellationToken);
+            return response;
         }
 
         public async Task<FriendRequestResponse?> AcceptRequestAsync(
@@ -222,35 +276,70 @@ namespace ArcaneLink.Services.Users
             Guid requestId,
             CancellationToken cancellationToken = default)
         {
-            var request = await _db.FriendRequests
-                .FirstOrDefaultAsync(
+            var participants = await _db.FriendRequests
+                .AsNoTracking()
+                .Where(
                     x => x.Id == requestId &&
-                         x.ToUserId == currentUserId &&
-                         x.StatusId == FriendRequestStatusIds.Pending,
+                         x.ToUserId == currentUserId)
+                .Select(x => new { x.FromUserId, x.ToUserId })
+                .FirstOrDefaultAsync(
                     cancellationToken);
 
-            if (request == null)
+            if (participants == null)
             {
                 return null;
             }
 
-            await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
             FriendRequestResponse? response = null;
+            FriendRequest? acceptedRequest = null;
             await _presenceCoordinator.ExecuteMutationAsync(
-                [request.FromUserId, request.ToUserId],
+                [participants.FromUserId, participants.ToUserId],
                 async token =>
                 {
+                    await using var transaction =
+                        await _db.Database.BeginTransactionAsync(token);
+                    await LockFriendMutationUsersAsync(
+                        participants.FromUserId,
+                        participants.ToUserId,
+                        token);
+
+                    var request = await _db.FriendRequests
+                        .FirstOrDefaultAsync(
+                            x => x.Id == requestId &&
+                                 x.ToUserId == currentUserId &&
+                                 x.StatusId == FriendRequestStatusIds.Pending,
+                            token);
+                    if (request == null)
+                    {
+                        return;
+                    }
+
                     response = await AcceptRequestCoreAsync(
                         currentUserId,
                         request,
                         token);
+                    if (response == null)
+                    {
+                        return;
+                    }
+
                     await transaction.CommitAsync(token);
+                    acceptedRequest = request;
                 },
                 cancellationToken);
-            await _presenceCoordinator.AudienceChangedAsync(
-                [request.FromUserId, request.ToUserId],
-                CancellationToken.None);
-            await NotifyFriendRequestClosedAsync(request, cancellationToken);
+
+            if (acceptedRequest == null)
+            {
+                return response;
+            }
+
+            await TryNotifyPostCommitAsync(
+                acceptedRequest.Id,
+                "presence audience refresh",
+                token => _presenceCoordinator.AudienceChangedAsync(
+                    [acceptedRequest.FromUserId, acceptedRequest.ToUserId],
+                    token));
+            await NotifyFriendRequestClosedAsync(acceptedRequest);
             return response;
         }
 
@@ -285,66 +374,151 @@ namespace ArcaneLink.Services.Users
             Guid friendUserId,
             CancellationToken cancellationToken = default)
         {
-            var rows = await _db.UserFriends
-                .Where(
-                    x => (x.UserId == currentUserId && x.FriendUserId == friendUserId) ||
-                         (x.UserId == friendUserId && x.FriendUserId == currentUserId))
-                .ToListAsync(cancellationToken);
+            var removed = false;
+            await _presenceCoordinator.ExecuteMutationAsync(
+                [currentUserId, friendUserId],
+                async token =>
+                {
+                    await using var transaction =
+                        await _db.Database.BeginTransactionAsync(token);
+                    await LockFriendMutationUsersAsync(
+                        currentUserId,
+                        friendUserId,
+                        token);
 
-            if (rows.Count == 0)
+                    var rows = await _db.UserFriends
+                        .Where(
+                            x => (x.UserId == currentUserId && x.FriendUserId == friendUserId) ||
+                                 (x.UserId == friendUserId && x.FriendUserId == currentUserId))
+                        .ToListAsync(token);
+                    if (rows.Count == 0)
+                    {
+                        return;
+                    }
+
+                    _db.UserFriends.RemoveRange(rows);
+                    await _db.SaveChangesAsync(token);
+                    await transaction.CommitAsync(token);
+                    removed = true;
+                },
+                cancellationToken);
+
+            if (!removed)
             {
                 return false;
             }
 
-            _db.UserFriends.RemoveRange(rows);
-            await _presenceCoordinator.ExecuteMutationAsync(
-                [currentUserId, friendUserId],
-                token => _db.SaveChangesAsync(token),
-                cancellationToken);
-            await _presenceCoordinator.AudienceChangedAsync(
-                [currentUserId, friendUserId],
-                CancellationToken.None);
-            await _realtime.NotifyUserAsync(
-                currentUserId,
-                RealtimeEventNames.FriendListChanged,
-                new { friendUserId },
-                cancellationToken);
-            await _realtime.NotifyUserAsync(
+            await TryNotifyPostCommitAsync(
                 friendUserId,
-                RealtimeEventNames.FriendListChanged,
-                new { friendUserId = currentUserId },
-                cancellationToken);
+                "presence audience refresh after friend removal",
+                token => _presenceCoordinator.AudienceChangedAsync(
+                    [currentUserId, friendUserId],
+                    token));
+            await TryNotifyPostCommitAsync(
+                friendUserId,
+                "current-user friend-list event after friend removal",
+                token => _realtime.NotifyUserAsync(
+                    currentUserId,
+                    RealtimeEventNames.FriendListChanged,
+                    new { friendUserId },
+                    token));
+            await TryNotifyPostCommitAsync(
+                friendUserId,
+                "removed-user friend-list event after friend removal",
+                token => _realtime.NotifyUserAsync(
+                    friendUserId,
+                    RealtimeEventNames.FriendListChanged,
+                    new { friendUserId = currentUserId },
+                    token));
             return true;
         }
 
-        private async Task NotifyFriendRequestClosedAsync(
-            FriendRequest request,
+        private async Task LockFriendMutationUsersAsync(
+            Guid firstUserId,
+            Guid secondUserId,
             CancellationToken cancellationToken)
         {
-            if (request.StatusId == FriendRequestStatusIds.Accepted)
+            if (!_db.Database.IsNpgsql())
             {
-                await _realtime.NotifyUserAsync(
-                    request.FromUserId,
-                    RealtimeEventNames.FriendListChanged,
-                    new { requestId = request.Id, friendUserId = request.ToUserId },
-                    cancellationToken);
-                await _realtime.NotifyUserAsync(
-                    request.ToUserId,
-                    RealtimeEventNames.FriendListChanged,
-                    new { requestId = request.Id, friendUserId = request.FromUserId },
-                    cancellationToken);
+                return;
             }
 
-            await _realtime.NotifyUserAsync(
-                request.FromUserId,
-                RealtimeEventNames.FriendRequestUpdated,
-                new { requestId = request.Id, statusId = request.StatusId },
-                cancellationToken);
-            await _realtime.NotifyUserAsync(
-                request.ToUserId,
-                RealtimeEventNames.FriendRequestUpdated,
-                new { requestId = request.Id, statusId = request.StatusId },
-                cancellationToken);
+            _ = await _db.Users
+                .FromSqlInterpolated($$"""
+                    SELECT *
+                    FROM users
+                    WHERE id IN ({{firstUserId}}, {{secondUserId}})
+                    ORDER BY id
+                    FOR UPDATE
+                    """)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
+        private async Task NotifyFriendRequestClosedAsync(FriendRequest request)
+        {
+            await TryNotifyPostCommitAsync(
+                request.Id,
+                "notification-list refresh",
+                token => _notifications.NotifyChangedAsync(
+                    [request.ToUserId],
+                    token));
+
+            if (request.StatusId == FriendRequestStatusIds.Accepted)
+            {
+                await TryNotifyPostCommitAsync(
+                    request.Id,
+                    "sender friend-list event",
+                    token => _realtime.NotifyUserAsync(
+                        request.FromUserId,
+                        RealtimeEventNames.FriendListChanged,
+                        new { requestId = request.Id, friendUserId = request.ToUserId },
+                        token));
+                await TryNotifyPostCommitAsync(
+                    request.Id,
+                    "receiver friend-list event",
+                    token => _realtime.NotifyUserAsync(
+                        request.ToUserId,
+                        RealtimeEventNames.FriendListChanged,
+                        new { requestId = request.Id, friendUserId = request.FromUserId },
+                        token));
+            }
+
+            await TryNotifyPostCommitAsync(
+                request.Id,
+                "sender friend-request event",
+                token => _realtime.NotifyUserAsync(
+                    request.FromUserId,
+                    RealtimeEventNames.FriendRequestUpdated,
+                    new { requestId = request.Id, statusId = request.StatusId },
+                    token));
+            await TryNotifyPostCommitAsync(
+                request.Id,
+                "receiver friend-request event",
+                token => _realtime.NotifyUserAsync(
+                    request.ToUserId,
+                    RealtimeEventNames.FriendRequestUpdated,
+                    new { requestId = request.Id, statusId = request.StatusId },
+                    token));
+        }
+
+        private async Task TryNotifyPostCommitAsync(
+            Guid subjectId,
+            string operation,
+            Func<CancellationToken, Task> callback)
+        {
+            try
+            {
+                await callback(CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(
+                    exception,
+                    "Friend mutation {SubjectId} committed, but post-commit operation {Operation} failed.",
+                    subjectId,
+                    operation);
+            }
         }
 
         private async Task<FriendRequestResponse?> AcceptRequestCoreAsync(
@@ -371,8 +545,11 @@ namespace ArcaneLink.Services.Users
                 now,
                 cancellationToken);
 
+            await _notifications.StageFriendRequestReadAsync(
+                request.ToUserId,
+                request.FromUserId,
+                cancellationToken);
             await _db.SaveChangesAsync(cancellationToken);
-            await NotifyFriendRequestClosedAsync(request, cancellationToken);
             return await LoadRequestResponseAsync(
                 currentUserId,
                 request.Id,
@@ -422,30 +599,74 @@ namespace ArcaneLink.Services.Users
             bool requireReceiver,
             CancellationToken cancellationToken)
         {
-            var request = await _db.FriendRequests
-                .FirstOrDefaultAsync(
+            var participants = await _db.FriendRequests
+                .AsNoTracking()
+                .Where(
                     x => x.Id == requestId &&
-                         x.StatusId == FriendRequestStatusIds.Pending &&
                          (requireReceiver
                              ? x.ToUserId == currentUserId
-                             : x.FromUserId == currentUserId),
+                             : x.FromUserId == currentUserId))
+                .Select(x => new { x.FromUserId, x.ToUserId })
+                .FirstOrDefaultAsync(
                     cancellationToken);
 
-            if (request == null)
+            if (participants == null)
             {
                 return null;
             }
 
-            var now = DateTime.UtcNow;
-            request.StatusId = statusId;
-            request.UpdatedAt = now;
-            request.RespondedAt = now;
+            FriendRequestResponse? response = null;
+            FriendRequest? closedRequest = null;
+            await _presenceCoordinator.ExecuteMutationAsync(
+                [participants.FromUserId, participants.ToUserId],
+                async token =>
+                {
+                    await using var transaction =
+                        await _db.Database.BeginTransactionAsync(token);
+                    await LockFriendMutationUsersAsync(
+                        participants.FromUserId,
+                        participants.ToUserId,
+                        token);
 
-            await _db.SaveChangesAsync(cancellationToken);
-            return await LoadRequestResponseAsync(
-                currentUserId,
-                request.Id,
+                    var request = await _db.FriendRequests
+                        .FirstOrDefaultAsync(
+                            x => x.Id == requestId &&
+                                 x.StatusId == FriendRequestStatusIds.Pending &&
+                                 (requireReceiver
+                                     ? x.ToUserId == currentUserId
+                                     : x.FromUserId == currentUserId),
+                            token);
+                    if (request == null)
+                    {
+                        return;
+                    }
+
+                    var now = DateTime.UtcNow;
+                    request.StatusId = statusId;
+                    request.UpdatedAt = now;
+                    request.RespondedAt = now;
+
+                    await _notifications.StageFriendRequestReadAsync(
+                        request.ToUserId,
+                        request.FromUserId,
+                        token);
+                    await _db.SaveChangesAsync(token);
+                    response = await LoadRequestResponseAsync(
+                        currentUserId,
+                        request.Id,
+                        token);
+                    await transaction.CommitAsync(token);
+                    closedRequest = request;
+                },
                 cancellationToken);
+
+            if (closedRequest == null)
+            {
+                return response;
+            }
+
+            await NotifyFriendRequestClosedAsync(closedRequest);
+            return response;
         }
 
         private async Task<FriendRequestResponse?> LoadRequestResponseAsync(

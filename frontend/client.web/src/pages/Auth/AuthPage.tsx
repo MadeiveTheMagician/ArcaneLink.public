@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import { useRef } from 'react'
 import { readJsonResponse } from '../../shared/api/api'
@@ -14,15 +14,25 @@ import {
   registerSteps,
   type AuthMessage,
   type AuthMode,
+  type AuthView,
   type LoginForm,
   type RegisterForm,
 } from './shell/AuthPageParts'
+import { AuthAccountFlow } from './account/AuthAccountFlow'
+import {
+  hasApiErrorCode,
+  type AuthAccountAction,
+} from './account/accountActionModel'
 import { isRegisterStepComplete } from './registration/AuthPageValidation'
 import artStyles from './shell/AuthArt.module.css'
 import shellStyles from './shell/AuthShell.module.css'
 
 type AuthPageProps = {
   onAuthenticated: (loginResponse: LoginResponse) => Promise<void>
+  accountAction?: AuthAccountAction | null
+  onAccountActionSettled?: () => void
+  onAccountActionExit?: () => void
+  onRequiresReauthentication?: () => void
 }
 
 function wait(ms: number) {
@@ -54,11 +64,20 @@ function detectDeviceName() {
 const loginHint = authCopy.hints.deviceReady
 const registerHint = authCopy.hints.registerReady
 
-export function AuthPage({ onAuthenticated }: AuthPageProps) {
+export function AuthPage({
+  onAuthenticated,
+  accountAction = null,
+  onAccountActionSettled = () => undefined,
+  onAccountActionExit = () => undefined,
+  onRequiresReauthentication = () => undefined,
+}: AuthPageProps) {
   const artLayerRef = useRef<HTMLDivElement | null>(null)
   const transitionSurfaceRef = useRef<HTMLDivElement | null>(null)
   const deviceName = useMemo(() => detectDeviceName(), [])
-  const [mode, setMode] = useState<AuthMode>('login')
+  const [view, setView] = useState<AuthView>(
+    () => accountAction?.kind ?? 'login',
+  )
+  const mode: AuthMode = view === 'register' ? 'register' : 'login'
   const [loginForm, setLoginForm] = useState<LoginForm>({
     loginOrEmail: '',
     password: '',
@@ -70,6 +89,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     email: '',
     password: '',
   })
+  const [verificationEmail, setVerificationEmail] = useState('')
   const [message, setMessage] = useState<AuthMessage>({
     tone: 'neutral',
     text: loginHint,
@@ -94,6 +114,12 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
       ? registerSteps.length - 1
       : nextIncompleteRegisterStep
 
+  useEffect(() => {
+    if (accountAction) {
+      setView(accountAction.kind)
+    }
+  }, [accountAction])
+
   async function animateModeSwitch(nextMode: AuthMode) {
     const surface = transitionSurfaceRef.current
     const artLayer = artLayerRef.current
@@ -102,7 +128,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     ).matches
 
     if (!surface || prefersReducedMotion) {
-      setMode(nextMode)
+      setView(nextMode)
       setMessage({
         tone: 'neutral',
         text: nextMode === 'login' ? loginHint : registerHint,
@@ -144,7 +170,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
       artOut?.finished ?? Promise.resolve(),
     ])
 
-    setMode(nextMode)
+    setView(nextMode)
     setMessage({
       tone: 'neutral',
       text: nextMode === 'login' ? loginHint : registerHint,
@@ -224,6 +250,15 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
       await wait(260)
       await onAuthenticated(loginResponse)
     } catch (error) {
+      if (hasApiErrorCode(error, 'email_not_confirmed')) {
+        setVerificationEmail(
+          loginForm.loginOrEmail.includes('@') ? loginForm.loginOrEmail : '',
+        )
+        setView('verify-email')
+        setMessage({ tone: 'error', text: authCopy.messages.emailNotConfirmed })
+        return
+      }
+
       setMessage({
         tone: 'error',
         text: error instanceof Error ? error.message : authCopy.messages.loginFailed,
@@ -254,10 +289,11 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
 
       setLoginForm({
         loginOrEmail: user.login,
-        password: registerForm.password,
+        password: '',
         deviceName: loginForm.deviceName,
       })
-      setMode('login')
+      setVerificationEmail(user.email)
+      setView('verify-email')
       setMessage({
         tone: 'success',
         text: authCopy.messages.registerSuccess(user.login),
@@ -273,10 +309,19 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     }
   }
 
+  function backToLogin() {
+    setView('login')
+    setMessage({ tone: 'neutral', text: loginHint })
+
+    if (accountAction) {
+      onAccountActionExit()
+    }
+  }
+
   return (
     <main
       className={`${shellStyles.authPage} ${
-        mode === 'login' ? shellStyles.authPageLogin : shellStyles.authPageRegister
+        view === 'register' ? shellStyles.authPageRegister : shellStyles.authPageLogin
       }`}
       style={authPageStyle}
     >
@@ -286,23 +331,29 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
         aria-hidden="true"
       />
       <section className={shellStyles.authPanel} aria-labelledby="auth-title">
-        <AuthModeSwitch
-          mode={mode}
-          isSwitchingMode={isSwitchingMode}
-          onSwitchMode={(nextMode) => void switchMode(nextMode)}
-        />
+        {(view === 'login' || view === 'register') && (
+          <AuthModeSwitch
+            mode={mode}
+            isSwitchingMode={isSwitchingMode}
+            onSwitchMode={(nextMode) => void switchMode(nextMode)}
+          />
+        )}
 
         <div ref={transitionSurfaceRef} className={shellStyles.authTransitionSurface}>
-          <AuthCopy mode={mode} />
+          <AuthCopy view={view} />
 
-          {mode === 'login' ? (
+          {view === 'login' ? (
             <AuthLoginForm
               loginForm={loginForm}
               isLoading={isLoading}
               onSubmit={submitLogin}
               onChange={setLoginForm}
+              onForgotPassword={() => {
+                setView('forgot-password')
+                setMessage({ tone: 'neutral', text: '' })
+              }}
             />
-          ) : (
+          ) : view === 'register' ? (
             <AuthRegisterForm
               registerForm={registerForm}
               registerProgress={registerProgress}
@@ -311,9 +362,21 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
               onSubmit={submitRegister}
               onChange={setRegisterForm}
             />
+          ) : (
+            <AuthAccountFlow
+              key={`${view}:${accountAction?.token ?? verificationEmail}`}
+              view={view}
+              token={accountAction?.token}
+              initialEmail={verificationEmail || loginForm.loginOrEmail}
+              onBackToLogin={backToLogin}
+              onAccountActionSettled={onAccountActionSettled}
+              onRequiresReauthentication={onRequiresReauthentication}
+            />
           )}
 
-          <AuthMessageView message={message} />
+          {(view === 'login' || view === 'register') && (
+            <AuthMessageView message={message} />
+          )}
         </div>
       </section>
     </main>

@@ -84,8 +84,8 @@
 }
 
 .tab[aria-selected='true'] .badge {
-  color: white;
-  background: color-mix(in srgb, var(--theme-accent), #171b39 38%);
+  color: var(--theme-accent-contrast);
+  background: var(--theme-surface-accent);
 }
 
 @media (max-width: 760px) {

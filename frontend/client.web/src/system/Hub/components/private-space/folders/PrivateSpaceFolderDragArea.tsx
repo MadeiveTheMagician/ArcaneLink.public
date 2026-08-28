@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -13,6 +19,8 @@ import {
   type Modifier,
 } from '@dnd-kit/core'
 import {
+  privateSpaceDragPreviewSize,
+  resolveCenteredDragPreviewTransform,
   resolveFolderChipDropPlacement,
   resolvePointerDropPlacement,
   type DragPoint,
@@ -55,6 +63,69 @@ const restrictFolderDragToHorizontal: Modifier = ({ active, transform }) =>
 
 const horizontalDragModifiers = [restrictFolderDragToHorizontal]
 
+function getPointerActivationPoint(event: Event): DragPoint | null {
+  if ('clientX' in event && 'clientY' in event) {
+    const { clientX, clientY } = event as MouseEvent | PointerEvent
+    return Number.isFinite(clientX) && Number.isFinite(clientY)
+      ? { x: clientX, y: clientY }
+      : null
+  }
+
+  if ('touches' in event) {
+    const touch = (event as TouchEvent).touches[0]
+    return touch ? { x: touch.clientX, y: touch.clientY } : null
+  }
+
+  return null
+}
+
+const centerPrivateSpaceOverlayOnPointer: Modifier = ({
+  active,
+  activeNodeRect,
+  activatorEvent,
+  transform,
+}) => {
+  if (
+    active?.data.current?.dragType !== 'private-space' ||
+    !activeNodeRect ||
+    !activatorEvent
+  ) {
+    return transform
+  }
+
+  const activationPoint = getPointerActivationPoint(activatorEvent)
+  if (!activationPoint) {
+    return transform
+  }
+
+  const centeredTransform = resolveCenteredDragPreviewTransform({
+    transform,
+    activationPoint,
+    sourceRect: activeNodeRect,
+    previewSize: privateSpaceDragPreviewSize,
+  })
+
+  return {
+    ...transform,
+    ...centeredTransform,
+  }
+}
+
+const privateSpaceOverlayModifiers = [centerPrivateSpaceOverlayOnPointer]
+const horizontalOverlayModifiers = [
+  restrictFolderDragToHorizontal,
+  centerPrivateSpaceOverlayOnPointer,
+]
+
+type ActiveOverlay = {
+  content: ReactNode
+  style?: CSSProperties
+}
+
+function clampDragEntryScale(value: number, maximum: number) {
+  return Math.min(maximum, Math.max(1, value))
+}
+
 export function PrivateSpaceFolderDragArea({
   disabled = false,
   folderDragAxis = 'free',
@@ -64,7 +135,7 @@ export function PrivateSpaceFolderDragArea({
   children,
 }: Props) {
   const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null)
-  const [activeOverlay, setActiveOverlay] = useState<ReactNode>(null)
+  const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay | null>(null)
   const [folderDragState, setFolderDragState] = useState<
     Omit<PrivateSpaceFolderDragState, 'expandedFolderId'>
   >({
@@ -179,7 +250,31 @@ export function PrivateSpaceFolderDragArea({
   function handleDragStart(event: DragStartEvent) {
     const dragType = event.active.data.current?.dragType
     activeDragTypeRef.current = typeof dragType === 'string' ? dragType : null
-    setActiveOverlay(event.active.data.current?.overlay as ReactNode ?? null)
+    const sourceRect = event.active.rect.current.initial
+    const privateSpaceOverlayStyle = dragType === 'private-space'
+      ? ({
+          width: privateSpaceDragPreviewSize.width,
+          height: privateSpaceDragPreviewSize.height,
+          '--private-space-drag-entry-scale-x': String(
+            clampDragEntryScale(
+              (sourceRect?.width ?? privateSpaceDragPreviewSize.width) /
+                privateSpaceDragPreviewSize.width,
+              2.6,
+            ),
+          ),
+          '--private-space-drag-entry-scale-y': String(
+            clampDragEntryScale(
+              (sourceRect?.height ?? privateSpaceDragPreviewSize.height) /
+                privateSpaceDragPreviewSize.height,
+              1.8,
+            ),
+          ),
+        } as CSSProperties)
+      : undefined
+    setActiveOverlay({
+      content: event.active.data.current?.overlay as ReactNode ?? null,
+      style: privateSpaceOverlayStyle,
+    })
     setFolderDragState({
       activeFolderId: dragType === 'private-folder'
         ? event.active.data.current?.folderId as string
@@ -193,12 +288,7 @@ export function PrivateSpaceFolderDragArea({
       spacePlacement: null,
     })
 
-    const pointerEvent = event.activatorEvent as PointerEvent
-    pointerPositionRef.current =
-      Number.isFinite(pointerEvent.clientX) &&
-      Number.isFinite(pointerEvent.clientY)
-        ? { x: pointerEvent.clientX, y: pointerEvent.clientY }
-        : null
+    pointerPositionRef.current = getPointerActivationPoint(event.activatorEvent)
   }
 
   function handleDragMove(event: DragMoveEvent) {
@@ -246,6 +336,10 @@ export function PrivateSpaceFolderDragArea({
 
   const dragModifiers =
     folderDragAxis === 'horizontal' ? horizontalDragModifiers : undefined
+  const overlayModifiers =
+    folderDragAxis === 'horizontal'
+      ? horizontalOverlayModifiers
+      : privateSpaceOverlayModifiers
 
   return (
     <DndContext
@@ -271,10 +365,11 @@ export function PrivateSpaceFolderDragArea({
       <DragOverlay
         adjustScale={false}
         dropAnimation={null}
-        modifiers={dragModifiers}
+        modifiers={overlayModifiers}
+        style={activeOverlay?.style}
         zIndex={220}
       >
-        {activeOverlay}
+        {activeOverlay?.content}
       </DragOverlay>
     </DndContext>
   )

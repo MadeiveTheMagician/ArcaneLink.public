@@ -83,3 +83,9 @@ export function rollbackAllNotificationsRead(
     return { ...notification, readAt: rollback.previousReadAt }
   })
 }
+
+export function clearReadNotificationHistory(
+  notifications: UserNotificationResponse[],
+) {
+  return notifications.filter((notification) => !notification.readAt)
+}

@@ -169,7 +169,7 @@
 }
 
 .voiceParticipants article {
-  --voice-card-accent: 139, 94, 255;
+  --voice-card-accent: 128, 128, 128;
   --voice-card-fill: color-mix(
     in srgb,
     rgb(var(--voice-card-accent)),
@@ -309,13 +309,13 @@
   width: 34px;
   height: 34px;
   place-items: center;
-  border: 1px solid rgba(211, 224, 255, 0.28);
+  border: 1px solid var(--theme-border-control);
   border-radius: 8px;
   padding: 0;
   color: var(--color-text);
-  background: rgba(6, 12, 30, 0.72);
+  background: var(--theme-control-bg);
   box-shadow:
-    0 0 16px rgba(80, 124, 255, 0.22),
+    0 0 16px var(--theme-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
 }

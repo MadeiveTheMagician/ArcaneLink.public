@@ -48,7 +48,9 @@ type ServerWorkspaceOverlaysProps = {
   canManageBans: boolean
   canManageInvites: boolean
   canManageRoles: boolean
+  canManageServerProfile: boolean
   canManageServerSettings: boolean
+  canDeleteServer: boolean
   canManageReports: boolean
   canViewAuditLog: boolean
   currentUserPermissionCodes: string[]
@@ -83,6 +85,7 @@ type ServerWorkspaceOverlaysProps = {
   onUpdateServer: (
     request: UpdateServerRequest,
   ) => Promise<ServerResponse | null>
+  onDeleteServer: () => Promise<void>
   onRevokeServerInvite: (inviteId: string) => void
   onLoadMoreServerJoinRequests: () => void
   onApproveServerJoinRequest: (requestId: string) => void
@@ -136,7 +139,9 @@ export function ServerWorkspaceOverlays({
   canManageBans,
   canManageInvites,
   canManageRoles,
+  canManageServerProfile,
   canManageServerSettings,
+  canDeleteServer,
   canManageReports,
   canViewAuditLog,
   currentUserPermissionCodes,
@@ -167,6 +172,7 @@ export function ServerWorkspaceOverlays({
   serverBans,
   onCreateServerInvite,
   onUpdateServer,
+  onDeleteServer,
   onRevokeServerInvite,
   onLoadMoreServerJoinRequests,
   onApproveServerJoinRequest,
@@ -248,7 +254,9 @@ export function ServerWorkspaceOverlays({
           canManageBans={canManageBans}
           canManageInvites={canManageInvites}
           canManageRoles={canManageRoles}
+          canManageServerProfile={canManageServerProfile}
           canManageServerSettings={canManageServerSettings}
+          canDeleteServer={canDeleteServer}
           canManageReports={canManageReports}
           canViewAuditLog={canViewAuditLog}
           isLoadingGovernance={isLoadingGovernance}
@@ -259,6 +267,7 @@ export function ServerWorkspaceOverlays({
           onOpenServerCoreTab={onOpenServerCoreTab}
           onCreateServerInvite={onCreateServerInvite}
           onUpdateServer={onUpdateServer}
+          onDeleteServer={onDeleteServer}
           onRevokeServerInvite={onRevokeServerInvite}
           onLoadMoreServerJoinRequests={onLoadMoreServerJoinRequests}
           onApproveServerJoinRequest={onApproveServerJoinRequest}

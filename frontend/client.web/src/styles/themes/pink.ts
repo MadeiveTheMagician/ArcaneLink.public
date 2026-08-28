@@ -4,8 +4,8 @@ import { themeCopy } from '../theme.copy'
 export const pinkTheme: SystemTheme = {
   code: 'pink',
   title: themeCopy.titles.pink,
-  dominantColor: '#ff77ba',
-  previewColors: ['#25101d', '#ff77ba', '#ffd1e7'],
+  dominantColor: '#c987a9',
+  previewColors: ['#241922', '#c987a9', '#e5b9cd'],
   assetSet: 'none',
   /*
    * Color variable guide:
@@ -51,19 +51,19 @@ export const pinkTheme: SystemTheme = {
    * --shadow-sapphire: theme shadow used by elevated UI.
    */
   variables: {
-    '--color-bg': '#25101d',
-    '--color-surface': 'rgba(37, 16, 29, 0.78)',
-    '--color-surface-strong': 'rgba(37, 16, 29, 0.95)',
-    '--color-border': '#713656',
-    '--color-text': '#fff0f7',
-    '--color-muted': '#d6a2bd',
-    '--color-sapphire': '#ff77ba',
-    '--color-sapphire-light': '#ffafd5',
-    '--color-violet': '#ff77ba',
-    '--color-rune': '#ffd1e7',
+    '--color-bg': '#241922',
+    '--color-surface': 'rgba(37, 27, 35, 0.82)',
+    '--color-surface-strong': 'rgba(37, 27, 35, 0.96)',
+    '--color-border': '#654557',
+    '--color-text': '#faeef4',
+    '--color-muted': '#c7a8b8',
+    '--color-sapphire': '#c987a9',
+    '--color-sapphire-light': '#e2b1c9',
+    '--color-violet': '#a88cab',
+    '--color-rune': '#efd0df',
     '--color-danger': '#ff6b75',
     '--color-success': '#98f0bd',
-    '--theme-accent-contrast': '#25101d',
-    '--shadow-sapphire': '0 26px 90px rgba(255, 119, 186, 0.22)',
+    '--theme-accent-contrast': '#281a23',
+    '--shadow-sapphire': '0 26px 90px rgba(201, 135, 169, 0.2)',
   },
 }

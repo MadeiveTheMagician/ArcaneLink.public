@@ -60,6 +60,7 @@ namespace ArcaneLink.Services.Notifications
                     SpaceId = x.SpaceId,
                     SpaceTitle = x.Space != null ? x.Space.Title : null,
                     MessageId = x.MessageId,
+                    MessageCreatedAt = x.Message != null ? x.Message.CreatedAt : null,
                     InviteId = x.InviteId,
                     CreatedAt = x.CreatedAt,
                     ReadAt = x.ReadAt
@@ -153,6 +154,21 @@ namespace ArcaneLink.Services.Notifications
             await NotifyChangedAsync([userId], cancellationToken);
         }
 
+        public async Task<int> ClearHistoryAsync(
+            Guid userId,
+            CancellationToken cancellationToken = default)
+        {
+            var deletedCount = await _db.UserNotifications
+                .Where(x => x.UserId == userId && x.ReadAt != null)
+                .ExecuteDeleteAsync(cancellationToken);
+            if (deletedCount > 0)
+            {
+                await NotifyChangedAsync([userId], cancellationToken);
+            }
+
+            return deletedCount;
+        }
+
         public async Task<bool> StageInviteReadAsync(
             Guid userId,
             Guid inviteId,
@@ -222,6 +238,54 @@ namespace ArcaneLink.Services.Notifications
             return Task.CompletedTask;
         }
 
+        public async Task StageFriendRequestAsync(
+            Guid targetUserId,
+            Guid actorUserId,
+            CancellationToken cancellationToken = default)
+        {
+            var actorDisplayName = await _db.UserProfiles
+                .Where(profile => profile.UserId == actorUserId)
+                .Select(profile => profile.DisplayName)
+                .SingleAsync(cancellationToken);
+
+            _db.UserNotifications.Add(new UserNotification
+            {
+                Id = Guid.NewGuid(),
+                UserId = targetUserId,
+                Kind = UserNotificationText.FriendRequestKind,
+                Title = UserNotificationText.FriendRequestTitle,
+                Body = UserNotificationText.FriendRequestBody(actorDisplayName),
+                ActorUserId = actorUserId,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        public async Task<bool> StageFriendRequestReadAsync(
+            Guid targetUserId,
+            Guid actorUserId,
+            CancellationToken cancellationToken = default)
+        {
+            var notifications = await _db.UserNotifications
+                .Where(notification =>
+                    notification.UserId == targetUserId &&
+                    notification.ActorUserId == actorUserId &&
+                    notification.Kind == UserNotificationText.FriendRequestKind &&
+                    notification.ReadAt == null)
+                .ToListAsync(cancellationToken);
+            if (notifications.Count == 0)
+            {
+                return false;
+            }
+
+            var now = DateTime.UtcNow;
+            foreach (var notification in notifications)
+            {
+                notification.ReadAt = now;
+            }
+
+            return true;
+        }
+
         public async Task<IReadOnlyList<Guid>> StageMentionsAsync(
             Guid actorUserId,
             Guid serverId,
@@ -283,7 +347,9 @@ namespace ArcaneLink.Services.Notifications
                     UserId = targetUserId,
                     Kind = UserNotificationText.MentionKind,
                     Title = UserNotificationText.MentionTitle,
-                    Body = UserNotificationText.MentionBody(context.SpaceTitle),
+                    Body = UserNotificationText.MentionBody(
+                        context.SpaceTitle,
+                        context.ServerTitle),
                     Detail = preview,
                     ActorUserId = actorUserId,
                     ServerId = serverId,
@@ -342,6 +408,12 @@ namespace ArcaneLink.Services.Notifications
             }
 
             var preview = UserNotificationText.CreatePreview(body ?? string.Empty);
+            var serverTitle = serverId.HasValue
+                ? await _db.Servers
+                    .Where(server => server.Id == serverId.Value)
+                    .Select(server => server.Title)
+                    .SingleAsync(cancellationToken)
+                : null;
             var now = DateTime.UtcNow;
             foreach (var userId in missing)
             {
@@ -352,7 +424,7 @@ namespace ArcaneLink.Services.Notifications
                     Kind = UserNotificationText.MentionKind,
                     Title = UserNotificationText.MentionTitle,
                     Body = serverId.HasValue
-                        ? UserNotificationText.MentionBody(spaceTitle)
+                        ? UserNotificationText.MentionBody(spaceTitle, serverTitle!)
                         : UserNotificationText.PrivateMentionBody(spaceTitle),
                     Detail = preview,
                     ActorUserId = actorUserId,

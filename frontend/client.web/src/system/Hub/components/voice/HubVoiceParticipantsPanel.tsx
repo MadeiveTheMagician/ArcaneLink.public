@@ -34,7 +34,21 @@ export function HubVoiceParticipantsPanel({
         {participants.map((participant) => (
           <article key={participant.userId} className={styles.participant}>
             <span className={`${styles.avatar} ui-frame`} aria-hidden="true">
-              {participant.displayName.slice(0, 1).toUpperCase()}
+              {participant.avatarAssetId ? (
+                <img
+                  className="ui-media-fit"
+                  src={`/api/assets/${participant.avatarAssetId}/content`}
+                  alt=""
+                  draggable={false}
+                  style={{
+                    transform: `translate(${(participant.avatarCropOffsetX ?? 0) * 100}%, ${
+                      (participant.avatarCropOffsetY ?? 0) * 100
+                    }%) scale(${participant.avatarCropZoom ?? 1})`,
+                  }}
+                />
+              ) : (
+                participant.displayName.slice(0, 1).toUpperCase()
+              )}
             </span>
             <span>
               <strong className="ui-ellipsis">{participant.displayName}</strong>

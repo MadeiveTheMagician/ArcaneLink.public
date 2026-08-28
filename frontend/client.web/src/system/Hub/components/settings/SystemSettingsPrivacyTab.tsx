@@ -329,10 +329,9 @@ export function SystemSettingsPrivacyTab({
             name="presenceMode"
             value={draft.presenceMode}
             disabled={saving}
-            onChange={(event) =>
+            onValueChange={(value) =>
               updateDraft({
-                presenceMode: event.target
-                  .value as PresenceSettingsDraft['presenceMode'],
+                presenceMode: value as PresenceSettingsDraft['presenceMode'],
               })
             }
           >

@@ -18,6 +18,9 @@ namespace ArcaneLink.Services.Servers
 {
     public sealed class ServerMemberProfileService : IServerMemberProfileService
     {
+        private const int MutualPreviewLimit = 24;
+        private const string DefaultProfileThemeCode = "sapphire";
+
         private readonly AppDbContext _db;
         private readonly IAssetService _assets;
         private readonly AvatarImageProcessor _avatarImageProcessor;
@@ -41,7 +44,7 @@ namespace ArcaneLink.Services.Servers
             _logger = logger;
         }
 
-        public async Task<ServerMemberProfileResponse?> GetAsync(
+        public async Task<ServerMemberViewerProfileResponse?> GetAsync(
             Guid currentUserId,
             Guid serverId,
             Guid targetUserId,
@@ -60,7 +63,21 @@ namespace ArcaneLink.Services.Servers
                 targetUserId,
                 tracking: false,
                 cancellationToken);
-            return member == null ? null : ToPublicResponse(member);
+            if (member == null)
+            {
+                return null;
+            }
+
+            var response = ToViewerResponse(member);
+            if (currentUserId != targetUserId)
+            {
+                await PopulateMutualContextAsync(
+                    response,
+                    currentUserId,
+                    targetUserId,
+                    cancellationToken);
+            }
+            return response;
         }
 
         public async Task<OwnServerMemberProfileResponse?> GetOwnAsync(
@@ -375,7 +392,10 @@ namespace ArcaneLink.Services.Servers
                     member.ServerId == serverId &&
                     member.UserId == userId &&
                     member.StatusId == ServerMemberStatusIds.Active &&
+                    member.LeftAt == null &&
                     member.BannedAt == null &&
+                    member.User.DeletedAt == null &&
+                    member.User.StatusId == UserStatusIds.Active &&
                     member.Server.DeletedAt == null,
                 cancellationToken);
         }
@@ -389,7 +409,15 @@ namespace ArcaneLink.Services.Servers
             IQueryable<ServerMember> query = _db.ServerMembers
                 .Include(member => member.User)
                     .ThenInclude(user => user.Profile)
-                .Include(member => member.ServerProfile);
+                .Include(member => member.User)
+                    .ThenInclude(user => user.ProfileSettings)
+                    .ThenInclude(settings => settings.SelectedTheme)
+                .Include(member => member.ServerProfile)
+                .Include(member => member.Roles
+                    .Where(assignment =>
+                        assignment.RevokedAt == null &&
+                        assignment.Role.DeletedAt == null))
+                    .ThenInclude(assignment => assignment.Role);
             if (!tracking)
             {
                 query = query.AsNoTracking();
@@ -400,9 +428,87 @@ namespace ArcaneLink.Services.Servers
                     member.ServerId == serverId &&
                     member.UserId == userId &&
                     member.StatusId == ServerMemberStatusIds.Active &&
+                    member.LeftAt == null &&
                     member.BannedAt == null &&
+                    member.User.DeletedAt == null &&
+                    member.User.StatusId == UserStatusIds.Active &&
                     member.Server.DeletedAt == null,
                 cancellationToken);
+        }
+
+        private async Task PopulateMutualContextAsync(
+            ServerMemberViewerProfileResponse response,
+            Guid currentUserId,
+            Guid targetUserId,
+            CancellationToken cancellationToken)
+        {
+            var mutualFriendIdsQuery = (
+                from viewerFriend in _db.UserFriends.AsNoTracking()
+                join targetFriend in _db.UserFriends.AsNoTracking()
+                    on viewerFriend.FriendUserId equals targetFriend.FriendUserId
+                where viewerFriend.UserId == currentUserId &&
+                      targetFriend.UserId == targetUserId &&
+                      viewerFriend.FriendUserId != currentUserId &&
+                      viewerFriend.FriendUserId != targetUserId &&
+                      targetFriend.FriendUser.DeletedAt == null &&
+                      targetFriend.FriendUser.StatusId == UserStatusIds.Active
+                select targetFriend.FriendUserId)
+                .Distinct();
+
+            response.MutualFriendCount = await mutualFriendIdsQuery.CountAsync(
+                cancellationToken);
+            response.MutualFriends = await _db.Users
+                .AsNoTracking()
+                .Where(user => mutualFriendIdsQuery.Contains(user.Id))
+                .OrderBy(user => user.Profile.DisplayNameNorm)
+                .ThenBy(user => user.Id)
+                .Take(MutualPreviewLimit)
+                .Select(user => new ServerMemberProfileMutualFriendResponse
+                {
+                    UserId = user.Id,
+                    Login = user.Login,
+                    DisplayName = user.Profile.DisplayName,
+                    AvatarAssetId = user.Profile.AvatarAssetId,
+                    AvatarCropOffsetX = user.Profile.AvatarCropOffsetX,
+                    AvatarCropOffsetY = user.Profile.AvatarCropOffsetY,
+                    AvatarCropZoom = user.Profile.AvatarCropZoom
+                })
+                .ToListAsync(cancellationToken);
+
+            var mutualServerIdsQuery = (
+                from viewerMember in _db.ServerMembers.AsNoTracking()
+                join targetMember in _db.ServerMembers.AsNoTracking()
+                    on viewerMember.ServerId equals targetMember.ServerId
+                where viewerMember.UserId == currentUserId &&
+                      viewerMember.StatusId == ServerMemberStatusIds.Active &&
+                      viewerMember.LeftAt == null &&
+                      viewerMember.BannedAt == null &&
+                      targetMember.UserId == targetUserId &&
+                      targetMember.StatusId == ServerMemberStatusIds.Active &&
+                      targetMember.LeftAt == null &&
+                      targetMember.BannedAt == null &&
+                      targetMember.Server.DeletedAt == null
+                select targetMember.ServerId)
+                .Distinct();
+
+            response.MutualServerCount = await mutualServerIdsQuery.CountAsync(
+                cancellationToken);
+            response.MutualServers = await _db.Servers
+                .AsNoTracking()
+                .Where(server => mutualServerIdsQuery.Contains(server.Id))
+                .OrderBy(server => server.Title)
+                .ThenBy(server => server.Id)
+                .Take(MutualPreviewLimit)
+                .Select(server => new ServerMemberProfileMutualServerResponse
+                {
+                    ServerId = server.Id,
+                    Title = server.Title,
+                    IconAssetId = server.IconAssetId,
+                    IconCropOffsetX = server.IconCropOffsetX,
+                    IconCropOffsetY = server.IconCropOffsetY,
+                    IconCropZoom = server.IconCropZoom
+                })
+                .ToListAsync(cancellationToken);
         }
 
         private Task<Asset?> GetOwnedAssetAsync(
@@ -465,11 +571,35 @@ namespace ArcaneLink.Services.Servers
                 cancellationToken);
         }
 
-        private static ServerMemberProfileResponse ToPublicResponse(
+        private static ServerMemberViewerProfileResponse ToViewerResponse(
             ServerMember member)
         {
+            var settings = member.User.ProfileSettings;
             return PopulateResponse(
-                new ServerMemberProfileResponse(),
+                new ServerMemberViewerProfileResponse
+                {
+                    MemberId = member.Id,
+                    JoinedAt = member.JoinedAt,
+                    ProfileThemeCode = settings?.SelectedTheme?.Code ??
+                        DefaultProfileThemeCode,
+                    ProfileColor = settings?.ProfileColor,
+                    ProfileBackgroundAssetId =
+                        settings?.ProfileBackgroundAssetId,
+                    Roles = member.Roles
+                        .Where(assignment =>
+                            assignment.RevokedAt == null &&
+                            assignment.Role.DeletedAt == null)
+                        .OrderBy(assignment => assignment.Role.Title)
+                        .ThenBy(assignment => assignment.Role.Id)
+                        .Select(assignment =>
+                            new ServerMemberProfileRoleResponse
+                            {
+                                Id = assignment.Role.Id,
+                                Title = assignment.Role.Title,
+                                Color = assignment.Role.Color
+                            })
+                        .ToList()
+                },
                 member,
                 includeOwnerAvatarEditingData: false);
         }

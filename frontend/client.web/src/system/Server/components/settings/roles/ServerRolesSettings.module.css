@@ -843,7 +843,11 @@
 
 .permissionToggle[aria-checked='true'] .permissionSwitch {
   border-color: var(--theme-accent-light);
-  background: color-mix(in srgb, var(--theme-accent), #101426 18%);
+  background: color-mix(
+    in srgb,
+    var(--theme-accent),
+    var(--theme-control-bg-strong) 18%
+  );
   box-shadow: 0 0 14px var(--theme-glow);
 }
 
@@ -879,8 +883,8 @@
   overflow: hidden;
   border: 1px solid var(--theme-border-accent);
   border-radius: 10px;
-  color: var(--theme-accent-light);
-  background: var(--theme-surface-accent);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
   font-size: 13px;
   font-weight: 900;
 }

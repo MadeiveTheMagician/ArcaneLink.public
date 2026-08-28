@@ -1,4 +1,4 @@
-﻿.dialog {
+.dialog {
   grid-template-rows: auto minmax(0, 1fr);
   width: min(1280px, calc(100vw - 32px));
   height: min(820px, calc(100dvh - 32px));
@@ -12,7 +12,7 @@
 
 .backdrop {
   z-index: 140;
-  background: rgba(2, 5, 14, 0.68);
+  background: rgba(0, 0, 0, 0.68);
   animation: serverSettingsBackdropIn 180ms ease-out both;
 }
 
@@ -29,12 +29,12 @@
 
 @keyframes serverSettingsBackdropIn {
   from {
-    background: rgba(2, 5, 14, 0);
+    background: rgba(0, 0, 0, 0);
     backdrop-filter: blur(0);
   }
 
   to {
-    background: rgba(2, 5, 14, 0.68);
+    background: rgba(0, 0, 0, 0.68);
     backdrop-filter: blur(12px);
   }
 }
@@ -55,7 +55,7 @@
 
 @keyframes serverSettingsBackdropOut {
   to {
-    background: rgba(2, 5, 14, 0);
+    background: rgba(0, 0, 0, 0);
     backdrop-filter: blur(0);
   }
 }
@@ -74,7 +74,7 @@
   align-items: start;
   justify-content: space-between;
   gap: 18px;
-  border-bottom: 1px solid var(--profile-border-soft, rgba(42, 47, 74, 0.9));
+  border-bottom: 1px solid var(--profile-border-soft, var(--theme-border-soft));
   padding: 18px 22px 15px;
 }
 
@@ -123,7 +123,7 @@
   align-content: start;
   gap: 7px;
   min-height: 0;
-  border-right: 1px solid var(--profile-border-soft, rgba(42, 47, 74, 0.9));
+  border-right: 1px solid var(--profile-border-soft, var(--theme-border-soft));
   padding: 14px;
   background:
     radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-accent), transparent 90%), transparent 42%),
@@ -360,7 +360,7 @@
     grid-auto-columns: minmax(116px, 1fr);
     overflow-x: auto;
     border-right: 0;
-    border-bottom: 1px solid var(--profile-border-soft, rgba(42, 47, 74, 0.9));
+    border-bottom: 1px solid var(--profile-border-soft, var(--theme-border-soft));
     padding: 10px;
   }
 

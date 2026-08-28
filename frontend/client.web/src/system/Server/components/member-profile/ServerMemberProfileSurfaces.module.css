@@ -1,0 +1,540 @@
+.compactCard,
+.fullDialog {
+  color: var(--color-text);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg), transparent 46%), color-mix(in srgb, var(--color-bg), transparent 18%)),
+    var(--server-member-profile-background, none),
+    var(--theme-frame-bg-strong);
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 24px 76px rgb(0 0 0 / 48%), 0 0 42px var(--theme-glow);
+}
+
+.compactCard {
+  position: fixed;
+  z-index: 110;
+  display: grid;
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 14px;
+  animation: compactProfileIn 160ms ease-out both;
+}
+
+.banner {
+  min-height: 98px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--profile-accent-color, var(--theme-accent)), #fff 8%), color-mix(in srgb, var(--profile-accent-color, var(--theme-accent)), #000 30%));
+  background-position: center;
+  background-size: cover;
+}
+
+.largeBanner {
+  min-height: clamp(150px, 25vh, 230px);
+}
+
+.openFullButton,
+.dialogCloseButton {
+  display: grid;
+  place-items: center;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.openFullButton {
+  border: 1px solid color-mix(in srgb, var(--color-text), transparent 74%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-bg), transparent 12%);
+}
+
+.openFullButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  backdrop-filter: blur(10px);
+}
+
+.openFullButton:hover {
+  border-color: var(--theme-border-accent);
+  background: var(--theme-hover-bg);
+}
+
+.dialogCloseButton {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.dialogCloseButton > span {
+  transition:
+    filter 150ms ease,
+    transform 150ms ease;
+}
+
+.dialogCloseButton:hover,
+.dialogCloseButton:focus-visible {
+  color: var(--theme-accent-light);
+  background: transparent;
+  outline: none;
+}
+
+.dialogCloseButton:hover > span,
+.dialogCloseButton:focus-visible > span {
+  filter:
+    drop-shadow(0 0 5px var(--theme-glow-strong))
+    drop-shadow(0 0 12px var(--theme-glow));
+  transform: scale(1.06);
+}
+
+.identity {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: end;
+  gap: 18px;
+  margin: -58px 28px 0;
+}
+
+.compactIdentity {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  margin: -38px 18px 0;
+}
+
+.identity.compactIdentity > span:last-child {
+  width: 100%;
+  padding-bottom: 0;
+}
+
+.identity > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  padding-bottom: 8px;
+}
+
+.fullProfile > .identity {
+  margin-bottom: 58px;
+}
+
+.fullProfile > .identity > span:last-child {
+  transform: translateY(58px);
+}
+
+.identity strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: clamp(21px, 2vw, 32px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compactIdentity strong {
+  font-size: 20px;
+}
+
+.identity small,
+.identity em {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar,
+.mutualAvatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid color-mix(in srgb, var(--color-bg), #000 14%);
+  color: var(--theme-avatar-contrast);
+  background: var(--theme-avatar-bg);
+  font-weight: 900;
+}
+
+.avatar {
+  width: 112px;
+  height: 112px;
+  border-radius: 22px;
+  font-size: 38px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 34%);
+}
+
+.compactIdentity .avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  font-size: 26px;
+}
+
+.avatar img,
+.mutualAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.compactContent,
+.fullProfileContent {
+  display: grid;
+  gap: 16px;
+}
+
+.compactContent {
+  padding: 16px 18px 20px;
+}
+
+.about,
+.noRoles,
+.mutualEmpty {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.roles > span {
+  border: 1px solid color-mix(in srgb, var(--server-member-role-color), transparent 44%);
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: color-mix(in srgb, var(--server-member-role-color), var(--color-text) 32%);
+  background: color-mix(in srgb, var(--server-member-role-color), transparent 86%);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mutualSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mutualSummary > span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 9px;
+  padding: 9px;
+  color: var(--color-muted);
+  background: var(--theme-control-bg);
+  font-size: 11px;
+}
+
+.mutualSummary strong {
+  color: var(--color-text);
+}
+
+.loadState {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  margin: 0;
+  padding: 22px;
+  color: var(--color-muted);
+}
+
+.loadState button {
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 7px;
+  padding: 7px 12px;
+  color: var(--color-text);
+  background: var(--theme-hover-bg);
+  cursor: pointer;
+}
+
+.fullBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: color-mix(in srgb, var(--theme-bg-start), transparent 18%);
+  backdrop-filter: blur(13px);
+  animation: fullProfileBackdropIn 170ms ease-out both;
+}
+
+.fullDialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(1260px, 96vw);
+  height: min(820px, 92dvh);
+  overflow: hidden;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 12px;
+  animation: fullProfileIn 190ms ease-out both;
+}
+
+.dialogHeader {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  padding: 12px 18px 12px 24px;
+  background: color-mix(in srgb, var(--theme-frame-bg-strong), transparent 4%);
+}
+
+.dialogHeader > span {
+  display: grid;
+  gap: 4px;
+}
+
+.dialogHeader small {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dialogHeader strong {
+  font-size: 22px;
+}
+
+.dialogCloseButton {
+  width: 42px;
+  height: 42px;
+}
+
+.fullLayout {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 1fr);
+}
+
+.fullLayoutOwnProfile {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.fullProfile {
+  min-width: 0;
+  overflow: auto;
+  border-right: 1px solid var(--theme-border-soft);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-bg), transparent 70%),
+      color-mix(in srgb, var(--color-bg), transparent 48%)
+    ),
+    var(--server-member-profile-background, none),
+    var(--theme-frame-bg);
+  background-position: center;
+  background-size: cover;
+}
+
+.fullLayoutOwnProfile .fullProfile {
+  border-right: 0;
+}
+
+.fullProfileContent {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 28px;
+}
+
+.profileSection,
+.profileFacts {
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--theme-frame-bg), transparent 8%);
+}
+
+.profileSection h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+
+.profileFacts {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0;
+}
+
+.profileFacts div {
+  min-width: 0;
+}
+
+.profileFacts dt,
+.profileFacts dd {
+  margin: 0;
+}
+
+.profileFacts dt {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.profileFacts dd {
+  margin-top: 7px;
+  overflow-wrap: anywhere;
+}
+
+.mutualPanel {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: color-mix(in srgb, var(--theme-frame-bg-strong), transparent 2%);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.mutualTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  padding: 12px;
+}
+
+.mutualTabs button {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 9px 6px;
+  color: var(--color-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.mutualTabs button[aria-selected='true'] {
+  border-color: var(--theme-border-accent);
+  color: var(--color-text);
+  background: var(--theme-active-bg);
+}
+
+.mutualTabs strong {
+  font-size: 15px;
+}
+
+.mutualTabPanel {
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mutualTabPanel[hidden] {
+  display: none;
+}
+
+.mutualList {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.mutualList article {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--theme-control-bg);
+}
+
+.mutualAvatar {
+  width: 38px;
+  height: 38px;
+  border-width: 1px;
+  border-radius: 10px;
+}
+
+.mutualList article > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.mutualList strong,
+.mutualList small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mutualList small {
+  color: var(--color-muted);
+}
+
+.mutualEmpty {
+  padding: 22px;
+}
+
+.mutualTruncation {
+  margin: 3px 0 0;
+  border-top: 1px solid var(--theme-border-soft);
+  padding: 10px 4px 2px;
+  color: var(--color-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+@keyframes compactProfileIn {
+  from { opacity: 0; transform: translateX(8px) scale(0.97); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes fullProfileBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fullProfileIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 760px) {
+  .fullBackdrop { padding: 0; }
+  .fullDialog { width: 100vw; height: 100dvh; border: 0; border-radius: 0; }
+  .fullLayout { grid-template-columns: 1fr; overflow: auto; }
+  .fullProfile { overflow: visible; border-right: 0; }
+  .mutualPanel { min-height: 320px; border-top: 1px solid var(--theme-border-soft); }
+  .fullProfileContent { grid-template-columns: 1fr; padding: 18px; }
+  .profileFacts { grid-template-columns: 1fr; }
+  .fullProfile > .identity { grid-template-columns: 82px minmax(0, 1fr); margin: -42px 18px 42px; }
+  .fullProfile > .identity .avatar { width: 82px; height: 82px; border-radius: 18px; }
+  .fullProfile > .identity > span:last-child { transform: translateY(42px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compactCard,
+  .fullBackdrop,
+  .fullDialog { animation: none; }
+}

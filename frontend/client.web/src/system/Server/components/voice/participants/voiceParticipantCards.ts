@@ -8,8 +8,8 @@ import type {
 } from '../../../hooks/voice/useVoiceChannel'
 import {
   createTrackStream,
-  getActiveVideoTracks,
   hasActiveVideoTrack,
+  selectParticipantVideoTracks,
 } from './voiceMediaTracks'
 import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes'
 import {
@@ -155,17 +155,18 @@ export function createVoiceParticipantCards({
         normalizeVoiceParticipantUserId(currentUserId)
     const isSpeaking = Boolean(speakingParticipantIds[normalizedParticipantId])
     const remoteStream = remoteStreamsByParticipantId[normalizedParticipantId]
-    const remoteVideoTracks = getActiveVideoTracks(
+    const remoteVideoTracks = selectParticipantVideoTracks(
       remoteStream,
+      participant,
       mediaTrackVersion,
     )
     const canRenderCamera = participant.canUseVideo !== false
     const canRenderScreen = participant.canShareScreen !== false
     const cameraTrack = participant.isCameraEnabled && canRenderCamera
-      ? remoteVideoTracks[0] ?? null
+      ? remoteVideoTracks.camera
       : null
     const screenTrack = participant.isScreenSharing && canRenderScreen
-      ? remoteVideoTracks[participant.isCameraEnabled ? 1 : 0] ?? null
+      ? remoteVideoTracks.screen
       : null
     const cameraStream = isSelf
       ? canRenderCamera

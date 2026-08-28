@@ -2,7 +2,12 @@ import { useRef } from 'react'
 import { describeIceServers } from './voiceChannelConfig'
 import { voiceDebug } from './voiceChannelDebug'
 import { attachVoicePeerConnectionHandlers } from './voicePeerConnectionHandlers'
+import {
+  cancelPendingVoiceLocalOffer,
+  runVoiceLocalOffer,
+} from './voiceLocalOfferGuard'
 import type { VoiceVideoSenderKind } from './useVoiceVideoSenders'
+import { registerVoiceVideoReceiverTrack } from './voiceVideoTrackKinds'
 import type {
   ConnectedVoiceChannel,
   VoiceParticipant,
@@ -148,6 +153,68 @@ export function useVoicePeerOrchestrator({
     return true
   }
 
+  async function createAndSendLocalOffer(
+    participantId: string,
+    kind: 'offer' | 'renegotiate-offer',
+    peer: RTCPeerConnection,
+    options: {
+      iceRestart?: boolean
+      rollbackLocalOffer?: boolean
+      isCurrent?: () => boolean
+    } = {},
+  ) {
+    const normalizedParticipantId = normalizeUserId(participantId)
+    const isCurrent = () =>
+      isCurrentPeerConnection(normalizedParticipantId, peer) &&
+      (options.isCurrent?.() ?? true)
+    const result = await runVoiceLocalOffer(
+      peer,
+      async () => {
+        if (!isCurrent()) {
+          return null
+        }
+        if (
+          options.rollbackLocalOffer &&
+          peer.signalingState === 'have-local-offer'
+        ) {
+          await peer.setLocalDescription({ type: 'rollback' })
+        }
+        if (peer.signalingState !== 'stable') {
+          return null
+        }
+
+        if (options.iceRestart) {
+          peer.restartIce()
+        }
+        const offer = options.iceRestart
+          ? await peer.createOffer({ iceRestart: true })
+          : await peer.createOffer()
+        if (!isCurrent() || peer.signalingState !== 'stable') {
+          return null
+        }
+
+        await peer.setLocalDescription(offer)
+        if (!isCurrent()) {
+          return null
+        }
+        return (await sendLocalOfferSignal(
+          normalizedParticipantId,
+          kind,
+          offer,
+          peer,
+        ))
+          ? offer
+          : null
+      },
+      {
+        requiresStable: !options.rollbackLocalOffer,
+        priority: options.iceRestart ? 'ice-restart' : 'normal',
+      },
+    )
+
+    return result.status === 'completed' ? result.value : null
+  }
+
   function scheduleLocalOfferWatchdog(
     participantId: string,
     peer: RTCPeerConnection,
@@ -213,24 +280,25 @@ export function useVoicePeerOrchestrator({
         }
 
         if (shouldCreateOffer(localParticipantId, remoteParticipantId)) {
-          const offer = await peer.createOffer()
+          const offer = await createAndSendLocalOffer(
+            remoteParticipantId,
+            'offer',
+            peer,
+            { isCurrent: () => isCurrentPeerSync(operationId, spaceId) },
+          )
           if (!isCurrentPeerSync(operationId, spaceId)) {
             closePeerIfCurrent(remoteParticipantId, peer)
             return
           }
+          if (!offer) {
+            continue
+          }
 
-          await peer.setLocalDescription(offer)
           voiceDebug('offer:created', {
             targetParticipantId: remoteParticipantId,
             signalingState: peer.signalingState,
             iceGatheringState: peer.iceGatheringState,
           })
-          await sendLocalOfferSignal(
-            participant.participantId,
-            'offer',
-            offer,
-            peer,
-          )
         }
       }
     }
@@ -303,6 +371,14 @@ export function useVoicePeerOrchestrator({
       const screenTransceiver = peer.addTransceiver('video', {
         direction: 'sendrecv',
       })
+      registerVoiceVideoReceiverTrack(
+        cameraTransceiver.receiver.track,
+        'camera',
+      )
+      registerVoiceVideoReceiverTrack(
+        screenTransceiver.receiver.track,
+        'screen',
+      )
       setVideoSender(
         normalizedRemoteParticipantId,
         'camera',
@@ -352,27 +428,27 @@ export function useVoicePeerOrchestrator({
     const normalizedParticipantId = normalizeUserId(participantId)
     const peer = getPeerConnection(normalizedParticipantId)
 
-    if (!peer || peer.signalingState !== 'stable') {
+    if (!peer) {
       voiceDebug('renegotiate:skip', {
         participantId: normalizedParticipantId,
-        signalingState: peer?.signalingState,
+        signalingState: undefined,
       })
       return
     }
 
-    const offer = await peer.createOffer()
-    await peer.setLocalDescription(offer)
+    const offer = await createAndSendLocalOffer(
+      normalizedParticipantId,
+      'renegotiate-offer',
+      peer,
+    )
+    if (!offer) {
+      return
+    }
     voiceDebug('renegotiate:offer-created', {
       targetParticipantId: normalizedParticipantId,
       signalingState: peer.signalingState,
       iceGatheringState: peer.iceGatheringState,
     })
-    await sendLocalOfferSignal(
-      normalizedParticipantId,
-      'renegotiate-offer',
-      offer,
-      peer,
-    )
     updatePeerStatus(normalizedParticipantId)
   }
 
@@ -393,40 +469,30 @@ export function useVoicePeerOrchestrator({
 
     try {
       const peerConfiguration = await getPeerConfiguration()
-      expectedPeer.setConfiguration(peerConfiguration)
-
-      if (expectedPeer.signalingState === 'have-local-offer') {
-        await expectedPeer.setLocalDescription({ type: 'rollback' })
-        voiceDebug('ice:restart-rollback', {
-          participantId: normalizedParticipantId,
-        })
-      }
-
-      if (expectedPeer.signalingState !== 'stable') {
-        voiceDebug('ice:restart-skip', {
-          participantId: normalizedParticipantId,
-          signalingState: expectedPeer.signalingState,
-        })
-        return
-      }
-
-      expectedPeer.restartIce()
-      const offer = await expectedPeer.createOffer({ iceRestart: true })
       if (
         !isCurrentPeerSync(operationId, channel.spaceId) ||
         !isCurrentPeerConnection(normalizedParticipantId, expectedPeer)
       ) {
         return
       }
-
-      await expectedPeer.setLocalDescription(offer)
-      const didSend = await sendLocalOfferSignal(
+      expectedPeer.setConfiguration(peerConfiguration)
+      const offer = await createAndSendLocalOffer(
         normalizedParticipantId,
         'renegotiate-offer',
-        offer,
         expectedPeer,
+        {
+          iceRestart: true,
+          rollbackLocalOffer: true,
+          isCurrent: () => isCurrentPeerSync(operationId, channel.spaceId),
+        },
       )
-      if (!didSend) {
+      if (
+        !isCurrentPeerSync(operationId, channel.spaceId) ||
+        !isCurrentPeerConnection(normalizedParticipantId, expectedPeer)
+      ) {
+        return
+      }
+      if (!offer) {
         voiceDebug('ice:restart-deferred', {
           participantId: normalizedParticipantId,
         })
@@ -477,12 +543,18 @@ export function useVoicePeerOrchestrator({
         return
       }
       if (!isCurrentPeerConnection(normalizedParticipantId, peer)) {
-        peer.close()
+        closePeerIfCurrent(normalizedParticipantId, peer)
         return
       }
 
-      const offer = await peer.createOffer()
-      await peer.setLocalDescription(offer)
+      const offer = await createAndSendLocalOffer(
+        normalizedParticipantId,
+        'renegotiate-offer',
+        peer,
+        {
+          isCurrent: () => isCurrentPeerSync(operationId, channel.spaceId),
+        },
+      )
       if (
         !isCurrentPeerSync(operationId, channel.spaceId) ||
         !isCurrentPeerConnection(normalizedParticipantId, peer)
@@ -490,14 +562,7 @@ export function useVoicePeerOrchestrator({
         closePeerIfCurrent(normalizedParticipantId, peer)
         return
       }
-
-      const didSend = await sendLocalOfferSignal(
-        normalizedParticipantId,
-        'renegotiate-offer',
-        offer,
-        peer,
-      )
-      if (!didSend) {
+      if (!offer) {
         return
       }
       updatePeerStatus(normalizedParticipantId)
@@ -511,6 +576,10 @@ export function useVoicePeerOrchestrator({
   }
 
   function closePeer(participantId: string) {
+    const peer = getPeerConnection(participantId)
+    if (peer) {
+      cancelPendingVoiceLocalOffer(peer)
+    }
     closePeerConnection(participantId)
     voiceDebug('peer:closed', { participantId })
     removeVideoSender(participantId)
@@ -526,6 +595,7 @@ export function useVoicePeerOrchestrator({
     if (isCurrentPeerConnection(normalizedParticipantId, peer)) {
       closePeer(normalizedParticipantId)
     } else {
+      cancelPendingVoiceLocalOffer(peer)
       peer.close()
     }
   }

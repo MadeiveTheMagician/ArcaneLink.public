@@ -15,7 +15,10 @@ import {
   getCreatableServerRolePermissions,
   resolveAccessibleServerCoreTab,
 } from '../../src/system/Server/utils/serverGovernanceCapabilities'
-import { resolveServerWorkspacePermissionCapabilities } from '../../src/system/Server/utils/serverEffectivePermissions'
+import {
+  canAccessServerSettings,
+  resolveServerWorkspacePermissionCapabilities,
+} from '../../src/system/Server/utils/serverEffectivePermissions'
 
 function permission(code: string): PermissionResponse {
   return {
@@ -204,6 +207,29 @@ test.describe('effective server governance capabilities', () => {
 
   test('keeps audit and invite settings inaccessible without their permissions', () => {
     expect(
+      resolveAccessibleServerCoreTab('general', {
+        canInviteMembers: false,
+        canManageServerProfile: false,
+        canManageServerSettings: false,
+        canDeleteServer: false,
+        canViewAuditLog: false,
+      }),
+    ).toBe('spaces')
+    expect(
+      resolveAccessibleServerCoreTab('general', {
+        canInviteMembers: false,
+        canManageServerProfile: true,
+        canViewAuditLog: false,
+      }),
+    ).toBe('general')
+    expect(
+      resolveAccessibleServerCoreTab('general', {
+        canInviteMembers: false,
+        canDeleteServer: true,
+        canViewAuditLog: false,
+      }),
+    ).toBe('general')
+    expect(
       resolveAccessibleServerCoreTab('audit', {
         canInviteMembers: true,
         canViewAuditLog: false,
@@ -304,6 +330,54 @@ test.describe('effective server governance capabilities', () => {
       resolveServerWorkspacePermissionCapabilities(null, true)
         .canAdministerServer,
     ).toBe(true)
+  })
+
+  test('exposes server settings only for capabilities represented in that dialog', () => {
+    const capabilitiesFor = (permissionCodes: string[], isOwner = false) =>
+      resolveServerWorkspacePermissionCapabilities(
+        {
+          serverId: 'server-1',
+          memberId: 'member-1',
+          authorizationVersion: 'version-1',
+          permissionSchemaVersion: 1,
+          isOwner,
+          isAdministrator: false,
+          authorityTier: isOwner ? 'owner' : 'standard',
+          authorityPosition: isOwner ? null : 10,
+          permissionCodes,
+        },
+        isOwner,
+        'server-1',
+      )
+
+    expect(canAccessServerSettings(capabilitiesFor([]))).toBe(false)
+    expect(
+      canAccessServerSettings(capabilitiesFor(['SEND_MESSAGES'])),
+    ).toBe(false)
+    expect(
+      canAccessServerSettings(capabilitiesFor(['MANAGE_SERVER_PROFILE'])),
+    ).toBe(true)
+
+    for (const permissionCode of [
+      'MANAGE_SERVER_SETTINGS',
+      'MANAGE_ROLES',
+      'ASSIGN_ROLES',
+      'MANAGE_DEFAULT_PERMISSIONS',
+      'CREATE_INVITES',
+      'VIEW_INVITE_LOG',
+      'MANAGE_INVITES',
+      'APPROVE_JOIN_REQUESTS',
+      'MANAGE_BANS',
+      'VIEW_AUDIT_LOG',
+      'MANAGE_REPORTS',
+    ]) {
+      expect(
+        canAccessServerSettings(capabilitiesFor([permissionCode])),
+        permissionCode,
+      ).toBe(true)
+    }
+
+    expect(canAccessServerSettings(capabilitiesFor([], true))).toBe(true)
   })
 
   test('allows report moderation only to owners and effective report managers', () => {
@@ -427,6 +501,7 @@ test.describe('effective server governance capabilities', () => {
     const assignedRoleIds: string[] = []
     const bannedMemberIds: string[] = []
     const blockedUserIds: string[] = []
+    const openedProfileMemberIds: string[] = []
     const commonOptions = {
       member: target,
       currentUserId: actor.userId,
@@ -446,7 +521,8 @@ test.describe('effective server governance capabilities', () => {
       isMutatingDirectMessageBlock: false,
       isUserBlockStatusResolved: true,
       isUserBlocked: false,
-      onSelectMember: () => undefined,
+      onOpenMemberProfile: (selectedMember: ServerMemberDetailsResponse) =>
+        openedProfileMemberIds.push(selectedMember.id),
       onOpenDirectSpace: () => undefined,
       onSendFriendRequest: () => undefined,
       onToggleUserBlock: (userId: string) => blockedUserIds.push(userId),
@@ -480,6 +556,12 @@ test.describe('effective server governance capabilities', () => {
     const nonModeratorItems = buildMemberContextMenuItems({
       ...commonOptions,
     })
+    const profileItem = nonModeratorItems.find(
+      (item) => item.type === 'item' && item.icon === 'profile',
+    )
+    expect(profileItem?.type).toBe('item')
+    if (profileItem?.type === 'item') profileItem.onSelect?.()
+    expect(openedProfileMemberIds).toEqual(['target-member'])
     expect(
       nonModeratorItems.some(
         (item) =>

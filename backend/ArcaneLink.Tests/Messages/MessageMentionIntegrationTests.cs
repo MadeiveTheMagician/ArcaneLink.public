@@ -399,6 +399,9 @@ public sealed class MessageMentionIntegrationTests : IClassFixture<ArcaneLinkApi
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var now = DateTime.UtcNow;
+            var registeredUser = await db.Users.SingleAsync(x => x.Id == user.Id);
+            registeredUser.StatusId = UserStatusIds.Active;
+            registeredUser.EmailConfirmedAt = now;
             db.ServerMembers.Add(new ServerMember
             {
                 Id = Guid.NewGuid(),

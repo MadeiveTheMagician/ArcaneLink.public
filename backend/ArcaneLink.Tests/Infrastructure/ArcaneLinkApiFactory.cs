@@ -7,6 +7,7 @@ using ArcaneLink.Services.Assets;
 using ArcaneLink.Services.Assets.Storage;
 using ArcaneLink.Services.Assets.Storage.Abstractions;
 using ArcaneLink.Services.PrivateSpaces;
+using ArcaneLink.Services.Email;
 using ArcaneLink.Services.RequestInfo.Abstractions;
 using ArcaneLink.Services.Realtime.Abstractions;
 using Microsoft.AspNetCore.Hosting;
@@ -77,7 +78,10 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
                 ["JwtSettings:AccessTokenExpirationMinutes"] = "60",
                 ["JwtSettings:RefreshTokenExpirationDays"] = "180",
                 ["JwtSettings:DeviceSessionIdleExpirationDays"] = "180",
-                ["JwtSettings:DeviceSessionAbsoluteExpirationDays"] = "365"
+                ["JwtSettings:DeviceSessionAbsoluteExpirationDays"] = "365",
+                ["DataProtection:KeysPath"] = Path.Combine(
+                    _testContentRoot,
+                    "data-protection-keys")
             });
         });
         builder.ConfigureTestServices(services =>
@@ -93,6 +97,7 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
             RemoveProviderServices(services, "Npgsql");
             RemoveHostedService<AssetCleanupHostedService>(services);
             RemoveHostedService<PrivateMessageTrashCleanupHostedService>(services);
+            RemoveHostedService<EmailOutboxHostedService>(services);
 
             _connection.Open();
 
@@ -287,6 +292,7 @@ public sealed class ArcaneLinkApiFactory : WebApplicationFactory<Program>
             EmailNorm = email.ToUpperInvariant(),
             PasswordHash = string.Empty,
             StatusId = UserStatusIds.Active,
+            EmailConfirmedAt = now,
             CreatedAt = now
         };
         user.PasswordHash = new PasswordHasher<User>().HashPassword(user, Password);

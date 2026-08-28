@@ -1,4 +1,4 @@
-﻿import {
+import {
   type CSSProperties,
   useEffect,
   useRef,
@@ -16,6 +16,7 @@ import {
   defaultMessageBubbleWidth,
   isMessageBubbleRightAligned,
   serverCopy,
+  SystemIcon,
 } from '../../../shared'
 import type {
   MessageBubbleAlignment,
@@ -32,6 +33,7 @@ import { ServerInviteMessageCards } from './ServerInviteMessageCards'
 import { resolveExternalMediaBubbleWidth } from './externalMediaSizeModel'
 import { resolvePrivateMessageReceiptIndicator } from './messageReceiptModel'
 import type { PrivateMessageReceiptIndicator } from './messageReceiptModel'
+import { getMessagePinnedEvent } from '../../../shared/messages/messageEventModel'
 
 export function MessageRow({
   message,
@@ -75,7 +77,7 @@ export function MessageRow({
     emojiCode: string,
     isPresent: boolean,
   ) => Promise<SpaceMessageResponse | null>
-  onJumpToMessage: (messageId: string) => void
+  onJumpToMessage: (messageId: string, createdAt?: string | null) => void
   invitePreviewAccessToken?: string | null
   invitePreviewOrigin?: string | null
   privateMessageReceiptViewerUserId?: string | null
@@ -84,6 +86,42 @@ export function MessageRow({
   messageBubbleAlignment?: MessageBubbleAlignment
   messageBubbleWidth?: MessageBubbleWidth
 }) {
+  const pinnedEvent = getMessagePinnedEvent(message)
+  if (pinnedEvent) {
+    return (
+      <>
+        {startsNewDay && (
+          <div className={styles.messageDayDivider}>
+            <span>{formatMessageDay(message.createdAt)}</span>
+          </div>
+        )}
+        <div
+          className={styles.messageEvent}
+          data-message-id={message.id}
+          role="status"
+        >
+          <span className={styles.messageEventRule} aria-hidden="true" />
+          <span className={styles.messageEventContent}>
+            <SystemIcon name="pin" size={14} />
+            <span>{serverCopy.messages.pinnedMessageEvent(message.senderDisplayName)}</span>
+            <button
+              type="button"
+              onClick={() =>
+                onJumpToMessage(
+                  pinnedEvent.messageId,
+                  message.replyTo?.createdAt,
+                )
+              }
+            >
+              «{serverCopy.messages.pinnedMessageLink}»
+            </button>
+          </span>
+          <span className={styles.messageEventRule} aria-hidden="true" />
+        </div>
+      </>
+    )
+  }
+
   const avatarUrl = message.senderAvatarAssetId
     ? `/api/assets/${message.senderAvatarAssetId}/content`
     : null
@@ -234,7 +272,11 @@ export function MessageRow({
               onOpen={
                 message.replyTo.isUnavailable
                   ? undefined
-                  : () => onJumpToMessage(message.replyTo!.id)
+                  : () =>
+                      onJumpToMessage(
+                        message.replyTo!.id,
+                        message.replyTo!.createdAt,
+                      )
               }
             />
           )}

@@ -84,9 +84,9 @@ export function VoiceProfilesPanel({
           <SystemSelect
             aria-label={settingsCopy.voice.activeProfile}
             value={activeProfileId}
-            onChange={(event) => {
+            onValueChange={(value) => {
               onBeforeApplyProfile?.()
-              activate(event.target.value)
+              activate(value)
             }}
           >
             {profiles.map((profile) => (

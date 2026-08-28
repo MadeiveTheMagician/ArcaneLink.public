@@ -217,7 +217,7 @@
     min-height: var(--mobile-nav-panel-height, 54px);
     padding: 8px 14px 6px 8px;
     background:
-      linear-gradient(180deg, #111b43 0%, #0b1432 100%);
+      linear-gradient(180deg, var(--theme-frame-bg-strong), var(--theme-control-bg-strong));
     opacity: 1;
     transform: translateY(0);
     transition:

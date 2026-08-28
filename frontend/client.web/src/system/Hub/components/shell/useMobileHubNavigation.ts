@@ -65,6 +65,12 @@ export function useMobileHubNavigation({
   }, [])
 
   function switchMobileTab(nextTab: MobileHubTab, action?: () => void) {
+    if (mobilePrivateChatCloseTimeoutRef.current !== null) {
+      window.clearTimeout(mobilePrivateChatCloseTimeoutRef.current)
+      mobilePrivateChatCloseTimeoutRef.current = null
+      setIsMobilePrivateChatClosing(false)
+    }
+
     if (nextTab !== mobileTab) {
       if (mobileTransitionTimeoutRef.current !== null) {
         window.clearTimeout(mobileTransitionTimeoutRef.current)
@@ -110,6 +116,14 @@ export function useMobileHubNavigation({
     }, MOBILE_PAGE_TRANSITION_DURATION_MS)
   }
 
+  function openMobilePrivateWorkspace(action: () => void) {
+    switchMobileTab('messages', action)
+  }
+
+  function openMobileProfileWorkspace(action: () => void) {
+    switchMobileTab('profile', action)
+  }
+
   return {
     mobileTab,
     isMobilePageTransitioning,
@@ -118,6 +132,8 @@ export function useMobileHubNavigation({
     openMobileServers: () => switchMobileTab('servers', showServersWorkspace),
     openMobileMessages: closeMobilePrivateChat,
     openMobileProfile: () => switchMobileTab('profile', showProfileWorkspace),
+    openMobilePrivateWorkspace,
+    openMobileProfileWorkspace,
     openMobileMenu: () => switchMobileTab('menu'),
     closeMobilePrivateChat,
   }

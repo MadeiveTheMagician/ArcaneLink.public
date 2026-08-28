@@ -101,12 +101,8 @@
 
 .primary {
   border-color: color-mix(in srgb, var(--theme-accent-light), transparent 45%) !important;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-accent), white 8%),
-      color-mix(in srgb, var(--theme-accent), #2678c5 28%)
-    ) !important;
+  color: var(--theme-accent-contrast) !important;
+  background: var(--theme-surface-accent) !important;
 }
 
 .danger {

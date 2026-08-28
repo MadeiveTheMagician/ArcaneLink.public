@@ -44,49 +44,48 @@ test.describe('server context menu items', () => {
     expect(leaveCount).toBe(1)
   })
 
-  test('offers settings sections and deletion to the owner', () => {
-    const openedSections: string[] = []
+  test('opens the full settings form without a nested owner menu', () => {
+    const openedServerIds: string[] = []
     const membership = createMembership('owner-1')
     const items = buildServerContextMenuItems({
       membership,
       currentUserId: 'owner-1',
-      onOpenServerSettings: (_membership, section) =>
-        openedSections.push(section),
+      onOpenServerSettings: (selectedMembership) =>
+        openedServerIds.push(selectedMembership.serverId),
       onLeaveServer: () => {
         throw new Error('The owner cannot leave through this menu.')
       },
       onCopyServerId: () => undefined,
     })
 
-    expect(items).toHaveLength(4)
+    expect(items).toHaveLength(2)
     const settingsItem = items[0]
     expect(settingsItem.type).toBe('item')
 
     if (settingsItem.type === 'item') {
       selectItem(settingsItem)
-      expect(settingsItem.submenu).toHaveLength(2)
-      selectItem(settingsItem.submenu![0])
-      selectItem(settingsItem.submenu![1])
+      expect(settingsItem.submenu).toBeUndefined()
     }
 
-    selectItem(items[3])
-    expect(openedSections).toEqual(['all', 'edit', 'delete', 'delete'])
+    expect(openedServerIds).toEqual(['server-1'])
+    expect(
+      items.some(
+        (item) =>
+          item.type === 'item' &&
+          (item.icon === 'trash' || item.danger === true),
+      ),
+    ).toBe(false)
   })
 
   test('opens only delegated settings without exposing server deletion', () => {
-    const openedAccess: Array<{
-      canManageProfile: boolean
-      canManageSettings: boolean
-      canDelete: boolean
-    }> = []
+    const openedServerIds: string[] = []
     let leaveCount = 0
     const items = buildServerContextMenuItems({
       membership: createMembership('owner-1'),
       currentUserId: 'member-1',
-      canManageServerProfile: true,
-      canManageServerSettings: false,
-      onOpenServerSettings: (_membership, _section, access) =>
-        openedAccess.push(access),
+      canOpenFullServerSettings: true,
+      onOpenServerSettings: (selectedMembership) =>
+        openedServerIds.push(selectedMembership.serverId),
       onLeaveServer: () => {
         leaveCount += 1
       },
@@ -97,23 +96,11 @@ test.describe('server context menu items', () => {
     expect(settingsItem.type).toBe('item')
     if (settingsItem.type === 'item') {
       selectItem(settingsItem)
-      expect(settingsItem.submenu).toHaveLength(1)
-      selectItem(settingsItem.submenu![0])
+      expect(settingsItem.submenu).toBeUndefined()
     }
     selectItem(items.at(-1)!)
 
-    expect(openedAccess).toEqual([
-      {
-        canManageProfile: true,
-        canManageSettings: false,
-        canDelete: false,
-      },
-      {
-        canManageProfile: true,
-        canManageSettings: false,
-        canDelete: false,
-      },
-    ])
+    expect(openedServerIds).toEqual(['server-1'])
     expect(leaveCount).toBe(1)
     expect(
       items.some(

@@ -7,6 +7,7 @@ import type {
   ServerMemberDisplayColorResponse,
   ServerPermissionDefinitionResponse,
   ServerRoleResponse,
+  UserDeviceSessionResponse,
   UserFriendResponse,
 } from '../../src/shared/types'
 
@@ -203,10 +204,22 @@ const spaces = [
 
 const pinnedAsset = {
   assetId: 'asset-pin-image',
+  displayOrder: 0,
   fileName: 'pinned-preview.png',
   mimeType: 'image/png',
   sizeBytes: 1024,
   createdAt: now,
+  isSpoiler: false,
+}
+
+const pinnedNextAsset = {
+  assetId: 'asset-pin-next-image',
+  displayOrder: 1,
+  fileName: 'pinned-preview-next.png',
+  mimeType: 'image/png',
+  sizeBytes: 2048,
+  createdAt: now,
+  isSpoiler: false,
 }
 
 const initialMessages = [
@@ -219,7 +232,7 @@ const initialMessages = [
   createMessage({
     id: 'message-pinned',
     body: 'Закреп с вложением для smoke-теста.',
-    assets: [pinnedAsset],
+    assets: [pinnedAsset, pinnedNextAsset],
     createdAt: '2026-06-21T11:59:00.000Z',
   }),
 ]
@@ -349,6 +362,26 @@ export async function mockArcaneLinkApi(
   )
   const serverInvites = [...(options.serverInvites ?? [])]
   const serverRoles = [...(options.serverRoles ?? [])]
+  let deviceSessions: UserDeviceSessionResponse[] = [
+    {
+      id: 'device-e2e',
+      deviceName: 'Current browser',
+      ipAddress: '127.0.0.1',
+      userAgent: 'Playwright',
+      createdAt: now,
+      lastUsedAt: now,
+      isCurrent: true,
+    },
+    {
+      id: 'device-other',
+      deviceName: 'Other browser',
+      ipAddress: '127.0.0.2',
+      userAgent: 'Playwright',
+      createdAt: now,
+      lastUsedAt: now,
+      isCurrent: false,
+    },
+  ]
   let serverMemberDisplayColor: ServerMemberDisplayColorResponse =
     options.serverMemberDisplayColor ?? {
       mode: 'default',
@@ -384,6 +417,32 @@ export async function mockArcaneLinkApi(
 
     if (method === 'POST' && path === '/api/auth/logout') {
       return json(route, {})
+    }
+
+    if (method === 'GET' && path === '/api/auth/sessions') {
+      return json(route, deviceSessions)
+    }
+
+    if (
+      method === 'POST' &&
+      path.startsWith('/api/auth/sessions/') &&
+      path.endsWith('/revoke')
+    ) {
+      const sessionId = path.split('/')[4]
+      deviceSessions = deviceSessions.filter(
+        (session) => session.id !== sessionId || session.isCurrent,
+      )
+      return route.fulfill({ status: 204, body: '' })
+    }
+
+    if (method === 'POST' && path === '/api/auth/sessions/revoke-others') {
+      deviceSessions = deviceSessions.filter((session) => session.isCurrent)
+      return route.fulfill({ status: 204, body: '' })
+    }
+
+    if (method === 'POST' && path === '/api/auth/sessions/revoke-all') {
+      deviceSessions = []
+      return route.fulfill({ status: 204, body: '' })
     }
 
     if (method === 'GET' && path === '/api/users/me') {

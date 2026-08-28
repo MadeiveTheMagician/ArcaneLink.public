@@ -113,6 +113,32 @@
   color: #ff9bab;
 }
 
+.messageLoadError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 14px 14px;
+}
+
+.messageLoadError .textError {
+  margin: 0;
+}
+
+.messageLoadError button {
+  min-height: 30px;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: var(--theme-accent-light);
+  background: var(--theme-control-bg);
+}
+
+.messageLoadError button:hover,
+.messageLoadError button:focus-visible {
+  background: var(--theme-hover-bg);
+}
+
 .textScrollBottom {
   position: absolute;
   right: 24px;

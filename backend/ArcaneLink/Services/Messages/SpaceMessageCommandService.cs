@@ -347,6 +347,7 @@ namespace ArcaneLink.Services.Messages
                 .FirstOrDefaultAsync(
                     x => x.SpaceId == spaceId && x.MessageId == messageId,
                     cancellationToken);
+            var wasPinned = pinnedMessage != null && pinnedMessage.UnpinnedAt == null;
 
             if (pinnedMessage == null)
             {
@@ -367,11 +368,28 @@ namespace ArcaneLink.Services.Messages
                 pinnedMessage.UnpinnedByUserId = null;
             }
 
+            Guid? eventMessageId = null;
+            if (!wasPinned)
+            {
+                eventMessageId = Guid.NewGuid();
+                _db.SpaceMessages.Add(new SpaceMessage
+                {
+                    Id = eventMessageId.Value,
+                    SpaceId = spaceId,
+                    SenderUserId = currentUserId,
+                    MessageTypeId = SpaceIds.MessageTypeEvent,
+                    Payload = SpaceMessageEventPayload.CreateMessagePinned(messageId),
+                    ReplyToMessageId = messageId,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                });
+            }
+
             await _db.SaveChangesAsync(cancellationToken);
             await _notifier.NotifyMessagesChangedAsync(
                 serverId,
                 spaceId,
-                messageId,
+                eventMessageId ?? messageId,
                 cancellationToken);
 
             return await SpaceMessageQueryService.LoadMutationResponseAsync(
@@ -381,6 +399,56 @@ namespace ArcaneLink.Services.Messages
                 spaceId,
                 messageId,
                 cancellationToken);
+        }
+
+        public async Task<bool> UnpinMessageAsync(
+            Guid currentUserId,
+            Guid serverId,
+            Guid spaceId,
+            Guid messageId,
+            CancellationToken cancellationToken = default)
+        {
+            if (await _access.GetPinnableMessageSpaceAsync(
+                    currentUserId,
+                    serverId,
+                    spaceId,
+                    cancellationToken) == null)
+            {
+                return false;
+            }
+
+            var messageExists = await _db.SpaceMessages
+                .AnyAsync(
+                    x => x.Id == messageId &&
+                         x.SpaceId == spaceId &&
+                         x.Space.ServerId == serverId &&
+                         x.DeletedAt == null,
+                    cancellationToken);
+            if (!messageExists)
+            {
+                return false;
+            }
+
+            var pinnedMessage = await _db.SpacePinnedMessages
+                .FirstOrDefaultAsync(
+                    x => x.SpaceId == spaceId &&
+                         x.MessageId == messageId &&
+                         x.UnpinnedAt == null,
+                    cancellationToken);
+            if (pinnedMessage == null)
+            {
+                return false;
+            }
+
+            pinnedMessage.UnpinnedAt = DateTime.UtcNow;
+            pinnedMessage.UnpinnedByUserId = currentUserId;
+            await _db.SaveChangesAsync(cancellationToken);
+            await _notifier.NotifyMessagesChangedAsync(
+                serverId,
+                spaceId,
+                messageId,
+                cancellationToken);
+            return true;
         }
 
         private async Task<bool> IsValidReplyAsync(

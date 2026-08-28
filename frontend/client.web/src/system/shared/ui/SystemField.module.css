@@ -1,5 +1,4 @@
 .field,
-.select,
 .search {
   box-sizing: border-box;
   width: 100%;
@@ -26,7 +25,6 @@
 }
 
 .field:focus,
-.select:focus,
 .search:focus-within {
   border-color: var(--theme-border-accent);
   box-shadow:
@@ -36,26 +34,6 @@
 
 .field {
   padding: 0 13px;
-}
-
-.select {
-  appearance: none;
-  padding: 0 38px 0 13px;
-}
-
-.selectWrap {
-  position: relative;
-  display: grid;
-  min-width: 0;
-}
-
-.selectIcon {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  color: var(--theme-text-soft);
-  pointer-events: none;
-  transform: translateY(-50%);
 }
 
 .search {

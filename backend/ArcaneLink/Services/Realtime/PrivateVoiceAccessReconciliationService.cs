@@ -44,20 +44,34 @@ namespace ArcaneLink.Services.Realtime
                 return;
             }
 
-            if (removed.Count == 0)
+            foreach (var connection in removed)
             {
-                return;
+                await _realtime.NotifyUserBestEffortAsync(
+                    _logger,
+                    userId,
+                    RealtimeEventNames.VoiceConnectionReplaced,
+                    new
+                    {
+                        connection.ServerId,
+                        connection.SpaceId,
+                        connection.ChannelScope,
+                        connection.ParticipantId
+                    },
+                    CancellationToken.None);
             }
-
-            await _realtime.NotifyUserBestEffortAsync(
-                _logger,
-                userId,
-                RealtimeEventNames.VoiceConnectionReplaced,
-                payload: null,
-                CancellationToken.None);
 
             try
             {
+                var callTransition = await _voiceConnections
+                    .SynchronizePrivateCallAsync(
+                        spaceId,
+                        "membership_changed",
+                        CancellationToken.None);
+                if (removed.Count == 0 && callTransition == null)
+                {
+                    return;
+                }
+
                 var recipients = await _db.PrivateSpaceMembers
                     .AsNoTracking()
                     .Where(member =>
@@ -81,6 +95,47 @@ namespace ArcaneLink.Services.Realtime
                     "VoiceChannelStateChanged",
                     payload,
                     CancellationToken.None);
+
+                if (callTransition != null)
+                {
+                    await _realtime.NotifyUsersBestEffortAsync(
+                        _logger,
+                        recipients,
+                        RealtimeEventNames.PrivateCallStateChanged,
+                        callTransition.Call,
+                        CancellationToken.None);
+                    await _realtime.NotifyUserBestEffortAsync(
+                        _logger,
+                        userId,
+                        RealtimeEventNames.PrivateCallStateChanged,
+                        callTransition.Call with
+                        {
+                            Phase = PrivateCallPhases.Ended,
+                            Revision = callTransition.Call.Revision + 1,
+                            EndedAt = DateTime.UtcNow,
+                            ParticipantUserIds = [],
+                            RingingUserIds = [],
+                            DeclinedUserIds = [],
+                            EndReason = "membership_revoked"
+                        },
+                        CancellationToken.None);
+
+                    if (callTransition.Call.Phase == PrivateCallPhases.Ended)
+                    {
+                        var emptyPayload = await _voiceConnections
+                            .GetChannelStatePayloadAsync(
+                                null,
+                                spaceId,
+                                VoiceChannelScopes.Private,
+                                CancellationToken.None);
+                        await _realtime.NotifyUsersBestEffortAsync(
+                            _logger,
+                            recipients,
+                            "VoiceChannelStateChanged",
+                            emptyPayload,
+                            CancellationToken.None);
+                    }
+                }
             }
             catch (Exception exception)
             {

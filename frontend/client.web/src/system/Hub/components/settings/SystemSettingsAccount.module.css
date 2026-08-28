@@ -1,8 +1,151 @@
 .sessionRow,
 .disclosure {
-  border: 1px solid var(--theme-section-border);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.credentialList {
+  display: grid;
+}
+
+.credentialRow + .credentialRow {
+  border-top: 1px solid color-mix(in srgb, var(--theme-section-border), transparent 22%);
+}
+
+.credentialSummary {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 10px 2px;
+}
+
+.credentialSummary > span,
+.credentialHint {
+  color: var(--color-muted);
+}
+
+.credentialSummary > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credentialSummary > button,
+.credentialActions button {
+  min-height: 34px;
+  border: 1px solid var(--theme-border-accent);
   border-radius: 7px;
-  background: var(--theme-control-bg);
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--theme-hover-bg);
+  font: inherit;
+  font-weight: 850;
+}
+
+.credentialSummary > button:hover,
+.credentialActions button:hover:not(:disabled) {
+  border-color: var(--theme-accent-light);
+  background: var(--theme-active-bg);
+}
+
+.credentialDisclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  visibility: hidden;
+  transition:
+    grid-template-rows 220ms cubic-bezier(0.2, 0.82, 0.2, 1),
+    opacity 150ms ease,
+    transform 220ms cubic-bezier(0.2, 0.82, 0.2, 1),
+    visibility 0s linear 220ms;
+}
+
+.credentialDisclosure > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.credentialDisclosureOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.credentialForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--theme-section-border), transparent 30%);
+  padding: 14px 2px 16px;
+}
+
+.credentialInput {
+  display: grid;
+  gap: 6px;
+}
+
+.credentialInput span {
+  color: var(--color-muted);
+  font-size: 0.84em;
+  font-weight: 850;
+}
+
+.credentialInput input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 7px;
+  outline: 0;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg-strong);
+  font: inherit;
+}
+
+.credentialInput input:focus {
+  border-color: var(--theme-accent-light);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-accent), transparent 76%);
+}
+
+.credentialActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.credentialActions button:last-child {
+  border-color: var(--theme-section-border);
+  color: var(--color-muted);
+  background: transparent;
+}
+
+.credentialActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.credentialHint,
+.credentialStatus {
+  margin: 0;
+  font-size: 0.84em;
+  line-height: 1.45;
+}
+
+.credentialStatus[data-tone='success'] {
+  color: var(--color-success);
+}
+
+.credentialStatus[data-tone='error'] {
+  color: color-mix(in srgb, var(--color-danger), white 26%);
 }
 
 .sessionRow strong,
@@ -40,11 +183,99 @@
   font-size: 0.86em;
 }
 
+.sessionsDisclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  visibility: hidden;
+  transition:
+    grid-template-rows 220ms cubic-bezier(0.2, 0.82, 0.2, 1),
+    opacity 150ms ease,
+    transform 220ms cubic-bezier(0.2, 0.82, 0.2, 1),
+    visibility 0s linear 220ms;
+}
+
+.sessionsDisclosureExpanded {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.sessionsDisclosureClip {
+  min-height: 0;
+  overflow: hidden;
+}
+
 .sessions {
   display: grid;
-  gap: 8px;
+  gap: 0;
   border-top: 1px solid var(--theme-section-border);
   padding: 10px;
+}
+
+.sessionsToolbar {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 14px 10px;
+  color: var(--color-muted);
+  font-size: 0.88em;
+  font-weight: 800;
+}
+
+.sessionsToolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.revokeAllButton,
+.revokeSessionButton {
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--color-danger), transparent 44%);
+  border-radius: 7px;
+  padding: 0 12px;
+  color: color-mix(in srgb, var(--color-danger), white 30%);
+  background: color-mix(in srgb, var(--color-danger), transparent 90%);
+  font: inherit;
+  font-size: 0.84em;
+  font-weight: 900;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    opacity 150ms ease;
+}
+
+.revokeAllButton:hover:not(:disabled),
+.revokeSessionButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-danger), transparent 18%);
+  background: color-mix(in srgb, var(--color-danger), transparent 82%);
+}
+
+.revokeAllButton:disabled,
+.revokeSessionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.sessionError {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  padding: 4px 10px 10px;
+}
+
+.sessionActionError {
+  margin: 0;
+  padding: 8px 14px;
+  color: color-mix(in srgb, var(--color-danger), white 26%);
+  font-size: 0.88em;
 }
 
 .sessionRow {
@@ -53,6 +284,10 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
+}
+
+.sessionRow + .sessionRow {
+  border-top: 1px solid color-mix(in srgb, var(--theme-section-border), transparent 24%);
 }
 
 .sessionRow span {
@@ -68,7 +303,39 @@
 }
 
 .sessionRow em {
-  color: var(--color-sapphire-light);
+  color: var(--theme-accent-light);
   font-style: normal;
   font-weight: 900;
+}
+
+@media (max-width: 640px) {
+  .credentialSummary,
+  .credentialForm {
+    grid-template-columns: 1fr;
+  }
+
+  .credentialSummary > button {
+    justify-self: start;
+  }
+
+  .sessionsToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sessionRow {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionRow em,
+  .revokeSessionButton {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sessionsDisclosure,
+  .credentialDisclosure {
+    transition: none;
+  }
 }

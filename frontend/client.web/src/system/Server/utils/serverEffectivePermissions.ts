@@ -110,3 +110,18 @@ export function canAccessServerRoleSettings(
     capabilities.canManageDefaultPermissions
   )
 }
+
+export function canAccessServerSettings(
+  capabilities: ServerWorkspacePermissionCapabilities,
+) {
+  return (
+    capabilities.canManageServerProfile ||
+    capabilities.canManageServerSettings ||
+    canAccessServerRoleSettings(capabilities) ||
+    capabilities.canViewInvites ||
+    capabilities.canApproveJoinRequests ||
+    capabilities.canManageBans ||
+    capabilities.canViewAuditLog ||
+    capabilities.canManageReports
+  )
+}

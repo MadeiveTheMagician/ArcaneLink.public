@@ -43,10 +43,8 @@ export function MessagePresentationSettingsField({
         <span>{settingsCopy.interface.messageDisplayFormatMode}</span>
         <SystemSelect
           value={format}
-          onChange={(event) =>
-            onFormatChange(
-              normalizeMessageDisplayFormat(event.currentTarget.value),
-            )
+          onValueChange={(value) =>
+            onFormatChange(normalizeMessageDisplayFormat(value))
           }
         >
           <option value="wall-scroll">
@@ -63,10 +61,8 @@ export function MessagePresentationSettingsField({
             <span>{settingsCopy.interface.messageBubbleAlignment}</span>
             <SystemSelect
               value={bubbleAlignment}
-              onChange={(event) =>
-                onBubbleAlignmentChange(
-                  normalizeMessageBubbleAlignment(event.currentTarget.value),
-                )
+              onValueChange={(value) =>
+                onBubbleAlignmentChange(normalizeMessageBubbleAlignment(value))
               }
             >
               <option value="one-side-left">
@@ -87,10 +83,8 @@ export function MessagePresentationSettingsField({
             <span>{settingsCopy.interface.messageBubbleWidth}</span>
             <SystemSelect
               value={bubbleWidth}
-              onChange={(event) =>
-                onBubbleWidthChange(
-                  normalizeMessageBubbleWidth(event.currentTarget.value),
-                )
+              onValueChange={(value) =>
+                onBubbleWidthChange(normalizeMessageBubbleWidth(value))
               }
             >
               <option value="standard">

@@ -305,8 +305,23 @@ export function HubVoiceDock({
               <div
                 className={`${styles.connectionActions} ${
                   isConnectionClosing ? styles.connectionClosing : ''
+                } ${
+                  connectedChannel?.channelScope === 'private'
+                    ? styles.privateConnectionActions
+                    : ''
                 }`}
               >
+                {connectedChannel?.channelScope === 'private' && (
+                  <button
+                    className={`${styles.connectionAction} ${styles.returnToCallAction}`}
+                    type="button"
+                    onClick={onOpenActiveVoiceSpace}
+                    aria-label={voiceCopy.dock.returnToPrivateCall}
+                    title={voiceCopy.dock.returnToPrivateCall}
+                  >
+                    <SystemIcon name="message" size={20} />
+                  </button>
+                )}
                 <button
                   className={`${styles.connectionAction} ${
                     voice.isCameraEnabled ? styles.active : ''

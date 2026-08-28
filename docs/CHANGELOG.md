@@ -3,6 +3,28 @@
 This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project uses Semantic Versioning.
 
+## [1.0.1] - 2026-08-25
+
+### Added
+
+- Email verification, password recovery and controlled account-email changes.
+- Durable email outbox delivery with production configuration validation.
+- User-selectable interface themes and updated desktop/mobile presentation.
+- Private-call lifecycle, voice layout presets and stronger connection recovery.
+- Bilingual server API ownership and account-email lifecycle references.
+
+### Changed
+
+- Updated the pinned .NET SDK and container build image to `10.0.400`.
+- Advanced Android packaging to `versionCode=2` and `versionName=1.0.1`.
+- Preserved short-lived TURN credentials while updating current voice flows.
+
+### Security
+
+- Kept runtime credentials and generated user content outside version control.
+- Required valid email delivery and TURN configuration in production.
+- Retained fail-closed authorization and relay-only production voice behavior.
+
 ## [1.0.0-rc.1] - 2026-08-11
 
 ### Added
@@ -29,4 +51,5 @@ and the project uses Semantic Versioning.
 - Added fail-closed granular authorization and hierarchy checks.
 - Preserved sensitive files outside version control by default.
 
+[1.0.1]: https://arcane-link.ru
 [1.0.0-rc.1]: https://arcane-link.ru

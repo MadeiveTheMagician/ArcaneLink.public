@@ -39,8 +39,6 @@ export type {
 export { SegmentedControl } from './ui/SegmentedControl'
 export { SystemButton } from './ui/SystemButton'
 export { SystemCheckbox } from './ui/SystemCheckbox'
-export { SystemDropdown } from './ui/SystemDropdown'
-export type { SystemDropdownOption } from './ui/SystemDropdown'
 export { SystemIconButton } from './ui/SystemIconButton'
 export { SystemPanel } from './ui/SystemPanel'
 export { SystemPopover } from './ui/SystemPopover'

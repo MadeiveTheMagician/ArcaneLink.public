@@ -2,6 +2,13 @@ import { authCopy } from '../../../system/shared/index'
 
 export type AuthMode = 'login' | 'register'
 
+export type AuthView =
+  | AuthMode
+  | 'verify-email'
+  | 'forgot-password'
+  | 'confirm-email'
+  | 'reset-password'
+
 export type RegisterForm = {
   login: string
   displayName: string

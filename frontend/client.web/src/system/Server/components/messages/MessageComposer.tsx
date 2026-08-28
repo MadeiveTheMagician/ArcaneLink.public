@@ -36,6 +36,12 @@ import {
   getMessageComposerHeight,
   getMessageComposerMaximumHeight,
 } from './messageComposerSizing'
+import {
+  advanceMessageComposerFocus,
+  createMessageComposerFocusState,
+  insertMessageEmoji,
+} from './messageComposerInteractionModel'
+import { MessageComposerEmojiPicker } from './MessageComposerEmojiPicker'
 import styles from './MessageComposer.module.css'
 
 type MessageComposerProps = {
@@ -46,6 +52,8 @@ type MessageComposerProps = {
   hasComposerContent: boolean
   isSending: boolean
   canSendMessages: boolean
+  autoFocusOnMount?: boolean
+  focusRequestId?: number
   replyTarget: SpaceMessageResponse | null
   draftMentions: readonly DraftMention[]
   mentionUsers: readonly MentionUserCandidate[]
@@ -111,6 +119,8 @@ export function MessageComposer({
   hasComposerContent,
   isSending,
   canSendMessages,
+  autoFocusOnMount = false,
+  focusRequestId = 0,
   replyTarget,
   draftMentions,
   mentionUsers,
@@ -129,6 +139,8 @@ export function MessageComposer({
   onSubmitMessage,
 }: MessageComposerProps) {
   const messageBodyRef = useRef<HTMLTextAreaElement | null>(null)
+  const focusStateRef = useRef(createMessageComposerFocusState())
+  const selectionRangeRef = useRef({ start: 0, end: 0 })
   const mentionOverlayRef = useRef<HTMLDivElement | null>(null)
   const isPastePendingRef = useRef(false)
   const scannedMentionCandidatesRef = useRef<string | null>(null)
@@ -137,6 +149,7 @@ export function MessageComposer({
   const autocompleteId = `message-mentions-${useId().replace(/:/g, '')}`
   const [caretPosition, setCaretPosition] = useState(0)
   const [activeMentionIndex, setActiveMentionIndex] = useState(0)
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
   const [dismissedMentionQuery, setDismissedMentionQuery] = useState<
     string | null
   >(null)
@@ -194,8 +207,12 @@ export function MessageComposer({
     onSetDraftMentions(nextMentions)
     onMentionInsertionRequestHandled?.(mentionInsertionRequest.id)
     setCaretPosition(nextDraft.length)
+    selectionRangeRef.current = {
+      start: nextDraft.length,
+      end: nextDraft.length,
+    }
     window.requestAnimationFrame(() => {
-      messageBodyRef.current?.focus()
+      messageBodyRef.current?.focus({ preventScroll: true })
       messageBodyRef.current?.setSelectionRange(
         nextDraft.length,
         nextDraft.length,
@@ -214,6 +231,7 @@ export function MessageComposer({
     : null
   const isMentionAutocompleteOpen = Boolean(
     !isSending &&
+      !isEmojiPickerOpen &&
       activeMentionQuery &&
       mentionOptions.length > 0 &&
       dismissedMentionQuery !== mentionQueryKey,
@@ -236,6 +254,12 @@ export function MessageComposer({
   useLayoutEffect(() => {
     refreshMentionCandidatesRef.current = onRefreshMentionCandidates
   }, [onRefreshMentionCandidates])
+
+  useEffect(() => {
+    if (isSending || !canSendMessages) {
+      setIsEmojiPickerOpen(false)
+    }
+  }, [canSendMessages, isSending])
 
   useEffect(() => {
     if (!activeMentionQueryText || !refreshMentionCandidatesRef.current) {
@@ -277,6 +301,18 @@ export function MessageComposer({
 
     resizeMessageBody(textarea)
   }, [draft])
+
+  useLayoutEffect(() => {
+    const decision = advanceMessageComposerFocus(focusStateRef.current, {
+      autoFocusOnMount,
+      focusRequestId,
+      canFocus: canSendMessages && !isSending,
+    })
+    focusStateRef.current = decision.state
+    if (!decision.shouldFocus) return
+
+    messageBodyRef.current?.focus({ preventScroll: true })
+  }, [autoFocusOnMount, canSendMessages, focusRequestId, isSending])
 
   useLayoutEffect(() => {
     const textarea = messageBodyRef.current
@@ -335,6 +371,10 @@ export function MessageComposer({
         : reconciledMentions,
     )
     setCaretPosition(event.target.selectionStart)
+    selectionRangeRef.current = {
+      start: event.target.selectionStart,
+      end: event.target.selectionEnd,
+    }
     setActiveMentionIndex(0)
     const nextQueryKey = nextQuery
       ? `${nextQuery.start}:${nextQuery.query}`
@@ -364,6 +404,10 @@ export function MessageComposer({
     onSetDraft(insertion.text)
     onSetDraftMentions(nextMentions)
     setCaretPosition(insertion.caret)
+    selectionRangeRef.current = {
+      start: insertion.caret,
+      end: insertion.caret,
+    }
     setActiveMentionIndex(0)
     const completedQuery = findActiveMentionQuery(
       insertion.text,
@@ -376,12 +420,73 @@ export function MessageComposer({
     )
 
     window.requestAnimationFrame(() => {
-      messageBodyRef.current?.focus()
+      messageBodyRef.current?.focus({ preventScroll: true })
       messageBodyRef.current?.setSelectionRange(
         insertion.caret,
         insertion.caret,
       )
     })
+  }
+
+  function insertEmoji(emoji: string) {
+    const textarea = messageBodyRef.current
+    const selectionStart =
+      textarea?.selectionStart ?? selectionRangeRef.current.start
+    const selectionEnd =
+      textarea?.selectionEnd ?? selectionRangeRef.current.end
+    const insertion = insertMessageEmoji({
+      text: draft,
+      emoji,
+      selectionStart,
+      selectionEnd,
+    })
+
+    if (!insertion.didInsert) {
+      textarea?.focus({ preventScroll: true })
+      return
+    }
+
+    onSetDraft(insertion.text)
+    onSetDraftMentions(
+      reconcileDraftMentions(draft, insertion.text, draftMentions),
+    )
+    setCaretPosition(insertion.caret)
+    const nextMentionQuery = findActiveMentionQuery(
+      insertion.text,
+      insertion.caret,
+    )
+    setDismissedMentionQuery(
+      nextMentionQuery
+        ? `${nextMentionQuery.start}:${nextMentionQuery.query}`
+        : null,
+    )
+    selectionRangeRef.current = {
+      start: insertion.caret,
+      end: insertion.caret,
+    }
+
+    window.requestAnimationFrame(() => {
+      messageBodyRef.current?.focus({ preventScroll: true })
+      messageBodyRef.current?.setSelectionRange(
+        insertion.caret,
+        insertion.caret,
+      )
+    })
+  }
+
+  function changeEmojiPickerOpen(nextIsOpen: boolean) {
+    if (nextIsOpen) {
+      const textarea = messageBodyRef.current
+      if (textarea) {
+        selectionRangeRef.current = {
+          start: textarea.selectionStart,
+          end: textarea.selectionEnd,
+        }
+      }
+      setDismissedMentionQuery(mentionQueryKey)
+    }
+
+    setIsEmojiPickerOpen(nextIsOpen)
   }
 
   function handleMessageKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -526,10 +631,22 @@ export function MessageComposer({
                 canSendMessages ? undefined : 'server-message-send-restriction'
               }
               onChange={changeDraft}
-              onClick={(event) => setCaretPosition(event.currentTarget.selectionStart)}
+              onClick={(event) => {
+                const { selectionStart, selectionEnd } = event.currentTarget
+                setCaretPosition(selectionStart)
+                selectionRangeRef.current = {
+                  start: selectionStart,
+                  end: selectionEnd,
+                }
+              }}
               onKeyUp={(event) => {
                 if (!['ArrowDown', 'ArrowUp'].includes(event.key)) {
-                  setCaretPosition(event.currentTarget.selectionStart)
+                  const { selectionStart, selectionEnd } = event.currentTarget
+                  setCaretPosition(selectionStart)
+                  selectionRangeRef.current = {
+                    start: selectionStart,
+                    end: selectionEnd,
+                  }
                 }
               }}
               onKeyDown={handleMessageKeyDown}
@@ -541,9 +658,14 @@ export function MessageComposer({
                 mentionOverlayRef.current.scrollTop = event.currentTarget.scrollTop
                 mentionOverlayRef.current.scrollLeft = event.currentTarget.scrollLeft
               }}
-              onSelect={(event) =>
-                setCaretPosition(event.currentTarget.selectionStart)
-              }
+              onSelect={(event) => {
+                const { selectionStart, selectionEnd } = event.currentTarget
+                setCaretPosition(selectionStart)
+                selectionRangeRef.current = {
+                  start: selectionStart,
+                  end: selectionEnd,
+                }
+              }}
               placeholder={
                 canSendMessages
                   ? serverCopy.messages.typeInSpace(title)
@@ -553,6 +675,12 @@ export function MessageComposer({
               rows={1}
             />
           </span>
+        <MessageComposerEmojiPicker
+          disabled={isSending || !canSendMessages}
+          isOpen={isEmojiPickerOpen}
+          onOpenChange={changeEmojiPickerOpen}
+          onSelect={insertEmoji}
+        />
         <button
           className={`${styles.sendButton} ${
             hasComposerContent ? styles.sendButtonVisible : ''

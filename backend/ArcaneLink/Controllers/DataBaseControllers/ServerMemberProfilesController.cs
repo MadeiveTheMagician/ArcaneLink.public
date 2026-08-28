@@ -37,7 +37,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         }
 
         [HttpGet("{userId:guid}")]
-        public Task<ActionResult<ServerMemberProfileResponse>> GetByUserId(
+        public Task<ActionResult<ServerMemberViewerProfileResponse>> GetByUserId(
             Guid serverId,
             Guid userId,
             CancellationToken cancellationToken)
@@ -105,7 +105,7 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             return response == null ? NotFound() : Ok(response);
         }
 
-        private async Task<ActionResult<ServerMemberProfileResponse>> GetProfile(
+        private async Task<ActionResult<ServerMemberViewerProfileResponse>> GetProfile(
             Guid serverId,
             Guid? targetUserId,
             CancellationToken cancellationToken)

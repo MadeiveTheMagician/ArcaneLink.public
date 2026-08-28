@@ -2,6 +2,7 @@ import { authCopy, SystemIcon } from '../../../system/shared/index'
 import type { AuthRequirement, ValidatedRegisterFieldKey } from './AuthPageValidation'
 import type { RegisterForm } from '../model/AuthPageModel'
 import { registerSteps } from '../model/AuthPageModel'
+import { AuthPasswordField } from '../fields/AuthPasswordField'
 import {
   RegisterRequirementsPanel,
   ValidatedRegisterField,
@@ -17,8 +18,10 @@ export function AuthDesktopRegisterForm({
   activeRequirementTitle,
   activeRequirementList,
   isLoading,
+  isPasswordVisible,
   onChange,
   onFocusRequirements,
+  onPasswordVisibilityChange,
 }: {
   registerForm: RegisterForm
   registerProgress: boolean[]
@@ -27,8 +30,10 @@ export function AuthDesktopRegisterForm({
   activeRequirementTitle: string
   activeRequirementList: AuthRequirement[]
   isLoading: boolean
+  isPasswordVisible: boolean
   onChange: (form: RegisterForm) => void
   onFocusRequirements: (field: ValidatedRegisterFieldKey | null) => void
+  onPasswordVisibilityChange: (isVisible: boolean) => void
 }) {
   return (
     <>
@@ -55,6 +60,11 @@ export function AuthDesktopRegisterForm({
           )
         })}
       </ol>
+
+      <p className={styles.authRegistrationNotice}>
+        <SystemIcon name="mail" size={16} />
+        <span>{authCopy.hints.registrationEmailVerification}</span>
+      </p>
 
       <div
         className={`${styles.authRegisterCredentials} ${styles.authRegisterCredentialsDesktop}`}
@@ -109,19 +119,22 @@ export function AuthDesktopRegisterForm({
               }
             />
           </label>
-          <ValidatedRegisterField icon="lock" label={authCopy.fields.password}>
-            <input
+          <div className={styles.authValidatedField}>
+            <AuthPasswordField
               name="password"
               autoComplete="new-password"
+              className={styles.authValidatedInput}
+              isVisible={isPasswordVisible}
+              label={authCopy.fields.password}
               placeholder={authCopy.fields.password}
-              type="password"
               value={registerForm.password}
               onFocus={() => onFocusRequirements('password')}
               onChange={(event) =>
                 onChange({ ...registerForm, password: event.target.value })
               }
+              onVisibilityChange={onPasswordVisibilityChange}
             />
-          </ValidatedRegisterField>
+          </div>
         </div>
       </div>
 

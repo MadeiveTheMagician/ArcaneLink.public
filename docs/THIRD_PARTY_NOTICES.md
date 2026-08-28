@@ -15,7 +15,7 @@ The primary package manifests and lockfiles include:
 - `frontend/client.mobile/android/variables.gradle`
 - `frontend/client.mobile/android/gradle/wrapper/gradle-wrapper.properties`
 
-Important direct dependencies in `1.0.0-rc.1` include:
+Important direct dependencies in `1.0.1` include:
 
 | Component | License declared by package |
 | --- | --- |

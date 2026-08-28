@@ -425,6 +425,67 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     }
 
     [Fact]
+    public async Task VoiceStateUpdate_RejectsAStaleParticipantGenerationOnTheSameConnection()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var authorization = new MutableSpaceAuthorizationService();
+        var service = new VoiceConnectionService(
+            scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>(),
+            authorization,
+            NullLogger<VoiceConnectionService>.Instance);
+        var serverId = ArcaneLinkApiFactory.ServerId;
+        var spaceId = Guid.NewGuid();
+        var connectionId = $"voice-state-generation-{Guid.NewGuid():N}";
+        var userId = ArcaneLinkApiFactory.MemberUserId;
+
+        authorization.SetCapabilities(userId, serverId, spaceId, connect: true);
+        authorization.SetPermission(userId, serverId, spaceId, "USE_VIDEO", true);
+        authorization.SetPermission(userId, serverId, spaceId, "SHARE_SCREEN", true);
+
+        try
+        {
+            var previous = Assert.IsType<VoiceJoinResult>(await service.JoinAsync(
+                connectionId,
+                userId,
+                serverId,
+                spaceId,
+                new VoiceStateUpdate(false, false, false, false)));
+            var current = Assert.IsType<VoiceJoinResult>(await service.JoinAsync(
+                connectionId,
+                userId,
+                serverId,
+                spaceId,
+                new VoiceStateUpdate(false, false, false, false)));
+            Assert.NotEqual(previous.ParticipantId, current.ParticipantId);
+
+            Assert.Null(await service.UpdateStateAsync(
+                connectionId,
+                spaceId,
+                new VoiceStateUpdate(false, false, true, true),
+                previous.ParticipantId));
+            Assert.NotNull(await service.UpdateStateAsync(
+                connectionId,
+                spaceId,
+                new VoiceStateUpdate(false, false, true, true),
+                current.ParticipantId));
+
+            using var roster = await GetSingleVoiceParticipantAsync(
+                service,
+                serverId,
+                spaceId);
+            Assert.Equal(
+                current.ParticipantId,
+                roster.RootElement.GetProperty("participantId").GetGuid());
+            Assert.True(roster.RootElement.GetProperty("isCameraEnabled").GetBoolean());
+            Assert.True(roster.RootElement.GetProperty("isScreenSharing").GetBoolean());
+        }
+        finally
+        {
+            await service.DisconnectAsync(connectionId);
+        }
+    }
+
+    [Fact]
     public async Task ServerVoiceModeration_UsesFieldSpecificAndDisconnectPermissions()
     {
         using var scope = _factory.Services.CreateScope();
@@ -633,7 +694,7 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     }
 
     [Fact]
-    public async Task ServerVoiceAccessReconciliation_NotifiesRevokedUser_AndOnlyViewAudienceOnce()
+    public async Task ServerVoiceAccessReconciliation_NotifiesOnlyRevokedConnectionGeneration_AndOnlyViewAudienceOnce()
     {
         using var scope = _factory.Services.CreateScope();
         var authorization = new MutableSpaceAuthorizationService
@@ -693,11 +754,19 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
             await reconciliation.ReconcileServerBestEffortAsync(serverId);
             await reconciliation.ReconcileServerBestEffortAsync(serverId);
 
-            var revoked = Assert.Single(realtime.UserNotifications);
-            Assert.Equal(ArcaneLinkApiFactory.MemberUserId, revoked.UserId);
+            var revoked = Assert.Single(realtime.ConnectionNotifications);
+            Assert.Equal(connectionId, revoked.ConnectionId);
             Assert.Equal(RealtimeEventNames.VoiceAccessRevoked, revoked.EventName);
-            Assert.NotNull(revoked.Payload?.GetType().GetProperty("serverId"));
-            Assert.Null(revoked.Payload?.GetType().GetProperty("spaceId"));
+            Assert.Equal(
+                serverId,
+                Assert.IsType<Guid>(revoked.Payload?.GetType().GetProperty("ServerId")?.GetValue(revoked.Payload)));
+            Assert.Equal(
+                spaceId,
+                Assert.IsType<Guid>(revoked.Payload?.GetType().GetProperty("SpaceId")?.GetValue(revoked.Payload)));
+            Assert.NotEqual(
+                Guid.Empty,
+                Assert.IsType<Guid>(revoked.Payload?.GetType().GetProperty("ParticipantId")?.GetValue(revoked.Payload)));
+            Assert.Empty(realtime.UserNotifications);
 
             var roster = Assert.Single(realtime.UserBatchNotifications);
             Assert.Equal([ArcaneLinkApiFactory.OwnerUserId], roster.UserIds);
@@ -925,6 +994,15 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
                 realtime.UserNotifications,
                 notification => notification.EventName == RealtimeEventNames.VoiceConnectionReplaced);
             Assert.Equal(ArcaneLinkApiFactory.MemberUserId, teardown.UserId);
+            Assert.Equal(
+                seeded.Space.Id,
+                Assert.IsType<Guid>(teardown.Payload?.GetType().GetProperty("SpaceId")?.GetValue(teardown.Payload)));
+            Assert.Equal(
+                VoiceChannelScopes.Private,
+                teardown.Payload?.GetType().GetProperty("ChannelScope")?.GetValue(teardown.Payload));
+            Assert.NotEqual(
+                Guid.Empty,
+                Assert.IsType<Guid>(teardown.Payload?.GetType().GetProperty("ParticipantId")?.GetValue(teardown.Payload)));
 
             var roster = Assert.Single(
                 realtime.UserBatchNotifications,
@@ -1133,6 +1211,650 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
         return JsonDocument.Parse(participant.GetRawText());
     }
 
+    [Fact]
+    public async Task PrivateCall_FirstAcceptStopsGroupRinging_AndDuplicateAcceptDoesNotReplaceParticipant()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var now = DateTime.UtcNow;
+        var thirdMember = new PrivateSpaceMember
+        {
+            Id = Guid.NewGuid(),
+            SpaceId = seeded.Space.Id,
+            UserId = ArcaneLinkApiFactory.OutsiderUserId,
+            StatusId = PrivateSpaceIds.MemberStatusActive,
+            JoinedAt = now,
+            AddedByUserId = ArcaneLinkApiFactory.OwnerUserId,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        db.PrivateSpaceMembers.Add(thirdMember);
+        await db.SaveChangesAsync();
+        var service = new VoiceConnectionService(
+            db,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance);
+        var callerConnection = $"call-caller-{Guid.NewGuid():N}";
+        var calleeConnection = $"call-callee-{Guid.NewGuid():N}";
+        var duplicateConnection = $"call-duplicate-{Guid.NewGuid():N}";
+
+        try
+        {
+            var started = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    callerConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            Assert.Equal(PrivateCallPhases.Ringing, started.Call.Phase);
+            Assert.Equal(2, started.Call.RingingUserIds.Count);
+
+            var acceptResults = await Task.WhenAll(
+                service.AcceptPrivateCallAsync(
+                    calleeConnection,
+                    ArcaneLinkApiFactory.MemberUserId,
+                    seeded.Space.Id,
+                    started.CallId,
+                    new VoiceStateUpdate(false, false, false, false)),
+                service.AcceptPrivateCallAsync(
+                    duplicateConnection,
+                    ArcaneLinkApiFactory.MemberUserId,
+                    seeded.Space.Id,
+                    started.CallId,
+                    new VoiceStateUpdate(false, false, false, false)));
+            var accepted = Assert.Single(acceptResults, result => result != null)!;
+            Assert.Equal(PrivateCallPhases.Active, accepted.Call.Phase);
+            Assert.Empty(accepted.Call.RingingUserIds);
+
+            var rosterJson = JsonSerializer.Serialize(
+                await service.GetChannelStatePayloadAsync(
+                    null,
+                    seeded.Space.Id,
+                    VoiceChannelScopes.Private));
+            Assert.Contains(accepted.ParticipantId.ToString(), rosterJson, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            await service.DisconnectAsync(callerConnection);
+            await service.DisconnectAsync(calleeConnection);
+            await service.DisconnectAsync(duplicateConnection);
+            await service.SynchronizePrivateCallAsync(seeded.Space.Id);
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_DeclineEndsGeneration_AndNextStartGetsFreshCallId()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var service = new VoiceConnectionService(
+            db,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance);
+        var firstConnection = $"call-first-{Guid.NewGuid():N}";
+        var secondConnection = $"call-second-{Guid.NewGuid():N}";
+
+        try
+        {
+            var first = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    firstConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            var declined = Assert.IsType<PrivateCallTransitionResult>(
+                await service.DeclinePrivateCallAsync(
+                    ArcaneLinkApiFactory.MemberUserId,
+                    seeded.Space.Id,
+                    first.CallId));
+            Assert.Equal(PrivateCallPhases.Ended, declined.Call.Phase);
+            Assert.Null(await service.GetPrivateCallStateAsync(
+                ArcaneLinkApiFactory.OwnerUserId,
+                seeded.Space.Id));
+
+            var second = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    secondConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            Assert.NotEqual(first.CallId, second.CallId);
+        }
+        finally
+        {
+            await service.DisconnectAsync(firstConnection);
+            await service.DisconnectAsync(secondConnection);
+            await service.SynchronizePrivateCallAsync(seeded.Space.Id);
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_LegacyRejoinRequiresPreviousParticipation_AndNeverCreatesGeneration()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var service = new VoiceConnectionService(
+            db,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance);
+        var callerConnection = $"call-owner-{Guid.NewGuid():N}";
+        var reconnectConnection = $"call-owner-rejoin-{Guid.NewGuid():N}";
+
+        try
+        {
+            Assert.Null(await service.RejoinPrivateCallAsync(
+                reconnectConnection,
+                ArcaneLinkApiFactory.OwnerUserId,
+                seeded.Space.Id,
+                new VoiceStateUpdate(false, false, false, false)));
+            var started = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    callerConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            Assert.Null(await service.RejoinPrivateCallAsync(
+                reconnectConnection,
+                ArcaneLinkApiFactory.MemberUserId,
+                seeded.Space.Id,
+                new VoiceStateUpdate(false, false, false, false)));
+            var rejoined = Assert.IsType<PrivateCallJoinResult>(
+                await service.RejoinPrivateCallAsync(
+                    reconnectConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            Assert.Equal(started.CallId, rejoined.CallId);
+            Assert.Empty(rejoined.IncomingUserIds);
+        }
+        finally
+        {
+            await service.DisconnectAsync(callerConnection);
+            await service.DisconnectAsync(reconnectConnection);
+            await service.SynchronizePrivateCallAsync(seeded.Space.Id);
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_DirectBlockPreventsRingingInitiation()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var privateSpace = await db.PrivateSpaces.FindAsync(seeded.Space.Id);
+        Assert.NotNull(privateSpace);
+        privateSpace.Kind = PrivateSpaceKindCodes.Direct;
+        privateSpace.DirectUserLowId = ArcaneLinkApiFactory.OwnerUserId.CompareTo(
+            ArcaneLinkApiFactory.MemberUserId) < 0
+            ? ArcaneLinkApiFactory.OwnerUserId
+            : ArcaneLinkApiFactory.MemberUserId;
+        privateSpace.DirectUserHighId = privateSpace.DirectUserLowId ==
+                                        ArcaneLinkApiFactory.OwnerUserId
+            ? ArcaneLinkApiFactory.MemberUserId
+            : ArcaneLinkApiFactory.OwnerUserId;
+        var block = new ArcaneLink.DataBase.Models.UsersModels.UserDirectMessageBlock
+        {
+            UserId = ArcaneLinkApiFactory.MemberUserId,
+            BlockedUserId = ArcaneLinkApiFactory.OwnerUserId,
+            CreatedAt = DateTime.UtcNow
+        };
+        db.UserDirectMessageBlocks.Add(block);
+        await db.SaveChangesAsync();
+        var service = new VoiceConnectionService(
+            db,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance,
+            directMessagePrivacy: scope.ServiceProvider
+                .GetRequiredService<IDirectMessagePrivacyService>());
+        var connectionId = $"blocked-call-{Guid.NewGuid():N}";
+
+        try
+        {
+            Assert.Null(await service.StartPrivateCallAsync(
+                connectionId,
+                ArcaneLinkApiFactory.OwnerUserId,
+                seeded.Space.Id,
+                new VoiceStateUpdate(false, false, false, false)));
+            Assert.Null(await service.GetPrivateCallStateAsync(
+                ArcaneLinkApiFactory.OwnerUserId,
+                seeded.Space.Id));
+        }
+        finally
+        {
+            await service.DisconnectAsync(connectionId);
+            db.UserDirectMessageBlocks.Remove(block);
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_DirectBlockAfterStartTerminatesGenerationAndLease()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var privateSpace = await db.PrivateSpaces.FindAsync(seeded.Space.Id);
+        Assert.NotNull(privateSpace);
+        privateSpace.Kind = PrivateSpaceKindCodes.Direct;
+        privateSpace.DirectUserLowId = ArcaneLinkApiFactory.OwnerUserId.CompareTo(
+            ArcaneLinkApiFactory.MemberUserId) < 0
+            ? ArcaneLinkApiFactory.OwnerUserId
+            : ArcaneLinkApiFactory.MemberUserId;
+        privateSpace.DirectUserHighId = privateSpace.DirectUserLowId ==
+                                        ArcaneLinkApiFactory.OwnerUserId
+            ? ArcaneLinkApiFactory.MemberUserId
+            : ArcaneLinkApiFactory.OwnerUserId;
+        await db.SaveChangesAsync();
+        var privacy = scope.ServiceProvider.GetRequiredService<IDirectMessagePrivacyService>();
+        var service = new VoiceConnectionService(
+            db,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance,
+            directMessagePrivacy: privacy);
+        var connectionId = $"blocked-active-call-{Guid.NewGuid():N}";
+        ArcaneLink.DataBase.Models.UsersModels.UserDirectMessageBlock? block = null;
+
+        try
+        {
+            var started = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    connectionId,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            block = new ArcaneLink.DataBase.Models.UsersModels.UserDirectMessageBlock
+            {
+                UserId = ArcaneLinkApiFactory.MemberUserId,
+                BlockedUserId = ArcaneLinkApiFactory.OwnerUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.UserDirectMessageBlocks.Add(block);
+            await db.SaveChangesAsync();
+
+            Assert.Null(await service.AcceptPrivateCallAsync(
+                $"blocked-accept-{Guid.NewGuid():N}",
+                ArcaneLinkApiFactory.MemberUserId,
+                seeded.Space.Id,
+                started.CallId,
+                new VoiceStateUpdate(false, false, false, false)));
+            var transition = Assert.IsType<PrivateCallTransitionResult>(
+                await service.ReconcilePrivateCallPrivacyAsync(seeded.Space.Id));
+            Assert.Equal(PrivateCallPhases.Ended, transition.Call.Phase);
+            Assert.Equal("privacy_changed", transition.Call.EndReason);
+            var lease = await service.RenewAccessLeaseAsync(
+                connectionId,
+                ArcaneLinkApiFactory.OwnerUserId,
+                null,
+                seeded.Space.Id,
+                VoiceChannelScopes.Private);
+            Assert.False(lease.IsActive);
+            Assert.Null(await service.GetPrivateCallStateAsync(
+                ArcaneLinkApiFactory.OwnerUserId,
+                seeded.Space.Id));
+        }
+        finally
+        {
+            await service.DisconnectAsync(connectionId);
+            if (block != null)
+            {
+                db.UserDirectMessageBlocks.Remove(block);
+            }
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_ConcurrentStartsCreateOneGenerationAndOneRingingDelivery()
+    {
+        using var firstScope = _factory.Services.CreateScope();
+        using var secondScope = _factory.Services.CreateScope();
+        var firstDb = firstScope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var secondDb = secondScope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(firstDb);
+        var firstService = new VoiceConnectionService(
+            firstDb,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance);
+        var secondService = new VoiceConnectionService(
+            secondDb,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance);
+        var firstConnection = $"concurrent-call-a-{Guid.NewGuid():N}";
+        var secondConnection = $"concurrent-call-b-{Guid.NewGuid():N}";
+
+        try
+        {
+            var starts = await Task.WhenAll(
+                firstService.StartPrivateCallAsync(
+                    firstConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)),
+                secondService.StartPrivateCallAsync(
+                    secondConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            var successful = Assert.Single(starts, result => result != null)!;
+            Assert.Equal([ArcaneLinkApiFactory.MemberUserId], successful.IncomingUserIds);
+            var current = Assert.IsType<PrivateCallState>(
+                await firstService.GetPrivateCallStateAsync(
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id));
+            Assert.Equal(successful.CallId, current.CallId);
+        }
+        finally
+        {
+            await firstService.DisconnectAsync(firstConnection);
+            await firstService.DisconnectAsync(secondConnection);
+            await firstService.SynchronizePrivateCallAsync(seeded.Space.Id);
+            firstDb.Spaces.Remove(seeded.Space);
+            await firstDb.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_ActiveCallSurvivesCallerLeave_AndEndsAfterLastParticipant()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var service = new VoiceConnectionService(
+            db,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance);
+        var callerConnection = $"active-caller-{Guid.NewGuid():N}";
+        var calleeConnection = $"active-callee-{Guid.NewGuid():N}";
+        var nextConnection = $"active-next-{Guid.NewGuid():N}";
+
+        try
+        {
+            var started = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    callerConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            Assert.NotNull(await service.AcceptPrivateCallAsync(
+                calleeConnection,
+                ArcaneLinkApiFactory.MemberUserId,
+                seeded.Space.Id,
+                started.CallId,
+                new VoiceStateUpdate(false, false, false, false)));
+
+            await service.DisconnectAsync(callerConnection);
+            var afterCallerLeft = Assert.IsType<PrivateCallTransitionResult>(
+                await service.SynchronizePrivateCallAsync(seeded.Space.Id));
+            Assert.Equal(PrivateCallPhases.Active, afterCallerLeft.Call.Phase);
+            Assert.Equal(
+                [ArcaneLinkApiFactory.MemberUserId],
+                afterCallerLeft.Call.ParticipantUserIds);
+
+            await service.DisconnectAsync(calleeConnection);
+            var ended = Assert.IsType<PrivateCallTransitionResult>(
+                await service.SynchronizePrivateCallAsync(seeded.Space.Id));
+            Assert.Equal(PrivateCallPhases.Ended, ended.Call.Phase);
+            Assert.Null(await service.GetPrivateCallStateAsync(
+                ArcaneLinkApiFactory.OwnerUserId,
+                seeded.Space.Id));
+
+            var next = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    nextConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            Assert.NotEqual(started.CallId, next.CallId);
+        }
+        finally
+        {
+            await service.DisconnectAsync(callerConnection);
+            await service.DisconnectAsync(calleeConnection);
+            await service.DisconnectAsync(nextConnection);
+            await service.SynchronizePrivateCallAsync(seeded.Space.Id);
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_SwitchingAllParticipantsToServerVoiceEndsGeneration_AndCanSwitchBack()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var authorization = new MutableSpaceAuthorizationService();
+        var service = new VoiceConnectionService(
+            db,
+            authorization,
+            NullLogger<VoiceConnectionService>.Instance);
+        var ownerConnection = $"switch-owner-{Guid.NewGuid():N}";
+        var memberConnection = $"switch-member-{Guid.NewGuid():N}";
+        var serverSpaceId = Guid.NewGuid();
+        var defaultState = new VoiceStateUpdate(false, false, false, false);
+
+        authorization.SetCapabilities(
+            ArcaneLinkApiFactory.OwnerUserId,
+            ArcaneLinkApiFactory.ServerId,
+            serverSpaceId,
+            connect: true);
+        authorization.SetCapabilities(
+            ArcaneLinkApiFactory.MemberUserId,
+            ArcaneLinkApiFactory.ServerId,
+            serverSpaceId,
+            connect: true);
+        try
+        {
+            var started = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    ownerConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    defaultState));
+            Assert.NotNull(await service.AcceptPrivateCallAsync(
+                memberConnection,
+                ArcaneLinkApiFactory.MemberUserId,
+                seeded.Space.Id,
+                started.CallId,
+                defaultState));
+
+            var ownerServerJoin = Assert.IsType<VoiceJoinResult>(
+                await service.JoinAsync(
+                    ownerConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    ArcaneLinkApiFactory.ServerId,
+                    serverSpaceId,
+                    defaultState));
+            Assert.Contains(
+                ownerServerJoin.RemovedConnections.Concat(
+                    ownerServerJoin.ReplacedConnections),
+                connection => connection.SpaceId == seeded.Space.Id &&
+                              connection.ChannelScope == VoiceChannelScopes.Private);
+            var afterOwnerSwitch = Assert.IsType<PrivateCallTransitionResult>(
+                await service.SynchronizePrivateCallAsync(
+                    seeded.Space.Id,
+                    "participant_moved"));
+            Assert.Equal(PrivateCallPhases.Active, afterOwnerSwitch.Call.Phase);
+            Assert.Equal(
+                [ArcaneLinkApiFactory.MemberUserId],
+                afterOwnerSwitch.Call.ParticipantUserIds);
+
+            var memberServerJoin = Assert.IsType<VoiceJoinResult>(
+                await service.JoinAsync(
+                    memberConnection,
+                    ArcaneLinkApiFactory.MemberUserId,
+                    ArcaneLinkApiFactory.ServerId,
+                    serverSpaceId,
+                    defaultState));
+            Assert.Contains(
+                memberServerJoin.RemovedConnections.Concat(
+                    memberServerJoin.ReplacedConnections),
+                connection => connection.SpaceId == seeded.Space.Id &&
+                              connection.ChannelScope == VoiceChannelScopes.Private);
+            var ended = Assert.IsType<PrivateCallTransitionResult>(
+                await service.SynchronizePrivateCallAsync(
+                    seeded.Space.Id,
+                    "participant_moved"));
+            Assert.Equal(PrivateCallPhases.Ended, ended.Call.Phase);
+            Assert.Equal("participant_moved", ended.Call.EndReason);
+            Assert.Null(await service.GetPrivateCallStateAsync(
+                ArcaneLinkApiFactory.OwnerUserId,
+                seeded.Space.Id));
+            var privateRoster = await service.GetChannelStatePayloadAsync(
+                null,
+                seeded.Space.Id,
+                VoiceChannelScopes.Private);
+            using var rosterDocument = JsonDocument.Parse(
+                JsonSerializer.Serialize(privateRoster));
+            Assert.Empty(
+                rosterDocument.RootElement
+                    .GetProperty("participants")
+                    .EnumerateArray());
+
+            var restarted = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    ownerConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    defaultState));
+            Assert.NotEqual(started.CallId, restarted.CallId);
+            Assert.Contains(
+                restarted.Voice.RemovedConnections.Concat(
+                    restarted.Voice.ReplacedConnections),
+                connection => connection.SpaceId == serverSpaceId &&
+                              connection.ChannelScope == VoiceChannelScopes.Server);
+        }
+        finally
+        {
+            await service.DisconnectAsync(ownerConnection);
+            await service.DisconnectAsync(memberConnection);
+            await service.SynchronizePrivateCallAsync(seeded.Space.Id);
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_GroupDeclinesEndOnlyAfterLastRingingMember()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var now = DateTime.UtcNow;
+        db.PrivateSpaceMembers.Add(new PrivateSpaceMember
+        {
+            Id = Guid.NewGuid(),
+            SpaceId = seeded.Space.Id,
+            UserId = ArcaneLinkApiFactory.OutsiderUserId,
+            StatusId = PrivateSpaceIds.MemberStatusActive,
+            JoinedAt = now,
+            AddedByUserId = ArcaneLinkApiFactory.OwnerUserId,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+        await db.SaveChangesAsync();
+        var service = new VoiceConnectionService(
+            db,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance);
+        var callerConnection = $"decline-group-{Guid.NewGuid():N}";
+
+        try
+        {
+            var started = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    callerConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            var firstDecline = Assert.IsType<PrivateCallTransitionResult>(
+                await service.DeclinePrivateCallAsync(
+                    ArcaneLinkApiFactory.MemberUserId,
+                    seeded.Space.Id,
+                    started.CallId));
+            Assert.Equal(PrivateCallPhases.Ringing, firstDecline.Call.Phase);
+            Assert.Equal(
+                [ArcaneLinkApiFactory.OutsiderUserId],
+                firstDecline.Call.RingingUserIds);
+
+            var lastDecline = Assert.IsType<PrivateCallTransitionResult>(
+                await service.DeclinePrivateCallAsync(
+                    ArcaneLinkApiFactory.OutsiderUserId,
+                    seeded.Space.Id,
+                    started.CallId));
+            Assert.Equal(PrivateCallPhases.Ended, lastDecline.Call.Phase);
+            using var roster = JsonDocument.Parse(JsonSerializer.Serialize(
+                await service.GetChannelStatePayloadAsync(
+                    null,
+                    seeded.Space.Id,
+                    VoiceChannelScopes.Private)));
+            Assert.Empty(roster.RootElement.GetProperty("participants").EnumerateArray());
+        }
+        finally
+        {
+            await service.DisconnectAsync(callerConnection);
+            await service.SynchronizePrivateCallAsync(seeded.Space.Id);
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
+    [Fact]
+    public async Task PrivateCall_RemovingUnjoinedInviteePrunesRingingAndEndsUnavailableCall()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArcaneLink.DataBase._Data.AppDbContext>();
+        var seeded = await SeedPrivateVoiceSpaceAsync(db);
+        var service = new VoiceConnectionService(
+            db,
+            new MutableSpaceAuthorizationService(),
+            NullLogger<VoiceConnectionService>.Instance);
+        var callerConnection = $"removed-invitee-{Guid.NewGuid():N}";
+
+        try
+        {
+            var started = Assert.IsType<PrivateCallJoinResult>(
+                await service.StartPrivateCallAsync(
+                    callerConnection,
+                    ArcaneLinkApiFactory.OwnerUserId,
+                    seeded.Space.Id,
+                    new VoiceStateUpdate(false, false, false, false)));
+            seeded.Member.StatusId = PrivateSpaceIds.MemberStatusRemoved;
+            seeded.Member.LeftAt = DateTime.UtcNow;
+            seeded.Member.UpdatedAt = seeded.Member.LeftAt.Value;
+            await db.SaveChangesAsync();
+
+            var ended = Assert.IsType<PrivateCallTransitionResult>(
+                await service.SynchronizePrivateCallAsync(
+                    seeded.Space.Id,
+                    "membership_changed"));
+            Assert.Equal(PrivateCallPhases.Ended, ended.Call.Phase);
+            Assert.True(ended.Call.Revision > started.Call.Revision);
+            Assert.Empty(ended.Call.RingingUserIds);
+            Assert.Null(await service.GetPrivateCallStateAsync(
+                ArcaneLinkApiFactory.OwnerUserId,
+                seeded.Space.Id));
+        }
+        finally
+        {
+            await service.DisconnectAsync(callerConnection);
+            await service.SynchronizePrivateCallAsync(seeded.Space.Id);
+            db.Spaces.Remove(seeded.Space);
+            await db.SaveChangesAsync();
+        }
+    }
+
     private static async Task<SeededPrivateVoiceSpace> SeedPrivateVoiceSpaceAsync(
         ArcaneLink.DataBase._Data.AppDbContext db)
     {
@@ -1315,9 +2037,23 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
     {
         public bool ThrowOnUser { get; set; }
         public bool ThrowOnUsers { get; set; }
+        public List<ConnectionNotification> ConnectionNotifications { get; } = [];
         public List<UserNotification> UserNotifications { get; } = [];
         public List<UserBatchNotification> UserBatchNotifications { get; } = [];
         public List<ServerNotification> ServerNotifications { get; } = [];
+
+        public Task NotifyConnectionAsync(
+            string connectionId,
+            string eventName,
+            object? payload = null,
+            CancellationToken cancellationToken = default)
+        {
+            ConnectionNotifications.Add(new ConnectionNotification(
+                connectionId,
+                eventName,
+                payload));
+            return Task.CompletedTask;
+        }
 
         public Task NotifyUserAsync(
             Guid userId,
@@ -1365,6 +2101,11 @@ public sealed class RealtimeAclServiceTests : IClassFixture<ArcaneLinkApiFactory
 
     private sealed record UserBatchNotification(
         IReadOnlyList<Guid> UserIds,
+        string EventName,
+        object? Payload);
+
+    private sealed record ConnectionNotification(
+        string ConnectionId,
         string EventName,
         object? Payload);
 

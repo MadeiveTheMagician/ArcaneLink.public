@@ -185,7 +185,6 @@ export function MessageSearchControl({
       <div className={styles.shell}>
         <span className={styles.icon} aria-hidden="true">
           <SystemIcon name="search" size={16} />
-          ⌕
         </span>
         <div className={styles.field}>
           {selectedUser && (

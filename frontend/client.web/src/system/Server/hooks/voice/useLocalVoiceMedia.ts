@@ -8,6 +8,7 @@ import {
 import type { StreamingSettings } from '../../../../shared/streaming/streamingSettings'
 import { settingsCopy } from '../../../shared/copy'
 import { publishVoiceInputLevel } from '../../../shared/voice/voiceInputEvents'
+import { subscribeVoicePlaybackUnlock } from '../../../shared/voice/voicePlaybackUnlock'
 import {
   createVoiceAudioConstraints,
   getVoiceSettings,
@@ -17,11 +18,15 @@ import {
 import type { VoiceSettings } from '../../../shared/voice/voiceSettings'
 import { voiceDebug } from './voiceChannelDebug'
 import {
+  createVoiceInputVadAvailabilityState,
   microphoneGainPercentToLinearGain,
   createSpeakingWhileMutedWarningState,
   isPushToTalkKeyEvent,
   resolveToggledMuteState,
+  resolveVoiceInputBackgroundState,
   resolveVoiceInputGateOpen,
+  resolveVoiceInputVadGateAvailable,
+  updateVoiceInputVadAvailability,
   updateVoiceInputAvailability,
   updateSpeakingWhileMutedWarning,
 } from './voiceInputGateModel'
@@ -40,6 +45,15 @@ import type {
   VoiceActivitySample,
 } from './useVoiceActivityMonitor'
 import type { VoiceVideoSenderKind } from './useVoiceVideoSenders'
+import {
+  resolveVoiceAudioContext,
+  resumeVoiceAudioContext,
+} from './voiceAudioContextRecovery'
+import {
+  resolveVoiceInputTrackRecoveryDelayMs,
+  shouldRecoverVoiceInputTrack,
+  voiceInputTrackStabilityResetDelayMs,
+} from './voiceInputTrackRecovery'
 
 type LocalVoiceState = {
   isMuted: boolean
@@ -109,12 +123,20 @@ export function useLocalVoiceMedia({
   const audioReconfigureRequestRef = useRef(0)
   const audioSessionGenerationRef = useRef(0)
   const isVoiceActiveRef = useRef(false)
+  const isVoiceActivityContextReadyRef = useRef(true)
+  const voiceInputVadAvailabilityRef = useRef(
+    createVoiceInputVadAvailabilityState(),
+  )
+  const lastOutboundAudioGateStateRef = useRef<boolean | null>(null)
   const isPushToTalkPressedRef = useRef(false)
   const speakingWarningRef = useRef(
     createSpeakingWhileMutedWarningState(),
   )
   const lastInputUnavailableWarningAtRef = useRef<number | null>(null)
   const inputUnavailableSinceRef = useRef<number | null>(null)
+  const inputTrackRecoveryTimerRef = useRef<number | null>(null)
+  const inputTrackStabilityTimerRef = useRef<number | null>(null)
+  const inputTrackRecoveryAttemptRef = useRef(0)
   const localVideoStreamRef = useRef<MediaStream | null>(null)
   const screenStreamRef = useRef<MediaStream | null>(null)
   const stateRef = useRef<LocalVoiceState>({
@@ -175,6 +197,13 @@ export function useLocalVoiceMedia({
     })
   })
 
+  useEffect(
+    () =>
+      subscribeVoicePlaybackUnlock(() => {
+        void prepareVoiceAudioContextsForUserGesture()
+      }),
+  )
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       const settings = voiceSettingsRef.current
@@ -207,28 +236,56 @@ export function useLocalVoiceMedia({
       event.preventDefault()
     }
 
+    function resumeForegroundAudio() {
+      void resumeVoiceAudioContexts()
+      updateOutboundAudioGate(true)
+      const pipeline = voiceInputPipelineRef.current
+      if (pipeline) {
+        inputTrackRecoveryAttemptRef.current = 0
+        scheduleInputTrackRecovery(pipeline)
+      }
+    }
+
+    function handleBackgroundInputLifecycle() {
+      clearInputTrackRecoveryTimer()
+      const previousPushToTalkPressed = isPushToTalkPressedRef.current
+      const backgroundState = resolveVoiceInputBackgroundState({
+        isPushToTalkPressed: previousPushToTalkPressed,
+        isVoiceActive: isVoiceActiveRef.current,
+      })
+      isPushToTalkPressedRef.current = backgroundState.isPushToTalkPressed
+      isVoiceActiveRef.current = backgroundState.isVoiceActive
+      updateOutboundAudioGate(true)
+    }
+
     function handleVisibilityChange() {
       if (document.visibilityState !== 'visible') {
-        resetPushToTalkState()
-        if (voiceSettingsRef.current.inputMode === 'voice-activity') {
-          isVoiceActiveRef.current = false
-          updateOutboundAudioGate()
-        }
+        handleBackgroundInputLifecycle()
         return
       }
 
-      void resumeVoiceAudioContexts()
+      resumeForegroundAudio()
+    }
+
+    function handlePageShow() {
+      if (document.visibilityState === 'visible') {
+        resumeForegroundAudio()
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
     window.addEventListener('blur', resetPushToTalkState)
+    window.addEventListener('pagehide', handleBackgroundInputLifecycle)
+    window.addEventListener('pageshow', handlePageShow)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
       window.removeEventListener('blur', resetPushToTalkState)
+      window.removeEventListener('pagehide', handleBackgroundInputLifecycle)
+      window.removeEventListener('pageshow', handlePageShow)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   })
@@ -395,6 +452,8 @@ export function useLocalVoiceMedia({
       nextOutboundStream.getAudioTracks()[0] ?? null
 
     stopLocalVoiceActivityMonitors()
+    clearInputTrackRecoveryTimer()
+    clearInputTrackStabilityTimer()
     voiceInputPipelineRef.current = nextPipeline
     observeNoiseSuppressionRuntime(nextPipeline)
     voiceInputAudioContextRef.current =
@@ -410,6 +469,8 @@ export function useLocalVoiceMedia({
           return
         }
 
+        clearInputTrackRecoveryTimer()
+        clearInputTrackStabilityTimer()
         setHasLocalAudioTrack(false)
         updateLocalVoiceState(
           true,
@@ -429,14 +490,24 @@ export function useLocalVoiceMedia({
 
         inputUnavailableSinceRef.current = Date.now()
         setHasLocalAudioTrack(false)
+        clearInputTrackStabilityTimer()
+        scheduleInputTrackRecovery(nextPipeline)
       }
       rawTrack.onunmute = () => {
         if (voiceInputPipelineRef.current !== nextPipeline) {
           return
         }
 
+        clearInputTrackRecoveryTimer()
+        clearInputTrackStabilityTimer()
         inputUnavailableSinceRef.current = null
         void resumeVoiceAudioContexts()
+        scheduleInputTrackStabilityReset(nextPipeline, rawTrack)
+      }
+      if (rawTrack.muted) {
+        scheduleInputTrackRecovery(nextPipeline)
+      } else {
+        scheduleInputTrackStabilityReset(nextPipeline, rawTrack)
       }
       startLocalVoiceActivityMonitor(
         getLocalParticipantId() ?? currentUserId,
@@ -499,8 +570,7 @@ export function useLocalVoiceMedia({
         manualThresholdDb: voiceSettingsRef.current.manualThresholdDb,
       }),
       onSpeakingChange: (isSpeaking) => {
-        isVoiceActiveRef.current =
-          document.visibilityState === 'visible' && isSpeaking
+        isVoiceActiveRef.current = isSpeaking
         updateOutboundAudioGate()
       },
       onSample: handleLocalVoiceActivitySample,
@@ -508,6 +578,15 @@ export function useLocalVoiceMedia({
   }
 
   function handleLocalVoiceActivitySample(sample: VoiceActivitySample) {
+    if (
+      isVoiceActivityContextReadyRef.current !==
+      sample.isAudioContextRunning
+    ) {
+      isVoiceActivityContextReadyRef.current =
+        sample.isAudioContextRunning
+      updateOutboundAudioGate(true)
+    }
+
     publishVoiceInputLevel(sample)
     updateInputAvailabilityWarning(sample)
 
@@ -521,6 +600,7 @@ export function useLocalVoiceMedia({
         pushToTalkKeyCode: settings.pushToTalkKeyCode,
         isPushToTalkPressed: isPushToTalkPressedRef.current,
         isVoiceActive: isVoiceActiveRef.current,
+        isVoiceActivityAvailable: isVoiceActivityGateAvailable(),
       })
     const warningResult = updateSpeakingWhileMutedWarning(
       speakingWarningRef.current,
@@ -539,15 +619,19 @@ export function useLocalVoiceMedia({
   }
 
   function updateInputAvailabilityWarning(sample: VoiceActivitySample) {
+    if (!sample.isAudioContextRunning) {
+      inputUnavailableSinceRef.current = null
+      return
+    }
+
     const settings = voiceSettingsRef.current
     const availability = updateVoiceInputAvailability(
       { unavailableSinceMs: inputUnavailableSinceRef.current },
       {
         nowMs: Date.now(),
         shouldObserve:
-          settings.warnInputUnavailable &&
-          ((!stateRef.current.isMuted && !stateRef.current.isDeafened) ||
-            settings.warnSpeakingWhileMuted),
+          (!stateRef.current.isMuted && !stateRef.current.isDeafened) ||
+          settings.warnSpeakingWhileMuted,
         isTrackLive: sample.isTrackLive,
         levelDb: sample.rawLevelDb,
       },
@@ -555,16 +639,37 @@ export function useLocalVoiceMedia({
     inputUnavailableSinceRef.current =
       availability.state.unavailableSinceMs
 
+    const previousVadAvailability = voiceInputVadAvailabilityRef.current
+    const nextVadAvailability = updateVoiceInputVadAvailability(
+      previousVadAvailability,
+      availability.status,
+    )
+    voiceInputVadAvailabilityRef.current = nextVadAvailability
+    if (
+      previousVadAvailability.isAvailable !==
+      nextVadAvailability.isAvailable
+    ) {
+      updateOutboundAudioGate(true)
+    }
+
     if (availability.status === 'available') {
       const pipeline = voiceInputPipelineRef.current
       if (
-        pipeline?.audioContext?.state === 'running' &&
+        pipeline &&
+        (pipeline.transportMode === 'direct' ||
+          pipeline.audioContext?.state === 'running') &&
         pipeline.outboundStream.getAudioTracks().some(
           (track) => track.readyState === 'live',
         )
       ) {
         setHasLocalAudioTrack(true)
       }
+      return
+    }
+    if (availability.status === 'silent') {
+      // Digital silence is valid with hardware/native noise suppression. The
+      // track still exists; only the rAF-based VAD becomes non-authoritative.
+      setHasLocalAudioTrack(sample.isTrackLive)
       return
     }
     if (availability.status !== 'unavailable') {
@@ -580,8 +685,17 @@ export function useLocalVoiceMedia({
     )
   }
 
+  function isVoiceActivityGateAvailable() {
+    return resolveVoiceInputVadGateAvailable({
+      documentVisibility: document.visibilityState,
+      isAudioContextReady: isVoiceActivityContextReadyRef.current,
+      isSignalAvailable: voiceInputVadAvailabilityRef.current.isAvailable,
+    })
+  }
+
   function updateOutboundAudioGate(immediate = false) {
     const settings = voiceSettingsRef.current
+    const isVoiceActivityAvailable = isVoiceActivityGateAvailable()
     const isOpen = resolveVoiceInputGateOpen({
       isMuted: stateRef.current.isMuted,
       isDeafened: stateRef.current.isDeafened,
@@ -589,11 +703,43 @@ export function useLocalVoiceMedia({
       pushToTalkKeyCode: settings.pushToTalkKeyCode,
       isPushToTalkPressed: isPushToTalkPressedRef.current,
       isVoiceActive: isVoiceActiveRef.current,
+      isVoiceActivityAvailable,
     })
 
+    const didGateStateChange = lastOutboundAudioGateStateRef.current !== isOpen
     forEachVoiceInputPipeline((pipeline) => {
       setVoiceInputGate(pipeline, isOpen, immediate)
     })
+
+    if (didGateStateChange) {
+      lastOutboundAudioGateStateRef.current = isOpen
+      const pipeline = voiceInputPipelineRef.current
+      voiceDebug('local-stream:outbound-gate-transition', {
+        isOpen,
+        immediate,
+        inputs: {
+          isMuted: stateRef.current.isMuted,
+          isDeafened: stateRef.current.isDeafened,
+          inputMode: settings.inputMode,
+          hasPushToTalkKey: Boolean(settings.pushToTalkKeyCode),
+          isPushToTalkPressed: isPushToTalkPressedRef.current,
+          isVoiceActive: isVoiceActiveRef.current,
+          isVoiceActivityContextReady:
+            isVoiceActivityContextReadyRef.current,
+          isVoiceActivitySignalAvailable:
+            voiceInputVadAvailabilityRef.current.isAvailable,
+          isVoiceActivityAvailable,
+          documentVisibility: document.visibilityState,
+        },
+        transportMode: pipeline?.transportMode ?? 'none',
+        rawAudioTracks:
+          pipeline?.rawStream.getAudioTracks().map(describeAudioGateTrack) ?? [],
+        outboundAudioTracks:
+          pipeline?.outboundStream
+            .getAudioTracks()
+            .map(describeAudioGateTrack) ?? [],
+      })
+    }
   }
 
   function updateRawAudioTrackState() {
@@ -613,6 +759,27 @@ export function useLocalVoiceMedia({
     }
   }
 
+  async function prepareVoiceAudioContextsForUserGesture() {
+    const inputAudioContext = resolveVoiceAudioContext(
+      voiceInputAudioContextRef.current,
+      () => new AudioContext(),
+    )
+    voiceInputAudioContextRef.current = inputAudioContext
+
+    const [, isActivityContextReady] = await Promise.all([
+      resumeVoiceAudioContext(inputAudioContext),
+      resumeVoiceActivityAudioContext(),
+    ])
+    if (voiceInputAudioContextRef.current !== inputAudioContext) {
+      return
+    }
+
+    isVoiceActivityContextReadyRef.current = isActivityContextReady
+    if (voiceInputPipelineRef.current) {
+      await resumeVoiceAudioContexts()
+    }
+  }
+
   async function resumeVoiceAudioContexts() {
     const pipeline = voiceInputPipelineRef.current
     if (!pipeline) {
@@ -628,11 +795,11 @@ export function useLocalVoiceMedia({
       return false
     }
 
-    const requiresActivityContext =
-      voiceSettingsRef.current.inputMode === 'voice-activity'
+    const wasActivityContextReady =
+      isVoiceActivityContextReadyRef.current
+    isVoiceActivityContextReadyRef.current = isActivityContextReady
     const isReady =
       isInputContextReady &&
-      (!requiresActivityContext || isActivityContextReady) &&
       pipeline.rawStream.getAudioTracks().some(
         (track) => track.readyState === 'live' && !track.muted,
       ) &&
@@ -640,6 +807,9 @@ export function useLocalVoiceMedia({
         (track) => track.readyState === 'live',
       )
     setHasLocalAudioTrack(isReady)
+    if (wasActivityContextReady !== isActivityContextReady) {
+      updateOutboundAudioGate(true)
+    }
 
     if (!isReady) {
       notifyInputUnavailable(
@@ -689,11 +859,24 @@ export function useLocalVoiceMedia({
         return
       }
 
-      await installVoiceInputPipeline(
-        voiceSettingsRef.current,
-        false,
-        audioSessionGenerationRef.current,
-      )
+      const previousPipeline = voiceInputPipelineRef.current
+      try {
+        await installVoiceInputPipeline(
+          voiceSettingsRef.current,
+          false,
+          audioSessionGenerationRef.current,
+        )
+      } finally {
+        if (
+          previousPipeline &&
+          voiceInputPipelineRef.current === previousPipeline &&
+          previousPipeline.rawStream.getAudioTracks().some(
+            (track) => track.readyState === 'live' && track.muted,
+          )
+        ) {
+          scheduleInputTrackRecovery(previousPipeline)
+        }
+      }
     }
 
     audioReconfigureChainRef.current =
@@ -703,6 +886,91 @@ export function useLocalVoiceMedia({
         message: error instanceof Error ? error.message : String(error),
       })
     })
+  }
+
+  function clearInputTrackRecoveryTimer() {
+    if (inputTrackRecoveryTimerRef.current === null) {
+      return
+    }
+
+    window.clearTimeout(inputTrackRecoveryTimerRef.current)
+    inputTrackRecoveryTimerRef.current = null
+  }
+
+  function clearInputTrackStabilityTimer() {
+    if (inputTrackStabilityTimerRef.current === null) {
+      return
+    }
+
+    window.clearTimeout(inputTrackStabilityTimerRef.current)
+    inputTrackStabilityTimerRef.current = null
+  }
+
+  function scheduleInputTrackStabilityReset(
+    pipeline: VoiceInputPipeline,
+    rawTrack: MediaStreamTrack,
+  ) {
+    clearInputTrackStabilityTimer()
+    if (inputTrackRecoveryAttemptRef.current === 0 || rawTrack.muted) {
+      return
+    }
+
+    const sessionGeneration = audioSessionGenerationRef.current
+    inputTrackStabilityTimerRef.current = window.setTimeout(() => {
+      inputTrackStabilityTimerRef.current = null
+      if (
+        sessionGeneration === audioSessionGenerationRef.current &&
+        voiceInputPipelineRef.current === pipeline &&
+        rawTrack.readyState === 'live' &&
+        !rawTrack.muted
+      ) {
+        inputTrackRecoveryAttemptRef.current = 0
+      }
+    }, voiceInputTrackStabilityResetDelayMs)
+  }
+
+  function scheduleInputTrackRecovery(pipeline: VoiceInputPipeline) {
+    clearInputTrackRecoveryTimer()
+    const sessionGeneration = audioSessionGenerationRef.current
+    const recoveryAttempt = inputTrackRecoveryAttemptRef.current
+    const recoveryDelayMs = resolveVoiceInputTrackRecoveryDelayMs(
+      recoveryAttempt,
+    )
+    if (recoveryDelayMs === null) {
+      return
+    }
+
+    inputTrackRecoveryTimerRef.current = window.setTimeout(() => {
+      inputTrackRecoveryTimerRef.current = null
+      if (
+        sessionGeneration !== audioSessionGenerationRef.current ||
+        voiceInputPipelineRef.current !== pipeline
+      ) {
+        return
+      }
+
+      const rawTrack = pipeline.rawStream.getAudioTracks()[0] ?? null
+      if (
+        !rawTrack ||
+        !shouldRecoverVoiceInputTrack({
+          documentVisibility: document.visibilityState,
+          isMuted: stateRef.current.isMuted,
+          isDeafened: stateRef.current.isDeafened,
+          trackMuted: rawTrack.muted,
+          trackReadyState: rawTrack.readyState,
+        })
+      ) {
+        return
+      }
+
+      voiceDebug('local-stream:recover-muted-input-track', {
+        trackId: rawTrack.id,
+        readyState: rawTrack.readyState,
+        recoveryAttempt: recoveryAttempt + 1,
+      })
+      inputTrackRecoveryAttemptRef.current = recoveryAttempt + 1
+      queueAudioInputReconfigure()
+    }, recoveryDelayMs)
   }
 
   function notifyInputUnavailable(error: unknown) {
@@ -755,6 +1023,8 @@ export function useLocalVoiceMedia({
     nextCameraEnabled = stateRef.current.isCameraEnabled,
     nextScreenSharing = stateRef.current.isScreenSharing,
   ) {
+    const wasTransmissionBlocked =
+      stateRef.current.isMuted || stateRef.current.isDeafened
     const nextState = {
       isMuted: nextMuted,
       isDeafened: nextDeafened,
@@ -771,6 +1041,16 @@ export function useLocalVoiceMedia({
     updateRawAudioTrackState()
     if (!nextMuted && !nextDeafened) {
       void resumeVoiceAudioContexts()
+      if (wasTransmissionBlocked) {
+        const pipeline = voiceInputPipelineRef.current
+        if (pipeline) {
+          inputTrackRecoveryAttemptRef.current = 0
+          scheduleInputTrackRecovery(pipeline)
+        }
+      }
+    } else {
+      clearInputTrackRecoveryTimer()
+      clearInputTrackStabilityTimer()
     }
     updateOutboundAudioGate()
     voiceDebug('local-state:update', {
@@ -1264,9 +1544,16 @@ export function useLocalVoiceMedia({
     localStreamRef.current = null
     activeCaptureSettingsRef.current = null
     isVoiceActiveRef.current = false
+    isVoiceActivityContextReadyRef.current = true
+    voiceInputVadAvailabilityRef.current =
+      createVoiceInputVadAvailabilityState()
+    lastOutboundAudioGateStateRef.current = null
     isPushToTalkPressedRef.current = false
     speakingWarningRef.current = createSpeakingWhileMutedWarningState()
     inputUnavailableSinceRef.current = null
+    clearInputTrackRecoveryTimer()
+    clearInputTrackStabilityTimer()
+    inputTrackRecoveryAttemptRef.current = 0
     if (retainedPipelineCleanupTimerRef.current !== null) {
       window.clearTimeout(retainedPipelineCleanupTimerRef.current)
       retainedPipelineCleanupTimerRef.current = null
@@ -1432,6 +1719,14 @@ function describeMediaTrack(track: MediaStreamTrack) {
   return {
     id: track.id,
     label: track.label,
+    enabled: track.enabled,
+    muted: track.muted,
+    readyState: track.readyState,
+  }
+}
+
+function describeAudioGateTrack(track: MediaStreamTrack) {
+  return {
     enabled: track.enabled,
     muted: track.muted,
     readyState: track.readyState,

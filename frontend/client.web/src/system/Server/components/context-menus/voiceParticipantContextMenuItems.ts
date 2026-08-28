@@ -4,6 +4,13 @@ import type {
   ServerRoleResponse,
 } from '../../../../shared/types'
 import type { VoiceUserAudioSettings } from '../../../shared/types/voicePlayback'
+import {
+  maximumVoiceParticipantVolumePercent,
+  minimumVoiceParticipantVolumePercent,
+  voiceParticipantVolumeFromPercent,
+  voiceParticipantVolumePercentStep,
+  voiceParticipantVolumeToPercent,
+} from '../../../shared/voice/voiceParticipantVolume'
 import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu'
 import { serverCopy, voiceCopy } from '../../../shared/copy'
 import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel'
@@ -44,7 +51,7 @@ type BuildVoiceParticipantContextMenuItemsOptions = {
   isMutatingDirectMessageBlock: boolean
   isUserBlockStatusResolved: boolean
   isUserBlocked: boolean
-  onSelectMember?: (memberId: string) => void
+  onOpenMemberProfile?: (member: ServerMemberDetailsResponse) => void
   onMentionUser?: (participant: VoiceParticipant) => void
   onOpenDirectSpace: (userId: string) => void
   onStartCall?: () => void
@@ -92,7 +99,7 @@ export function buildVoiceParticipantContextMenuItems({
   isMutatingDirectMessageBlock,
   isUserBlockStatusResolved,
   isUserBlocked,
-  onSelectMember,
+  onOpenMemberProfile,
   onMentionUser,
   onOpenDirectSpace,
   onStartCall,
@@ -152,12 +159,12 @@ export function buildVoiceParticipantContextMenuItems({
       })
     : false
   const identityItems: ContextMenuItem[] = [
-    ...(member && onSelectMember
+    ...(member && onOpenMemberProfile
       ? ([{
           type: 'item',
           label: serverCopy.contextMenu.profile,
           icon: 'profile',
-          onSelect: () => onSelectMember(member.id),
+          onSelect: () => onOpenMemberProfile(member),
         }] satisfies ContextMenuItem[])
       : []),
     ...(!isSelf && onMentionUser
@@ -192,13 +199,15 @@ export function buildVoiceParticipantContextMenuItems({
           type: 'range',
           label: voiceCopy.participantMenu.volume,
           icon: 'audio',
-          min: 0,
-          max: 200,
-          step: 5,
-          value: Math.round(audioSettings.volume * 100),
-          valueLabel: `${Math.round(audioSettings.volume * 100)}%`,
+          min: minimumVoiceParticipantVolumePercent,
+          max: maximumVoiceParticipantVolumePercent,
+          step: voiceParticipantVolumePercentStep,
+          value: voiceParticipantVolumeToPercent(audioSettings.volume),
+          valueLabel: `${voiceParticipantVolumeToPercent(audioSettings.volume)}%`,
           onChange: (volumePercent) =>
-            onChangeAudioSettings({ volume: volumePercent / 100 }),
+            onChangeAudioSettings({
+              volume: voiceParticipantVolumeFromPercent(volumePercent),
+            }),
         },
         {
           type: 'item',

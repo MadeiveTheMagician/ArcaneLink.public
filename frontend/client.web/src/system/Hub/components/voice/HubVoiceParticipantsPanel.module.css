@@ -1,4 +1,4 @@
-﻿.panel {
+.panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 18px;
@@ -61,10 +61,10 @@
   place-items: center;
   border: 1px solid var(--theme-section-border);
   border-radius: 8px;
-  color: var(--theme-accent-contrast);
+  color: var(--theme-avatar-contrast);
   background:
     radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.38), transparent 28%),
-    var(--theme-surface-accent);
+    var(--theme-avatar-bg);
   font-size: 14px;
   font-weight: 900;
 }

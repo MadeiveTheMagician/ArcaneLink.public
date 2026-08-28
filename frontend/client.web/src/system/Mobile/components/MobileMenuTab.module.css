@@ -1,4 +1,4 @@
-﻿.panel {
+.panel {
   display: none;
 }
 
@@ -11,7 +11,7 @@
     padding: 24px 20px calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 16px);
     background:
       radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--theme-accent), transparent 84%), transparent 42%),
-      rgba(3, 8, 20, 0.82);
+      var(--theme-frame-bg);
   }
 
   .actions {

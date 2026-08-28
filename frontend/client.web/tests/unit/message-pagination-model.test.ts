@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import type { SpaceMessageResponse } from '../../src/shared/types'
 import {
   getOldestMessageCursor,
+  getMessageWindowCursor,
   hasOlderMessagePage,
   mergeLatestMessagePage,
   messageHistoryPageSize,
@@ -32,6 +33,20 @@ test.describe('server message pagination model', () => {
       id: 'oldest',
     })
     expect(getOldestMessageCursor([])).toBeNull()
+  })
+
+  test('builds a cursor that includes the requested message window', () => {
+    expect(
+      getMessageWindowCursor(
+        'message-42',
+        '2026-07-01T10:00:00.000Z',
+      ),
+    ).toEqual({
+      createdAt: '2026-07-01T10:00:00.001Z',
+      id: 'message-42',
+    })
+    expect(getMessageWindowCursor('', '2026-07-01T10:00:00.000Z')).toBeNull()
+    expect(getMessageWindowCursor('message-42', 'not-a-date')).toBeNull()
   })
 
   test('prepends older messages without duplicating an overlapping item', () => {

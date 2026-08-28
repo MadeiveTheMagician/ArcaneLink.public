@@ -5,10 +5,12 @@ namespace ArcaneLink.Services.Notifications
         public const int PreviewMaxLength = 240;
         public const string InviteKind = "invite";
         public const string PrivateSpaceInviteKind = "private-space-invite";
+        public const string FriendRequestKind = "friend-request";
         public const string MentionKind = "mention";
         public const string SystemKind = "system";
         public const string InviteTitle = "Приглашение на сервер";
         public const string PrivateSpaceInviteTitle = "Новая личная переписка";
+        public const string FriendRequestTitle = "Новая заявка в друзья";
         public const string MentionTitle = "Упоминание";
 
         public static string PrivateSpaceInviteBody(string? spaceTitle) =>
@@ -16,8 +18,11 @@ namespace ArcaneLink.Services.Notifications
                 ? "Вас добавили в личную переписку"
                 : $"Вас добавили в личную переписку «{spaceTitle}»";
 
-        public static string MentionBody(string spaceTitle) =>
-            $"Вас упомянули в #{spaceTitle}";
+        public static string FriendRequestBody(string actorDisplayName) =>
+            $"{actorDisplayName} хочет добавить вас в друзья";
+
+        public static string MentionBody(string spaceTitle, string serverTitle) =>
+            $"Вас упомянули в #{spaceTitle} на сервере «{serverTitle}»";
 
         public static string PrivateMentionBody(string? spaceTitle) =>
             string.IsNullOrWhiteSpace(spaceTitle)

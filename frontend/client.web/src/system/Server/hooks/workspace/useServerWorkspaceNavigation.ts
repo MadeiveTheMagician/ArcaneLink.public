@@ -2,9 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type {
   ServerMemberDetailsResponse,
   ServerEffectivePermissionsResponse,
-  ServerMemberRoleResponse,
   ServerMemberResponse,
-  ServerRoleResponse,
   SpaceMessageResponse,
   SpaceResponse,
   UserResponse,
@@ -27,14 +25,14 @@ type UseServerWorkspaceNavigationOptions = {
   selectedServerMembership: ServerMemberResponse
   user: UserResponse
   serverMembers: ServerMemberDetailsResponse[]
-  memberRoles: ServerMemberRoleResponse[]
-  serverRoles: ServerRoleResponse[]
   serverSpaces: SpaceResponse[]
   isLoadingSpaces: boolean
   voice: VoiceChannelController
   onCloseSettings: () => boolean
   onOpenVoiceChat: (spaceId: string | null) => void
   effectivePermissions: ServerEffectivePermissionsResponse | null
+  externalMessageFocus?: FocusMessageRequest | null
+  onExternalMessageFocusConsumed?: () => void
 }
 
 function isMobileServerWorkspace() {
@@ -48,14 +46,14 @@ export function useServerWorkspaceNavigation({
   selectedServerMembership,
   user,
   serverMembers,
-  memberRoles,
-  serverRoles,
   serverSpaces,
   isLoadingSpaces,
   voice,
   onCloseSettings,
   onOpenVoiceChat,
   effectivePermissions,
+  externalMessageFocus,
+  onExternalMessageFocusConsumed,
 }: UseServerWorkspaceNavigationOptions) {
   const serverId = selectedServerMembership.server.id
   const [activeSelection, setActiveSelection] = useState<{
@@ -77,8 +75,6 @@ export function useServerWorkspaceNavigation({
     selectedServerMembership,
     user,
     serverMembers,
-    memberRoles,
-    serverRoles,
     serverSpaces,
     activeDetail,
     effectivePermissions,
@@ -179,6 +175,31 @@ export function useServerWorkspaceNavigation({
     )
     onOpenVoiceChat(space.typeCode === 'voice_room' ? space.id : null)
   }
+
+  useEffect(() => {
+    if (!externalMessageFocus || isLoadingSpaces) return
+
+    const space = serverSpaces.find(
+      (item) =>
+        item.id === externalMessageFocus.spaceId ||
+        item.voiceChatSpaceId === externalMessageFocus.spaceId,
+    )
+    if (!space || space.typeCode === 'category') return
+
+    if (!selectDetail(toChannelDetail(space), true)) return
+
+    setFocusedMessage(externalMessageFocus)
+    onOpenVoiceChat(space.typeCode === 'voice_room' ? space.id : null)
+    onExternalMessageFocusConsumed?.()
+    // The target is an explicit one-shot navigation request. Selection helpers
+    // intentionally remain outside the dependency list to avoid replaying it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    externalMessageFocus,
+    isLoadingSpaces,
+    onExternalMessageFocusConsumed,
+    serverSpaces,
+  ])
 
   return {
     ...workspaceState,

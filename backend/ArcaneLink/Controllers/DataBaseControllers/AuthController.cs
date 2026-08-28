@@ -23,19 +23,22 @@ namespace ArcaneLink.Controllers.DataBaseControllers
         private readonly IAuthTokenService _authTokenService;
         private readonly ILogoutService _logoutService;
         private readonly IUserDeviceSessionService _deviceSessionService;
+        private readonly IAccountLifecycleService _accountLifecycleService;
         
         public AuthController(
             IUserRegistrationService registrationService,
             ILoginService loginService,
             IAuthTokenService authTokenService,
             ILogoutService logoutService,
-            IUserDeviceSessionService deviceSessionService)
+            IUserDeviceSessionService deviceSessionService,
+            IAccountLifecycleService accountLifecycleService)
         {
             _registrationService = registrationService;
             _loginService = loginService;
             _authTokenService = authTokenService;
             _logoutService = logoutService;
             _deviceSessionService = deviceSessionService;
+            _accountLifecycleService = accountLifecycleService;
         }
 
         [HttpPost("register")]
@@ -69,6 +72,120 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 response.AccessTokenExpireAt);
 
             return Ok(response);
+        }
+
+        [HttpPost("email/resend")]
+        [EnableRateLimiting(AbuseRateLimitPolicyNames.Auth)]
+        public async Task<ActionResult<AcceptedAccountActionResponse>> ResendEmailVerification(
+            [FromBody] ResendVerificationEmailRequest request,
+            CancellationToken cancellationToken)
+        {
+            await _accountLifecycleService.QueueVerificationResendAsync(
+                request.Email,
+                cancellationToken);
+            return Accepted(CreateAcceptedResponse());
+        }
+
+        [HttpPost("email/confirm")]
+        [EnableRateLimiting(AbuseRateLimitPolicyNames.Auth)]
+        public async Task<ActionResult<ConfirmEmailResponse>> ConfirmEmail(
+            [FromBody] EmailTokenRequest request,
+            CancellationToken cancellationToken)
+        {
+            return Ok(await _accountLifecycleService.ConfirmEmailAsync(
+                request.Token,
+                cancellationToken));
+        }
+
+        [HttpPost("password/forgot")]
+        [EnableRateLimiting(AbuseRateLimitPolicyNames.Auth)]
+        public async Task<ActionResult<AcceptedAccountActionResponse>> ForgotPassword(
+            [FromBody] ForgotPasswordRequest request,
+            CancellationToken cancellationToken)
+        {
+            await _accountLifecycleService.QueuePasswordResetAsync(
+                request.LoginOrEmail,
+                cancellationToken);
+            return Accepted(CreateAcceptedResponse());
+        }
+
+        [HttpPost("password/reset")]
+        [EnableRateLimiting(AbuseRateLimitPolicyNames.Auth)]
+        public async Task<IActionResult> ResetPassword(
+            [FromBody] ResetPasswordRequest request,
+            CancellationToken cancellationToken)
+        {
+            await _accountLifecycleService.ResetPasswordAsync(
+                request.Token,
+                request.NewPassword,
+                cancellationToken);
+            ClearRefreshTokenCookie();
+            ClearAssetAccessTokenCookie();
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPut("account/login")]
+        [EnableRateLimiting(AbuseRateLimitPolicyNames.Auth)]
+        public async Task<ActionResult<AccountChangeResponse>> ChangeLogin(
+            [FromBody] ChangeLoginRequest request,
+            CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            var response = await _accountLifecycleService.ChangeLoginAsync(
+                userId.Value,
+                request,
+                cancellationToken);
+            ClearRefreshTokenCookie();
+            ClearAssetAccessTokenCookie();
+            return Ok(response);
+        }
+
+        [Authorize]
+        [HttpPost("account/email/change")]
+        [EnableRateLimiting(AbuseRateLimitPolicyNames.Auth)]
+        public async Task<ActionResult<AcceptedAccountActionResponse>> ChangeEmail(
+            [FromBody] ChangeEmailRequest request,
+            CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            await _accountLifecycleService.QueueEmailChangeAsync(
+                userId.Value,
+                request,
+                cancellationToken);
+            return Accepted(CreateAcceptedResponse());
+        }
+
+        [Authorize]
+        [HttpPost("account/password/change")]
+        [EnableRateLimiting(AbuseRateLimitPolicyNames.Auth)]
+        public async Task<IActionResult> ChangePassword(
+            [FromBody] ChangePasswordRequest request,
+            CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            await _accountLifecycleService.ChangePasswordAsync(
+                userId.Value,
+                request,
+                cancellationToken);
+            ClearRefreshTokenCookie();
+            ClearAssetAccessTokenCookie();
+            return NoContent();
         }
 
         [HttpPost("refresh")]
@@ -152,15 +269,25 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             CancellationToken cancellationToken)
         {
             var userId = GetCurrentUserId();
+            var currentDeviceSessionId = GetCurrentDeviceSessionId();
 
-            if (userId == null)
+            if (userId == null || currentDeviceSessionId == null)
             {
                 return Unauthorized();
+            }
+
+            if (id == currentDeviceSessionId.Value)
+            {
+                return BadRequest(new
+                {
+                    message = "The current device session cannot be revoked from the session list."
+                });
             }
 
             var isRevoked = await _deviceSessionService.RevokeSessionAsync(
                 userId.Value,
                 id,
+                currentDeviceSessionId.Value,
                 cancellationToken);
 
             if (!isRevoked)
@@ -168,6 +295,46 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 return NotFound();
             }
 
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPost("sessions/revoke-others")]
+        public async Task<IActionResult> RevokeOtherSessions(
+            CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            var currentDeviceSessionId = GetCurrentDeviceSessionId();
+
+            if (userId == null || currentDeviceSessionId == null)
+            {
+                return Unauthorized();
+            }
+
+            await _deviceSessionService.RevokeOtherSessionsAsync(
+                userId.Value,
+                currentDeviceSessionId.Value,
+                cancellationToken);
+
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPost("sessions/revoke-all")]
+        public async Task<IActionResult> RevokeAllSessions(
+            CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            await _deviceSessionService.RevokeAllSessionsAsync(
+                userId.Value,
+                cancellationToken);
+            ClearRefreshTokenCookie();
+            ClearAssetAccessTokenCookie();
             return NoContent();
         }
 
@@ -179,6 +346,9 @@ namespace ArcaneLink.Controllers.DataBaseControllers
                 ? userId
                 : null;
         }
+
+        private static AcceptedAccountActionResponse CreateAcceptedResponse() =>
+            new("If the account is eligible, an email with the next steps will be sent.");
 
         private Guid? GetCurrentDeviceSessionId()
         {

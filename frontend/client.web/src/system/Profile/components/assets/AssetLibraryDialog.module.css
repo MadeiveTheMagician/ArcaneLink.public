@@ -1,4 +1,4 @@
-﻿.dialog {
+.dialog {
   width: min(760px, 100%);
   gap: 16px;
   padding: 22px;
@@ -39,19 +39,10 @@
   background: var(--theme-control-bg);
 }
 
-.filter span {
+.filter > span {
   color: var(--color-muted);
   font-size: 13px;
   font-weight: 800;
-}
-
-.filter select {
-  min-height: 38px;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 999px;
-  padding: 0 38px 0 14px;
-  color: var(--color-text);
-  background: var(--theme-control-bg-strong);
 }
 
 .list {

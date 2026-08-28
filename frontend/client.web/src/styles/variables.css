@@ -31,6 +31,11 @@
   --theme-scrollbar-thumb: color-mix(in srgb, var(--theme-accent), transparent 26%);
   --theme-glow: color-mix(in srgb, var(--theme-accent), transparent 76%);
   --theme-glow-strong: color-mix(in srgb, var(--theme-accent), transparent 60%);
+  --theme-icon-gradient-start: color-mix(in srgb, var(--theme-accent-light), #ffffff 38%);
+  --theme-icon-gradient-middle: var(--theme-accent-light);
+  --theme-icon-gradient-end: color-mix(in srgb, var(--theme-accent), #000000 10%);
+  --theme-icon-outline: color-mix(in srgb, var(--color-text), transparent 8%);
+  --theme-icon-glow-color: color-mix(in srgb, var(--theme-accent-light), transparent 34%);
   --theme-surface-raised:
     radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-accent), transparent 84%), transparent 32%),
     linear-gradient(
@@ -50,6 +55,8 @@
       color-mix(in srgb, var(--theme-accent), #ffffff 4%),
       color-mix(in srgb, var(--theme-accent), #000 26%)
     );
+  --theme-avatar-bg: var(--theme-surface-accent);
+  --theme-avatar-contrast: var(--theme-accent-contrast);
   --theme-profile-bg-image: url("/ui/arcane-profile-runes-bg.webp");
   --theme-overview-bg-image:
     radial-gradient(circle at 18% 22%, rgba(123, 97, 255, 0.34), transparent 30%),

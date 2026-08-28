@@ -1,4 +1,4 @@
-﻿.page {
+.page {
   min-height: 100vh;
   display: grid;
   place-items: center;
@@ -153,7 +153,7 @@
 }
 
 .actions .accept {
-  color: var(--color-text);
+  color: var(--theme-accent-contrast);
   background: var(--theme-surface-accent);
   box-shadow:
     0 0 30px color-mix(in srgb, var(--theme-accent), transparent 72%),

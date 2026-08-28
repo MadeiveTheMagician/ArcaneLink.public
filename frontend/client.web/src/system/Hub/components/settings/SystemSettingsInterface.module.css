@@ -40,10 +40,10 @@
   grid-auto-rows: max-content;
   gap: 12px;
   min-width: 0;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 7px;
-  padding: 14px;
-  background: var(--theme-control-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 7px 2px;
+  background: transparent;
 }
 
 .messageFormatField > span {
@@ -57,7 +57,7 @@
 }
 
 .messageFormatControl > span {
-  color: var(--theme-text-muted);
+  color: var(--theme-text-faint);
   font-size: 12px;
   font-weight: 900;
 }
@@ -76,31 +76,54 @@
 }
 
 .themeTile {
+  position: relative;
   display: grid;
   gap: 10px;
   min-height: 92px;
   border: 1px solid var(--theme-section-border);
   border-radius: 7px;
   padding: 12px;
-  color: var(--color-text);
-  background:
-    radial-gradient(
-      circle at 84% 14%,
-      color-mix(in srgb, var(--theme-tile-dominant), transparent 64%),
-      transparent 44%
-    ),
-    var(--theme-control-bg);
+  color: var(--theme-tile-contrast);
+  background: var(--theme-tile-dominant);
   font: inherit;
   font-weight: 900;
   text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.themeGrid > .themeTile {
+  color: var(--theme-tile-contrast);
+}
+
+.themeGrid > .themeTile > strong {
+  color: var(--theme-tile-contrast);
+}
+
+.themeIcon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
 }
 
 .themeTile:hover,
 .activeThemeTile {
-  border-color: var(--theme-tile-dominant);
+  border-color: color-mix(
+    in srgb,
+    var(--theme-tile-contrast),
+    transparent 22%
+  );
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--theme-tile-dominant), transparent 42%),
-    0 14px 32px color-mix(in srgb, var(--theme-tile-dominant), transparent 78%);
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-tile-contrast), transparent 52%),
+    0 14px 32px color-mix(in srgb, var(--theme-tile-dominant), #000 56%);
+}
+
+.themeTile:hover {
+  transform: translateY(-1px);
 }
 
 .themeSwatches {
@@ -112,7 +135,8 @@
 
 .themeSwatches span {
   height: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-tile-contrast), transparent 76%);
   border-radius: 5px;
 }
 
@@ -120,10 +144,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 7px;
-  padding: 12px 14px;
-  background: var(--theme-control-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 8px 2px;
+  background: transparent;
 }
 
 .profileColorPreview {
@@ -146,6 +170,12 @@
 
 .profileColorPanel small {
   color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .themeTile {
+    transition: none;
+  }
 }
 .videoCardSizes {
   display: grid;

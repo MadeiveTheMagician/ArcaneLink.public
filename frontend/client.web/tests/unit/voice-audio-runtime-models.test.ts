@@ -8,6 +8,7 @@ import {
 } from '../../src/system/Server/hooks/voice/voiceNoiseSuppressionModel'
 import {
   clampVoiceParticipantVolume,
+  createVoicePlaybackAudioEngine,
   createVoiceSpatialAudioEngine,
   resolveVoiceSpatialAudioMode,
   resolveVoiceSpatialPosition,
@@ -156,6 +157,93 @@ test.describe('voice spatial audio model', () => {
     expect(createAudioContextCalls).toBe(0)
   })
 
+  test('requests a Web Audio graph for participant gain above one hundred percent', () => {
+    let createAudioContextCalls = 0
+    const engine = createVoicePlaybackAudioEngine('off', true, () => {
+      createAudioContextCalls += 1
+      throw new Error('Expected test factory failure.')
+    })
+
+    expect(engine).toBeNull()
+    expect(createAudioContextCalls).toBe(1)
+  })
+
+  test('applies boosted participant gain through Web Audio with peak protection', () => {
+    const gainTargets: number[] = []
+    const limiterThresholds: number[] = []
+    const audioParam = (targets: number[] = []) => ({
+      value: 0,
+      cancelScheduledValues: () => undefined,
+      setTargetAtTime: (value: number) => targets.push(value),
+    })
+    const audioNode = () => ({
+      connect: () => undefined,
+      disconnect: () => undefined,
+    })
+    const participantGain = {
+      ...audioNode(),
+      gain: audioParam(gainTargets),
+      channelCount: 2,
+      channelCountMode: 'max',
+      channelInterpretation: 'speakers',
+    }
+    const outputGain = {
+      ...audioNode(),
+      gain: audioParam(),
+    }
+    let gainNodeCount = 0
+    const limiter = {
+      ...audioNode(),
+      threshold: audioParam(limiterThresholds),
+      knee: audioParam(),
+      ratio: audioParam(),
+      attack: audioParam(),
+      release: audioParam(),
+    }
+    const context = {
+      state: 'running',
+      currentTime: 0,
+      baseLatency: 0,
+      createMediaStreamSource: () => audioNode(),
+      createMediaStreamDestination: () => ({
+        ...audioNode(),
+        stream: { getTracks: () => [] },
+      }),
+      createGain: () => {
+        gainNodeCount += 1
+        return gainNodeCount === 1 ? participantGain : outputGain
+      },
+      createDynamicsCompressor: () => limiter,
+      createStereoPanner: () => audioNode(),
+      createPanner: () => audioNode(),
+      resume: async () => undefined,
+      close: async () => undefined,
+    }
+    const engine = createVoicePlaybackAudioEngine(
+      'off',
+      true,
+      () => context as unknown as AudioContext,
+    )
+    const path = engine?.attachParticipant(
+      'participant-a',
+      {} as MediaStream,
+      3.47,
+    )
+
+    expect(path).toBeTruthy()
+    expect(participantGain.gain.value).toBe(3.47)
+    expect(limiterThresholds.at(-1)).toBe(-3)
+
+    path?.setParticipantVolume(5)
+    expect(gainTargets.at(-1)).toBe(4)
+    expect(path?.getTelemetry().participantVolume).toBe(4)
+
+    path?.setParticipantVolume(1)
+    expect(limiterThresholds.at(-1)).toBe(0)
+    path?.dispose()
+    engine?.dispose()
+  })
+
   test('maps ephemeral participant ids to persistent user preferences', () => {
     const index = indexVoiceUserIdsByParticipantId([
       { participantId: ' RTC-Participant-1 ', userId: ' User-42 ' },
@@ -228,9 +316,10 @@ test.describe('voice spatial audio model', () => {
     })
   })
 
-  test('supports individual participant gain up to two hundred percent', () => {
+  test('supports individual participant gain up to four hundred percent', () => {
     expect(clampVoiceParticipantVolume(1.75)).toBe(1.75)
-    expect(clampVoiceParticipantVolume(3)).toBe(2)
+    expect(clampVoiceParticipantVolume(3.47)).toBe(3.47)
+    expect(clampVoiceParticipantVolume(5)).toBe(4)
     expect(clampVoiceParticipantVolume(-1)).toBe(0)
     expect(clampVoiceParticipantVolume(Number.NaN)).toBe(1)
   })

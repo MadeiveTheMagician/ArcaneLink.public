@@ -1,4 +1,4 @@
-﻿using ArcaneLink.DataBase.Models.UsersModels;
+using ArcaneLink.DataBase.Models.UsersModels;
 using Microsoft.AspNetCore.Identity;
 
 namespace ArcaneLink.Services.Users.Abstractions
@@ -11,5 +11,7 @@ namespace ArcaneLink.Services.Users.Abstractions
             User user,
             string passwordHash,
             string password);
+
+        void PerformDummyVerification(string password);
     }
 }

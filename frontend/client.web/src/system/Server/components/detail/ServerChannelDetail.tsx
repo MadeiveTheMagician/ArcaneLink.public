@@ -26,10 +26,7 @@ import type {
 } from '../../../shared'
 import type { ServerDetail } from '../../utils/serverWorkspaceModel'
 import { ServerOverview } from '../overview/ServerOverview'
-import {
-  ServerChannelPlaceholder,
-  ServerMemberDetail,
-} from '../shell/ServerWorkspaceSections'
+import { ServerChannelPlaceholder } from '../shell/ServerWorkspaceSections'
 import { ServerMessagePanel } from '../messages/ServerMessagePanel'
 import type { MessageComposerMentionInsertionRequest } from '../messages/MessageComposer'
 import type { MessageAttachmentDraft } from '../messages/messageAttachmentDraft'
@@ -40,6 +37,8 @@ import {
   canSendMessagesToSpace,
 } from '../../utils/spaceCapabilities'
 import styles from '../shell/ServerWorkspace.module.css'
+import { getServerMembersPanelDisclosure } from '../members/serverMembersPanelModel'
+import type { OlderMessageLoadResult } from '../../hooks/messages/messagePaginationModel'
 
 type ServerChannelDetailProps = {
   accessToken: string
@@ -47,11 +46,6 @@ type ServerChannelDetailProps = {
   user: UserResponse
   visibleDetail: ServerDetail | null
   visibleChannel: Extract<ServerDetail, { type: 'channel' }> | null
-  selectedMember: ServerMemberDetailsResponse | null | undefined
-  selectedMemberRoles: ServerRoleResponse[]
-  friendUserIds: Set<string>
-  pendingOutgoingUserIds: Set<string>
-  isMutatingFriends: boolean
   canManageServer: boolean
   serverMembers: ServerMemberDetailsResponse[]
   serverMemberCount: number
@@ -59,6 +53,7 @@ type ServerChannelDetailProps = {
   serverSpaces: SpaceResponse[]
   voice: VoiceChannelController
   isVoiceChatOpen: boolean
+  membersPanelId: string
   isMembersPanelCollapsed: boolean
   onToggleMembersPanel: () => void
   onToggleVoiceChat: (spaceId: string) => void
@@ -86,7 +81,6 @@ type ServerChannelDetailProps = {
   messageDisplayFormat: MessageDisplayFormat
   messageBubbleAlignment: MessageBubbleAlignment
   messageBubbleWidth: MessageBubbleWidth
-  onSendFriendRequest: (userId: string) => void
   onOpenVoiceParticipantContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
     participant: VoiceParticipant,
@@ -109,6 +103,7 @@ type ServerChannelDetailProps = {
   ) => Promise<SpaceMessageResponse | null>
   onDeleteMessage: (messageId: string) => Promise<boolean>
   onPinMessage: (messageId: string) => Promise<SpaceMessageResponse | null>
+  onUnpinMessage: (messageId: string) => Promise<boolean>
   onSetMessageReaction: (
     messageId: string,
     emojiCode: string,
@@ -117,7 +112,11 @@ type ServerChannelDetailProps = {
   onMarkMessagesRead: (
     throughMessageId: string,
   ) => Promise<SpaceReadStateResponse | null>
-  onLoadOlderMessages: () => Promise<boolean>
+  onLoadOlderMessages: () => Promise<OlderMessageLoadResult>
+  onLoadMessageWindow: (
+    messageId: string,
+    createdAt: string,
+  ) => Promise<boolean>
   onCloseDetail: () => void
   focusedMessageId?: string | null
 }
@@ -128,11 +127,6 @@ export function ServerChannelDetail({
   user,
   visibleDetail,
   visibleChannel,
-  selectedMember,
-  selectedMemberRoles,
-  friendUserIds,
-  pendingOutgoingUserIds,
-  isMutatingFriends,
   canManageServer,
   serverMembers,
   serverMemberCount,
@@ -140,6 +134,7 @@ export function ServerChannelDetail({
   serverSpaces,
   voice,
   isVoiceChatOpen,
+  membersPanelId,
   isMembersPanelCollapsed,
   onToggleMembersPanel,
   onToggleVoiceChat,
@@ -164,15 +159,16 @@ export function ServerChannelDetail({
   messageDisplayFormat,
   messageBubbleAlignment,
   messageBubbleWidth,
-  onSendFriendRequest,
   onOpenVoiceParticipantContextMenu,
   onSendMessage,
   onUpdateMessage,
   onDeleteMessage,
   onPinMessage,
+  onUnpinMessage,
   onSetMessageReaction,
   onMarkMessagesRead,
   onLoadOlderMessages,
+  onLoadMessageWindow,
   onCloseDetail,
   focusedMessageId,
 }: ServerChannelDetailProps) {
@@ -187,20 +183,13 @@ export function ServerChannelDetail({
         memberCount={serverMemberCount}
         roleCount={canManageServer ? serverRoles.length : null}
         spaces={serverSpaces}
-      />
-    )
-  }
-
-  if (selectedMember) {
-    return (
-      <ServerMemberDetail
-        member={selectedMember}
-        roles={selectedMemberRoles}
-        isSelf={selectedMember.userId === user.id}
-        isFriend={friendUserIds.has(selectedMember.userId)}
-        hasPendingFriendRequest={pendingOutgoingUserIds.has(selectedMember.userId)}
-        isMutatingFriends={isMutatingFriends}
-        onSendFriendRequest={onSendFriendRequest}
+        headerActions={
+          <MembersPanelToggleButton
+            panelId={membersPanelId}
+            isCollapsed={isMembersPanelCollapsed}
+            onToggle={onToggleMembersPanel}
+          />
+        }
       />
     )
   }
@@ -237,11 +226,13 @@ export function ServerChannelDetail({
         titleIcon={<span className={styles.serverTextChannelMark}>#</span>}
         headerActions={
           <MembersPanelToggleButton
+            panelId={membersPanelId}
             isCollapsed={isMembersPanelCollapsed}
             onToggle={onToggleMembersPanel}
           />
         }
         messages={messages}
+        unreadCount={selectedSpace?.unreadCount ?? 0}
         pinnedMessages={pinnedMessages}
         isLoading={isLoadingMessages}
         isLoadingOlderMessages={isLoadingOlderMessages}
@@ -260,8 +251,10 @@ export function ServerChannelDetail({
         onUpdateMessage={onUpdateMessage}
         onDeleteMessage={onDeleteMessage}
         onPinMessage={onPinMessage}
+        onUnpinMessage={onUnpinMessage}
         onSetMessageReaction={onSetMessageReaction}
         onMarkRead={onMarkMessagesRead}
+        onLoadMessageWindow={onLoadMessageWindow}
         onLoadOlderMessages={onLoadOlderMessages}
         focusedMessageId={focusedMessageId}
       />
@@ -298,6 +291,7 @@ export function ServerChannelDetail({
         onToggleVoiceChat={() => onToggleVoiceChat(voiceSpaceId)}
         headerActions={
           <MembersPanelToggleButton
+            panelId={membersPanelId}
             isCollapsed={isMembersPanelCollapsed}
             onToggle={onToggleMembersPanel}
           />
@@ -319,6 +313,7 @@ export function ServerChannelDetail({
             spaceId: voiceMessageSpaceId ?? voiceSpaceId,
           },
           messages,
+          unreadCount: selectedSpace?.unreadCount ?? 0,
           pinnedMessages,
           isLoading: isLoadingMessages,
           isLoadingOlderMessages,
@@ -337,8 +332,10 @@ export function ServerChannelDetail({
           onUpdateMessage,
           onDeleteMessage,
           onPinMessage,
+          onUnpinMessage,
           onSetMessageReaction,
           onMarkRead: onMarkMessagesRead,
+          onLoadMessageWindow,
           onLoadOlderMessages,
         }}
         participants={voice.participantsBySpaceId[voiceSpaceId] ?? []}
@@ -397,15 +394,15 @@ export function ServerChannelDetail({
 }
 
 function MembersPanelToggleButton({
+  panelId,
   isCollapsed,
   onToggle,
 }: {
+  panelId: string
   isCollapsed: boolean
   onToggle: () => void
 }) {
-  const label = isCollapsed
-    ? 'Показать участников'
-    : 'Скрыть участников'
+  const disclosure = getServerMembersPanelDisclosure(isCollapsed)
 
   return (
     <button
@@ -413,10 +410,11 @@ function MembersPanelToggleButton({
         isCollapsed ? styles.membersPanelToggleCollapsed : ''
       }`}
       type="button"
-      aria-label={label}
-      aria-expanded={!isCollapsed}
-      data-tooltip={label}
-      title={label}
+      aria-label={disclosure.toggleLabel}
+      aria-controls={panelId}
+      aria-expanded={disclosure.toggleExpanded}
+      data-tooltip={disclosure.toggleLabel}
+      title={disclosure.toggleLabel}
       onClick={onToggle}
     >
       <SystemIcon name="chevron-right" size={18} />

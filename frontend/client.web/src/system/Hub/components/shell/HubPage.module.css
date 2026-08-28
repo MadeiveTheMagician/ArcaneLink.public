@@ -1,4 +1,4 @@
-﻿.page {
+.page {
   --profile-interface-scale: 1;
   --profile-font-scale: 1;
   --profile-rail-width: calc(64.5px * var(--profile-interface-scale));
@@ -95,8 +95,8 @@
   z-index: -1;
   content: "";
   background-image:
-    radial-gradient(circle, rgba(229, 239, 255, 0.42) 0 1px, transparent 1.7px),
-    radial-gradient(circle, rgba(146, 181, 255, 0.24) 0 1px, transparent 1.6px);
+    radial-gradient(circle, color-mix(in srgb, var(--theme-text-soft), transparent 58%) 0 1px, transparent 1.7px),
+    radial-gradient(circle, color-mix(in srgb, var(--theme-accent-light), transparent 76%) 0 1px, transparent 1.6px);
   background-position:
     0 0,
     42px 64px;

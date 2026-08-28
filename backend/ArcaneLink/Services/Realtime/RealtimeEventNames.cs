@@ -31,6 +31,8 @@ namespace ArcaneLink.Services.Realtime
         public const string CurrentSessionRevoked = "CurrentSessionRevoked";
         public const string VoiceAccessRevoked = "VoiceAccessRevoked";
         public const string VoiceConnectionReplaced = "VoiceConnectionReplaced";
+        public const string IncomingPrivateCall = "IncomingPrivateCall";
+        public const string PrivateCallStateChanged = "PrivateCallStateChanged";
         public const string ModerationCaseChanged = "ModerationCaseChanged";
         public const string MyModerationReportsChanged = "MyModerationReportsChanged";
     }

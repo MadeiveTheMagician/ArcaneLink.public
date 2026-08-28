@@ -265,6 +265,26 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             return response == null ? NotFound() : Ok(response);
         }
 
+        [HttpDelete("{messageId:guid}/pin")]
+        public async Task<IActionResult> UnpinMessage(
+            Guid serverId,
+            Guid spaceId,
+            Guid messageId,
+            CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return Unauthorized();
+
+            return await _messageService.UnpinMessageAsync(
+                userId.Value,
+                serverId,
+                spaceId,
+                messageId,
+                cancellationToken)
+                ? NoContent()
+                : NotFound();
+        }
+
         [HttpPut("read-state")]
         public async Task<ActionResult<SpaceReadStateResponse>> MarkRead(
             Guid serverId,

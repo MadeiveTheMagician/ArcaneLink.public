@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { authCopy, SystemIcon } from '../../../system/shared/index'
 import type { LoginForm } from '../model/AuthPageModel'
+import { AuthPasswordField } from '../fields/AuthPasswordField'
 import formStyles from './AuthFormControls.module.css'
 import styles from './AuthLoginForm.module.css'
 
@@ -10,14 +10,14 @@ export function AuthLoginForm({
   isLoading,
   onSubmit,
   onChange,
+  onForgotPassword,
 }: {
   loginForm: LoginForm
   isLoading: boolean
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onChange: (form: LoginForm) => void
+  onForgotPassword: () => void
 }) {
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-
   return (
     <form
       className={`${formStyles.authForm} ${styles.authFormLogin}`}
@@ -26,7 +26,7 @@ export function AuthLoginForm({
       <div className={styles.authFieldStack}>
         <label className={formStyles.authField}>
           <i aria-hidden="true">
-            <SystemIcon name="user" />
+            <SystemIcon name="mail" />
           </i>
           <span>{authCopy.fields.loginOrEmail}</span>
           <input
@@ -42,37 +42,16 @@ export function AuthLoginForm({
             }
           />
         </label>
-        <label
-          className={`${formStyles.authField} ${formStyles.authPasswordField}`}
-        >
-          <i aria-hidden="true">
-            <SystemIcon name="lock" />
-          </i>
-          <span>{authCopy.fields.password}</span>
-          <input
-            name="password"
-            autoComplete="current-password"
-            placeholder={authCopy.fields.password}
-            type={isPasswordVisible ? 'text' : 'password'}
-            value={loginForm.password}
-            onChange={(event) =>
-              onChange({ ...loginForm, password: event.target.value })
-            }
-          />
-          <button
-            className={formStyles.authPasswordToggle}
-            type="button"
-            aria-label={
-              isPasswordVisible
-                ? authCopy.aria.hidePassword
-                : authCopy.aria.showPassword
-            }
-            aria-pressed={isPasswordVisible}
-            onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
-          >
-            <SystemIcon name={isPasswordVisible ? 'eye-off' : 'eye'} />
-          </button>
-        </label>
+        <AuthPasswordField
+          name="password"
+          autoComplete="current-password"
+          label={authCopy.fields.password}
+          placeholder={authCopy.fields.password}
+          value={loginForm.password}
+          onChange={(event) =>
+            onChange({ ...loginForm, password: event.target.value })
+          }
+        />
       </div>
 
       <div className={styles.authLoginOptions}>
@@ -80,7 +59,9 @@ export function AuthLoginForm({
           <input name="rememberMe" type="checkbox" />
           <span>{authCopy.fields.rememberMe}</span>
         </label>
-        <button type="button">{authCopy.hints.forgotPassword}</button>
+        <button type="button" onClick={onForgotPassword}>
+          {authCopy.hints.forgotPassword}
+        </button>
       </div>
 
       <button

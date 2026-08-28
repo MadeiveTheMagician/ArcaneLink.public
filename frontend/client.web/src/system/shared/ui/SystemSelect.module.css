@@ -1,0 +1,172 @@
+.root {
+  display: block;
+  min-width: 0;
+}
+
+.trigger {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 8px;
+  padding: 0 12px 0 13px;
+  color: var(--color-text);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-control-bg), var(--theme-accent) 4%),
+      var(--theme-control-bg-strong)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-text), transparent 92%),
+    0 10px 28px color-mix(in srgb, var(--theme-accent), transparent 92%);
+  font: inherit;
+  text-align: left;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+}
+
+.trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trigger:hover:not(:disabled),
+.trigger[data-open='true'] {
+  border-color: var(--theme-border-accent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-control-bg), var(--theme-accent) 8%),
+      color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 5%)
+    );
+}
+
+.trigger:focus-visible {
+  border-color: var(--theme-border-accent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-accent), transparent 68%),
+    0 0 24px color-mix(in srgb, var(--theme-accent), transparent 78%);
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.icon {
+  color: var(--theme-text-soft);
+  transform: rotate(0deg);
+  transition: transform 160ms ease;
+}
+
+.trigger[data-open='true'] .icon {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  display: grid;
+  overflow-x: hidden;
+  overflow-y: auto;
+  gap: 3px;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 9px;
+  padding: 6px;
+  color: var(--color-text);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-frame-bg), var(--theme-accent) 5%),
+      color-mix(in srgb, var(--theme-frame-bg-strong), #000 5%)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-text), transparent 90%),
+    0 20px 54px color-mix(in srgb, #000, transparent 24%),
+    0 0 24px color-mix(in srgb, var(--theme-accent), transparent 82%);
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transform-origin: top center;
+  transition:
+    opacity 160ms ease,
+    transform 160ms cubic-bezier(0.2, 0.85, 0.35, 1);
+  scrollbar-color: var(--theme-scrollbar-thumb) var(--theme-scrollbar-track);
+  will-change: opacity, transform;
+}
+
+.menu[data-placement='top'] {
+  transform-origin: bottom center;
+}
+
+.menu[data-state='opening'],
+.menu[data-state='closing'] {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-5px) scale(0.985);
+}
+
+.menu[data-placement='top'][data-state='opening'],
+.menu[data-placement='top'][data-state='closing'] {
+  transform: translateY(5px) scale(0.985);
+}
+
+.option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--theme-text-soft);
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  outline: none;
+  cursor: default;
+}
+
+.option > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.option:hover:not([aria-disabled='true']),
+.option[data-active='true'] {
+  color: var(--color-text);
+  background: var(--theme-hover-bg);
+}
+
+.option[aria-selected='true'] {
+  color: var(--color-text);
+  background: var(--theme-active-bg);
+  box-shadow:
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent), transparent 58%);
+}
+
+.option[aria-disabled='true'] {
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .icon,
+  .menu {
+    transition: none;
+  }
+}

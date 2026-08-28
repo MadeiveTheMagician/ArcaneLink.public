@@ -39,7 +39,7 @@ and microphone hardware are declared optional so voice-only and camera-less devi
 
 ## Release-candidate limitation
 
-Android screen sharing is not part of the `1.0.0-rc.1` support contract. It requires a separately tested
+Android screen sharing is not part of the `1.0.1` support contract. It requires a separately tested
 MediaProjection integration; the wrapper currently guarantees camera and microphone capture only.
 
 ## Build and open

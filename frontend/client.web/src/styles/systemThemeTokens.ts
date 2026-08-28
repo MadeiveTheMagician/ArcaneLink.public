@@ -37,10 +37,17 @@ export const SYSTEM_THEME_VARIABLE_NAMES = [
   '--theme-scrollbar-thumb',
   '--theme-glow',
   '--theme-glow-strong',
+  '--theme-icon-gradient-start',
+  '--theme-icon-gradient-middle',
+  '--theme-icon-gradient-end',
+  '--theme-icon-outline',
+  '--theme-icon-glow-color',
   '--theme-backdrop-glow',
   '--theme-surface-raised',
   '--theme-surface-accent',
   '--theme-surface-accent-strong',
+  '--theme-avatar-bg',
+  '--theme-avatar-contrast',
   '--theme-arcane-backdrop',
   '--theme-profile-bg-image',
   '--theme-overview-bg-image',
@@ -87,6 +94,15 @@ export function buildSystemThemeVariables(
     '--theme-glow': 'color-mix(in srgb, var(--theme-accent), transparent 76%)',
     '--theme-glow-strong':
       'color-mix(in srgb, var(--theme-accent), transparent 60%)',
+    '--theme-icon-gradient-start':
+      'color-mix(in srgb, var(--theme-accent-light), #ffffff 38%)',
+    '--theme-icon-gradient-middle': 'var(--theme-accent-light)',
+    '--theme-icon-gradient-end':
+      'color-mix(in srgb, var(--theme-accent), #000000 10%)',
+    '--theme-icon-outline':
+      'color-mix(in srgb, var(--color-text), transparent 8%)',
+    '--theme-icon-glow-color':
+      'color-mix(in srgb, var(--theme-accent-light), transparent 34%)',
     '--theme-backdrop-glow':
       'color-mix(in srgb, var(--theme-accent), transparent 82%)',
     '--theme-surface-raised':
@@ -95,6 +111,8 @@ export function buildSystemThemeVariables(
       'linear-gradient(135deg, color-mix(in srgb, var(--theme-accent), #ffffff 4%), color-mix(in srgb, var(--theme-accent), #000 22%))',
     '--theme-surface-accent-strong':
       'linear-gradient(180deg, color-mix(in srgb, var(--theme-accent), #ffffff 4%), color-mix(in srgb, var(--theme-accent), #000 26%))',
+    '--theme-avatar-bg': 'var(--theme-surface-accent)',
+    '--theme-avatar-contrast': 'var(--theme-accent-contrast)',
     '--theme-arcane-backdrop':
       'linear-gradient(180deg, color-mix(in srgb, var(--color-bg), transparent 16%), color-mix(in srgb, var(--color-bg), #000 8%)), radial-gradient(circle at 76% 26%, var(--theme-backdrop-glow), transparent 30%)',
     '--theme-profile-bg-image': 'none',

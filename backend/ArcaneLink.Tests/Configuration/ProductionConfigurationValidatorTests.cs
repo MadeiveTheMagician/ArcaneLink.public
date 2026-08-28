@@ -95,6 +95,26 @@ public sealed class ProductionConfigurationValidatorTests
     }
 
     [Fact]
+    public void Validate_RejectsProductionWithoutEmailDelivery()
+    {
+        var configuration = CreateConfiguration(
+            jwtSecret: "production-secret-key-with-more-than-32-chars",
+            connectionString: "Host=db;Password=strong-password",
+            allowedHosts: "arcane-link.ru",
+            overrides: new Dictionary<string, string?>
+            {
+                ["EmailDelivery:Enabled"] = "false"
+            });
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            ProductionConfigurationValidator.Validate(
+                configuration,
+                new TestWebHostEnvironment(Environments.Production)));
+
+        Assert.Contains("EmailDelivery", exception.Message);
+    }
+
+    [Fact]
     public void Validate_RejectsDisabledProductionContentSecurityPolicy()
     {
         var configuration = CreateConfiguration(
@@ -219,7 +239,14 @@ public sealed class ProductionConfigurationValidatorTests
                 "production-turn-shared-secret-with-more-than-32-chars",
             ["TurnCredentials:TtlSeconds"] = "600",
             ["TurnCredentials:Urls:0"] =
-                "turn:arcane-link.ru:3478?transport=udp"
+                "turn:arcane-link.ru:3478?transport=udp",
+            ["EmailDelivery:Enabled"] = "true",
+            ["EmailDelivery:Host"] = "smtp.example.test",
+            ["EmailDelivery:Port"] = "587",
+            ["EmailDelivery:Username"] = "system@example.test",
+            ["EmailDelivery:Password"] = "smtp-test-password",
+            ["EmailDelivery:FromAddress"] = "system@example.test",
+            ["EmailDelivery:PublicOrigin"] = "https://arcane-link.ru"
         };
         if (includeKnownProxy)
         {

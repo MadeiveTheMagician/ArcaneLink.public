@@ -39,6 +39,7 @@ export const communicationIconNames = [
   'screen',
   'screen-off',
   'send',
+  'smile',
   'speaker',
   'video',
 ] as const

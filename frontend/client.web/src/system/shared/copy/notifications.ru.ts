@@ -3,6 +3,7 @@ export const notificationCopy = {
   brandFallback: 'ArcaneLink',
   title: 'Уведомления',
   actions: {
+    clearHistory: 'Очистить историю уведомлений',
     accept: 'Принять',
     acceptInvitation: 'Принять приглашение',
     closeInvitation: 'Закрыть приглашение',
@@ -12,11 +13,17 @@ export const notificationCopy = {
     markAllRead: 'Отметить все уведомления прочитанными',
     notNow: 'Не сейчас',
     openPrivateSpace: 'Открыть приватный спейс',
+    openMention: 'Перейти к упоминанию',
+    openFriendRequests: 'Открыть заявки в друзья',
     enableNotifications: 'Включить уведомления',
     disableNotifications: 'Выключить уведомления',
     retry: 'Повторить',
   },
   center: {
+    clearHistoryConfirmation:
+      'Удалить все прочитанные уведомления? Непрочитанные уведомления и активные приглашения останутся.',
+    clearHistoryError:
+      'Не удалось очистить историю уведомлений. Попробуйте ещё раз.',
     searchPlaceholder: 'Поиск уведомлений',
     filtersLabel: 'Фильтры уведомлений',
     notificationsEnabled: 'Уведомления включены',

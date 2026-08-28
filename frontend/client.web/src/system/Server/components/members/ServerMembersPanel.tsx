@@ -7,6 +7,8 @@ import { useMessageSearch } from '../../../shared/hooks/useMessageSearch'
 import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton'
 import { shouldLoadMoreServerMembers } from '../../hooks/workspace/serverMemberPaginationModel'
 import styles from './ServerMembersPanel.module.css'
+import { getServerMembersPanelDisclosure } from './serverMembersPanelModel'
+import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel'
 
 const memberSkeletonKeys = Array.from(
   { length: 20 },
@@ -16,7 +18,8 @@ const memberSkeletonKeys = Array.from(
 export function ServerMembersPanel({
   accessToken,
   className = '',
-  hidden = false,
+  id,
+  isCollapsed = false,
   isCompact,
   isLoading,
   isLoadingMore,
@@ -33,7 +36,8 @@ export function ServerMembersPanel({
 }: {
   accessToken: string
   className?: string
-  hidden?: boolean
+  id: string
+  isCollapsed?: boolean
   isCompact: boolean
   isLoading: boolean
   isLoadingMore: boolean
@@ -43,7 +47,11 @@ export function ServerMembersPanel({
   serverId: string
   spaces: SpaceResponse[]
   selectedMemberId: string | null
-  onSelectMember: (member: ServerMemberDetailsResponse) => void
+  onSelectMember: (
+    member: ServerMemberDetailsResponse,
+    anchor: ServerMemberProfileAnchor,
+    focusTarget: HTMLElement,
+  ) => void
   onOpenMemberContextMenu: (
     member: ServerMemberDetailsResponse,
     event: MouseEvent<HTMLElement>,
@@ -51,6 +59,7 @@ export function ServerMembersPanel({
   onOpenSearchResult: (message: SpaceMessageResponse) => void
   onLoadMore: () => Promise<boolean>
 }) {
+  const disclosure = getServerMembersPanelDisclosure(isCollapsed)
   const messageSearch = useMessageSearch({
     accessToken,
     endpoint: `/api/servers/${serverId}/messages/search`,
@@ -96,10 +105,15 @@ export function ServerMembersPanel({
 
   return (
     <aside
-      hidden={hidden}
-      className={`${styles.memberPanel} ui-panel ${className} ${isCompact ? styles.compact : ''}`}
+      id={id}
+      className={`${styles.memberPanel} ui-panel ${className} ${
+        isCompact ? styles.compact : ''
+      } ${isCollapsed ? styles.collapsed : ''}`}
+      data-state={disclosure.state}
       aria-label={serverCopy.labels.members}
+      aria-hidden={disclosure.ariaHidden}
       aria-busy={!messageSearch.isActive && (isLoading || isLoadingMore)}
+      inert={disclosure.inert}
     >
       <header>
         <div className={styles.memberSearchSlot}>
@@ -192,7 +206,24 @@ export function ServerMembersPanel({
                 className={`${styles.memberCard} ui-list-row ${
                   selectedMemberId === member.id ? styles.activeMember : ''
                 }`}
-                onClick={() => onSelectMember(member)}
+                role="button"
+                tabIndex={0}
+                onClick={(event) =>
+                  onSelectMember(
+                    member,
+                    event.currentTarget.getBoundingClientRect(),
+                    event.currentTarget,
+                  )
+                }
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return
+                  event.preventDefault()
+                  onSelectMember(
+                    member,
+                    event.currentTarget.getBoundingClientRect(),
+                    event.currentTarget,
+                  )
+                }}
                 onContextMenu={(event) =>
                   onOpenMemberContextMenu(member, event)
                 }

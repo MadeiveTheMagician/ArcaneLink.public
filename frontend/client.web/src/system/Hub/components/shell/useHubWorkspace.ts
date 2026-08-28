@@ -148,6 +148,11 @@ export function useHubWorkspace({
     activatePrivateSpace(message.spaceId)
   }
 
+  function openPrivateMessage(message: MessageFocusRequest) {
+    setFocusedPrivateMessage(message)
+    activatePrivateSpace(message.spaceId)
+  }
+
   function activatePrivateSpace(spaceId: string) {
     setActivePrivateSpaceId(spaceId)
     setActiveServerId(null)
@@ -184,6 +189,7 @@ export function useHubWorkspace({
     showInvitesWorkspace,
     openPrivateSpace,
     openPrivateSearchResult,
+    openPrivateMessage,
     closeServerContextMenu,
     leaveServerFromContextMenu,
   }

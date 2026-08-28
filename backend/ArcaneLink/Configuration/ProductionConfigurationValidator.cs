@@ -71,6 +71,7 @@ public static class ProductionConfigurationValidator
 
         ValidateSecurityHeaders(configuration);
         ValidateForwardedHeaders(configuration);
+        ValidateEmailDelivery(configuration);
     }
 
     private static void ValidateSecurityHeaders(IConfiguration configuration)
@@ -160,10 +161,21 @@ public static class ProductionConfigurationValidator
     {
         return value.Contains('\r') || value.Contains('\n');
     }
-
     private static bool ContainsPlaceholderMarker(string value)
     {
         return value.Contains("replace-with", StringComparison.OrdinalIgnoreCase) ||
                value.Contains("change-me", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void ValidateEmailDelivery(IConfiguration configuration)
+    {
+        var options = configuration
+            .GetSection(EmailDeliveryOptions.SectionName)
+            .Get<EmailDeliveryOptions>() ?? new EmailDeliveryOptions();
+        if (!options.Enabled || !options.IsValid())
+        {
+            throw new InvalidOperationException(
+                "Production EmailDelivery must be enabled and configured with SMTP credentials and an HTTPS public origin.");
+        }
     }
 }

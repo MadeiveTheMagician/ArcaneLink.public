@@ -9,12 +9,17 @@ import type {
   ServerMemberResponse,
   SpaceResponse,
 } from '../../../../shared/types'
+import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel'
 import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel'
 import type { VoiceUserAudioSettings } from '../../../shared/types/voicePlayback'
 import { serverCopy, SystemIcon } from '../../../shared'
 import type { ServerDetail } from '../../utils/serverWorkspaceModel'
 import headerStyles from './ServerChannelTreeHeader.module.css'
 import { MobileServerMembersPanel } from './MobileServerMembersPanel'
+import {
+  isMobileMembersPanelOpen,
+  type MobileServerTab,
+} from './mobileServerMembersPanelModel'
 import styles from './ServerChannelTreeNavigation.module.css'
 import reorderStyles from './ServerChannelTreeReorder.module.css'
 import { SpaceNavigationNode } from './SpaceNavigationNode'
@@ -28,8 +33,10 @@ type ServerChannelTreeProps = {
   rootSpaces: SpaceResponse[]
   spaces: SpaceResponse[]
   visibleDetail: ServerDetail | null
+  selectedMemberId: string | null
   isLoadingSpaces: boolean
   canInviteMembers: boolean
+  canOpenServerSettings: boolean
   canManageSpaces: boolean
   canManageServer: boolean
   canMoveVoiceParticipants: boolean
@@ -45,7 +52,11 @@ type ServerChannelTreeProps = {
   onOpenInviteDialog: () => void
   onOpenSettings: () => void
   onSelectOverview: () => void
-  onSelectMember: (member: ServerMemberDetailsResponse) => void
+  onSelectMember: (
+    member: ServerMemberDetailsResponse,
+    anchor: ServerMemberProfileAnchor,
+    focusTarget: HTMLElement,
+  ) => void
   onLoadMoreMembers: () => Promise<boolean>
   onSelectSpace: (space: SpaceResponse) => void
   onOpenVoiceChat: (space: SpaceResponse) => void
@@ -72,8 +83,10 @@ export function ServerChannelTree({
   rootSpaces,
   spaces,
   visibleDetail,
+  selectedMemberId,
   isLoadingSpaces,
   canInviteMembers,
+  canOpenServerSettings,
   canManageSpaces,
   canManageServer,
   canMoveVoiceParticipants,
@@ -99,12 +112,15 @@ export function ServerChannelTree({
   onOpenVoiceParticipantContextMenu,
   onContextMenu,
 }: ServerChannelTreeProps) {
-  const [mobileServerTab, setMobileServerTab] = useState<'spaces' | 'members'>(
-    'spaces',
-  )
+  const [mobileServerTab, setMobileServerTab] =
+    useState<MobileServerTab>('spaces')
   const [isMobileSpaceReorderEnabled, setIsMobileSpaceReorderEnabled] =
     useState(false)
   const isMobileServerTree = useMobileServerTree()
+  const isMobileMembersOpen = isMobileMembersPanelOpen(
+    isMobileServerTree,
+    mobileServerTab,
+  )
   const canDragSpaces =
     canManageSpaces && (!isMobileServerTree || isMobileSpaceReorderEnabled)
   const dragAndDrop = useSpaceTreeDragAndDrop({
@@ -173,16 +189,17 @@ export function ServerChannelTree({
           </span>
           <strong>{server.title}</strong>
           <div className={headerStyles.topbarActions}>
-            <button
-              className={headerStyles.inviteButton}
-              type="button"
-              onClick={onOpenInviteDialog}
-              disabled={!canInviteMembers}
-              aria-label={serverCopy.actions.inviteMembers}
-              title={serverCopy.actions.inviteMembers}
-            >
-              <SystemIcon name="plus" size={20} />
-            </button>
+            {canInviteMembers && (
+              <button
+                className={headerStyles.inviteButton}
+                type="button"
+                onClick={onOpenInviteDialog}
+                aria-label={serverCopy.actions.inviteMembers}
+                title={serverCopy.actions.inviteMembers}
+              >
+                <SystemIcon name="plus" size={20} />
+              </button>
+            )}
             {canManageSpaces && (
               <button
                 className={[
@@ -202,15 +219,17 @@ export function ServerChannelTree({
                 <SystemIcon name="more-vertical" size={20} />
               </button>
             )}
-            <button
-              className={headerStyles.settingsButton}
-              type="button"
-              onClick={onOpenSettings}
-              aria-label={serverCopy.settings.title}
-              title={serverCopy.settings.title}
-            >
-              <SystemIcon name="settings" size={20} />
-            </button>
+            {canOpenServerSettings && (
+              <button
+                className={headerStyles.settingsButton}
+                type="button"
+                onClick={onOpenSettings}
+                aria-label={serverCopy.settings.title}
+                title={serverCopy.settings.title}
+              >
+                <SystemIcon name="settings" size={20} />
+              </button>
+            )}
           </div>
         </div>
         <span>Spaces</span>
@@ -246,11 +265,13 @@ export function ServerChannelTree({
           </button>
           <button
             className={
-              mobileServerTab === 'members'
+              isMobileMembersOpen
                 ? headerStyles.mobileServerTabActive
                 : ''
             }
             type="button"
+            aria-controls="mobile-server-members-panel"
+            aria-pressed={isMobileMembersOpen}
             onClick={() => setMobileServerTab('members')}
           >
             {serverCopy.labels.members}
@@ -261,7 +282,7 @@ export function ServerChannelTree({
         className={[
           'ui-scroll-list ui-scrollbar-none',
           isRootSpaceDropTarget ? reorderStyles.spaceRootDropTarget : '',
-          mobileServerTab === 'members' ? styles.mobileSpacesPanelHidden : '',
+          isMobileMembersOpen ? styles.mobileSpacesPanelHidden : '',
           isMobileSpaceReorderEnabled ? styles.mobileSpacesReorderEnabled : '',
         ]
           .filter(Boolean)
@@ -271,6 +292,8 @@ export function ServerChannelTree({
         onDrop={(event) => void dropSpaceOnRoot(event)}
         onContextMenu={(event) => onContextMenu(event)}
         aria-busy={isLoadingSpaces}
+        aria-hidden={isMobileMembersOpen}
+        inert={isMobileMembersOpen}
       >
         <button
           className={visibleDetail?.type === 'overview' ? styles.active : ''}
@@ -327,10 +350,8 @@ export function ServerChannelTree({
       </nav>
       <MobileServerMembersPanel
         members={serverMembers}
-        selectedMemberId={
-          visibleDetail?.type === 'member' ? visibleDetail.memberId : null
-        }
-        isOpen={mobileServerTab === 'members'}
+        selectedMemberId={selectedMemberId}
+        isOpen={isMobileMembersOpen}
         isLoadingMore={isLoadingMoreMembers}
         hasMore={hasMoreMembers}
         onSelectMember={onSelectMember}

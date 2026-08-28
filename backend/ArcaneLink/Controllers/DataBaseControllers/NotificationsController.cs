@@ -60,6 +60,19 @@ namespace ArcaneLink.Controllers.DataBaseControllers
             return NoContent();
         }
 
+        [HttpDelete("history")]
+        public async Task<IActionResult> ClearHistory(CancellationToken cancellationToken)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            await _notifications.ClearHistoryAsync(userId.Value, cancellationToken);
+            return NoContent();
+        }
+
         private Guid? GetCurrentUserId()
         {
             var value = User.FindFirstValue("userId");

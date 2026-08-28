@@ -457,14 +457,16 @@ export function DirectUserProfileDialog({
   accessToken,
   currentUserId,
   space,
+  targetMember,
   onClose,
 }: {
   accessToken: string
   currentUserId: string
   space: PrivateSpaceResponse
+  targetMember?: PrivateSpaceResponse['members'][number]
   onClose: () => void
 }) {
-  const member = getPrivateSpaceOtherMember(space, currentUserId)
+  const member = targetMember ?? getPrivateSpaceOtherMember(space, currentUserId)
   const targetUserId = member?.userId ?? null
   const [profile, setProfile] =
     useState<PublicUserProfileResponse | null>(null)

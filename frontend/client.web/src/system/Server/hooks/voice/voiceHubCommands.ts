@@ -1,6 +1,8 @@
 import * as signalR from '@microsoft/signalr'
 import type {
   ConnectedVoiceChannel,
+  PrivateCallJoinResult,
+  PrivateCallState,
   VoiceStatePayload,
 } from './voiceChannelTypes'
 
@@ -9,6 +11,33 @@ type LocalVoiceState = {
   isDeafened: boolean
   isCameraEnabled: boolean
   isScreenSharing: boolean
+}
+
+export async function prepareVoiceJoinMedia<TConnection>(
+  ensureConnection: () => Promise<TConnection>,
+  ensureLocalStream: () => Promise<MediaStream>,
+) {
+  const [connectionResult, mediaResult] = await Promise.allSettled([
+    ensureConnection(),
+    ensureLocalStream(),
+  ])
+  const connection = connectionResult.status === 'fulfilled'
+    ? connectionResult.value
+    : null
+  if (mediaResult.status === 'rejected') {
+    return {
+      connection,
+      error: mediaResult.reason,
+    }
+  }
+  if (connectionResult.status === 'rejected') {
+    return {
+      connection: null,
+      error: connectionResult.reason,
+    }
+  }
+
+  return { connection, error: null }
 }
 
 export function invokeJoinVoiceChannel(
@@ -45,6 +74,109 @@ export function invokeGetVoiceChannelState(
   return channel.channelScope === 'private'
     ? connection.invoke('GetPrivateVoiceChannelState', channel.spaceId)
     : connection.invoke('GetVoiceChannelState', channel.serverId, channel.spaceId)
+}
+
+export function invokeRefreshCurrentVoiceIdentity(
+  connection: signalR.HubConnection,
+) {
+  return connection.invoke('RefreshCurrentVoiceIdentity')
+}
+
+export async function leavePreviousVoiceChannelAfterFailedSwitch(
+  connection: signalR.HubConnection,
+  previousChannel: ConnectedVoiceChannel | null,
+  nextChannel: ConnectedVoiceChannel,
+) {
+  if (
+    !previousChannel ||
+    previousChannel.spaceId.trim().toLowerCase() ===
+      nextChannel.spaceId.trim().toLowerCase()
+  ) {
+    return false
+  }
+
+  try {
+    await connection.invoke('LeaveVoiceChannel', previousChannel.spaceId)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function leaveStaleVoiceJoin(
+  connection: signalR.HubConnection,
+  channel: ConnectedVoiceChannel,
+) {
+  try {
+    await connection.invoke('LeaveVoiceChannel', channel.spaceId)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function invokeStartPrivateCall(
+  connection: signalR.HubConnection,
+  spaceId: string,
+  localVoiceState: LocalVoiceState,
+) {
+  return connection.invoke<PrivateCallJoinResult | null>(
+    'StartPrivateCall',
+    spaceId,
+    localVoiceState.isMuted,
+    localVoiceState.isDeafened,
+    localVoiceState.isCameraEnabled,
+    localVoiceState.isScreenSharing,
+  )
+}
+
+export function invokeAcceptPrivateCall(
+  connection: signalR.HubConnection,
+  spaceId: string,
+  callId: string,
+  localVoiceState: LocalVoiceState,
+) {
+  return connection.invoke<PrivateCallJoinResult | null>(
+    'AcceptPrivateCall',
+    spaceId,
+    callId,
+    localVoiceState.isMuted,
+    localVoiceState.isDeafened,
+    localVoiceState.isCameraEnabled,
+    localVoiceState.isScreenSharing,
+  )
+}
+
+export function invokeDeclinePrivateCall(
+  connection: signalR.HubConnection,
+  spaceId: string,
+  callId: string,
+) {
+  return connection.invoke<boolean>('DeclinePrivateCall', spaceId, callId)
+}
+
+export function invokeCancelPrivateCall(
+  connection: signalR.HubConnection,
+  spaceId: string,
+  callId: string,
+) {
+  return connection.invoke<boolean>('CancelPrivateCall', spaceId, callId)
+}
+
+export function invokeGetPrivateCallState(
+  connection: signalR.HubConnection,
+  spaceId: string,
+) {
+  return connection.invoke<PrivateCallState | null>(
+    'GetPrivateCallState',
+    spaceId,
+  )
+}
+
+export function invokeGetIncomingPrivateCalls(
+  connection: signalR.HubConnection,
+) {
+  return connection.invoke<PrivateCallState[]>('GetIncomingPrivateCalls')
 }
 
 export function invokeUpdateVoiceParticipantModeration(

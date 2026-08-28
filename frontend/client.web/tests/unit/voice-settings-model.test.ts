@@ -13,6 +13,10 @@ import {
 
 test.describe('voice settings model', () => {
   test('uses voice-safe defaults for missing or malformed storage', () => {
+    expect(defaultVoiceSettings).toMatchObject({
+      thresholdMode: 'manual',
+      manualThresholdDb: -45,
+    })
     expect(parseVoiceSettings(null)).toEqual(defaultVoiceSettings)
     expect(parseVoiceSettings('{broken')).toEqual(defaultVoiceSettings)
     expect(
@@ -93,6 +97,8 @@ test.describe('voice settings model', () => {
       outputVolumePercent: 64,
       inputMode: 'push-to-talk',
       pushToTalkKeyCode: 'KeyC',
+      thresholdMode: 'manual',
+      manualThresholdDb: -45,
       qualityProfile: 'automatic',
       adaptiveQuality: true,
     })
@@ -129,6 +135,7 @@ test.describe('voice settings model', () => {
       ),
     ).toMatchObject({
       autoGainControl: true,
+      thresholdMode: 'manual',
       manualThresholdDb: -42,
     })
 

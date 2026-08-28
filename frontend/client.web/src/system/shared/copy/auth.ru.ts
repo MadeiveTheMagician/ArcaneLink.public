@@ -9,6 +9,12 @@ export const authCopy = {
     loginLoading: 'Сверяем печать...',
     next: 'Далее',
     register: 'Регистрация',
+    backToLogin: 'Вернуться ко входу',
+    sendRecoveryLink: 'Отправить ссылку',
+    resetPassword: 'Сменить пароль',
+    resendVerification: 'Отправить письмо ещё раз',
+    saving: 'Сохраняем...',
+    sending: 'Отправляем...',
   },
   aria: {
     changeForm: 'Смена формы',
@@ -28,6 +34,8 @@ export const authCopy = {
     loginPlaceholder: 'Логин',
     loginRegisterPlaceholder: 'Введите логин',
     password: 'Пароль',
+    newPassword: 'Новый пароль',
+    confirmPassword: 'Повторите новый пароль',
     rememberMe: 'Запомнить меня',
   },
   hints: {
@@ -36,6 +44,14 @@ export const authCopy = {
     loginCopy: 'Войдите в свой контур и продолжите работу с серверами, друзьями и личными сообщениями.',
     registerCopy: 'Заполните четыре печати регистрации. После создания аккаунта портал вернет вас ко входу.',
     registerReady: 'Заполните свиток регистрации. После создания аккаунта портал вернет вас ко входу.',
+    registrationEmailVerification:
+      'После регистрации мы отправим на email ссылку. Войти можно только после подтверждения адреса.',
+    forgotPasswordCopy:
+      'Укажите email или логин. Если аккаунт активен, мы отправим безопасную ссылку.',
+    resetPasswordCopy:
+      'Задайте новый пароль. После смены все активные сеансы будут завершены.',
+    confirmEmailCopy:
+      'Проверяем одноразовую ссылку и активируем email.',
   },
   labels: {
     device: 'Устройство',
@@ -67,8 +83,37 @@ export const authCopy = {
       `Портал открыт. Добро пожаловать, ${displayName}.`,
     registerFailed: 'Регистрация не выполнена.',
     registerSuccess: (login: string) =>
-      `Аккаунт ${login} создан. Печать готова ко входу.`,
+      `Аккаунт ${login} создан. Проверьте почту и подтвердите email перед входом.`,
     verifyingAccessSeal: 'Сверяем печать доступа...',
+    emailNotConfirmed:
+      'Адрес email ещё не подтверждён. Откройте ссылку из письма, затем войдите.',
+    verificationSent:
+      'Если аккаунт ожидает подтверждения, новое письмо будет отправлено.',
+    recoverySent:
+      'Если аккаунт найден, ссылка для смены пароля отправлена.',
+    passwordResetSuccess:
+      'Пароль изменён. Теперь войдите с новым паролем.',
+    emailConfirmed:
+      'Адрес email подтверждён. Аккаунт активирован, можно войти.',
+    confirmingEmail: 'Проверяем ссылку подтверждения...',
+    checkVerificationInbox:
+      'Аккаунт пока не активирован. Проверьте входящие и откройте ссылку из письма. При необходимости письмо можно отправить повторно.',
+    emailChangeConfirmed:
+      'Новый адрес email подтверждён. Для безопасности войдите в аккаунт заново.',
+    emailConfirmationFailed:
+      'Ссылка подтверждения недействительна или срок её действия истёк.',
+    passwordRequirementsNotMet:
+      'Новый пароль пока не соответствует требованиям безопасности.',
+    passwordResetFailed:
+      'Не удалось изменить пароль. Ссылка могла устареть или уже использоваться.',
+    recoverySendFailed:
+      'Не удалось отправить письмо для восстановления. Повторите попытку позже.',
+    resettingPassword: 'Сохраняем новый пароль...',
+    sendingRecovery: 'Готовим письмо для восстановления...',
+    sendingVerification: 'Отправляем письмо подтверждения...',
+    verificationSendFailed:
+      'Не удалось отправить письмо подтверждения. Повторите попытку позже.',
+    passwordsDoNotMatch: 'Пароли не совпадают.',
   },
   steps: {
     displayName: 'Профиль',
@@ -79,6 +124,12 @@ export const authCopy = {
   tabs: {
     login: 'Вход',
     register: 'Регистрация',
+  },
+  titles: {
+    confirmEmail: 'Подтверждение email',
+    forgotPassword: 'Восстановление пароля',
+    resetPassword: 'Новый пароль',
+    verifyEmail: 'Проверьте почту',
   },
   themeTest: {
     activeFrame: 'Активный фрейм',

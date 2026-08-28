@@ -36,6 +36,8 @@ namespace ArcaneLink.DataBase._Data
 
         public DbSet<UserRefreshToken> UserRefreshTokens => Set<UserRefreshToken>();
         public DbSet<UserDeviceSession> UserDeviceSessions => Set<UserDeviceSession>();
+        public DbSet<UserAccountActionToken> UserAccountActionTokens => Set<UserAccountActionToken>();
+        public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
 
         public DbSet<AssetType> AssetTypes => Set<AssetType>();
         public DbSet<Asset> Assets => Set<Asset>();

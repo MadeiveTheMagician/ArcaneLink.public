@@ -10,16 +10,16 @@
   display: grid;
   gap: 14px;
   overflow: hidden;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 9px;
-  padding: 16px;
+  border: 0;
+  border-radius: 0;
+  padding: 6px 2px;
   background:
     radial-gradient(
       circle at 0 0,
       color-mix(in srgb, var(--diagnostics-tone), transparent 85%),
       transparent 38%
     ),
-    var(--theme-control-bg);
+    transparent;
   --diagnostics-tone: var(--theme-accent-light);
   transition:
     border-color 180ms ease,
@@ -28,12 +28,7 @@
 }
 
 .anchor:focus-within .panel {
-  border-color: color-mix(
-    in srgb,
-    var(--diagnostics-tone),
-    var(--theme-section-border) 32%
-  );
-  box-shadow: 0 0 24px color-mix(in srgb, var(--diagnostics-tone), transparent 86%);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--diagnostics-tone), transparent 42%);
 }
 
 .panel[data-quality='good'] {
@@ -103,7 +98,7 @@
   align-content: start;
   min-width: 0;
   gap: 4px;
-  border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 46%);
+  border: 0;
   border-radius: 7px;
   padding: 10px;
   background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 18%);

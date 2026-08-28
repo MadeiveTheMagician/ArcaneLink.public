@@ -10,12 +10,34 @@
 }
 
 @media (max-width: 760px) {
-  :global(.profile-page.is-server-mode) .open {
+  :global(.profile-page.is-server-mode) .panel {
     display: grid;
     align-content: start;
+    grid-column: 1;
+    grid-row: 2;
     min-height: 0;
     gap: 8px;
     padding: 0 0 10px;
+    overflow-y: auto;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(20px);
+    visibility: hidden;
+    transition:
+      opacity 160ms ease,
+      transform 220ms cubic-bezier(0.2, 0.82, 0.2, 1),
+      visibility 0s linear 220ms;
+  }
+
+  :global(.profile-page.is-server-mode) .open {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateX(0);
+    visibility: visible;
+    transition:
+      opacity 180ms ease,
+      transform 220ms cubic-bezier(0.2, 0.82, 0.2, 1),
+      visibility 0s linear 0s;
   }
 
   :global(.profile-page.is-server-mode) .panel button {
@@ -25,7 +47,7 @@
     border-radius: 10px;
     padding: 9px 12px;
     background:
-      linear-gradient(180deg, rgba(14, 26, 58, 0.94), rgba(7, 15, 36, 0.96));
+      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
   }
 
   :global(.profile-page.is-server-mode) .panel button:hover,
@@ -33,7 +55,7 @@
     border-color: color-mix(in srgb, var(--theme-accent-light), transparent 68%);
     background:
       radial-gradient(circle at 12% 50%, color-mix(in srgb, var(--theme-accent), transparent 72%), transparent 42%),
-      linear-gradient(180deg, rgba(15, 29, 64, 0.98), rgba(8, 17, 40, 0.98));
+      linear-gradient(180deg, var(--theme-hover-bg), var(--theme-control-bg-strong));
   }
 
   :global(.profile-page.is-server-mode) .avatar {
@@ -45,8 +67,8 @@
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 72%);
     border-radius: 11px;
-    color: rgba(238, 243, 255, 0.96);
-    background: rgba(15, 28, 62, 0.96);
+    color: var(--theme-avatar-contrast);
+    background: var(--theme-avatar-bg);
     font-size: 14px;
     font-weight: 900;
   }
@@ -69,8 +91,16 @@
   }
 
   :global(.profile-page.is-server-mode) .text small {
-    color: rgba(170, 181, 222, 0.72);
+    color: var(--theme-text-faint);
     font-size: 11px;
     font-weight: 700;
+  }
+}
+
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+  :global(.profile-page.is-server-mode) .panel,
+  :global(.profile-page.is-server-mode) .open {
+    transform: none;
+    transition: none;
   }
 }

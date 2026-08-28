@@ -50,8 +50,6 @@
   font-weight: 850;
 }
 
-.heading select,
-.decision select,
 .decision textarea {
   border: 1px solid var(--theme-border-control);
   border-radius: 7px;
@@ -245,6 +243,7 @@
 .decision > button {
   justify-self: end;
   border-color: var(--theme-border-accent);
+  color: var(--theme-accent-contrast);
   background: var(--theme-surface-accent);
 }
 

@@ -2,10 +2,12 @@ import type { CSSProperties } from 'react'
 import {
   getProfileColor,
   getSystemTheme,
+  getThemeDominantTextColor,
   SYSTEM_THEMES,
 } from '../../../../styles/systemThemes'
 import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings'
 import { settingsCopy } from '../../../shared/copy'
+import { SystemIcon } from '../../../shared/icons/SystemIcon'
 import {
   ScaleControl,
   SettingsSection,
@@ -79,9 +81,25 @@ export function SystemSettingsInterfaceTab({
                 style={
                   {
                     '--theme-tile-dominant': theme.dominantColor,
+                    '--theme-tile-contrast': getThemeDominantTextColor(
+                      theme.dominantColor,
+                    ),
+                    '--theme-icon-gradient-start': theme.previewColors[2],
+                    '--theme-icon-gradient-middle': theme.previewColors[1],
+                    '--theme-accent-light': theme.previewColors[2],
+                    '--theme-icon-gradient-end': theme.dominantColor,
+                    '--theme-icon-outline': getThemeDominantTextColor(
+                      theme.dominantColor,
+                    ),
+                    '--theme-icon-glow-color': theme.dominantColor,
                   } as CSSProperties
                 }
               >
+                <SystemIcon
+                  className={styles.themeIcon}
+                  name="settings"
+                  size={26}
+                />
                 <span className={styles.themeSwatches} aria-hidden="true">
                   {theme.previewColors.map((color) => (
                     <span key={color} style={{ background: color }} />

@@ -3,6 +3,7 @@ import type { UserNotificationResponse } from '../../src/shared/types'
 import {
   applyAllNotificationsRead,
   applyNotificationRead,
+  clearReadNotificationHistory,
   rollbackAllNotificationsRead,
   rollbackNotificationRead,
 } from '../../src/system/Hub/components/notifications/notificationCenterModel'
@@ -66,5 +67,12 @@ test.describe('notification center optimistic read model', () => {
     expect(
       rollbackAllNotificationsRead(concurrent, optimistic.rollbacks)[0].readAt,
     ).toBe('server-value')
+  })
+
+  test('clears only read notification history', () => {
+    const unread = notification('unread')
+    const read = notification('read', 'earlier')
+
+    expect(clearReadNotificationHistory([read, unread])).toEqual([unread])
   })
 })

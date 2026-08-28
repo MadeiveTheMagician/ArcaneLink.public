@@ -3,10 +3,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(190px, 260px);
   align-items: center;
   gap: 16px;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 7px;
-  padding: 14px;
-  background: var(--theme-control-bg);
+  padding: 7px 2px;
 }
 
 .selectField > span:first-child {
@@ -31,9 +28,9 @@
 
 .permissionList {
   overflow: hidden;
-  border: 1px solid var(--theme-section-border);
-  border-radius: 9px;
-  background: var(--theme-control-bg);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .permissionRow {
@@ -83,8 +80,12 @@
 }
 
 .permissionRowSelected {
-  background: var(--theme-surface-accent);
+  background: var(--theme-active-bg);
   box-shadow: inset 3px 0 0 var(--theme-accent-light);
+}
+
+.permissionRowSelected small {
+  color: var(--theme-text-soft);
 }
 
 .permissionRowSelected:hover {

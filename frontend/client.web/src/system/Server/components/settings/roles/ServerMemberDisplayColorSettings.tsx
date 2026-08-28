@@ -125,8 +125,8 @@ export function ServerMemberDisplayColorSettings({
           aria-label="Цвет имени на сервере"
           value={selectionValue}
           disabled={isLoading || isSaving || !settings}
-          onChange={(event) =>
-            void selectDisplayColor(event.currentTarget.value)
+          onValueChange={(value) =>
+            void selectDisplayColor(value)
           }
         >
           <option value="auto">Автоматически</option>

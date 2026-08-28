@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type PointerEvent,
@@ -16,7 +17,6 @@ import type {
   ServerInviteResponse,
   ServerJoinRequestResponse,
   ServerMemberDetailsResponse,
-  ServerMemberRoleResponse,
   ServerMemberResponse,
   ServerResponse,
   ServerRoleResponse,
@@ -40,10 +40,15 @@ import {
   type VoiceUserAudioSettings,
 } from '../../../shared/types/voicePlayback'
 import { ServerMembersPanel } from './ServerWorkspaceSections'
+import {
+  ServerMemberCompactProfile,
+  ServerMemberFullProfile,
+} from '../member-profile/ServerMemberProfileSurfaces'
 import { useSpaceMessages } from '../../hooks/messages/useSpaceMessages'
 import { useServerSpaceDialogs } from '../../hooks/workspace/useServerSpaceDialogs'
 import { useServerWorkspaceContextMenus } from '../../hooks/workspace/useServerWorkspaceContextMenus'
 import { useServerWorkspaceNavigation } from '../../hooks/workspace/useServerWorkspaceNavigation'
+import { useServerMemberProfileOverlay } from '../../hooks/workspace/useServerMemberProfileOverlay'
 import type { VoiceChannelController } from '../../hooks/voice/useVoiceChannel'
 import {
   type ServerCoreTab,
@@ -59,6 +64,7 @@ import type {
   MessageBubbleAlignment,
   MessageBubbleWidth,
 } from '../../../shared'
+import type { MessageFocusRequest } from '../../../shared/messages/messageFocusModel'
 import {
   canApplySpaceReorder,
   canManageAnySpace,
@@ -90,7 +96,6 @@ type ServerWorkspaceProps = {
   spacePermissions: PermissionResponse[]
   serverPermissions: PermissionResponse[]
   serverEffectivePermissions: ServerEffectivePermissionsResponse | null
-  memberRoles: ServerMemberRoleResponse[]
   serverAuditLogs: ServerAuditLogResponse[]
   serverBans: ServerBanResponse[]
   friends: UserFriendResponse[]
@@ -113,6 +118,9 @@ type ServerWorkspaceProps = {
   loadExternalMediaPreviews: boolean
   horizontalVideoCardSize: number
   verticalVideoCardSize: number
+  selectedThemeCode: string
+  profileColor: string | null
+  applySystemThemeToOtherProfiles: boolean
   messageDisplayFormat?: MessageDisplayFormat
   messageBubbleAlignment?: MessageBubbleAlignment
   messageBubbleWidth?: MessageBubbleWidth
@@ -135,6 +143,7 @@ type ServerWorkspaceProps = {
   onUpdateServer: (
     request: UpdateServerRequest,
   ) => Promise<ServerResponse | null>
+  onDeleteServer: () => Promise<void>
   onRevokeServerInvite: (inviteId: string) => void
   onLoadMoreServerJoinRequests: () => void
   onApproveServerJoinRequest: (requestId: string) => void
@@ -177,6 +186,8 @@ type ServerWorkspaceProps = {
   onCloseSettings: () => void
   isSettingsOpen: boolean
   voice: VoiceChannelController
+  externalMessageFocus?: MessageFocusRequest | null
+  onExternalMessageFocusConsumed?: () => void
 }
 
 export function ServerWorkspace({
@@ -196,7 +207,6 @@ export function ServerWorkspace({
   spacePermissions,
   serverPermissions,
   serverEffectivePermissions,
-  memberRoles,
   serverAuditLogs,
   serverBans,
   friends,
@@ -219,6 +229,9 @@ export function ServerWorkspace({
   loadExternalMediaPreviews,
   horizontalVideoCardSize,
   verticalVideoCardSize,
+  selectedThemeCode,
+  profileColor,
+  applySystemThemeToOtherProfiles,
   messageDisplayFormat = 'wall-scroll',
   messageBubbleAlignment = defaultMessageBubbleAlignment,
   messageBubbleWidth = defaultMessageBubbleWidth,
@@ -228,6 +241,7 @@ export function ServerWorkspace({
   onLoadServerInvites,
   onCreateServerInvite,
   onUpdateServer,
+  onDeleteServer,
   onRevokeServerInvite,
   onLoadMoreServerJoinRequests,
   onApproveServerJoinRequest,
@@ -256,6 +270,8 @@ export function ServerWorkspace({
   voiceAudioSettingsByUserId,
   voicePlaybackStatesByParticipantId,
   onChangeVoiceAudioSettings,
+  externalMessageFocus,
+  onExternalMessageFocusConsumed,
 }: ServerWorkspaceProps) {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
   const [isLoadingInviteDialog, setIsLoadingInviteDialog] = useState(false)
@@ -271,6 +287,7 @@ export function ServerWorkspace({
     string | null
   >(null)
   const [isMembersPanelCollapsed, setIsMembersPanelCollapsed] = useState(false)
+  const membersPanelId = useId()
   const [hasUnsavedRoleChanges, setHasUnsavedRoleChanges] = useState(false)
 
   function confirmDiscardRoleChanges() {
@@ -329,7 +346,9 @@ export function ServerWorkspace({
     canManageReports,
     canManageRoles,
     canManageServer,
+    canManageServerProfile,
     canManageServerSettings,
+    canOpenServerSettings,
     canMoveVoiceParticipants,
     canMuteVoiceMembers,
     canViewAuditLog,
@@ -342,8 +361,6 @@ export function ServerWorkspace({
     isOwner,
     openSearchResult,
     rootSpaces,
-    selectedMember,
-    selectedMemberRoles,
     selectDetail,
     selectSpace,
     server,
@@ -355,15 +372,48 @@ export function ServerWorkspace({
     selectedServerMembership,
     user,
     serverMembers,
-    memberRoles,
-    serverRoles,
     serverSpaces,
     isLoadingSpaces,
     voice,
     onCloseSettings: requestCloseSettings,
     onOpenVoiceChat: setOpenVoiceChatSpaceId,
     effectivePermissions: serverEffectivePermissions,
+    externalMessageFocus,
+    onExternalMessageFocusConsumed,
   })
+  const memberProfile = useServerMemberProfileOverlay({
+    accessToken,
+    serverId: server.id,
+  })
+  const memberProfileViewerTheme = {
+    selectedThemeCode,
+    profileColor,
+    applySystemThemeToOtherProfiles,
+  }
+
+  useEffect(() => {
+    if (serverEffectivePermissions === null) {
+      return
+    }
+
+    if (!canInviteMembers && isInviteDialogOpen) {
+      inviteDialogLoadVersionRef.current += 1
+      setIsInviteDialogOpen(false)
+      setIsLoadingInviteDialog(false)
+    }
+
+    if (!canOpenServerSettings && isSettingsOpen) {
+      setHasUnsavedRoleChanges(false)
+      onCloseSettings()
+    }
+  }, [
+    canInviteMembers,
+    canOpenServerSettings,
+    isInviteDialogOpen,
+    isSettingsOpen,
+    onCloseSettings,
+    serverEffectivePermissions,
+  ])
   const visibleMessageSpace = visibleChannel?.spaceId
     ? serverSpaces.find((space) => space.id === visibleChannel.spaceId)
     : undefined
@@ -470,7 +520,7 @@ export function ServerWorkspace({
     onCreateSpace: openCreateSpaceDialog,
     onEditSpace: openEditSpaceDialog,
     onDeleteSpace: setPendingDeleteSpace,
-    onSelectMember: (memberId) => selectDetail({ type: 'member', memberId }),
+    onOpenMemberProfile: memberProfile.openFull,
     onOpenDirectSpace,
     onStartDirectVoice,
     onSendFriendRequest,
@@ -529,11 +579,13 @@ export function ServerWorkspace({
     messageError,
     mentionCandidates,
     loadMentionCandidates,
+    loadMessageWindow,
     loadOlderMessages,
     sendMessage,
     updateMessage,
     deleteMessage,
     pinMessage,
+    unpinMessage,
     setMessageReaction,
     markMessagesRead,
   } = useSpaceMessages(
@@ -558,6 +610,10 @@ export function ServerWorkspace({
   }
 
   function openInviteDialog() {
+    if (!canInviteMembers) {
+      return
+    }
+
     const loadVersion = inviteDialogLoadVersionRef.current + 1
     inviteDialogLoadVersionRef.current = loadVersion
     setIsInviteDialogOpen(true)
@@ -599,8 +655,10 @@ export function ServerWorkspace({
             rootSpaces={rootSpaces}
             spaces={serverSpaces}
             visibleDetail={visibleDetail}
+            selectedMemberId={memberProfile.overlay?.member.id ?? null}
             isLoadingSpaces={isLoadingSpaces}
             canInviteMembers={canInviteMembers}
+            canOpenServerSettings={canOpenServerSettings}
             participantsBySpaceId={voice.participantsBySpaceId}
             audioSettingsByUserId={voiceAudioSettingsByUserId}
             serverMembers={serverMembers}
@@ -616,11 +674,13 @@ export function ServerWorkspace({
             }
             collapsedCategoryIds={collapsedCategoryIds}
             onOpenInviteDialog={openInviteDialog}
-            onOpenSettings={onOpenSettings}
+            onOpenSettings={() => {
+              if (canOpenServerSettings) {
+                onOpenSettings()
+              }
+            }}
             onSelectOverview={() => selectDetail({ type: 'overview' })}
-            onSelectMember={(member) =>
-              selectDetail({ type: 'member', memberId: member.id })
-            }
+            onSelectMember={memberProfile.openCompact}
             onSelectSpace={selectSpaceAndCloseVoiceChat}
             onOpenVoiceChat={openVoiceSpaceChat}
             onToggleCategory={toggleCategory}
@@ -665,11 +725,6 @@ export function ServerWorkspace({
             user={user}
             visibleDetail={visibleDetail}
             visibleChannel={visibleChannel}
-            selectedMember={selectedMember}
-            selectedMemberRoles={selectedMemberRoles}
-            friendUserIds={friendUserIds}
-            pendingOutgoingUserIds={pendingOutgoingUserIds}
-            isMutatingFriends={isMutatingFriends}
             canManageServer={canManageServer}
             serverMembers={serverMembers}
             serverMemberCount={serverMemberCount}
@@ -680,6 +735,7 @@ export function ServerWorkspace({
               visibleChannel,
               openVoiceChatSpaceId,
             )}
+            membersPanelId={membersPanelId}
             isMembersPanelCollapsed={isMembersPanelCollapsed}
             onToggleMembersPanel={() =>
               setIsMembersPanelCollapsed((current) => !current)
@@ -722,7 +778,6 @@ export function ServerWorkspace({
             messageDisplayFormat={messageDisplayFormat}
             messageBubbleAlignment={messageBubbleAlignment}
             messageBubbleWidth={messageBubbleWidth}
-            onSendFriendRequest={onSendFriendRequest}
             onOpenVoiceParticipantContextMenu={(
               event,
               participant,
@@ -740,8 +795,10 @@ export function ServerWorkspace({
             onUpdateMessage={updateMessage}
             onDeleteMessage={deleteMessage}
             onPinMessage={pinMessage}
+            onUnpinMessage={unpinMessage}
             onSetMessageReaction={setMessageReaction}
             onMarkMessagesRead={markMessagesRead}
+            onLoadMessageWindow={loadMessageWindow}
             onLoadOlderMessages={loadOlderMessages}
             focusedMessageId={
               focusedMessage?.spaceId === activeMessageSpaceId
@@ -753,6 +810,7 @@ export function ServerWorkspace({
         membersPanel={
           <ServerMembersPanel
             accessToken={accessToken}
+            id={membersPanelId}
             isCompact={isMemberPanelCompact}
             isLoading={isLoadingServerMembers}
             isLoadingMore={isLoadingMoreServerMembers}
@@ -761,12 +819,8 @@ export function ServerWorkspace({
             totalCount={serverMemberCount}
             serverId={server.id}
             spaces={serverSpaces}
-            selectedMemberId={
-              visibleDetail?.type === 'member' ? visibleDetail.memberId : null
-            }
-            onSelectMember={(member) =>
-              selectDetail({ type: 'member', memberId: member.id })
-            }
+            selectedMemberId={memberProfile.overlay?.member.id ?? null}
+            onSelectMember={memberProfile.openCompact}
             onOpenMemberContextMenu={openMemberContextMenu}
             onOpenSearchResult={openSearchResult}
             onLoadMore={onLoadMoreServerMembers}
@@ -793,13 +847,15 @@ export function ServerWorkspace({
         canManageBans={canManageBans}
         canManageInvites={canManageInvites}
         canManageRoles={canManageRoles}
+        canManageServerProfile={canManageServerProfile}
         canManageServerSettings={canManageServerSettings}
+        canDeleteServer={isOwner}
         canManageReports={canManageReports}
         canViewAuditLog={canViewAuditLog}
         currentUserPermissionCodes={
           serverEffectivePermissions?.permissionCodes ?? []
         }
-        isInviteDialogOpen={isInviteDialogOpen}
+        isInviteDialogOpen={isInviteDialogOpen && canInviteMembers}
         isLoadingInviteDialog={isLoadingInviteDialog}
         inviteDialogLoadError={inviteDialogLoadError}
         isLoadingGovernance={isLoadingGovernance}
@@ -820,7 +876,7 @@ export function ServerWorkspace({
         memberContextItems={getMemberContextItems()}
         spaceContextItems={getSpaceContextItems()}
         voiceParticipantContextItems={getVoiceParticipantContextItems()}
-        isSettingsOpen={isSettingsOpen}
+        isSettingsOpen={isSettingsOpen && canOpenServerSettings}
         serverCoreTab={serverCoreTab}
         serverRoles={serverRoles}
         serverPermissions={serverPermissions}
@@ -828,6 +884,7 @@ export function ServerWorkspace({
         serverBans={serverBans}
         onCreateServerInvite={onCreateServerInvite}
         onUpdateServer={onUpdateServer}
+        onDeleteServer={onDeleteServer}
         onRevokeServerInvite={onRevokeServerInvite}
         onLoadMoreServerJoinRequests={onLoadMoreServerJoinRequests}
         onApproveServerJoinRequest={onApproveServerJoinRequest}
@@ -867,6 +924,34 @@ export function ServerWorkspace({
           isSubmitting={isMutatingUserBlock}
           onClose={closeUserBlockDialog}
           onConfirm={confirmUserBlock}
+        />
+      )}
+
+      {memberProfile.overlay?.mode === 'compact' && memberProfile.overlay.anchor && (
+        <ServerMemberCompactProfile
+          currentUserId={user.id}
+          member={memberProfile.overlay.member}
+          profile={memberProfile.profile}
+          viewerTheme={memberProfileViewerTheme}
+          anchor={memberProfile.overlay.anchor}
+          isLoading={memberProfile.isLoading}
+          error={memberProfile.error}
+          onRetry={memberProfile.retry}
+          onClose={memberProfile.close}
+          onOpenFull={memberProfile.expandToFull}
+        />
+      )}
+
+      {memberProfile.overlay?.mode === 'full' && (
+        <ServerMemberFullProfile
+          currentUserId={user.id}
+          member={memberProfile.overlay.member}
+          profile={memberProfile.profile}
+          viewerTheme={memberProfileViewerTheme}
+          isLoading={memberProfile.isLoading}
+          error={memberProfile.error}
+          onRetry={memberProfile.retry}
+          onClose={memberProfile.close}
         />
       )}
     </>

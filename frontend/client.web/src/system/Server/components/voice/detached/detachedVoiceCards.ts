@@ -212,7 +212,7 @@ export function updateDetachedSpeakingState(
       }
 
       if (article.dataset.hideServiceInfo === 'true') {
-        article.style.setProperty('--detached-card-accent', '211, 224, 255')
+        article.style.setProperty('--detached-card-accent', '184, 184, 184')
         article.style.setProperty('--detached-card-border-alpha', '0.12')
         return
       }

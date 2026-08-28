@@ -3,14 +3,15 @@
 ## Supported version
 
 Security fixes are developed against the latest ArcaneLink release candidate
-or stable release. `1.0.0-rc.1` is the supported review baseline until it is
+or stable release. `1.0.1` is the supported review baseline until it is
 replaced.
 
 ## Reporting a vulnerability
 
 Do not open a public issue and do not include secrets, personal data or working
-exploit payloads in an ordinary discussion. Notify the repository owner
-privately through the access channel used to grant repository review. Include:
+exploit payloads in an ordinary discussion. Use GitHub private vulnerability
+reporting when it is enabled, or establish another private channel with the
+repository owner before sending sensitive details. Include:
 
 - affected version and component;
 - minimal reproduction steps;

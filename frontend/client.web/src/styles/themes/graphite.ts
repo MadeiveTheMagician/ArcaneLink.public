@@ -1,0 +1,62 @@
+import type { SystemTheme } from '../systemThemes'
+import { themeCopy } from '../theme.copy'
+
+export const graphiteTheme: SystemTheme = {
+  code: 'graphite',
+  title: themeCopy.titles.graphite,
+  dominantColor: '#313131',
+  previewColors: ['#121212', '#313131', '#666666'],
+  assetSet: 'none',
+  variables: {
+    '--color-bg': '#121212',
+    '--color-surface': '#1a1a1a',
+    '--color-surface-strong': 'rgba(32, 32, 32, 0.98)',
+    '--color-border': '#383838',
+    '--color-text': '#f2f2f2',
+    '--color-muted': '#b8b8b8',
+    '--color-sapphire': '#666666',
+    '--color-sapphire-light': '#b8b8b8',
+    '--color-violet': '#909090',
+    '--color-rune': '#d6d6d6',
+    '--color-danger': '#f06a73',
+    '--color-success': '#69d09c',
+    '--theme-accent-contrast': '#ffffff',
+    '--theme-bg-start': '#0e0e0e',
+    '--theme-bg-mid': '#121212',
+    '--theme-bg-end': '#181818',
+    '--theme-text-soft': '#cccccc',
+    '--theme-text-faint': '#9e9e9e',
+    '--theme-frame-bg': 'rgba(18, 18, 18, 0.96)',
+    '--theme-frame-bg-strong': 'rgba(25, 25, 25, 0.98)',
+    '--theme-control-bg': 'rgba(32, 32, 32, 0.94)',
+    '--theme-control-bg-strong': 'rgba(15, 15, 15, 0.98)',
+    '--theme-hover-bg': '#252525',
+    '--theme-active-bg': '#2c2c2c',
+    '--theme-border-soft': 'rgba(88, 88, 88, 0.46)',
+    '--theme-border-control': 'rgba(100, 100, 100, 0.56)',
+    '--theme-border-accent': 'rgba(184, 184, 184, 0.58)',
+    '--theme-section-border': 'rgba(100, 100, 100, 0.42)',
+    '--theme-scrollbar-track': 'rgba(15, 15, 15, 0.82)',
+    '--theme-scrollbar-thumb': 'rgba(106, 106, 106, 0.76)',
+    '--theme-icon-gradient-start': '#f2f2f2',
+    '--theme-icon-gradient-middle': '#b8b8b8',
+    '--theme-icon-gradient-end': '#808080',
+    '--theme-icon-outline': '#f2f2f2',
+    '--theme-icon-glow-color': 'rgba(184, 184, 184, 0.2)',
+    '--theme-backdrop-glow': 'rgba(184, 184, 184, 0.06)',
+    '--theme-glow': 'rgba(0, 0, 0, 0.18)',
+    '--theme-glow-strong': 'rgba(0, 0, 0, 0.3)',
+    '--theme-surface-raised':
+      'linear-gradient(180deg, rgba(36, 36, 36, 0.98), rgba(21, 21, 21, 0.98))',
+    '--theme-surface-accent':
+      'linear-gradient(135deg, #666666, #4e4e4e)',
+    '--theme-surface-accent-strong':
+      'linear-gradient(180deg, #666666, #4e4e4e)',
+    '--theme-avatar-bg':
+      'linear-gradient(135deg, #444444, #2c2c2c)',
+    '--theme-avatar-contrast': '#f2f2f2',
+    '--theme-arcane-backdrop':
+      'linear-gradient(180deg, rgba(18, 18, 18, 0.2), rgba(14, 14, 14, 0.32)), radial-gradient(circle at 76% 26%, rgba(184, 184, 184, 0.05), transparent 32%)',
+    '--shadow-sapphire': '0 26px 90px rgba(0, 0, 0, 0.34)',
+  },
+}

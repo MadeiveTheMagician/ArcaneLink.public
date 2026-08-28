@@ -6,6 +6,8 @@ type DismissableLayerBoundary = EventTarget & {
 
 type DismissableLayerEvent = Pick<Event, 'composedPath' | 'target'>
 
+const dismissableLayerBranchAttribute = 'data-dismissable-layer-branch'
+
 export function isPointerEventOutsideDismissableLayer(
   event: DismissableLayerEvent,
   layer: DismissableLayerBoundary | null,
@@ -13,7 +15,17 @@ export function isPointerEventOutsideDismissableLayer(
 ) {
   return (
     !isEventInsideBoundary(event, layer) &&
-    !isEventInsideBoundary(event, trigger)
+    !isEventInsideBoundary(event, trigger) &&
+    !isEventInsideDismissableLayerBranch(event)
+  )
+}
+
+function isEventInsideDismissableLayerBranch(event: DismissableLayerEvent) {
+  return event.composedPath().some(
+    (target) =>
+      'hasAttribute' in target &&
+      typeof target.hasAttribute === 'function' &&
+      target.hasAttribute(dismissableLayerBranchAttribute),
   )
 }
 

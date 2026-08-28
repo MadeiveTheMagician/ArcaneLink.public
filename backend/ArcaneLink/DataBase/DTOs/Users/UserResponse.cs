@@ -1,4 +1,4 @@
-﻿namespace ArcaneLink.DataBase.DTOs.Users
+namespace ArcaneLink.DataBase.DTOs.Users
 {
     public class UserResponse
     {
@@ -10,5 +10,7 @@
         public DateTime CreatedAt { get; set; }
         public string PresenceStatus { get; set; } = "offline";
         public DateTime? LastSeenAt { get; set; }
+        public DateTime? EmailConfirmedAt { get; set; }
+        public bool RequiresEmailConfirmation => EmailConfirmedAt == null;
     }
 }

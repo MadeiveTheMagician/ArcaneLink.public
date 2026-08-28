@@ -12,7 +12,7 @@
     color-mix(
       in srgb,
       rgb(var(--detached-card-accent)),
-      #0b1020 72%
+      var(--theme-control-bg-strong) 72%
     );
   box-shadow:
     inset 0 -96px 120px rgba(0, 0, 0, 0.18),
@@ -28,7 +28,7 @@
   place-items: center;
   overflow: hidden;
   border-radius: 16px;
-  color: #eef2ff;
+  color: var(--color-text);
   background: rgba(var(--detached-card-accent), 0.28);
   box-shadow:
     0 0 0 2px rgba(var(--detached-card-accent), 0.5),
@@ -63,7 +63,7 @@
 }
 .arcane-detached-card-name {
   overflow: hidden;
-  color: #eef2ff;
+  color: var(--color-text);
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 15px;
@@ -104,17 +104,17 @@
   padding: 0;
 }
 .arcane-detached-preset-grid[data-edit="true"] {
-  border: 1px solid rgba(119, 143, 255, 0.20);
+  border: 1px solid var(--theme-border-soft);
   background-image:
-    linear-gradient(rgba(119, 143, 255, 0.16) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(119, 143, 255, 0.16) 1px, transparent 1px);
+    linear-gradient(var(--theme-section-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--theme-section-border) 1px, transparent 1px);
   background-size: var(--detached-cell-size) var(--detached-cell-size);
 }
 .arcane-detached-center-line {
   position: absolute;
   z-index: 0;
-  background: rgba(159, 123, 255, 0.44);
-  box-shadow: 0 0 18px rgba(159, 123, 255, 0.38);
+  background: var(--theme-border-accent);
+  box-shadow: 0 0 18px var(--theme-glow-strong);
   pointer-events: none;
 }
 .arcane-detached-center-line[data-axis="vertical"] {
@@ -145,22 +145,22 @@
   cursor: grab;
 }
 .arcane-detached-slot[data-selected-slot="true"] {
-  outline: 2px solid rgba(159, 123, 255, 0.95);
+  outline: 2px solid var(--theme-accent-light);
   outline-offset: 3px;
   box-shadow:
     inset 0 -96px 120px rgba(0, 0, 0, 0.18),
     0 16px 42px rgba(0, 0, 0, 0.24),
     0 0 0 1px rgba(255, 255, 255, 0.20),
-    0 0 26px rgba(159, 123, 255, 0.42);
+    0 0 26px var(--theme-glow-strong);
 }
 .arcane-detached-empty-slot {
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  border: 1px dashed rgba(170, 188, 255, 0.34);
+  border: 1px dashed var(--theme-border-accent);
   border-radius: var(--detached-card-radius);
-  color: rgba(220, 228, 255, 0.56);
-  background: rgba(14, 20, 42, 0.58);
+  color: var(--theme-text-faint);
+  background: var(--theme-control-bg);
   font-size: 13px;
 }
 .arcane-detached-slot-badge {
@@ -168,11 +168,11 @@
   top: 8px;
   left: 8px;
   z-index: 3;
-  border: 1px solid rgba(220, 228, 255, 0.25);
+  border: 1px solid var(--theme-border-control);
   border-radius: 8px;
   padding: 4px 7px;
-  color: #eef2ff;
-  background: rgba(3, 6, 18, 0.72);
+  color: var(--color-text);
+  background: var(--theme-control-bg-strong);
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;

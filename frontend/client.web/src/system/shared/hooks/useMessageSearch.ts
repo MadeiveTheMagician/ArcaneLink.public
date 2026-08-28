@@ -10,6 +10,7 @@ export type MessageSearchFilters = {
 }
 
 type SubmittedSearch = {
+  endpoint: string | null
   query: string
   filters: MessageSearchFilters
 }
@@ -48,7 +49,11 @@ export function useMessageSearch({
   const isActive = Boolean(submittedSearch) &&
     (submittedQuery.length > 0 || hasSubmittedFilters)
   const requestUrl = useMemo(() => {
-    if (!endpoint || !submittedSearch) {
+    if (
+      !endpoint ||
+      !submittedSearch ||
+      submittedSearch.endpoint !== endpoint
+    ) {
       return null
     }
 
@@ -86,6 +91,7 @@ export function useMessageSearch({
     }
 
     setSubmittedSearch({
+      endpoint,
       query: normalizedQuery,
       filters: nextFilters,
     })
@@ -98,6 +104,14 @@ export function useMessageSearch({
     setResults([])
     setError(null)
   }
+
+  useEffect(() => {
+    setQuery('')
+    setFilters(emptyFilters)
+    setSubmittedSearch(null)
+    setResults([])
+    setError(null)
+  }, [endpoint])
 
   useEffect(() => {
     if (!requestUrl) {

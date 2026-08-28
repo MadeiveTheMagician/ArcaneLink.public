@@ -42,7 +42,7 @@ type BuildMemberContextMenuItemsOptions = {
   isMutatingDirectMessageBlock: boolean
   isUserBlockStatusResolved: boolean
   isUserBlocked: boolean
-  onSelectMember: (memberId: string) => void
+  onOpenMemberProfile: (member: ServerMemberDetailsResponse) => void
   onOpenDirectSpace: (userId: string) => void
   onSendFriendRequest: (userId: string) => void
   onToggleUserBlock: (userId: string) => void
@@ -138,7 +138,7 @@ export function buildMemberContextMenuItems({
   isMutatingDirectMessageBlock,
   isUserBlockStatusResolved,
   isUserBlocked,
-  onSelectMember,
+  onOpenMemberProfile,
   onOpenDirectSpace,
   onSendFriendRequest,
   onToggleUserBlock,
@@ -239,7 +239,7 @@ export function buildMemberContextMenuItems({
       type: 'item',
       label: serverCopy.contextMenu.profile,
       icon: 'profile',
-      onSelect: () => onSelectMember(member.id),
+      onSelect: () => onOpenMemberProfile(member),
     },
     {
       type: 'item',

@@ -1,18 +1,18 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
 
-import type { SpaceResponse } from '../../src/shared/types'
+import type { SpaceResponse } from '../../src/shared/types';
 import {
   getRecentServerDetail,
   recentServerSpaceLifetimeMs,
-  rememberRecentServerDetail,
-} from '../../src/system/Server/utils/serverRecentSpace'
+  rememberRecentServerDetail
+} from '../../src/system/Server/utils/serverRecentSpace';
 
 function createStorage() {
-  const values = new Map<string, string>()
+  const values = new Map<string, string>();
   return {
     getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => values.set(key, value),
-  } as Storage
+    setItem: (key: string, value: string) => values.set(key, value)
+  } as Storage;
 }
 
 function createSpace(id: string, typeCode: SpaceResponse['typeCode']) {
@@ -35,63 +35,70 @@ function createSpace(id: string, typeCode: SpaceResponse['typeCode']) {
     effectiveCapabilities: {
       canSendMessages: true,
       canConnectVoice: true,
-      canManageSpace: true,
-    },
-  } satisfies SpaceResponse
+      canManageSpace: true
+    }
+  } satisfies SpaceResponse;
 }
 
 test.describe('recent server space', () => {
   test('restores a recently visited server channel', () => {
-    const storage = createStorage()
-    const space = createSpace('space-1', 'text_room')
+    const storage = createStorage();
+    const space = createSpace('space-1', 'text_room');
 
     rememberRecentServerDetail(
       'server-1',
       { type: 'channel', spaceId: space.id, title: space.title, kind: 'text' },
       1000,
-      storage,
-    )
+      storage
+    );
 
     expect(getRecentServerDetail('server-1', [space], 2000, storage)).toEqual({
       type: 'channel',
       spaceId: space.id,
       title: space.title,
-      kind: 'text',
-    })
-  })
+      kind: 'text'
+    });
+  });
 
   test('expires a visited channel after one hour', () => {
-    const storage = createStorage()
-    const space = createSpace('space-1', 'text_room')
+    const storage = createStorage();
+    const space = createSpace('space-1', 'text_room');
 
     rememberRecentServerDetail(
       'server-1',
       { type: 'channel', spaceId: space.id, title: space.title, kind: 'text' },
       1000,
-      storage,
-    )
+      storage
+    );
 
     expect(
       getRecentServerDetail(
         'server-1',
         [space],
         1001 + recentServerSpaceLifetimeMs,
-        storage,
-      ),
-    ).toBeNull()
-  })
+        storage
+      )
+    ).toBeNull();
+  });
 
   test('does not restore a deleted or category space', () => {
-    const storage = createStorage()
-    const category = createSpace('category-1', 'category')
+    const storage = createStorage();
+    const category = createSpace('category-1', 'category');
 
     rememberRecentServerDetail(
       'server-1',
-      { type: 'channel', spaceId: category.id, title: category.title, kind: 'text' },
+      {
+        type: 'channel',
+        spaceId: category.id,
+        title: category.title,
+        kind: 'text'
+      },
       1000,
-      storage,
-    )
+      storage
+    );
 
-    expect(getRecentServerDetail('server-1', [category], 2000, storage)).toBeNull()
-  })
-})
+    expect(
+      getRecentServerDetail('server-1', [category], 2000, storage)
+    ).toBeNull();
+  });
+});

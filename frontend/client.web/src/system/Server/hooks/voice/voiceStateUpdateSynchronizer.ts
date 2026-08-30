@@ -1,110 +1,110 @@
 export type VoiceStateUpdateGeneration = {
-  participantId: string
-  spaceId: string
-}
+  participantId: string;
+  spaceId: string;
+};
 
 export type VoiceStateUpdateRequest = VoiceStateUpdateGeneration & {
-  isMuted: boolean
-  isDeafened: boolean
-  isCameraEnabled: boolean
-  isScreenSharing: boolean
-}
+  isMuted: boolean;
+  isDeafened: boolean;
+  isCameraEnabled: boolean;
+  isScreenSharing: boolean;
+};
 
 type VoiceStateSnapshot = Omit<
   VoiceStateUpdateRequest,
   keyof VoiceStateUpdateGeneration
->
+>;
 
 export function enqueueAcceptedVoiceGenerationState(
   synchronizer: { enqueue: (request: VoiceStateUpdateRequest) => void },
   participantId: string,
   spaceId: string,
-  getCurrentState: () => VoiceStateSnapshot,
+  getCurrentState: () => VoiceStateSnapshot
 ) {
   synchronizer.enqueue({
     participantId,
     spaceId,
-    ...getCurrentState(),
-  })
+    ...getCurrentState()
+  });
 }
 
 type VoiceStateUpdateSynchronizerOptions = {
-  send: (request: VoiceStateUpdateRequest) => Promise<void>
-  isCurrentGeneration: (request: VoiceStateUpdateGeneration) => boolean
-  retryDelayMs?: number
-  schedule?: (callback: () => void, delayMs: number) => number
-  cancel?: (handle: number) => void
-}
+  send: (request: VoiceStateUpdateRequest) => Promise<void>;
+  isCurrentGeneration: (request: VoiceStateUpdateGeneration) => boolean;
+  retryDelayMs?: number;
+  schedule?: (callback: () => void, delayMs: number) => number;
+  cancel?: (handle: number) => void;
+};
 
 export function createVoiceStateUpdateSynchronizer({
   send,
   isCurrentGeneration,
   retryDelayMs = 500,
   schedule = (callback, delayMs) => globalThis.setTimeout(callback, delayMs),
-  cancel = (handle) => globalThis.clearTimeout(handle),
+  cancel = (handle) => globalThis.clearTimeout(handle)
 }: VoiceStateUpdateSynchronizerOptions) {
-  let pending: VoiceStateUpdateRequest | null = null
-  let isSending = false
-  let retryHandle: number | null = null
-  let isDisposed = false
+  let pending: VoiceStateUpdateRequest | null = null;
+  let isSending = false;
+  let retryHandle: number | null = null;
+  let isDisposed = false;
 
   function scheduleFlush() {
     if (isDisposed || isSending || retryHandle !== null || !pending) {
-      return
+      return;
     }
-    isSending = true
-    void flush()
+    isSending = true;
+    void flush();
   }
 
   async function flush() {
     while (!isDisposed && pending) {
-      const request = pending
-      pending = null
+      const request = pending;
+      pending = null;
       if (!isCurrentGeneration(request)) {
-        continue
+        continue;
       }
 
       try {
-        await send(request)
+        await send(request);
       } catch {
         if (!pending && isCurrentGeneration(request)) {
-          pending = request
+          pending = request;
         }
-        isSending = false
+        isSending = false;
         if (pending && retryHandle === null) {
           retryHandle = schedule(() => {
-            retryHandle = null
-            scheduleFlush()
-          }, retryDelayMs)
+            retryHandle = null;
+            scheduleFlush();
+          }, retryDelayMs);
         }
-        return
+        return;
       }
     }
-    isSending = false
+    isSending = false;
   }
 
   return {
     enqueue(request: VoiceStateUpdateRequest) {
       if (isDisposed) {
-        return
+        return;
       }
-      pending = request
-      scheduleFlush()
+      pending = request;
+      scheduleFlush();
     },
     invalidate() {
-      pending = null
+      pending = null;
       if (retryHandle !== null) {
-        cancel(retryHandle)
-        retryHandle = null
+        cancel(retryHandle);
+        retryHandle = null;
       }
     },
     dispose() {
-      isDisposed = true
-      pending = null
+      isDisposed = true;
+      pending = null;
       if (retryHandle !== null) {
-        cancel(retryHandle)
-        retryHandle = null
+        cancel(retryHandle);
+        retryHandle = null;
       }
-    },
-  }
+    }
+  };
 }

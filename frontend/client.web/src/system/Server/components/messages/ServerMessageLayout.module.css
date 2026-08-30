@@ -8,8 +8,16 @@
   border-top: 0;
   border-bottom: 0;
   background:
-    radial-gradient(circle at 82% 8%, var(--theme-backdrop-glow), transparent 30%),
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+    radial-gradient(
+      circle at 82% 8%,
+      var(--theme-backdrop-glow),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      var(--theme-frame-bg),
+      var(--theme-control-bg-strong)
+    );
 }
 
 .chatSurface header {
@@ -158,7 +166,8 @@
     box-shadow 150ms ease;
 }
 
-.textMain[data-scroll-bottom-placement="above-attachment-drafts"] .textScrollBottom {
+.textMain[data-scroll-bottom-placement='above-attachment-drafts']
+  .textScrollBottom {
   bottom: 272px;
 }
 

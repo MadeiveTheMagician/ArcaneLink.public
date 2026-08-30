@@ -1,23 +1,24 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
+
 import type {
   FriendUserResponse,
   PrivateSpaceMemberResponse,
   PrivateSpaceResponse,
   SpaceMessageAssetResponse,
-  SpaceMessageResponse,
-} from '../../src/shared/types'
-import { communityCopy } from '../../src/system/shared/copy/community.ru'
+  SpaceMessageResponse
+} from '../../src/shared/types';
 import {
-  formatPrivateSpaceMuteRemaining,
   filterPrivateSpacesByConversationQuery,
+  formatPrivateSpaceMuteRemaining,
   getDefaultPrivateSpaceGroupTitle,
   getPrivateSpaceOtherMember,
   getPrivateSpacePresenceStatus,
   getPrivateSpacePreview,
   getPrivateSpaceTitle,
   getPrivateSpaceTooltipModel,
-  resolvePrivateSpaceMuteState,
-} from '../../src/system/Hub/components/direct-messages/directMessageModel'
+  resolvePrivateSpaceMuteState
+} from '../../src/system/Hub/components/direct-messages/directMessageModel';
+import { communityCopy } from '../../src/system/shared/copy/community.ru';
 
 function createUser(id: string, displayName: string): FriendUserResponse {
   return {
@@ -37,14 +38,14 @@ function createUser(id: string, displayName: string): FriendUserResponse {
     recommendationScore: 0,
     isFriend: false,
     hasIncomingFriendRequest: false,
-    hasOutgoingFriendRequest: false,
-  }
+    hasOutgoingFriendRequest: false
+  };
 }
 
 function createMember(
   userId: string,
   displayName: string,
-  statusCode = 'active',
+  statusCode = 'active'
 ): PrivateSpaceMemberResponse {
   return {
     id: `member-${userId}`,
@@ -56,13 +57,13 @@ function createMember(
     addedByUserId: null,
     createdAt: '',
     updatedAt: '',
-    user: createUser(userId, displayName),
-  }
+    user: createUser(userId, displayName)
+  };
 }
 
 function createSpace(
   members: PrivateSpaceMemberResponse[],
-  overrides: Partial<PrivateSpaceResponse> = {},
+  overrides: Partial<PrivateSpaceResponse> = {}
 ): PrivateSpaceResponse {
   return {
     spaceId: 'space-1',
@@ -88,16 +89,16 @@ function createSpace(
       customAvatarCropZoom: 1,
       mutedUntil: null,
       isMutedIndefinitely: false,
-      isPeerBlocked: false,
+      isPeerBlocked: false
     },
     members,
     lastMessage: null,
-    ...overrides,
-  }
+    ...overrides
+  };
 }
 
 function createMessage(
-  overrides: Partial<SpaceMessageResponse> = {},
+  overrides: Partial<SpaceMessageResponse> = {}
 ): SpaceMessageResponse {
   return {
     id: 'message-1',
@@ -123,8 +124,8 @@ function createMessage(
     reactions: [],
     mentions: [],
     receipt: null,
-    ...overrides,
-  }
+    ...overrides
+  };
 }
 
 function createAsset(): SpaceMessageAssetResponse {
@@ -135,133 +136,124 @@ function createAsset(): SpaceMessageAssetResponse {
     mimeType: 'image/png',
     sizeBytes: 1024,
     createdAt: '',
-    isSpoiler: false,
-  }
+    isSpoiler: false
+  };
 }
 
 test.describe('direct message model', () => {
   test('filters the conversation list by effective direct and group titles', () => {
     const direct = createSpace(
       [createMember('current', 'Current'), createMember('friend-1', 'Astra')],
-      { spaceId: 'direct-1' },
-    )
+      { spaceId: 'direct-1' }
+    );
     const group = createSpace(
       [createMember('current', 'Current'), createMember('friend-2', 'Boris')],
-      { spaceId: 'group-1', kind: 'group', title: 'Учебная группа' },
-    )
+      { spaceId: 'group-1', kind: 'group', title: 'Учебная группа' }
+    );
 
     expect(
       filterPrivateSpacesByConversationQuery(
         [direct, group],
         'current',
-        '  ГРУППА ',
-      ).map((space) => space.spaceId),
-    ).toEqual(['group-1'])
+        '  ГРУППА '
+      ).map((space) => space.spaceId)
+    ).toEqual(['group-1']);
     expect(
       filterPrivateSpacesByConversationQuery(
         [direct, group],
         'current',
-        'astra',
-      ).map((space) => space.spaceId),
-    ).toEqual(['direct-1'])
-  })
+        'astra'
+      ).map((space) => space.spaceId)
+    ).toEqual(['direct-1']);
+  });
 
   test('uses the other member name for an explicit Direct space', () => {
     const directSpace = createSpace([
       createMember('current', 'Current'),
-      createMember('friend-1', 'Astra'),
-    ])
+      createMember('friend-1', 'Astra')
+    ]);
 
-    expect(getPrivateSpaceTitle(directSpace, 'current')).toBe('Astra')
-  })
+    expect(getPrivateSpaceTitle(directSpace, 'current')).toBe('Astra');
+  });
 
   test('keeps a two-user Group distinct from a Direct conversation', () => {
     const twoUserGroup = createSpace(
-      [
-        createMember('current', 'Current'),
-        createMember('friend-1', 'Astra'),
-      ],
+      [createMember('current', 'Current'), createMember('friend-1', 'Astra')],
       {
         kind: 'group',
-        title: 'Проектная группа',
-      },
-    )
+        title: 'Проектная группа'
+      }
+    );
 
     expect(getPrivateSpaceTitle(twoUserGroup, 'current')).toBe(
-      'Проектная группа',
-    )
-    expect(getPrivateSpacePresenceStatus(twoUserGroup, 'current')).toBeNull()
-  })
+      'Проектная группа'
+    );
+    expect(getPrivateSpacePresenceStatus(twoUserGroup, 'current')).toBeNull();
+  });
 
   test('builds a stable default Group title from three displayed members', () => {
     const members = [
       createMember('current', 'Current'),
       createMember('friend-1', 'Astra'),
       createMember('friend-2', 'Boris'),
-      createMember('friend-3', 'Clara'),
-    ]
+      createMember('friend-3', 'Clara')
+    ];
     const group = createSpace(members, {
       kind: 'group',
-      title: null,
-    })
+      title: null
+    });
 
     expect(getDefaultPrivateSpaceGroupTitle(members)).toBe(
-      'Группа пользователей Current, Astra, Boris и др.',
-    )
+      'Группа пользователей Current, Astra, Boris и др.'
+    );
     expect(getPrivateSpaceTitle(group, 'current')).toBe(
-      'Группа пользователей Current, Astra, Boris и др.',
-    )
-  })
+      'Группа пользователей Current, Astra, Boris и др.'
+    );
+  });
 
   test('ignores inactive members in a generated Group title', () => {
     const members = [
       createMember('current', 'Current'),
       createMember('friend-1', 'Astra'),
-      createMember('friend-2', 'Former member', 'left'),
-    ]
+      createMember('friend-2', 'Former member', 'left')
+    ];
 
     expect(getDefaultPrivateSpaceGroupTitle(members)).toBe(
-      'Группа пользователей Current, Astra',
-    )
-  })
+      'Группа пользователей Current, Astra'
+    );
+  });
 
   test('prefers a viewer custom nickname in a Direct conversation', () => {
     const directSpace = createSpace(
-      [
-        createMember('current', 'Current'),
-        createMember('friend-1', 'Astra'),
-      ],
+      [createMember('current', 'Current'), createMember('friend-1', 'Astra')],
       {
         viewerSettings: {
           ...createSpace([]).viewerSettings,
-          customNickname: '  Напарница  ',
-        },
-      },
-    )
+          customNickname: '  Напарница  '
+        }
+      }
+    );
 
-    expect(getPrivateSpaceTitle(directSpace, 'current')).toBe('Напарница')
-  })
+    expect(getPrivateSpaceTitle(directSpace, 'current')).toBe('Напарница');
+  });
 
   test('keeps the original and custom Direct names in the tooltip', () => {
     const directSpace = createSpace(
-      [
-        createMember('current', 'Current'),
-        createMember('friend-1', 'Astra'),
-      ],
+      [createMember('current', 'Current'), createMember('friend-1', 'Astra')],
       {
         viewerSettings: {
           ...createSpace([]).viewerSettings,
           customNickname: '  Напарница  ',
-          note: '  Вместе работаем над релизом  ',
-        },
-      },
-    )
+          note: '  Вместе работаем над релизом  '
+        }
+      }
+    );
 
     expect(getPrivateSpaceTooltipModel(directSpace, 'current')).toEqual({
       title: 'Astra: Напарница',
-      note: 'Вместе работаем над релизом',
-    })
-  })
+      note: 'Вместе работаем над релизом'
+    });
+  });
 
   test('uses the group title without applying a Direct custom nickname', () => {
     const groupSpace = createSpace(
@@ -271,67 +263,67 @@ test.describe('direct message model', () => {
         title: 'Команда',
         viewerSettings: {
           ...createSpace([]).viewerSettings,
-          customNickname: 'Не должно отображаться',
-        },
-      },
-    )
+          customNickname: 'Не должно отображаться'
+        }
+      }
+    );
 
     expect(getPrivateSpaceTooltipModel(groupSpace, 'current')).toEqual({
       title: 'Команда',
-      note: null,
-    })
-  })
+      note: null
+    });
+  });
 
   test('resolves finite, expired, invalid and indefinite mute states', () => {
-    const nowMs = Date.parse('2026-07-29T10:00:00.000Z')
+    const nowMs = Date.parse('2026-07-29T10:00:00.000Z');
 
     expect(
       resolvePrivateSpaceMuteState(
         {
           isMutedIndefinitely: false,
-          mutedUntil: '2026-07-29T11:02:03.000Z',
+          mutedUntil: '2026-07-29T11:02:03.000Z'
         },
-        nowMs,
-      ),
+        nowMs
+      )
     ).toEqual({
       isMuted: true,
       isIndefinite: false,
       expiresAtMs: Date.parse('2026-07-29T11:02:03.000Z'),
-      remainingMs: 3_723_000,
-    })
+      remainingMs: 3_723_000
+    });
     expect(
       resolvePrivateSpaceMuteState(
         {
           isMutedIndefinitely: false,
-          mutedUntil: '2026-07-29T09:59:59.000Z',
+          mutedUntil: '2026-07-29T09:59:59.000Z'
         },
-        nowMs,
-      ).isMuted,
-    ).toBe(false)
+        nowMs
+      ).isMuted
+    ).toBe(false);
     expect(
       resolvePrivateSpaceMuteState(
         {
           isMutedIndefinitely: false,
-          mutedUntil: 'not-a-date',
+          mutedUntil: 'not-a-date'
         },
-        nowMs,
-      ).isMuted,
-    ).toBe(false)
+        nowMs
+      ).isMuted
+    ).toBe(false);
     expect(
       resolvePrivateSpaceMuteState(
         {
           isMutedIndefinitely: true,
-          mutedUntil: null,
+          mutedUntil: null
         },
-        nowMs,
-      ),
+        nowMs
+      )
     ).toEqual({
       isMuted: true,
       isIndefinite: true,
       expiresAtMs: null,
-      remainingMs: null,
-    })
-  })
+      remainingMs: null
+    });
+  });
 
   test('formats finite and indefinite mute countdowns', () => {
     expect(
@@ -339,85 +331,93 @@ test.describe('direct message model', () => {
         isMuted: true,
         isIndefinite: false,
         expiresAtMs: 3_723_000,
-        remainingMs: 3_723_000,
-      }),
-    ).toBe('1:02:03')
+        remainingMs: 3_723_000
+      })
+    ).toBe('1:02:03');
     expect(
       formatPrivateSpaceMuteRemaining({
         isMuted: true,
         isIndefinite: false,
         expiresAtMs: 63_000,
-        remainingMs: 63_000,
-      }),
-    ).toBe('01:03')
+        remainingMs: 63_000
+      })
+    ).toBe('01:03');
     expect(
       formatPrivateSpaceMuteRemaining({
         isMuted: true,
         isIndefinite: true,
         expiresAtMs: null,
-        remainingMs: null,
-      }),
-    ).toBe('∞')
+        remainingMs: null
+      })
+    ).toBe('∞');
     expect(
       formatPrivateSpaceMuteRemaining({
         isMuted: false,
         isIndefinite: false,
         expiresAtMs: null,
-        remainingMs: null,
-      }),
-    ).toBeNull()
-  })
+        remainingMs: null
+      })
+    ).toBeNull();
+  });
 
   test('prefers an active other member', () => {
-    const inactive = createMember('friend-1', 'Inactive', 'left')
-    const active = createMember('friend-2', 'Active')
-    const space = createSpace([createMember('current', 'Current'), inactive, active])
+    const inactive = createMember('friend-1', 'Inactive', 'left');
+    const active = createMember('friend-2', 'Active');
+    const space = createSpace([
+      createMember('current', 'Current'),
+      inactive,
+      active
+    ]);
 
-    expect(getPrivateSpaceOtherMember(space, 'current')).toBe(active)
-  })
+    expect(getPrivateSpaceOtherMember(space, 'current')).toBe(active);
+  });
 
   test('exposes presence only for one-to-one conversations', () => {
-    const onlineFriend = createMember('friend-1', 'Online friend')
+    const onlineFriend = createMember('friend-1', 'Online friend');
     onlineFriend.user = {
       ...onlineFriend.user,
-      presenceStatus: 'online',
-    }
+      presenceStatus: 'online'
+    };
     const directSpace = createSpace([
       createMember('current', 'Current'),
-      onlineFriend,
-    ])
-    const groupSpace = createSpace([
-      ...directSpace.members,
-      createMember('friend-2', 'Another friend'),
-    ], { kind: 'group' })
+      onlineFriend
+    ]);
+    const groupSpace = createSpace(
+      [...directSpace.members, createMember('friend-2', 'Another friend')],
+      { kind: 'group' }
+    );
 
-    expect(getPrivateSpacePresenceStatus(directSpace, 'current')).toBe('online')
+    expect(getPrivateSpacePresenceStatus(directSpace, 'current')).toBe(
+      'online'
+    );
     expect(
       getPrivateSpacePresenceStatus(
         createSpace([
           createMember('current', 'Current'),
-          createMember('friend-1', 'Offline friend'),
+          createMember('friend-1', 'Offline friend')
         ]),
-        'current',
-      ),
-    ).toBe('offline')
-    expect(getPrivateSpacePresenceStatus(groupSpace, 'current')).toBeNull()
-  })
+        'current'
+      )
+    ).toBe('offline');
+    expect(getPrivateSpacePresenceStatus(groupSpace, 'current')).toBeNull();
+  });
 
   test('uses message text, attachment and empty-state previews in order', () => {
-    const space = createSpace([])
-    const message = createMessage({ body: '  Hello  ' })
+    const space = createSpace([]);
+    const message = createMessage({ body: '  Hello  ' });
 
-    expect(getPrivateSpacePreview({ ...space, lastMessage: message })).toBe('Hello')
+    expect(getPrivateSpacePreview({ ...space, lastMessage: message })).toBe(
+      'Hello'
+    );
     expect(
       getPrivateSpacePreview({
         ...space,
         lastMessage: createMessage({
           body: '',
-          assets: [createAsset()],
-        }),
-      }),
-    ).toBe(communityCopy.direct.attachment)
-    expect(getPrivateSpacePreview(space)).toBe(communityCopy.direct.noMessages)
-  })
-})
+          assets: [createAsset()]
+        })
+      })
+    ).toBe(communityCopy.direct.attachment);
+    expect(getPrivateSpacePreview(space)).toBe(communityCopy.direct.noMessages);
+  });
+});

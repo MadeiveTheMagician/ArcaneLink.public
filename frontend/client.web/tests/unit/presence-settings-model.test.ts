@@ -1,11 +1,12 @@
-import { expect, test } from '@playwright/test'
-import type { ProfileSettingsDraft } from '../../src/system/Profile/hooks/useProfileSettings'
+import { expect, test } from '@playwright/test';
+
 import {
   buildPresenceSettingsRequest,
   isPresenceSettingsDraft,
   mergePresenceSettings,
-  toPresenceSettingsDraft,
-} from '../../src/system/Hub/components/settings/presenceSettingsModel'
+  toPresenceSettingsDraft
+} from '../../src/system/Hub/components/settings/presenceSettingsModel';
+import type { ProfileSettingsDraft } from '../../src/system/Profile/hooks/useProfileSettings';
 
 const profileSettings: ProfileSettingsDraft = {
   interfaceScale: 1,
@@ -30,68 +31,67 @@ const profileSettings: ProfileSettingsDraft = {
   directMessagePermission: 'everyone',
   presenceVisibility: 'everyone',
   showLastSeen: true,
-  presenceMode: 'automatic',
-}
+  presenceMode: 'automatic'
+};
 
 test.describe('presence settings model', () => {
   test('normalizes legacy or invalid settings to privacy-safe contract defaults', () => {
     expect(toPresenceSettingsDraft({})).toEqual({
       presenceVisibility: 'everyone',
       showLastSeen: true,
-      presenceMode: 'automatic',
-    })
+      presenceMode: 'automatic'
+    });
     expect(
       toPresenceSettingsDraft({
         presenceVisibility: 'invalid' as 'everyone',
         showLastSeen: false,
-        presenceMode: 'invalid' as 'automatic',
-      }),
+        presenceMode: 'invalid' as 'automatic'
+      })
     ).toEqual({
       presenceVisibility: 'everyone',
       showLastSeen: false,
-      presenceMode: 'automatic',
-    })
-  })
+      presenceMode: 'automatic'
+    });
+  });
 
   test('validates and builds the exact update contract', () => {
     const draft = {
       presenceVisibility: 'friends',
       showLastSeen: false,
-      presenceMode: 'invisible',
-    } as const
+      presenceMode: 'invisible'
+    } as const;
 
-    expect(isPresenceSettingsDraft(draft)).toBe(true)
+    expect(isPresenceSettingsDraft(draft)).toBe(true);
     expect(isPresenceSettingsDraft({ ...draft, presenceMode: 'away' })).toBe(
-      false,
-    )
-    expect(buildPresenceSettingsRequest(draft)).toEqual(draft)
-  })
+      false
+    );
+    expect(buildPresenceSettingsRequest(draft)).toEqual(draft);
+  });
 
   test('accepts a canonical custom visibility contract', () => {
     const draft = {
-      presenceVisibility:
-        'custom:friends,friends_of_friends,shared_servers',
+      presenceVisibility: 'custom:friends,friends_of_friends,shared_servers',
       showLastSeen: true,
-      presenceMode: 'automatic',
-    } as const
+      presenceMode: 'automatic'
+    } as const;
 
-    expect(isPresenceSettingsDraft(draft)).toBe(true)
-    expect(toPresenceSettingsDraft(draft)).toEqual(draft)
-  })
+    expect(isPresenceSettingsDraft(draft)).toBe(true);
+    expect(toPresenceSettingsDraft(draft)).toEqual(draft);
+  });
 
   test('merges privacy fields without changing unrelated profile settings', () => {
     const merged = mergePresenceSettings(profileSettings, {
       presenceVisibility: 'nobody',
       showLastSeen: false,
-      presenceMode: 'invisible',
-    })
+      presenceMode: 'invisible'
+    });
 
     expect(merged).toMatchObject({
       interfaceScale: 1,
       selectedThemeCode: 'sapphire',
       presenceVisibility: 'nobody',
       showLastSeen: false,
-      presenceMode: 'invisible',
-    })
-  })
-})
+      presenceMode: 'invisible'
+    });
+  });
+});

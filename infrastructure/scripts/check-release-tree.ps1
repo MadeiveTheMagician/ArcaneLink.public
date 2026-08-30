@@ -19,11 +19,7 @@ function Get-RelativeFilePath {
         [Parameter(Mandatory)] [string]$FilePath
     )
 
-    $separator = [IO.Path]::DirectorySeparatorChar
-    $normalizedBase = $BasePath.TrimEnd($separator, [IO.Path]::AltDirectorySeparatorChar) + $separator
-    $baseUri = [Uri]$normalizedBase
-    $fileUri = [Uri]$FilePath
-    return [Uri]::UnescapeDataString($baseUri.MakeRelativeUri($fileUri).ToString()) -replace '/', $separator
+    return [IO.Path]::GetRelativePath($BasePath, $FilePath)
 }
 
 function Get-ReleaseFiles {

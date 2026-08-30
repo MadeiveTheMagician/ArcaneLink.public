@@ -12,229 +12,228 @@ using ArcaneLink.Services.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace ArcaneLink.Services.PrivateSpaces
+namespace ArcaneLink.Services.PrivateSpaces;
+
+public sealed class PrivateSpacePersonalAvatarService
 {
-    public sealed class PrivateSpacePersonalAvatarService
+    private readonly AppDbContext _db;
+    private readonly IAssetService _assets;
+    private readonly AvatarImageProcessor _processor;
+    private readonly PrivateSpaceRealtimeNotifier _notifier;
+    private readonly AssetUploadOptions _uploadOptions;
+    private readonly TimeProvider _timeProvider;
+
+    public PrivateSpacePersonalAvatarService(
+        AppDbContext db,
+        IAssetService assets,
+        AvatarImageProcessor processor,
+        PrivateSpaceRealtimeNotifier notifier,
+        IOptions<AssetUploadOptions> uploadOptions,
+        TimeProvider timeProvider)
     {
-        private readonly AppDbContext _db;
-        private readonly IAssetService _assets;
-        private readonly AvatarImageProcessor _processor;
-        private readonly PrivateSpaceRealtimeNotifier _notifier;
-        private readonly AssetUploadOptions _uploadOptions;
-        private readonly TimeProvider _timeProvider;
+        this._db = db;
+        this._assets = assets;
+        this._processor = processor;
+        this._notifier = notifier;
+        this._uploadOptions = uploadOptions.Value;
+        this._timeProvider = timeProvider;
+    }
 
-        public PrivateSpacePersonalAvatarService(
-            AppDbContext db,
-            IAssetService assets,
-            AvatarImageProcessor processor,
-            PrivateSpaceRealtimeNotifier notifier,
-            IOptions<AssetUploadOptions> uploadOptions,
-            TimeProvider timeProvider)
+    public async Task<bool> UploadAsync(
+        Guid currentUserId,
+        Guid spaceId,
+        UploadPrivateSpacePersonalAvatarRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var membership = await this._db.PrivateSpaceMembers
+            .Include(member => member.PrivateSpace)
+                .ThenInclude(privateSpace => privateSpace.Space)
+            .FirstOrDefaultAsync(
+                member =>
+                    member.SpaceId == spaceId &&
+                    member.UserId == currentUserId &&
+                    member.StatusId ==
+                    PrivateSpaceIds.MemberStatusActive &&
+                    member.PrivateSpace.DeletedAt == null &&
+                    member.PrivateSpace.Space.DeletedAt == null,
+                cancellationToken);
+        if (membership == null)
         {
-            _db = db;
-            _assets = assets;
-            _processor = processor;
-            _notifier = notifier;
-            _uploadOptions = uploadOptions.Value;
-            _timeProvider = timeProvider;
+            return false;
         }
 
-        public async Task<bool> UploadAsync(
-            Guid currentUserId,
-            Guid spaceId,
-            UploadPrivateSpacePersonalAvatarRequest request,
-            CancellationToken cancellationToken = default)
+        this.ValidateFile(request.File);
+        var crop = ParseCrop(request);
+        await using var source = request.File.OpenReadStream();
+        await using var optimizedContent = await this._processor.ProcessAsync(
+            source,
+            crop.OffsetX,
+            crop.OffsetY,
+            crop.Zoom,
+            cancellationToken);
+
+        Guid? uploadedAssetId = null;
+        var assignmentSaved = false;
+        try
         {
-            var membership = await _db.PrivateSpaceMembers
-                .Include(member => member.PrivateSpace)
-                    .ThenInclude(privateSpace => privateSpace.Space)
-                .FirstOrDefaultAsync(
-                    member =>
-                        member.SpaceId == spaceId &&
-                        member.UserId == currentUserId &&
-                        member.StatusId ==
-                        PrivateSpaceIds.MemberStatusActive &&
-                        member.PrivateSpace.DeletedAt == null &&
-                        member.PrivateSpace.Space.DeletedAt == null,
-                    cancellationToken);
-            if (membership == null)
-            {
-                return false;
-            }
-
-            ValidateFile(request.File);
-            var crop = ParseCrop(request);
-            await using var source = request.File.OpenReadStream();
-            await using var optimizedContent = await _processor.ProcessAsync(
-                source,
-                crop.OffsetX,
-                crop.OffsetY,
-                crop.Zoom,
+            uploadedAssetId = await this.UploadOptimizedAssetAsync(
+                currentUserId,
+                request.File.FileName,
+                optimizedContent,
                 cancellationToken);
+            var previousAssetId = membership.PeerAvatarAssetId;
+            membership.PeerAvatarAssetId = uploadedAssetId;
+            membership.PeerAvatarCropOffsetX = 0;
+            membership.PeerAvatarCropOffsetY = 0;
+            membership.PeerAvatarCropZoom = 1;
+            membership.UpdatedAt =
+                this._timeProvider.GetUtcNow().UtcDateTime;
+            await this._db.SaveChangesAsync(cancellationToken);
+            assignmentSaved = true;
 
-            Guid? uploadedAssetId = null;
-            var assignmentSaved = false;
-            try
+            if (previousAssetId.HasValue &&
+                previousAssetId != uploadedAssetId)
             {
-                uploadedAssetId = await UploadOptimizedAssetAsync(
+                await this.DeleteOwnedOptimizedIfOrphanedAsync(
                     currentUserId,
-                    request.File.FileName,
-                    optimizedContent,
-                    cancellationToken);
-                var previousAssetId = membership.PeerAvatarAssetId;
-                membership.PeerAvatarAssetId = uploadedAssetId;
-                membership.PeerAvatarCropOffsetX = 0;
-                membership.PeerAvatarCropOffsetY = 0;
-                membership.PeerAvatarCropZoom = 1;
-                membership.UpdatedAt =
-                    _timeProvider.GetUtcNow().UtcDateTime;
-                await _db.SaveChangesAsync(cancellationToken);
-                assignmentSaved = true;
-
-                if (previousAssetId.HasValue &&
-                    previousAssetId != uploadedAssetId)
-                {
-                    await DeleteOwnedOptimizedIfOrphanedAsync(
-                        currentUserId,
-                        previousAssetId.Value,
-                        CancellationToken.None);
-                }
-
-                await _notifier.NotifySpacesChangedForUserAsync(
-                    currentUserId,
-                    spaceId,
+                    previousAssetId.Value,
                     CancellationToken.None);
-                return true;
             }
-            catch
-            {
-                if (!assignmentSaved && uploadedAssetId.HasValue)
-                {
-                    await _assets.DeleteOwnedAssetAsync(
-                        currentUserId,
-                        uploadedAssetId.Value,
-                        CancellationToken.None);
-                }
 
-                throw;
-            }
+            await this._notifier.NotifySpacesChangedForUserAsync(
+                currentUserId,
+                spaceId,
+                CancellationToken.None);
+            return true;
         }
-
-        public async Task DeleteOwnedOptimizedIfOrphanedAsync(
-            Guid ownerUserId,
-            Guid assetId,
-            CancellationToken cancellationToken = default)
+        catch
         {
-            await OptimizedAvatarAssetCleanup.DeleteOwnedIfOrphanedAsync(
-                _db,
-                _assets,
-                ownerUserId,
-                assetId,
-                cancellationToken);
+            if (!assignmentSaved && uploadedAssetId.HasValue)
+            {
+                await this._assets.DeleteOwnedAssetAsync(
+                    currentUserId,
+                    uploadedAssetId.Value,
+                    CancellationToken.None);
+            }
+
+            throw;
         }
+    }
 
-        private async Task<Guid> UploadOptimizedAssetAsync(
-            Guid ownerUserId,
-            string? sourceFileName,
-            MemoryStream content,
-            CancellationToken cancellationToken)
+    public async Task DeleteOwnedOptimizedIfOrphanedAsync(
+        Guid ownerUserId,
+        Guid assetId,
+        CancellationToken cancellationToken = default)
+    {
+        await OptimizedAvatarAssetCleanup.DeleteOwnedIfOrphanedAsync(
+            this._db,
+            this._assets,
+            ownerUserId,
+            assetId,
+            cancellationToken);
+    }
+
+    private async Task<Guid> UploadOptimizedAssetAsync(
+        Guid ownerUserId,
+        string? sourceFileName,
+        MemoryStream content,
+        CancellationToken cancellationToken)
+    {
+        var baseName = Path.GetFileNameWithoutExtension(sourceFileName);
+        var fileName =
+            $"{(string.IsNullOrWhiteSpace(baseName) ? "avatar" : baseName)}.webp";
+        var formFile = new FormFile(
+            content,
+            0,
+            content.Length,
+            "File",
+            fileName)
         {
-            var baseName = Path.GetFileNameWithoutExtension(sourceFileName);
-            var fileName =
-                $"{(string.IsNullOrWhiteSpace(baseName) ? "avatar" : baseName)}.webp";
-            var formFile = new FormFile(
-                content,
-                0,
-                content.Length,
-                "File",
-                fileName)
+            Headers = new HeaderDictionary(),
+            ContentType = "image/webp"
+        };
+        var asset = await this._assets.UploadAssetAsync(
+            ownerUserId,
+            new UploadAssetRequest
             {
-                Headers = new HeaderDictionary(),
-                ContentType = "image/webp"
-            };
-            var asset = await _assets.UploadAssetAsync(
-                ownerUserId,
-                new UploadAssetRequest
-                {
-                    AssetTypeId = AssetTypeIds.CurrentAvatar,
-                    File = formFile
-                },
-                cancellationToken);
-            var storedAsset = await _db.Assets.FirstAsync(
-                item => item.Id == asset.Id,
-                cancellationToken);
-            storedAsset.Width = _processor.OutputSizePixels;
-            storedAsset.Height = _processor.OutputSizePixels;
-            await _db.SaveChangesAsync(cancellationToken);
-            return asset.Id;
+                AssetTypeId = AssetTypeIds.CurrentAvatar,
+                File = formFile
+            },
+            cancellationToken);
+        var storedAsset = await this._db.Assets.FirstAsync(
+            item => item.Id == asset.Id,
+            cancellationToken);
+        storedAsset.Width = this._processor.OutputSizePixels;
+        storedAsset.Height = this._processor.OutputSizePixels;
+        await this._db.SaveChangesAsync(cancellationToken);
+        return asset.Id;
+    }
+
+    private void ValidateFile(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            throw new InvalidAssetDataException(
+                ExceptionMessages.AssetFileIsRequired);
         }
-
-        private void ValidateFile(IFormFile? file)
+        if (file.Length > this._uploadOptions.MaxImageUploadSizeBytes)
         {
-            if (file == null || file.Length == 0)
-            {
-                throw new InvalidAssetDataException(
-                    ExceptionMessages.AssetFileIsRequired);
-            }
-            if (file.Length > _uploadOptions.MaxImageUploadSizeBytes)
-            {
-                throw new InvalidAssetDataException(
-                    ExceptionMessages.AssetFileIsTooLarge);
-            }
+            throw new InvalidAssetDataException(
+                ExceptionMessages.AssetFileIsTooLarge);
         }
+    }
 
-        private static AvatarCrop ParseCrop(
-            UploadPrivateSpacePersonalAvatarRequest request)
+    private static AvatarCrop ParseCrop(
+        UploadPrivateSpacePersonalAvatarRequest request)
+    {
+        var crop = new AvatarCrop(
+            ParseFormDouble(request.CropOffsetX, 0),
+            ParseFormDouble(request.CropOffsetY, 0),
+            ParseFormDouble(request.CropZoom, 1));
+        if (!double.IsFinite(crop.OffsetX) ||
+            !double.IsFinite(crop.OffsetY) ||
+            !double.IsFinite(crop.Zoom))
         {
-            var crop = new AvatarCrop(
-                ParseFormDouble(request.CropOffsetX, 0),
-                ParseFormDouble(request.CropOffsetY, 0),
-                ParseFormDouble(request.CropZoom, 1));
-            if (!double.IsFinite(crop.OffsetX) ||
-                !double.IsFinite(crop.OffsetY) ||
-                !double.IsFinite(crop.Zoom))
-            {
-                throw InvalidCrop();
-            }
-
-            return new AvatarCrop(
-                Math.Clamp(crop.OffsetX, -1, 1),
-                Math.Clamp(crop.OffsetY, -1, 1),
-                Math.Clamp(crop.Zoom, 0.5, 3));
-        }
-
-        private static double ParseFormDouble(
-            string? value,
-            double defaultValue)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return defaultValue;
-            }
-
-            if (double.TryParse(
-                    value,
-                    NumberStyles.Float,
-                    CultureInfo.InvariantCulture,
-                    out var parsed) ||
-                double.TryParse(
-                    value,
-                    NumberStyles.Float,
-                    CultureInfo.CurrentCulture,
-                    out parsed))
-            {
-                return parsed;
-            }
-
             throw InvalidCrop();
         }
 
-        private static InvalidUserProfileDataException InvalidCrop() =>
-            new(ExceptionMessages.AvatarCropIsInvalid);
-
-        private readonly record struct AvatarCrop(
-            double OffsetX,
-            double OffsetY,
-            double Zoom);
+        return new AvatarCrop(
+            Math.Clamp(crop.OffsetX, -1, 1),
+            Math.Clamp(crop.OffsetY, -1, 1),
+            Math.Clamp(crop.Zoom, 0.5, 3));
     }
+
+    private static double ParseFormDouble(
+        string? value,
+        double defaultValue)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return defaultValue;
+        }
+
+        if (double.TryParse(
+                value,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out var parsed) ||
+            double.TryParse(
+                value,
+                NumberStyles.Float,
+                CultureInfo.CurrentCulture,
+                out parsed))
+        {
+            return parsed;
+        }
+
+        throw InvalidCrop();
+    }
+
+    private static InvalidUserProfileDataException InvalidCrop() =>
+        new(ExceptionMessages.AvatarCropIsInvalid);
+
+    private readonly record struct AvatarCrop(
+        double OffsetX,
+        double OffsetY,
+        double Zoom);
 }

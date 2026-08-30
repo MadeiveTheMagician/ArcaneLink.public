@@ -1021,7 +1021,7 @@ public sealed class UserPresenceCoordinatorTests
         private readonly SemaphoreSlim _deliverySignal = new(0);
 
         public IReadOnlyList<PresenceDelivery> PresenceDeliveries =>
-            _presenceDeliveries.ToArray();
+            this._presenceDeliveries.ToArray();
 
         public Task NotifyUserAsync(
             Guid userId,
@@ -1029,7 +1029,7 @@ public sealed class UserPresenceCoordinatorTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return RecordAsync([userId], eventName, payload);
+            return this.RecordAsync([userId], eventName, payload);
         }
 
         public Task NotifyUsersAsync(
@@ -1038,7 +1038,7 @@ public sealed class UserPresenceCoordinatorTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return RecordAsync(userIds.ToArray(), eventName, payload);
+            return this.RecordAsync(userIds.ToArray(), eventName, payload);
         }
 
         public Task NotifyServerAsync(
@@ -1053,9 +1053,9 @@ public sealed class UserPresenceCoordinatorTests
         public async Task WaitForPresenceCountAsync(int expectedCount)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-            while (_presenceDeliveries.Count < expectedCount)
+            while (this._presenceDeliveries.Count < expectedCount)
             {
-                await _deliverySignal.WaitAsync(timeout.Token);
+                await this._deliverySignal.WaitAsync(timeout.Token);
             }
         }
 
@@ -1067,8 +1067,8 @@ public sealed class UserPresenceCoordinatorTests
             if (eventName == RealtimeEventNames.UserPresenceChanged &&
                 payload is UserPresenceChanged presence)
             {
-                _presenceDeliveries.Enqueue(new PresenceDelivery(userIds, presence));
-                _deliverySignal.Release();
+                this._presenceDeliveries.Enqueue(new PresenceDelivery(userIds, presence));
+                this._deliverySignal.Release();
             }
 
             return Task.CompletedTask;
@@ -1122,9 +1122,9 @@ public sealed class UserPresenceCoordinatorTests
         private readonly ConcurrentQueue<PresenceDelivery> _presenceDeliveries = [];
         private int _presenceAttempts;
 
-        public int PresenceAttempts => Volatile.Read(ref _presenceAttempts);
+        public int PresenceAttempts => Volatile.Read(ref this._presenceAttempts);
         public IReadOnlyList<PresenceDelivery> PresenceDeliveries =>
-            _presenceDeliveries.ToArray();
+            this._presenceDeliveries.ToArray();
 
         public Task NotifyUserAsync(
             Guid userId,
@@ -1132,7 +1132,7 @@ public sealed class UserPresenceCoordinatorTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return NotifyUsersAsync(
+            return this.NotifyUsersAsync(
                 [userId],
                 eventName,
                 payload,
@@ -1151,13 +1151,13 @@ public sealed class UserPresenceCoordinatorTests
                 return Task.CompletedTask;
             }
 
-            if (Interlocked.Increment(ref _presenceAttempts) == 1)
+            if (Interlocked.Increment(ref this._presenceAttempts) == 1)
             {
                 return Task.FromException(
                     new InvalidOperationException("Injected first-attempt failure."));
             }
 
-            _presenceDeliveries.Enqueue(
+            this._presenceDeliveries.Enqueue(
                 new PresenceDelivery(userIds.ToArray(), presence));
             return Task.CompletedTask;
         }
@@ -1181,13 +1181,13 @@ public sealed class UserPresenceCoordinatorTests
         private int _failedPresenceAttempts;
 
         public IReadOnlyList<PresenceDelivery> PresenceDeliveries =>
-            _presenceDeliveries.ToArray();
+            this._presenceDeliveries.ToArray();
         public int FailedPresenceAttempts =>
-            Volatile.Read(ref _failedPresenceAttempts);
+            Volatile.Read(ref this._failedPresenceAttempts);
 
         public void FailNextPresenceAttempts(int count)
         {
-            Volatile.Write(ref _remainingFailures, count);
+            Volatile.Write(ref this._remainingFailures, count);
         }
 
         public Task NotifyUserAsync(
@@ -1196,7 +1196,7 @@ public sealed class UserPresenceCoordinatorTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return NotifyUsersAsync(
+            return this.NotifyUsersAsync(
                 [userId],
                 eventName,
                 payload,
@@ -1215,16 +1215,16 @@ public sealed class UserPresenceCoordinatorTests
                 return Task.CompletedTask;
             }
 
-            if (Interlocked.Decrement(ref _remainingFailures) >= 0)
+            if (Interlocked.Decrement(ref this._remainingFailures) >= 0)
             {
-                Interlocked.Increment(ref _failedPresenceAttempts);
+                Interlocked.Increment(ref this._failedPresenceAttempts);
                 return Task.FromException(
                     new InvalidOperationException("Injected presence failure."));
             }
 
-            _presenceDeliveries.Enqueue(
+            this._presenceDeliveries.Enqueue(
                 new PresenceDelivery(userIds.ToArray(), presence));
-            _deliverySignal.Release();
+            this._deliverySignal.Release();
             return Task.CompletedTask;
         }
 
@@ -1240,9 +1240,9 @@ public sealed class UserPresenceCoordinatorTests
         public async Task WaitForPresenceCountAsync(int expectedCount)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-            while (_presenceDeliveries.Count < expectedCount)
+            while (this._presenceDeliveries.Count < expectedCount)
             {
-                await _deliverySignal.WaitAsync(timeout.Token);
+                await this._deliverySignal.WaitAsync(timeout.Token);
             }
         }
     }
@@ -1256,27 +1256,27 @@ public sealed class UserPresenceCoordinatorTests
         private int _shouldBlock;
 
         public IReadOnlyList<PresenceDelivery> PresenceDeliveries =>
-            _presenceDeliveries.ToArray();
+            this._presenceDeliveries.ToArray();
 
         public void BlockNextPresenceDelivery()
         {
-            _blockedSignal = new TaskCompletionSource(
+            this._blockedSignal = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously);
-            _releaseSignal = new TaskCompletionSource(
+            this._releaseSignal = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously);
-            Volatile.Write(ref _shouldBlock, 1);
+            Volatile.Write(ref this._shouldBlock, 1);
         }
 
         public async Task WaitUntilPresenceDeliveryBlockedAsync()
         {
-            var signal = _blockedSignal ?? throw new InvalidOperationException(
+            var signal = this._blockedSignal ?? throw new InvalidOperationException(
                 "No presence delivery was configured to block.");
             await signal.Task.WaitAsync(TimeSpan.FromSeconds(2));
         }
 
         public void ReleaseBlockedPresenceDelivery()
         {
-            (_releaseSignal ?? throw new InvalidOperationException(
+            (this._releaseSignal ?? throw new InvalidOperationException(
                 "No presence delivery is blocked."))
                 .TrySetResult();
         }
@@ -1287,7 +1287,7 @@ public sealed class UserPresenceCoordinatorTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return NotifyUsersAsync(
+            return this.NotifyUsersAsync(
                 [userId],
                 eventName,
                 payload,
@@ -1306,15 +1306,15 @@ public sealed class UserPresenceCoordinatorTests
                 return;
             }
 
-            if (Interlocked.Exchange(ref _shouldBlock, 0) == 1)
+            if (Interlocked.Exchange(ref this._shouldBlock, 0) == 1)
             {
-                _blockedSignal?.TrySetResult();
-                var release = _releaseSignal ?? throw new InvalidOperationException(
+                this._blockedSignal?.TrySetResult();
+                var release = this._releaseSignal ?? throw new InvalidOperationException(
                     "Blocked presence delivery has no release signal.");
                 await release.Task.WaitAsync(cancellationToken);
             }
 
-            _presenceDeliveries.Enqueue(
+            this._presenceDeliveries.Enqueue(
                 new PresenceDelivery(userIds.ToArray(), presence));
         }
 
@@ -1332,11 +1332,11 @@ public sealed class UserPresenceCoordinatorTests
     {
         private int _failures;
 
-        public int Failures => Volatile.Read(ref _failures);
+        public int Failures => Volatile.Read(ref this._failures);
 
         public bool TryFail()
         {
-            return Interlocked.CompareExchange(ref _failures, 1, 0) == 0;
+            return Interlocked.CompareExchange(ref this._failures, 1, 0) == 0;
         }
     }
 

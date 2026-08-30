@@ -1,86 +1,83 @@
-import type { SpaceMessageResponse } from '../../../../shared/types'
+import type { SpaceMessageResponse } from '../../../../shared/types';
 
 export type FirstUnreadNavigationTarget = {
-  messageId: string | null
-  needsOlderMessages: boolean
-}
+  messageId: string | null;
+  needsOlderMessages: boolean;
+};
 
 export function shouldHoldInitialUnreadPosition({
   hasFocusedMessage,
   unreadCount,
   isLoading,
   isLoadingOlderMessages,
-  needsOlderMessages,
+  needsOlderMessages
 }: {
-  hasFocusedMessage: boolean
-  unreadCount: number
-  isLoading: boolean
-  isLoadingOlderMessages: boolean
-  needsOlderMessages: boolean
+  hasFocusedMessage: boolean;
+  unreadCount: number;
+  isLoading: boolean;
+  isLoadingOlderMessages: boolean;
+  needsOlderMessages: boolean;
 }) {
   return (
     !hasFocusedMessage &&
     Number.isFinite(unreadCount) &&
     unreadCount > 0 &&
     (isLoading || isLoadingOlderMessages || needsOlderMessages)
-  )
+  );
 }
 
 export function getLatestUnreadMessageId(
   messages: readonly SpaceMessageResponse[],
   currentUserId: string,
-  unreadCount: number,
+  unreadCount: number
 ) {
   if (unreadCount <= 0) {
-    return null
+    return null;
   }
 
   for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index]
+    const message = messages[index];
 
     if (!message.deletedAt && message.senderUserId !== currentUserId) {
-      return message.id
+      return message.id;
     }
   }
 
-  return null
+  return null;
 }
 
 export function getFirstUnreadNavigationTarget(
   messages: readonly SpaceMessageResponse[],
   currentUserId: string,
   unreadCount: number,
-  hasOlderMessages: boolean,
+  hasOlderMessages: boolean
 ): FirstUnreadNavigationTarget {
   const normalizedUnreadCount = Number.isFinite(unreadCount)
     ? Math.max(0, Math.floor(unreadCount))
-    : 0
+    : 0;
 
   if (normalizedUnreadCount === 0) {
     return {
       messageId: null,
-      needsOlderMessages: false,
-    }
+      needsOlderMessages: false
+    };
   }
 
-  let loadedUnreadCount = 0
-  let oldestLoadedUnreadMessageId: string | null = null
+  let loadedUnreadCount = 0;
+  let oldestLoadedUnreadMessageId: string | null = null;
 
   for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index]
+    const message = messages[index];
 
-    if (
-      !message.deletedAt &&
-      message.senderUserId !== currentUserId
-    ) {
-      loadedUnreadCount += 1
-      oldestLoadedUnreadMessageId = message.id
+    if (!message.deletedAt && message.senderUserId !== currentUserId) {
+      loadedUnreadCount += 1;
+      oldestLoadedUnreadMessageId = message.id;
 
       if (loadedUnreadCount === normalizedUnreadCount) {
         return {
           messageId: message.id,
-          needsOlderMessages: false,
-        }
+          needsOlderMessages: false
+        };
       }
     }
   }
@@ -88,8 +85,8 @@ export function getFirstUnreadNavigationTarget(
   if (hasOlderMessages) {
     return {
       messageId: null,
-      needsOlderMessages: true,
-    }
+      needsOlderMessages: true
+    };
   }
 
   // The unread count and the visible history can briefly disagree after a
@@ -97,6 +94,6 @@ export function getFirstUnreadNavigationTarget(
   // available incoming message is the safest recoverable boundary.
   return {
     messageId: oldestLoadedUnreadMessageId,
-    needsOlderMessages: false,
-  }
+    needsOlderMessages: false
+  };
 }

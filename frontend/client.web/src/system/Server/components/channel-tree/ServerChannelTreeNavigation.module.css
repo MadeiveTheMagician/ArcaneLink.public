@@ -34,12 +34,13 @@
   border: 0;
   border-right: 1px solid var(--theme-section-border);
   border-radius: 0;
-  padding:
-    var(--server-panel-padding)
-    var(--server-panel-padding)
+  padding: var(--server-panel-padding) var(--server-panel-padding)
     var(--profile-voice-dock-reserve);
-  background:
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-frame-bg-strong));
+  background: linear-gradient(
+    180deg,
+    var(--theme-frame-bg),
+    var(--theme-frame-bg-strong)
+  );
   box-shadow: none;
 }
 
@@ -156,7 +157,7 @@
 
 .voiceSpaceWithChat > .voiceChatButton:hover,
 .voiceSpaceWithChat > .voiceChatButton:focus-visible,
-.voiceSpaceWithChat > .voiceChatButton[data-open="true"] {
+.voiceSpaceWithChat > .voiceChatButton[data-open='true'] {
   border-color: color-mix(in srgb, var(--theme-accent-light), transparent 66%);
   color: var(--theme-accent-light);
   background: var(--theme-hover-bg);
@@ -191,7 +192,7 @@
   left: 10px;
   height: 1px;
   pointer-events: none;
-  content: "";
+  content: '';
   opacity: 0;
   background: linear-gradient(
     90deg,
@@ -213,7 +214,11 @@
 .spacePanel nav button:hover,
 .spacePanel nav button.active {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 88%), color-mix(in srgb, var(--theme-accent), transparent 96%)),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 88%),
+      color-mix(in srgb, var(--theme-accent), transparent 96%)
+    ),
     transparent;
 }
 
@@ -339,18 +344,23 @@
 .voiceChannelMember:focus-visible {
   border-color: color-mix(in srgb, var(--theme-accent-light), transparent 78%);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 86%), color-mix(in srgb, var(--theme-accent), transparent 96%)),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 86%),
+      color-mix(in srgb, var(--theme-accent), transparent 96%)
+    ),
     transparent;
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 88%),
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent-light), transparent 88%),
     0 0 16px color-mix(in srgb, var(--theme-accent), transparent 86%);
 }
 
-.voiceChannelMembers > div[draggable="true"] {
+.voiceChannelMembers > div[draggable='true'] {
   cursor: grab;
 }
 
-.voiceChannelMembers > div[draggable="true"]:active {
+.voiceChannelMembers > div[draggable='true']:active {
   cursor: grabbing;
 }
 
@@ -383,7 +393,8 @@
   height: 20px;
   place-items: center;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--theme-accent-light), transparent 54%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-accent-light), transparent 54%);
   border-radius: 999px;
   color: var(--theme-avatar-contrast);
   background: var(--theme-avatar-bg);
@@ -434,7 +445,9 @@
     column-gap: 8px;
   }
 
-  :global(.profile-page.is-server-mode) .voiceSpaceWithChat > button:first-child {
+  :global(.profile-page.is-server-mode)
+    .voiceSpaceWithChat
+    > button:first-child {
     padding-right: 12px;
   }
 

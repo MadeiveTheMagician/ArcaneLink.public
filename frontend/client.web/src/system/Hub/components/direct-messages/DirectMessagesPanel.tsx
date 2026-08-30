@@ -1,112 +1,113 @@
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+
+import { apiJson, apiNoContent } from '../../../../shared/api/api';
+import type { ImageCrop } from '../../../../shared/media/ImageCropEditor';
 import type {
   AssetResponse,
   DirectMessageBlockedUserResponse,
   PrivateSpaceResponse,
   ServerMemberResponse,
-  UserFriendResponse,
-} from '../../../../shared/types'
-import type { ImageCrop } from '../../../../shared/media/ImageCropEditor'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { apiJson, apiNoContent } from '../../../../shared/api/api'
-import { ContextMenu } from '../../../shared/components/context-menu/ContextMenu'
-import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import { SystemSearchInput } from '../../../shared/ui/SystemSearchInput'
+  UserFriendResponse
+} from '../../../../shared/types';
 import {
+  UserBlockDialog,
+  type UserBlockDialogTarget,
   communityCopy,
   dispatchUserBlockChanged,
   getUserBlockedNotice,
-  profileCopy,
-  UserBlockDialog,
-  type UserBlockDialogTarget,
-} from '../../../shared'
+  profileCopy
+} from '../../../shared';
+import { ContextMenu } from '../../../shared/components/context-menu/ContextMenu';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
+import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon';
+import { SystemSearchInput } from '../../../shared/ui/SystemSearchInput';
+import { PrivateSpaceFolderDialog } from '../private-space/folders/PrivateSpaceFolderDialog';
+import { privateSpaceFolderCopy } from '../private-space/folders/privateSpaceFolderCopy.ru';
+import { orderPrivateSpaces } from '../private-space/folders/privateSpaceOrderModel';
+import { usePrivateSpaceFolders } from '../private-space/folders/usePrivateSpaceFolders';
 import {
-  filterPrivateSpacesByConversationQuery,
-} from './directMessageModel'
-import { useDirectMessageContextMenu } from './useDirectMessageContextMenu'
-import { DirectMessagesDesktopView } from './DirectMessagesDesktopView'
-import { DirectMessagesMobileView } from './DirectMessagesMobileView'
+  type PrivateSpaceAvatarFileValidationError,
+  supportedPrivateSpaceAvatarMimeTypes,
+  validatePrivateSpaceAvatarFile
+} from '../private-space/privateSpaceAvatarModel';
+import type {
+  GroupPrivateSpaceSettingsPatch,
+  PrivateSpacePersonalSettingsPatch
+} from '../private-space/usePrivateSpaces';
+import { DirectMessagesDesktopView } from './DirectMessagesDesktopView';
+import { DirectMessagesMobileView } from './DirectMessagesMobileView';
 import {
   CreatePrivateSpaceDialog,
   DirectUserProfileDialog,
   GroupPrivateSpaceSettingsDialog,
   MarkAllPrivateSpacesReadDialog,
-  PrivateSpaceActionDialog,
   type PrivateSpaceAction,
-  PrivateSpaceTextSettingDialog,
-} from './PrivateSpaceDialogs'
-import { usePrivateSpaceFolders } from '../private-space/folders/usePrivateSpaceFolders'
-import { PrivateSpaceFolderDialog } from '../private-space/folders/PrivateSpaceFolderDialog'
-import styles from './DirectMessagesPanel.module.css'
-import { privateSpaceFolderCopy } from '../private-space/folders/privateSpaceFolderCopy.ru'
-import { orderPrivateSpaces } from '../private-space/folders/privateSpaceOrderModel'
-import type {
-  GroupPrivateSpaceSettingsPatch,
-  PrivateSpacePersonalSettingsPatch,
-} from '../private-space/usePrivateSpaces'
-import {
-  supportedPrivateSpaceAvatarMimeTypes,
-  validatePrivateSpaceAvatarFile,
-  type PrivateSpaceAvatarFileValidationError,
-} from '../private-space/privateSpaceAvatarModel'
+  PrivateSpaceActionDialog,
+  PrivateSpaceTextSettingDialog
+} from './PrivateSpaceDialogs';
+import { filterPrivateSpacesByConversationQuery } from './directMessageModel';
+import { useDirectMessageContextMenu } from './useDirectMessageContextMenu';
 
-const avatarAssetTypeId = '11000000-0000-0000-0000-000000000000'
-const privateSpaceAvatarAccept =
-  supportedPrivateSpaceAvatarMimeTypes.join(',')
+import styles from './DirectMessagesPanel.module.css';
+
+const avatarAssetTypeId = '11000000-0000-0000-0000-000000000000';
+const privateSpaceAvatarAccept = supportedPrivateSpaceAvatarMimeTypes.join(',');
 
 const AssetCropDialog = lazy(() =>
   import('../../../Profile/components/assets/AssetCropDialog').then(
-    (module) => ({ default: module.AssetCropDialog }),
-  ),
-)
+    (module) => ({ default: module.AssetCropDialog })
+  )
+);
 
 type PrivateSpaceAvatarDraft = {
-  spaceId: string
-  file: File
-  previewUrl: string
-}
+  spaceId: string;
+  file: File;
+  previewUrl: string;
+};
 
-export { getPrivateSpaceTitle } from './directMessageModel'
+export { getPrivateSpaceTitle } from './directMessageModel';
 
 type DirectMessagesPanelProps = {
-  accessToken: string
-  className?: string
-  currentUserId: string
-  activePrivateSpaceId: string | null
-  privateSpaces: PrivateSpaceResponse[]
-  friends: UserFriendResponse[]
-  friendUserIds: Set<string>
-  isLoadingPrivateSpaces: boolean
-  isMutatingPrivateSpaces: boolean
-  showPrivateReadAllButton: boolean
-  onOpenPrivateSpace: (spaceId: string) => void
-  onDropFilesToPrivateSpace: (spaceId: string, files: File[]) => void
+  accessToken: string;
+  className?: string;
+  currentUserId: string;
+  activePrivateSpaceId: string | null;
+  privateSpaces: PrivateSpaceResponse[];
+  friends: UserFriendResponse[];
+  friendUserIds: Set<string>;
+  isLoadingPrivateSpaces: boolean;
+  isMutatingPrivateSpaces: boolean;
+  showPrivateReadAllButton: boolean;
+  onOpenPrivateSpace: (spaceId: string) => void;
+  onDropFilesToPrivateSpace: (spaceId: string, files: File[]) => void;
   onCreatePrivateSpace: (
     memberUserIds: string[],
-    title?: string | null,
-  ) => Promise<PrivateSpaceResponse | null>
-  onLoadInviteTargetServers: (targetUserId: string) => Promise<ServerMemberResponse[]>
-  onClosePrivateSpace: (spaceId: string) => Promise<void>
-  onClearPrivateSpaceHistory: (spaceId: string) => Promise<boolean>
-  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void
-  onRemoveFriend: (userId: string) => void
-  onSendFriendRequest: (userId: string) => void
+    title?: string | null
+  ) => Promise<PrivateSpaceResponse | null>;
+  onLoadInviteTargetServers: (
+    targetUserId: string
+  ) => Promise<ServerMemberResponse[]>;
+  onClosePrivateSpace: (spaceId: string) => Promise<void>;
+  onClearPrivateSpaceHistory: (spaceId: string) => Promise<boolean>;
+  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void;
+  onRemoveFriend: (userId: string) => void;
+  onSendFriendRequest: (userId: string) => void;
   onUpdatePersonalSettings: (
     spaceId: string,
-    request: PrivateSpacePersonalSettingsPatch,
-  ) => Promise<PrivateSpaceResponse>
+    request: PrivateSpacePersonalSettingsPatch
+  ) => Promise<PrivateSpaceResponse>;
   onUploadPersonalAvatar: (
     spaceId: string,
     file: File,
-    crop: ImageCrop,
-  ) => Promise<PrivateSpaceResponse>
+    crop: ImageCrop
+  ) => Promise<PrivateSpaceResponse>;
   onUpdateGroupSettings: (
     spaceId: string,
-    request: GroupPrivateSpaceSettingsPatch,
-  ) => Promise<PrivateSpaceResponse>
-  onMarkPrivateSpaceRead: (spaceId: string) => Promise<void>
-  onMarkAllPrivateSpacesRead: () => Promise<{ updatedSpaceCount: number }>
-}
+    request: GroupPrivateSpaceSettingsPatch
+  ) => Promise<PrivateSpaceResponse>;
+  onMarkPrivateSpaceRead: (spaceId: string) => Promise<void>;
+  onMarkAllPrivateSpacesRead: () => Promise<{ updatedSpaceCount: number }>;
+};
 
 export function DirectMessagesPanel({
   accessToken,
@@ -132,163 +133,162 @@ export function DirectMessagesPanel({
   onUploadPersonalAvatar,
   onUpdateGroupSettings,
   onMarkPrivateSpaceRead,
-  onMarkAllPrivateSpacesRead,
+  onMarkAllPrivateSpacesRead
 }: DirectMessagesPanelProps) {
-  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   const [profileDialogSpace, setProfileDialogSpace] =
-    useState<PrivateSpaceResponse | null>(null)
+    useState<PrivateSpaceResponse | null>(null);
   const [noteDialogSpace, setNoteDialogSpace] =
-    useState<PrivateSpaceResponse | null>(null)
+    useState<PrivateSpaceResponse | null>(null);
   const [nicknameDialogSpace, setNicknameDialogSpace] =
-    useState<PrivateSpaceResponse | null>(null)
+    useState<PrivateSpaceResponse | null>(null);
   const [groupSettingsSpace, setGroupSettingsSpace] =
-    useState<PrivateSpaceResponse | null>(null)
+    useState<PrivateSpaceResponse | null>(null);
   const [customAvatarSpace, setCustomAvatarSpace] =
-    useState<PrivateSpaceResponse | null>(null)
+    useState<PrivateSpaceResponse | null>(null);
   const [customAvatarDraft, setCustomAvatarDraft] =
-    useState<PrivateSpaceAvatarDraft | null>(null)
+    useState<PrivateSpaceAvatarDraft | null>(null);
   const [customAvatarError, setCustomAvatarError] = useState<string | null>(
-    null,
-  )
-  const [isCustomAvatarSaving, setIsCustomAvatarSaving] = useState(false)
+    null
+  );
+  const [isCustomAvatarSaving, setIsCustomAvatarSaving] = useState(false);
   const [userBlockDialogTarget, setUserBlockDialogTarget] =
-    useState<UserBlockDialogTarget | null>(null)
-  const [isUserBlockSubmitting, setIsUserBlockSubmitting] = useState(false)
-  const [isReadAllDialogOpen, setIsReadAllDialogOpen] = useState(false)
+    useState<UserBlockDialogTarget | null>(null);
+  const [isUserBlockSubmitting, setIsUserBlockSubmitting] = useState(false);
+  const [isReadAllDialogOpen, setIsReadAllDialogOpen] = useState(false);
   const [pendingSpaceAction, setPendingSpaceAction] = useState<{
-    action: PrivateSpaceAction
-    spaceId: string
-  } | null>(null)
-  const [isDialogSaving, setIsDialogSaving] = useState(false)
-  const customAvatarInputRef = useRef<HTMLInputElement | null>(null)
-  const [isFolderRailCollapsed, setIsFolderRailCollapsed] = useState(false)
-  const [conversationQuery, setConversationQuery] = useState('')
+    action: PrivateSpaceAction;
+    spaceId: string;
+  } | null>(null);
+  const [isDialogSaving, setIsDialogSaving] = useState(false);
+  const customAvatarInputRef = useRef<HTMLInputElement | null>(null);
+  const [isFolderRailCollapsed, setIsFolderRailCollapsed] = useState(false);
+  const [conversationQuery, setConversationQuery] = useState('');
   const [folderDialog, setFolderDialog] = useState<{
-    folder: import('../../../../shared/types').PrivateSpaceFolderResponse | null
-  } | null>(null)
-  const folderController = usePrivateSpaceFolders(accessToken, privateSpaces)
+    folder:
+      import('../../../../shared/types').PrivateSpaceFolderResponse | null;
+  } | null>(null);
+  const folderController = usePrivateSpaceFolders(accessToken, privateSpaces);
 
   const folderPrivateSpaces = folderController.activeFolder
     ? orderPrivateSpaces(
         privateSpaces,
         folderController.activeFolder.spaceIds,
-        folderController.activeFolder.isSystem,
+        folderController.activeFolder.isSystem
       )
-    : privateSpaces
+    : privateSpaces;
   const visiblePrivateSpaces = filterPrivateSpacesByConversationQuery(
     folderPrivateSpaces,
     currentUserId,
-    conversationQuery,
-  )
+    conversationQuery
+  );
   const showMarkAllRead =
     showPrivateReadAllButton &&
-    privateSpaces.some((space) => space.unreadCount > 0)
-  const {
-    contextMenu,
-    contextMenuItems,
-    openContextMenu,
-    closeContextMenu,
-  } = useDirectMessageContextMenu({
-    currentUserId,
-    friendUserIds,
-    isMutatingPrivateSpaces:
-      isMutatingPrivateSpaces ||
-      folderController.isMutating ||
-      isDialogSaving ||
-      isCustomAvatarSaving ||
-      isUserBlockSubmitting,
-    pinnedSpaceIds: new Set(
-      folderController.activeFolder?.pinnedSpaceIds ?? [],
-    ),
-    folders: folderController.folders,
-    onAddToFolder: (folderId, spaceId) => {
-      void folderController.addSpaceToFolder(folderId, spaceId)
-    },
-    onRemoveFromFolder: (folderId, spaceId) => {
-      void folderController.removeSpaceFromFolder(folderId, spaceId)
-    },
-    onOpenUserProfile: setProfileDialogSpace,
-    onOpenNote: setNoteDialogSpace,
-    onOpenNickname: setNicknameDialogSpace,
-    onChooseCustomAvatar: (space) => {
-      setCustomAvatarError(null)
-      setCustomAvatarSpace(space)
-      window.requestAnimationFrame(() => customAvatarInputRef.current?.click())
-    },
-    onClearCustomAvatar: (spaceId) => {
-      void savePersonalSettings(spaceId, { clearCustomAvatar: true })
-    },
-    onOpenGroupSettings: setGroupSettingsSpace,
-    onTogglePin: (spaceId, isPinned) => {
-      void folderController.setPinned(spaceId, isPinned)
-    },
-    onSetMute: (spaceId, muteMode) => {
-      void savePersonalSettings(spaceId, { muteMode })
-    },
-    onMarkRead: (spaceId) => {
-      void onMarkPrivateSpaceRead(spaceId)
-    },
-    onBlockUser: (member) => {
-      setUserBlockDialogTarget({
-        userId: member.userId,
-        displayName: member.user.displayName,
-        login: member.user.login,
-      })
-    },
-    onUnblockUser: (member) => {
-      void unblockUser({
-        userId: member.userId,
-        displayName: member.user.displayName,
-        login: member.user.login,
-      })
-    },
-    onSendFriendRequest,
-    onLoadInviteTargetServers,
-    onRequestClearHistory: (space) =>
-      setPendingSpaceAction({
-        action: 'clear-history',
-        spaceId: space.spaceId,
-      }),
-    onRequestLeaveGroup: (space) =>
-      setPendingSpaceAction({
-        action: 'leave-group',
-        spaceId: space.spaceId,
-      }),
-    onRequestDeleteDirect: (space) =>
-      setPendingSpaceAction({
-        action: 'delete-direct',
-        spaceId: space.spaceId,
-      }),
-    onCreateDirectServerInvite,
-    onRemoveFriend,
-  })
+    privateSpaces.some((space) => space.unreadCount > 0);
+  const { contextMenu, contextMenuItems, openContextMenu, closeContextMenu } =
+    useDirectMessageContextMenu({
+      currentUserId,
+      friendUserIds,
+      isMutatingPrivateSpaces:
+        isMutatingPrivateSpaces ||
+        folderController.isMutating ||
+        isDialogSaving ||
+        isCustomAvatarSaving ||
+        isUserBlockSubmitting,
+      pinnedSpaceIds: new Set(
+        folderController.activeFolder?.pinnedSpaceIds ?? []
+      ),
+      folders: folderController.folders,
+      onAddToFolder: (folderId, spaceId) => {
+        void folderController.addSpaceToFolder(folderId, spaceId);
+      },
+      onRemoveFromFolder: (folderId, spaceId) => {
+        void folderController.removeSpaceFromFolder(folderId, spaceId);
+      },
+      onOpenUserProfile: setProfileDialogSpace,
+      onOpenNote: setNoteDialogSpace,
+      onOpenNickname: setNicknameDialogSpace,
+      onChooseCustomAvatar: (space) => {
+        setCustomAvatarError(null);
+        setCustomAvatarSpace(space);
+        window.requestAnimationFrame(() =>
+          customAvatarInputRef.current?.click()
+        );
+      },
+      onClearCustomAvatar: (spaceId) => {
+        void savePersonalSettings(spaceId, { clearCustomAvatar: true });
+      },
+      onOpenGroupSettings: setGroupSettingsSpace,
+      onTogglePin: (spaceId, isPinned) => {
+        void folderController.setPinned(spaceId, isPinned);
+      },
+      onSetMute: (spaceId, muteMode) => {
+        void savePersonalSettings(spaceId, { muteMode });
+      },
+      onMarkRead: (spaceId) => {
+        void onMarkPrivateSpaceRead(spaceId);
+      },
+      onBlockUser: (member) => {
+        setUserBlockDialogTarget({
+          userId: member.userId,
+          displayName: member.user.displayName,
+          login: member.user.login
+        });
+      },
+      onUnblockUser: (member) => {
+        void unblockUser({
+          userId: member.userId,
+          displayName: member.user.displayName,
+          login: member.user.login
+        });
+      },
+      onSendFriendRequest,
+      onLoadInviteTargetServers,
+      onRequestClearHistory: (space) =>
+        setPendingSpaceAction({
+          action: 'clear-history',
+          spaceId: space.spaceId
+        }),
+      onRequestLeaveGroup: (space) =>
+        setPendingSpaceAction({
+          action: 'leave-group',
+          spaceId: space.spaceId
+        }),
+      onRequestDeleteDirect: (space) =>
+        setPendingSpaceAction({
+          action: 'delete-direct',
+          spaceId: space.spaceId
+        }),
+      onCreateDirectServerInvite,
+      onRemoveFriend
+    });
 
   useEffect(() => {
     if (!isCreateMenuOpen) {
-      return undefined
+      return undefined;
     }
 
     function closeByKey(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        setIsCreateMenuOpen(false)
+        setIsCreateMenuOpen(false);
       }
     }
 
-    window.addEventListener('keydown', closeByKey)
+    window.addEventListener('keydown', closeByKey);
 
     return () => {
-      window.removeEventListener('keydown', closeByKey)
-    }
-  }, [isCreateMenuOpen])
+      window.removeEventListener('keydown', closeByKey);
+    };
+  }, [isCreateMenuOpen]);
 
   useEffect(() => {
-    const previewUrl = customAvatarDraft?.previewUrl
+    const previewUrl = customAvatarDraft?.previewUrl;
     return () => {
       if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
+        URL.revokeObjectURL(previewUrl);
       }
-    }
-  }, [customAvatarDraft?.previewUrl])
+    };
+  }, [customAvatarDraft?.previewUrl]);
 
   return (
     <aside
@@ -319,8 +319,16 @@ export function DirectMessagesPanel({
             <button
               className={`${styles.folderToggle} ${isFolderRailCollapsed ? styles.folderToggleCollapsed : ''}`}
               type="button"
-              aria-label={isFolderRailCollapsed ? privateSpaceFolderCopy.expand : privateSpaceFolderCopy.collapse}
-              title={isFolderRailCollapsed ? privateSpaceFolderCopy.expand : privateSpaceFolderCopy.collapse}
+              aria-label={
+                isFolderRailCollapsed
+                  ? privateSpaceFolderCopy.expand
+                  : privateSpaceFolderCopy.collapse
+              }
+              title={
+                isFolderRailCollapsed
+                  ? privateSpaceFolderCopy.expand
+                  : privateSpaceFolderCopy.collapse
+              }
               aria-expanded={!isFolderRailCollapsed}
               onClick={() => setIsFolderRailCollapsed((current) => !current)}
             >
@@ -416,9 +424,9 @@ export function DirectMessagesPanel({
           onSave={async (value) => {
             const saved = await savePersonalSettings(noteDialogSpace.spaceId, {
               note: value,
-              clearNote: value == null,
-            })
-            if (saved) setNoteDialogSpace(null)
+              clearNote: value == null
+            });
+            if (saved) setNoteDialogSpace(null);
           }}
         />
       )}
@@ -434,11 +442,11 @@ export function DirectMessagesPanel({
             const saved = await savePersonalSettings(
               nicknameDialogSpace.spaceId,
               {
-              customNickname: value,
-              clearCustomNickname: value == null,
-              },
-            )
-            if (saved) setNicknameDialogSpace(null)
+                customNickname: value,
+                clearCustomNickname: value == null
+              }
+            );
+            if (saved) setNicknameDialogSpace(null);
           }}
         />
       )}
@@ -473,9 +481,9 @@ export function DirectMessagesPanel({
         aria-hidden="true"
         tabIndex={-1}
         onChange={(event) => {
-          const file = event.target.files?.[0]
-          selectCustomAvatarFile(file)
-          event.target.value = ''
+          const file = event.target.files?.[0];
+          selectCustomAvatarFile(file);
+          event.target.value = '';
         }}
       />
       {customAvatarDraft && (
@@ -493,7 +501,7 @@ export function DirectMessagesPanel({
             onConfirm={(crop) => void confirmCustomAvatarChange(crop)}
             onImageError={() =>
               setCustomAvatarError(
-                communityCopy.direct.personalAvatarOpenFailed,
+                communityCopy.direct.personalAvatarOpenFailed
               )
             }
           />
@@ -504,9 +512,7 @@ export function DirectMessagesPanel({
           target={userBlockDialogTarget}
           isSubmitting={isUserBlockSubmitting}
           onClose={() => setUserBlockDialogTarget(null)}
-          onConfirm={(comment) =>
-            blockUser(userBlockDialogTarget, comment)
-          }
+          onConfirm={(comment) => blockUser(userBlockDialogTarget, comment)}
         />
       )}
       {folderDialog && (
@@ -519,274 +525,277 @@ export function DirectMessagesPanel({
           onClose={() => setFolderDialog(null)}
           onSave={async (request) => {
             if (folderDialog.folder) {
-              await folderController.updateFolder(folderDialog.folder.id, request)
+              await folderController.updateFolder(
+                folderDialog.folder.id,
+                request
+              );
             } else {
-              await folderController.createFolder(request)
+              await folderController.createFolder(request);
             }
-            setFolderDialog(null)
+            setFolderDialog(null);
           }}
         />
       )}
     </aside>
-  )
+  );
 
   async function createPrivateSpace(
     memberUserIds: string[],
-    title?: string | null,
+    title?: string | null
   ) {
-    setIsDialogSaving(true)
+    setIsDialogSaving(true);
     try {
-      const createdSpace = await onCreatePrivateSpace(memberUserIds, title)
-      if (!createdSpace) return
-      setIsCreateMenuOpen(false)
-      onOpenPrivateSpace(createdSpace.spaceId)
+      const createdSpace = await onCreatePrivateSpace(memberUserIds, title);
+      if (!createdSpace) return;
+      setIsCreateMenuOpen(false);
+      onOpenPrivateSpace(createdSpace.spaceId);
     } catch (error) {
-      showDialogError(error, communityCopy.direct.createFailed)
+      showDialogError(error, communityCopy.direct.createFailed);
     } finally {
-      setIsDialogSaving(false)
+      setIsDialogSaving(false);
     }
   }
 
   async function savePersonalSettings(
     spaceId: string,
-    request: PrivateSpacePersonalSettingsPatch,
+    request: PrivateSpacePersonalSettingsPatch
   ) {
-    setIsDialogSaving(true)
+    setIsDialogSaving(true);
     try {
-      await onUpdatePersonalSettings(spaceId, request)
-      return true
+      await onUpdatePersonalSettings(spaceId, request);
+      return true;
     } catch (error) {
-      showDialogError(error, communityCopy.direct.settingsSaveFailed)
-      return false
+      showDialogError(error, communityCopy.direct.settingsSaveFailed);
+      return false;
     } finally {
-      setIsDialogSaving(false)
+      setIsDialogSaving(false);
     }
   }
 
   function selectCustomAvatarFile(file: File | undefined) {
     if (!file || !customAvatarSpace) {
-      return
+      return;
     }
 
-    const validationError = validatePrivateSpaceAvatarFile(file)
+    const validationError = validatePrivateSpaceAvatarFile(file);
     if (validationError) {
-      showSystemNotice(getPrivateSpaceAvatarFileError(validationError))
-      setCustomAvatarSpace(null)
-      return
+      showSystemNotice(getPrivateSpaceAvatarFileError(validationError));
+      setCustomAvatarSpace(null);
+      return;
     }
 
-    setCustomAvatarError(null)
+    setCustomAvatarError(null);
     setCustomAvatarDraft({
       spaceId: customAvatarSpace.spaceId,
       file,
-      previewUrl: URL.createObjectURL(file),
-    })
+      previewUrl: URL.createObjectURL(file)
+    });
   }
 
   function cancelCustomAvatarChange() {
     if (isCustomAvatarSaving) {
-      return
+      return;
     }
 
-    setCustomAvatarDraft(null)
-    setCustomAvatarSpace(null)
-    setCustomAvatarError(null)
+    setCustomAvatarDraft(null);
+    setCustomAvatarSpace(null);
+    setCustomAvatarError(null);
   }
 
   async function confirmCustomAvatarChange(crop: ImageCrop) {
     if (!customAvatarDraft) {
-      return
+      return;
     }
 
     const validationError = validatePrivateSpaceAvatarFile(
-      customAvatarDraft.file,
-    )
+      customAvatarDraft.file
+    );
     if (validationError) {
-      setCustomAvatarError(getPrivateSpaceAvatarFileError(validationError))
-      return
+      setCustomAvatarError(getPrivateSpaceAvatarFileError(validationError));
+      return;
     }
 
-    setIsCustomAvatarSaving(true)
-    setCustomAvatarError(null)
+    setIsCustomAvatarSaving(true);
+    setCustomAvatarError(null);
     try {
       await onUploadPersonalAvatar(
         customAvatarDraft.spaceId,
         customAvatarDraft.file,
-        crop,
-      )
-      setCustomAvatarDraft(null)
-      setCustomAvatarSpace(null)
+        crop
+      );
+      setCustomAvatarDraft(null);
+      setCustomAvatarSpace(null);
     } catch {
-      setCustomAvatarError(profileCopy.errors.avatarSaveFailed)
+      setCustomAvatarError(profileCopy.errors.avatarSaveFailed);
     } finally {
-      setIsCustomAvatarSaving(false)
+      setIsCustomAvatarSaving(false);
     }
   }
 
   async function uploadGroupAvatarAsset(file: File) {
     if (!file.type.startsWith('image/')) {
-      throw new Error(communityCopy.direct.selectedFileIsNotImage)
+      throw new Error(communityCopy.direct.selectedFileIsNotImage);
     }
 
-    const formData = new FormData()
-    formData.append('AssetTypeId', avatarAssetTypeId)
-    formData.append('File', file)
+    const formData = new FormData();
+    formData.append('AssetTypeId', avatarAssetTypeId);
+    formData.append('File', file);
     return apiJson<AssetResponse>('/api/assets/upload', {
       method: 'POST',
       accessToken,
-      body: formData,
-    })
+      body: formData
+    });
   }
 
   async function saveGroupSettings(
     space: PrivateSpaceResponse,
     value: {
-      title: string
-      description: string
-      avatarFile: File | null
-      clearAvatar: boolean
-    },
+      title: string;
+      description: string;
+      avatarFile: File | null;
+      clearAvatar: boolean;
+    }
   ) {
-    setIsDialogSaving(true)
+    setIsDialogSaving(true);
     try {
       const request: GroupPrivateSpaceSettingsPatch = {
         title: value.title.trim() || null,
         clearTitle: value.title.trim().length === 0,
         description: value.description.trim() || null,
-        clearDescription: value.description.trim().length === 0,
-      }
+        clearDescription: value.description.trim().length === 0
+      };
 
       if (value.avatarFile) {
-        const asset = await uploadGroupAvatarAsset(value.avatarFile)
-        request.avatarAssetId = asset.id
-        request.avatarCropOffsetX = 0
-        request.avatarCropOffsetY = 0
-        request.avatarCropZoom = 1
+        const asset = await uploadGroupAvatarAsset(value.avatarFile);
+        request.avatarAssetId = asset.id;
+        request.avatarCropOffsetX = 0;
+        request.avatarCropOffsetY = 0;
+        request.avatarCropZoom = 1;
       } else if (value.clearAvatar) {
-        request.clearAvatar = true
+        request.clearAvatar = true;
       }
 
-      await onUpdateGroupSettings(space.spaceId, request)
-      setGroupSettingsSpace(null)
+      await onUpdateGroupSettings(space.spaceId, request);
+      setGroupSettingsSpace(null);
     } catch (error) {
-      showDialogError(error, communityCopy.direct.groupSettingsSaveFailed)
+      showDialogError(error, communityCopy.direct.groupSettingsSaveFailed);
     } finally {
-      setIsDialogSaving(false)
+      setIsDialogSaving(false);
     }
   }
 
   async function blockUser(
     target: UserBlockDialogTarget,
-    comment: string | null,
+    comment: string | null
   ) {
-    setIsUserBlockSubmitting(true)
+    setIsUserBlockSubmitting(true);
     try {
       const blockedUser = await apiJson<DirectMessageBlockedUserResponse>(
         `/api/users/me/direct-message-blocks/${target.userId}`,
         {
           method: 'PUT',
           accessToken,
-          body: { comment },
-        },
-      )
+          body: { comment }
+        }
+      );
       dispatchUserBlockChanged({
         userId: target.userId,
         isBlocked: true,
-        comment: blockedUser.comment,
-      })
-      setUserBlockDialogTarget(null)
+        comment: blockedUser.comment
+      });
+      setUserBlockDialogTarget(null);
       showSystemNotice(
-        getUserBlockedNotice(target.displayName, blockedUser.comment),
-      )
+        getUserBlockedNotice(target.displayName, blockedUser.comment)
+      );
     } catch (error) {
-      showDialogError(error, communityCopy.direct.blockFailed)
+      showDialogError(error, communityCopy.direct.blockFailed);
     } finally {
-      setIsUserBlockSubmitting(false)
+      setIsUserBlockSubmitting(false);
     }
   }
 
   async function unblockUser(target: UserBlockDialogTarget) {
-    setIsUserBlockSubmitting(true)
+    setIsUserBlockSubmitting(true);
     try {
       await apiNoContent(
         `/api/users/me/direct-message-blocks/${target.userId}`,
         {
           method: 'DELETE',
-          accessToken,
-        },
-      )
+          accessToken
+        }
+      );
       dispatchUserBlockChanged({
         userId: target.userId,
         isBlocked: false,
-        comment: null,
-      })
+        comment: null
+      });
       showSystemNotice(
         communityCopy.direct.userUnblockedNotice(
-          target.displayName.trim() || communityCopy.direct.userFallback,
-        ),
-      )
+          target.displayName.trim() || communityCopy.direct.userFallback
+        )
+      );
     } catch (error) {
-      showDialogError(error, communityCopy.direct.unblockFailed)
+      showDialogError(error, communityCopy.direct.unblockFailed);
     } finally {
-      setIsUserBlockSubmitting(false)
+      setIsUserBlockSubmitting(false);
     }
   }
 
   async function markAllPrivateSpacesRead() {
-    setIsDialogSaving(true)
+    setIsDialogSaving(true);
     try {
-      await onMarkAllPrivateSpacesRead()
-      setIsReadAllDialogOpen(false)
+      await onMarkAllPrivateSpacesRead();
+      setIsReadAllDialogOpen(false);
     } catch (error) {
-      showDialogError(error, communityCopy.direct.markAllReadFailed)
+      showDialogError(error, communityCopy.direct.markAllReadFailed);
     } finally {
-      setIsDialogSaving(false)
+      setIsDialogSaving(false);
     }
   }
 
   async function confirmPrivateSpaceAction() {
-    if (!pendingSpaceAction) return
+    if (!pendingSpaceAction) return;
 
-    setIsDialogSaving(true)
+    setIsDialogSaving(true);
     try {
       if (pendingSpaceAction.action === 'clear-history') {
         const wasCleared = await onClearPrivateSpaceHistory(
-          pendingSpaceAction.spaceId,
-        )
-        if (!wasCleared) return
+          pendingSpaceAction.spaceId
+        );
+        if (!wasCleared) return;
       } else {
-        await onClosePrivateSpace(pendingSpaceAction.spaceId)
+        await onClosePrivateSpace(pendingSpaceAction.spaceId);
       }
 
-      setPendingSpaceAction(null)
+      setPendingSpaceAction(null);
     } catch (error) {
       const fallback =
         pendingSpaceAction.action === 'leave-group'
           ? communityCopy.direct.leaveGroupFailed
           : pendingSpaceAction.action === 'delete-direct'
             ? communityCopy.direct.deleteDirectFailed
-            : communityCopy.direct.clearHistoryFailed
-      showDialogError(error, fallback)
+            : communityCopy.direct.clearHistoryFailed;
+      showDialogError(error, fallback);
     } finally {
-      setIsDialogSaving(false)
+      setIsDialogSaving(false);
     }
   }
 
   function onCreateFolderFromSearch() {
-    setFolderDialog({ folder: null })
+    setFolderDialog({ folder: null });
   }
 }
 
 function showDialogError(_error: unknown, fallback: string) {
-  showSystemNotice(fallback)
+  showSystemNotice(fallback);
 }
 
 function getPrivateSpaceAvatarFileError(
-  error: PrivateSpaceAvatarFileValidationError,
+  error: PrivateSpaceAvatarFileValidationError
 ) {
   return error === 'too-large'
     ? profileCopy.errors.avatarTooLarge
-    : profileCopy.errors.avatarUnsupportedType
+    : profileCopy.errors.avatarUnsupportedType;
 }
 
 function showSystemNotice(body: string) {
@@ -798,8 +807,8 @@ function showSystemNotice(body: string) {
           .slice(2)}`,
         title: communityCopy.direct.noticeTitle,
         body,
-        force: true,
-      },
-    }),
-  )
+        force: true
+      }
+    })
+  );
 }

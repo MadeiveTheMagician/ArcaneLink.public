@@ -14,13 +14,13 @@ public sealed class AbuseProtectionOptions
 
     public void Validate()
     {
-        ValidateRule(nameof(Auth), Auth);
-        ValidateRule(nameof(Uploads), Uploads);
-        ValidateRule(nameof(Invites), Invites);
-        ValidateRule(nameof(DiscoverySearch), DiscoverySearch);
-        ValidateRule(nameof(SignalRConnect), SignalRConnect);
-        ValidateRule(nameof(ModerationReports), ModerationReports);
-        ValidateRule(nameof(TurnCredentials), TurnCredentials);
+        ValidateRule(nameof(this.Auth), this.Auth);
+        ValidateRule(nameof(this.Uploads), this.Uploads);
+        ValidateRule(nameof(this.Invites), this.Invites);
+        ValidateRule(nameof(this.DiscoverySearch), this.DiscoverySearch);
+        ValidateRule(nameof(this.SignalRConnect), this.SignalRConnect);
+        ValidateRule(nameof(this.ModerationReports), this.ModerationReports);
+        ValidateRule(nameof(this.TurnCredentials), this.TurnCredentials);
     }
 
     private static void ValidateRule(string name, RateLimitRuleOptions rule)
@@ -49,8 +49,8 @@ public sealed class RateLimitRuleOptions
 
     public RateLimitRuleOptions(int permitLimit, int windowSeconds)
     {
-        PermitLimit = permitLimit;
-        WindowSeconds = windowSeconds;
+        this.PermitLimit = permitLimit;
+        this.WindowSeconds = windowSeconds;
     }
 
     public int PermitLimit { get; set; }

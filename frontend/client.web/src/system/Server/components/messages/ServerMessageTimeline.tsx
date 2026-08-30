@@ -1,73 +1,69 @@
-import {
-  memo,
-  type RefObject,
-} from 'react'
+import { type RefObject, memo } from 'react';
+
 import type {
   MessageDisplayFormat,
   SpaceMessageAssetResponse,
-  SpaceMessageResponse,
-} from '../../../../shared/types'
-import {
-  serverCopy,
-  startsMessageBubbleSequence,
-} from '../../../shared'
+  SpaceMessageResponse
+} from '../../../../shared/types';
+import { serverCopy, startsMessageBubbleSequence } from '../../../shared';
 import type {
   MessageBubbleAlignment,
-  MessageBubbleWidth,
-} from '../../../shared'
-import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton'
-import workspaceStyles from '../shell/ServerWorkspace.module.css'
-import styles from './ServerMessageLayout.module.css'
-import { MessageRow } from './MessageRow'
-import { getMessageDayKey } from './messageUtils'
+  MessageBubbleWidth
+} from '../../../shared';
+import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton';
+import { MessageRow } from './MessageRow';
+import { getMessageDayKey } from './messageUtils';
+
+import workspaceStyles from '../shell/ServerWorkspace.module.css';
+import styles from './ServerMessageLayout.module.css';
 
 const messageSkeletonRows = Array.from({ length: 14 }, (_, index) => ({
   key: `message-${index + 1}`,
   textWidth: ['62%', '44%', '71%', '52%'][index % 4],
-  titleWidth: index % 2 === 0 ? 132 : 104,
-}))
+  titleWidth: index % 2 === 0 ? 132 : 104
+}));
 
 type ServerMessageTimelineProps = {
-  feedKey: string
-  feedRef: RefObject<HTMLDivElement | null>
-  messages: SpaceMessageResponse[]
-  isLoading: boolean
-  isLoadingOlder: boolean
-  highlightedMessageId: string | null
-  canScrollToBottom: boolean
-  onScroll: () => void
-  onScrollToBottom: () => void
-  scrollToBottomLabel: string
-  onJumpToMessage: (messageId: string, createdAt?: string | null) => void
+  feedKey: string;
+  feedRef: RefObject<HTMLDivElement | null>;
+  messages: SpaceMessageResponse[];
+  isLoading: boolean;
+  isLoadingOlder: boolean;
+  highlightedMessageId: string | null;
+  canScrollToBottom: boolean;
+  onScroll: () => void;
+  onScrollToBottom: () => void;
+  scrollToBottomLabel: string;
+  onJumpToMessage: (messageId: string, createdAt?: string | null) => void;
   onOpenPreview: (
     asset: SpaceMessageAssetResponse,
-    message: SpaceMessageResponse,
-  ) => void
-  onRequestDownload: (asset: SpaceMessageAssetResponse) => void
+    message: SpaceMessageResponse
+  ) => void;
+  onRequestDownload: (asset: SpaceMessageAssetResponse) => void;
   onContextMenu: (
     message: SpaceMessageResponse,
     x: number,
     y: number,
-    focusOnOpen: boolean,
-  ) => void
-  defaultAttachmentExpanded: boolean
-  loadExternalMediaPreviews: boolean
-  horizontalVideoCardSize: number
-  verticalVideoCardSize: number
-  canReact: boolean
-  invitePreviewAccessToken?: string | null
-  invitePreviewOrigin?: string | null
-  privateMessageReceiptViewerUserId?: string | null
-  currentUserId: string
-  messageDisplayFormat: MessageDisplayFormat
-  messageBubbleAlignment: MessageBubbleAlignment
-  messageBubbleWidth: MessageBubbleWidth
+    focusOnOpen: boolean
+  ) => void;
+  defaultAttachmentExpanded: boolean;
+  loadExternalMediaPreviews: boolean;
+  horizontalVideoCardSize: number;
+  verticalVideoCardSize: number;
+  canReact: boolean;
+  invitePreviewAccessToken?: string | null;
+  invitePreviewOrigin?: string | null;
+  privateMessageReceiptViewerUserId?: string | null;
+  currentUserId: string;
+  messageDisplayFormat: MessageDisplayFormat;
+  messageBubbleAlignment: MessageBubbleAlignment;
+  messageBubbleWidth: MessageBubbleWidth;
   onSetReaction: (
     messageId: string,
     emojiCode: string,
-    isPresent: boolean,
-  ) => Promise<SpaceMessageResponse | null>
-}
+    isPresent: boolean
+  ) => Promise<SpaceMessageResponse | null>;
+};
 
 export const ServerMessageTimeline = memo(function ServerMessageTimeline({
   feedRef,
@@ -95,9 +91,9 @@ export const ServerMessageTimeline = memo(function ServerMessageTimeline({
   messageDisplayFormat,
   messageBubbleAlignment,
   messageBubbleWidth,
-  onSetReaction,
+  onSetReaction
 }: ServerMessageTimelineProps) {
-  const isInitialLoading = isLoading && messages.length === 0
+  const isInitialLoading = isLoading && messages.length === 0;
 
   return (
     <>
@@ -139,26 +135,26 @@ export const ServerMessageTimeline = memo(function ServerMessageTimeline({
           </div>
         ) : messages.length > 0 ? (
           messages.map((message, index) => {
-            const previous = messages[index - 1] ?? null
-            const currentDay = getMessageDayKey(message.createdAt)
+            const previous = messages[index - 1] ?? null;
+            const currentDay = getMessageDayKey(message.createdAt);
             const previousDay = previous
               ? getMessageDayKey(previous.createdAt)
-              : null
-            const startsNewDay = currentDay !== previousDay
-            const currentIsEvent = message.messageTypeCode === 'event'
-            const previousIsEvent = previous?.messageTypeCode === 'event'
+              : null;
+            const startsNewDay = currentDay !== previousDay;
+            const currentIsEvent = message.messageTypeCode === 'event';
+            const previousIsEvent = previous?.messageTypeCode === 'event';
             const startsNewAuthor =
               startsNewDay ||
               currentIsEvent ||
               previousIsEvent ||
               previous?.senderUserId !== message.senderUserId ||
               Boolean(message.replyTo) ||
-              Boolean(message.mentions?.length)
+              Boolean(message.mentions?.length);
             const startsNewBubbleSequence = startsMessageBubbleSequence(
               message.senderUserId,
-              previousIsEvent ? null : previous?.senderUserId ?? null,
-              startsNewDay || currentIsEvent,
-            )
+              previousIsEvent ? null : (previous?.senderUserId ?? null),
+              startsNewDay || currentIsEvent
+            );
 
             return (
               <MessageRow
@@ -190,7 +186,7 @@ export const ServerMessageTimeline = memo(function ServerMessageTimeline({
                   onContextMenu(message, x, y, focusOnOpen)
                 }
               />
-            )
+            );
           })
         ) : (
           <p className={styles.textEmpty}>{serverCopy.messages.emptyChannel}</p>
@@ -206,5 +202,5 @@ export const ServerMessageTimeline = memo(function ServerMessageTimeline({
         </button>
       ) : null}
     </>
-  )
-})
+  );
+});

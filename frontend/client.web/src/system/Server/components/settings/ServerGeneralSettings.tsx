@@ -1,61 +1,59 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { createPortal } from 'react-dom'
-import type { ImageCrop } from '../../../../shared/media/ImageCropEditor'
-import { apiJson } from '../../../../shared/api/api'
+import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+
+import { apiJson } from '../../../../shared/api/api';
+import type { ImageCrop } from '../../../../shared/media/ImageCropEditor';
 import type {
   AssetResponse,
   ServerAccessMode,
   ServerResponse,
-  UpdateServerRequest,
-} from '../../../../shared/types'
-import { useAssetImagePicker } from '../../../Profile/hooks/useAssetImagePicker'
-import { AssetCropDialog } from '../../../Profile/components/assets/AssetCropDialog'
-import { AssetLibraryDialog } from '../../../Profile/components/assets/AssetLibraryDialog'
-import { serverCopy } from '../../../shared'
-import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon'
-import buttonStyles from '../../../shared/styles/Button.module.css'
-import styles from './ServerGeneralSettings.module.css'
+  UpdateServerRequest
+} from '../../../../shared/types';
+import { AssetCropDialog } from '../../../Profile/components/assets/AssetCropDialog';
+import { AssetLibraryDialog } from '../../../Profile/components/assets/AssetLibraryDialog';
+import { useAssetImagePicker } from '../../../Profile/hooks/useAssetImagePicker';
+import { serverCopy } from '../../../shared';
+import { SystemPlusIcon } from '../../../shared/icons/components/SystemPlusIcon';
 
-const serverIconAssetTypeId = '14000000-0000-0000-0000-000000000000'
-const maxServerIconUploadSizeBytes = 10 * 1024 * 1024
+import buttonStyles from '../../../shared/styles/Button.module.css';
+import styles from './ServerGeneralSettings.module.css';
+
+const serverIconAssetTypeId = '14000000-0000-0000-0000-000000000000';
+const maxServerIconUploadSizeBytes = 10 * 1024 * 1024;
 const allowedServerIconMimeTypes = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/gif',
-  'image/bmp',
-])
-const accessModes: ServerAccessMode[] = [
-  'public',
-  'restricted',
-  'private',
-]
+  'image/bmp'
+]);
+const accessModes: ServerAccessMode[] = ['public', 'restricted', 'private'];
 
 type ServerGeneralForm = {
-  title: string
-  description: string
-  accessMode: ServerAccessMode
-  iconAssetId: string | null
-  iconPreviewUrl: string | null
-  iconPreviewIsObjectUrl: boolean
-  iconCropOffsetX: number
-  iconCropOffsetY: number
-  iconCropZoom: number
-  iconFile?: File
-}
+  title: string;
+  description: string;
+  accessMode: ServerAccessMode;
+  iconAssetId: string | null;
+  iconPreviewUrl: string | null;
+  iconPreviewIsObjectUrl: boolean;
+  iconCropOffsetX: number;
+  iconCropOffsetY: number;
+  iconCropZoom: number;
+  iconFile?: File;
+};
 
 type ServerGeneralSettingsProps = {
-  accessToken: string
-  server: ServerResponse
-  canManageProfile: boolean
-  canManageSettings: boolean
-  canDelete: boolean
+  accessToken: string;
+  server: ServerResponse;
+  canManageProfile: boolean;
+  canManageSettings: boolean;
+  canDelete: boolean;
   onUpdateServer: (
-    request: UpdateServerRequest,
-  ) => Promise<ServerResponse | null>
-  onDeleteServer: () => Promise<void>
-  onNestedOverlayChange: (isOpen: boolean) => void
-}
+    request: UpdateServerRequest
+  ) => Promise<ServerResponse | null>;
+  onDeleteServer: () => Promise<void>;
+  onNestedOverlayChange: (isOpen: boolean) => void;
+};
 
 function createForm(server: ServerResponse): ServerGeneralForm {
   return {
@@ -69,8 +67,8 @@ function createForm(server: ServerResponse): ServerGeneralForm {
     iconPreviewIsObjectUrl: false,
     iconCropOffsetX: server.iconCropOffsetX,
     iconCropOffsetY: server.iconCropOffsetY,
-    iconCropZoom: server.iconCropZoom,
-  }
+    iconCropZoom: server.iconCropZoom
+  };
 }
 
 export function ServerGeneralSettings({
@@ -81,60 +79,60 @@ export function ServerGeneralSettings({
   canDelete,
   onUpdateServer,
   onDeleteServer,
-  onNestedOverlayChange,
+  onNestedOverlayChange
 }: ServerGeneralSettingsProps) {
-  const [form, setForm] = useState(() => createForm(server))
-  const [notice, setNotice] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [isDeleteSectionOpen, setIsDeleteSectionOpen] = useState(false)
-  const [assetSort, setAssetSort] = useState<'newest' | 'oldest'>('newest')
-  const currentObjectUrlRef = useRef<string | null>(null)
+  const [form, setForm] = useState(() => createForm(server));
+  const [notice, setNotice] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteSectionOpen, setIsDeleteSectionOpen] = useState(false);
+  const [assetSort, setAssetSort] = useState<'newest' | 'oldest'>('newest');
+  const currentObjectUrlRef = useRef<string | null>(null);
   const iconPicker = useAssetImagePicker({
     accessToken,
     libraryEndpoint: '/api/assets/me/server-icon',
-    sort: assetSort,
-  })
+    sort: assetSort
+  });
   const isNestedOverlayOpen =
-    iconPicker.isCropDialogOpen || iconPicker.isLibraryOpen
+    iconPicker.isCropDialogOpen || iconPicker.isLibraryOpen;
 
   useEffect(() => {
-    onNestedOverlayChange(isNestedOverlayOpen)
-    return () => onNestedOverlayChange(false)
-  }, [isNestedOverlayOpen, onNestedOverlayChange])
+    onNestedOverlayChange(isNestedOverlayOpen);
+    return () => onNestedOverlayChange(false);
+  }, [isNestedOverlayOpen, onNestedOverlayChange]);
 
   useEffect(() => {
-    releaseCurrentObjectUrl()
-    setForm(createForm(server))
-    setNotice(null)
-    setIsDeleteSectionOpen(false)
+    releaseCurrentObjectUrl();
+    setForm(createForm(server));
+    setNotice(null);
+    setIsDeleteSectionOpen(false);
     // Reset only when the selected server changes. Server updates are applied
     // explicitly after save so an in-progress draft is never overwritten.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [server.id])
+  }, [server.id]);
 
   useEffect(
     () => () => {
       if (currentObjectUrlRef.current) {
-        URL.revokeObjectURL(currentObjectUrlRef.current)
+        URL.revokeObjectURL(currentObjectUrlRef.current);
       }
     },
-    [currentObjectUrlRef],
-  )
+    [currentObjectUrlRef]
+  );
 
   function releaseCurrentObjectUrl() {
     if (currentObjectUrlRef.current) {
-      URL.revokeObjectURL(currentObjectUrlRef.current)
-      currentObjectUrlRef.current = null
+      URL.revokeObjectURL(currentObjectUrlRef.current);
+      currentObjectUrlRef.current = null;
     }
   }
 
   function updateForm(next: Partial<ServerGeneralForm>) {
-    setForm((current) => ({ ...current, ...next }))
+    setForm((current) => ({ ...current, ...next }));
   }
 
   function clearIcon() {
-    releaseCurrentObjectUrl()
+    releaseCurrentObjectUrl();
     updateForm({
       iconAssetId: null,
       iconPreviewUrl: null,
@@ -142,20 +140,20 @@ export function ServerGeneralSettings({
       iconCropOffsetX: 0,
       iconCropOffsetY: 0,
       iconCropZoom: 1,
-      iconFile: undefined,
-    })
-    iconPicker.clearFileInput()
+      iconFile: undefined
+    });
+    iconPicker.clearFileInput();
   }
 
   function confirmIconChange(crop: ImageCrop) {
-    const draft = iconPicker.draft
-    if (!draft) return
+    const draft = iconPicker.draft;
+    if (!draft) return;
 
-    releaseCurrentObjectUrl()
+    releaseCurrentObjectUrl();
     const previewUrl = draft.file
       ? URL.createObjectURL(draft.file)
-      : draft.previewUrl
-    if (draft.file) currentObjectUrlRef.current = previewUrl
+      : draft.previewUrl;
+    if (draft.file) currentObjectUrlRef.current = previewUrl;
 
     updateForm({
       iconAssetId: draft.assetId ?? null,
@@ -164,36 +162,36 @@ export function ServerGeneralSettings({
       iconFile: draft.file,
       iconCropOffsetX: crop.offsetX,
       iconCropOffsetY: crop.offsetY,
-      iconCropZoom: crop.zoom,
-    })
-    iconPicker.completeCrop()
+      iconCropZoom: crop.zoom
+    });
+    iconPicker.completeCrop();
   }
 
   async function uploadIconAsset() {
-    if (!form.iconFile) return form.iconAssetId
+    if (!form.iconFile) return form.iconAssetId;
 
-    validateServerIconFile(form.iconFile)
-    const body = new FormData()
-    body.append('AssetTypeId', serverIconAssetTypeId)
-    body.append('File', form.iconFile)
+    validateServerIconFile(form.iconFile);
+    const body = new FormData();
+    body.append('AssetTypeId', serverIconAssetTypeId);
+    body.append('File', form.iconFile);
     const asset = await apiJson<AssetResponse>('/api/assets/upload', {
       method: 'POST',
       accessToken,
-      body,
-    })
-    return asset.id
+      body
+    });
+    return asset.id;
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setIsSaving(true)
-    setNotice(null)
+    event.preventDefault();
+    setIsSaving(true);
+    setNotice(null);
 
     try {
       const iconAssetId = canManageProfile
         ? await uploadIconAsset()
-        : server.iconAssetId
-      const request: UpdateServerRequest = {}
+        : server.iconAssetId;
+      const request: UpdateServerRequest = {};
       if (canManageProfile) {
         Object.assign(request, {
           title: form.title,
@@ -202,43 +200,43 @@ export function ServerGeneralSettings({
           iconCropOffsetX: form.iconCropOffsetX,
           iconCropOffsetY: form.iconCropOffsetY,
           iconCropZoom: form.iconCropZoom,
-          clearIconAsset: !iconAssetId && !form.iconFile,
-        })
+          clearIconAsset: !iconAssetId && !form.iconFile
+        });
       }
-      if (canManageSettings) request.accessMode = form.accessMode
+      if (canManageSettings) request.accessMode = form.accessMode;
 
-      const updatedServer = await onUpdateServer(request)
+      const updatedServer = await onUpdateServer(request);
       if (updatedServer) {
-        releaseCurrentObjectUrl()
-        setForm(createForm(updatedServer))
-        setNotice(serverCopy.dialog.updated)
+        releaseCurrentObjectUrl();
+        setForm(createForm(updatedServer));
+        setNotice(serverCopy.dialog.updated);
       }
     } catch (error) {
       setNotice(
         error instanceof Error
           ? error.message
-          : serverCopy.assets.iconSaveFailed,
-      )
+          : serverCopy.assets.iconSaveFailed
+      );
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   async function deleteServer() {
-    setIsDeleting(true)
-    setNotice(null)
+    setIsDeleting(true);
+    setNotice(null);
     try {
-      await onDeleteServer()
+      await onDeleteServer();
     } catch (error) {
       setNotice(
-        error instanceof Error ? error.message : serverCopy.dialog.deleteFailed,
-      )
+        error instanceof Error ? error.message : serverCopy.dialog.deleteFailed
+      );
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
   }
 
-  const canEdit = canManageProfile || canManageSettings
+  const canEdit = canManageProfile || canManageSettings;
 
   return (
     <section className={styles.root}>
@@ -247,7 +245,11 @@ export function ServerGeneralSettings({
         <span>{serverCopy.settings.generalDescription}</span>
       </header>
 
-      {notice && <p className={styles.notice} role="status">{notice}</p>}
+      {notice && (
+        <p className={styles.notice} role="status">
+          {notice}
+        </p>
+      )}
 
       {canEdit && (
         <form className={styles.form} onSubmit={submit}>
@@ -265,14 +267,16 @@ export function ServerGeneralSettings({
                     src={form.iconPreviewUrl}
                     alt=""
                     style={{
-                      transform: `translate(${form.iconCropOffsetX * 100}%, ${form.iconCropOffsetY * 100}%) scale(${form.iconCropZoom})`,
+                      transform: `translate(${form.iconCropOffsetX * 100}%, ${form.iconCropOffsetY * 100}%) scale(${form.iconCropZoom})`
                     }}
                   />
                 ) : (
                   <span>
-                    {form.title.trim()
-                      ? form.title.slice(0, 1).toUpperCase()
-                      : <SystemPlusIcon size="large" />}
+                    {form.title.trim() ? (
+                      form.title.slice(0, 1).toUpperCase()
+                    ) : (
+                      <SystemPlusIcon size="large" />
+                    )}
                   </span>
                 )}
               </button>
@@ -313,7 +317,9 @@ export function ServerGeneralSettings({
                 className={styles.fileInput}
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => iconPicker.selectFile(event.target.files?.[0])}
+                onChange={(event) =>
+                  iconPicker.selectFile(event.target.files?.[0])
+                }
               />
             </div>
           )}
@@ -337,7 +343,9 @@ export function ServerGeneralSettings({
               <textarea
                 className="ui-field-control"
                 value={form.description}
-                onChange={(event) => updateForm({ description: event.target.value })}
+                onChange={(event) =>
+                  updateForm({ description: event.target.value })
+                }
                 maxLength={512}
               />
             </label>
@@ -349,8 +357,8 @@ export function ServerGeneralSettings({
               <p>{serverCopy.dialog.accessModeDescription}</p>
               <div className={styles.accessModeGrid}>
                 {accessModes.map((accessMode) => {
-                  const copy = serverCopy.dialog.accessModes[accessMode]
-                  const isSelected = form.accessMode === accessMode
+                  const copy = serverCopy.dialog.accessModes[accessMode];
+                  const isSelected = form.accessMode === accessMode;
                   return (
                     <label
                       key={accessMode}
@@ -368,7 +376,7 @@ export function ServerGeneralSettings({
                         <small>{copy.description}</small>
                       </span>
                     </label>
-                  )
+                  );
                 })}
               </div>
             </fieldset>
@@ -412,70 +420,81 @@ export function ServerGeneralSettings({
                 onClick={() => void deleteServer()}
                 disabled={isDeleting || isSaving}
               >
-                {isDeleting ? serverCopy.dialog.deleting : serverCopy.dialog.delete}
+                {isDeleting
+                  ? serverCopy.dialog.deleting
+                  : serverCopy.dialog.delete}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {iconPicker.isCropDialogOpen && iconPicker.draft && createPortal(
-        <div className={styles.nestedOverlay} data-dismissable-layer-branch="">
-          <AssetCropDialog
-          imageUrl={iconPicker.draft.previewUrl}
-          title={serverCopy.assets.iconCropTitle}
-          description={serverCopy.assets.iconCropDescription}
-          shape="rounded"
-          aspectRatio="1 / 1"
-          frameLabel="server icon"
-          initialCrop={
-            iconPicker.draft.assetId === form.iconAssetId ||
-            (!iconPicker.draft.assetId && iconPicker.draft.file)
-              ? {
-                  offsetX: form.iconCropOffsetX,
-                  offsetY: form.iconCropOffsetY,
-                  zoom: form.iconCropZoom,
-                }
-              : undefined
-          }
-          isSaving={isSaving}
-          onCancel={iconPicker.cancelCrop}
-          onConfirm={confirmIconChange}
-          />
-        </div>,
-        document.body,
-      )}
+      {iconPicker.isCropDialogOpen &&
+        iconPicker.draft &&
+        createPortal(
+          <div
+            className={styles.nestedOverlay}
+            data-dismissable-layer-branch=""
+          >
+            <AssetCropDialog
+              imageUrl={iconPicker.draft.previewUrl}
+              title={serverCopy.assets.iconCropTitle}
+              description={serverCopy.assets.iconCropDescription}
+              shape="rounded"
+              aspectRatio="1 / 1"
+              frameLabel="server icon"
+              initialCrop={
+                iconPicker.draft.assetId === form.iconAssetId ||
+                (!iconPicker.draft.assetId && iconPicker.draft.file)
+                  ? {
+                      offsetX: form.iconCropOffsetX,
+                      offsetY: form.iconCropOffsetY,
+                      zoom: form.iconCropZoom
+                    }
+                  : undefined
+              }
+              isSaving={isSaving}
+              onCancel={iconPicker.cancelCrop}
+              onConfirm={confirmIconChange}
+            />
+          </div>,
+          document.body
+        )}
 
-      {iconPicker.isLibraryOpen && createPortal(
-        <div className={styles.nestedOverlay} data-dismissable-layer-branch="">
-          <AssetLibraryDialog
-          titleId="server-settings-icon-library-title"
-          title={serverCopy.assets.iconLibraryTitle}
-          description={serverCopy.assets.iconLibraryDescription}
-          emptyText={serverCopy.assets.iconLibraryEmpty}
-          loadingText={serverCopy.assets.iconLibraryLoading}
-          assets={iconPicker.sortedAssets}
-          isLoading={iconPicker.isLoadingAssets}
-          sort={assetSort}
-          isRounded
-          onSortChange={setAssetSort}
-          onClose={() => iconPicker.setIsLibraryOpen(false)}
-          onSelectAsset={iconPicker.selectAsset}
-          formatDate={formatDate}
-          />
-        </div>,
-        document.body,
-      )}
+      {iconPicker.isLibraryOpen &&
+        createPortal(
+          <div
+            className={styles.nestedOverlay}
+            data-dismissable-layer-branch=""
+          >
+            <AssetLibraryDialog
+              titleId="server-settings-icon-library-title"
+              title={serverCopy.assets.iconLibraryTitle}
+              description={serverCopy.assets.iconLibraryDescription}
+              emptyText={serverCopy.assets.iconLibraryEmpty}
+              loadingText={serverCopy.assets.iconLibraryLoading}
+              assets={iconPicker.sortedAssets}
+              isLoading={iconPicker.isLoadingAssets}
+              sort={assetSort}
+              isRounded
+              onSortChange={setAssetSort}
+              onClose={() => iconPicker.setIsLibraryOpen(false)}
+              onSelectAsset={iconPicker.selectAsset}
+              formatDate={formatDate}
+            />
+          </div>,
+          document.body
+        )}
     </section>
-  )
+  );
 }
 
 function validateServerIconFile(file: File) {
   if (file.size > maxServerIconUploadSizeBytes) {
-    throw new Error(serverCopy.assets.iconTooLarge)
+    throw new Error(serverCopy.assets.iconTooLarge);
   }
   if (!allowedServerIconMimeTypes.has(file.type)) {
-    throw new Error(serverCopy.assets.iconUnsupportedType)
+    throw new Error(serverCopy.assets.iconUnsupportedType);
   }
 }
 
@@ -483,6 +502,6 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: 'long',
-    year: 'numeric',
-  }).format(new Date(value))
+    year: 'numeric'
+  }).format(new Date(value));
 }

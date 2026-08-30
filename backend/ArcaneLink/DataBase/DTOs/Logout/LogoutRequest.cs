@@ -1,7 +1,6 @@
-﻿namespace ArcaneLink.DataBase.DTOs.Logout
+namespace ArcaneLink.DataBase.DTOs.Logout;
+
+public class LogoutRequest
 {
-    public class LogoutRequest
-    {
-        public string? RefreshToken { get; set; }
-    }
+    public string? RefreshToken { get; set; }
 }

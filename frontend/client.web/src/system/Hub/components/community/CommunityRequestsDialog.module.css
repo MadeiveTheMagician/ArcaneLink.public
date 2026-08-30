@@ -6,7 +6,11 @@
   place-items: center;
   padding: 32px;
   background:
-    radial-gradient(circle at 70% 20%, color-mix(in srgb, var(--theme-accent), transparent 82%), transparent 38%),
+    radial-gradient(
+      circle at 70% 20%,
+      color-mix(in srgb, var(--theme-accent), transparent 82%),
+      transparent 38%
+    ),
     rgba(0, 0, 0, 0.58);
   backdrop-filter: blur(10px);
 }
@@ -22,7 +26,11 @@
   border-radius: 14px;
   padding: 18px;
   background:
-    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--theme-accent), transparent 76%), transparent 40%),
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 76%),
+      transparent 40%
+    ),
     color-mix(in srgb, var(--theme-control-bg-strong), #000 8%);
   box-shadow:
     0 28px 70px rgba(0, 0, 0, 0.48),
@@ -142,9 +150,8 @@
 .communityDialogList::-webkit-scrollbar-thumb {
   border: 5px solid transparent;
   border-radius: 999px;
-  background:
-    color-mix(in srgb, var(--theme-scrollbar-thumb), transparent 8%)
-      padding-box;
+  background: color-mix(in srgb, var(--theme-scrollbar-thumb), transparent 8%)
+    padding-box;
 }
 
 @keyframes communityDialogIn {
@@ -179,4 +186,3 @@
     min-height: min(620px, 86vh);
   }
 }
-

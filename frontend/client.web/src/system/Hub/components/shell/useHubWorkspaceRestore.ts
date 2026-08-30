@@ -1,19 +1,20 @@
-import { useEffect } from 'react'
-import type { ServerMemberResponse } from '../../../../shared/types'
-import type { HubWorkspace } from './useHubWorkspace'
+import { useEffect } from 'react';
+
+import type { ServerMemberResponse } from '../../../../shared/types';
+import type { HubWorkspace } from './useHubWorkspace';
 
 type UseHubWorkspaceRestoreOptions = {
-  activeWorkspace: HubWorkspace
-  activeServerId: string | null
-  selectedServerMembership: ServerMemberResponse | null
-  serverMemberships: ServerMemberResponse[]
-  hasLoadedServers: boolean
+  activeWorkspace: HubWorkspace;
+  activeServerId: string | null;
+  selectedServerMembership: ServerMemberResponse | null;
+  serverMemberships: ServerMemberResponse[];
+  hasLoadedServers: boolean;
   loadServerMembers: (
     membership: ServerMemberResponse,
-    silent?: boolean,
-  ) => Promise<void>
-  showProfileWorkspace: () => void
-}
+    silent?: boolean
+  ) => Promise<void>;
+  showProfileWorkspace: () => void;
+};
 
 export function useHubWorkspaceRestore({
   activeWorkspace,
@@ -22,7 +23,7 @@ export function useHubWorkspaceRestore({
   serverMemberships,
   hasLoadedServers,
   loadServerMembers,
-  showProfileWorkspace,
+  showProfileWorkspace
 }: UseHubWorkspaceRestoreOptions) {
   useEffect(() => {
     const action = resolveHubWorkspaceRestore({
@@ -30,25 +31,25 @@ export function useHubWorkspaceRestore({
       activeServerId,
       hasSelectedServerMembership: Boolean(selectedServerMembership),
       serverIds: serverMemberships.map((membership) => membership.serverId),
-      hasLoadedServers,
-    })
+      hasLoadedServers
+    });
 
     if (action === 'none') {
-      return
+      return;
     }
 
     if (action === 'load-server-members') {
       const membership = serverMemberships.find(
-        (item) => item.serverId === activeServerId,
-      )
+        (item) => item.serverId === activeServerId
+      );
       if (!membership) {
-        return
+        return;
       }
-      void loadServerMembers(membership, true)
-      return
+      void loadServerMembers(membership, true);
+      return;
     }
 
-    showProfileWorkspace()
+    showProfileWorkspace();
   }, [
     activeServerId,
     activeWorkspace,
@@ -56,8 +57,8 @@ export function useHubWorkspaceRestore({
     selectedServerMembership,
     serverMemberships,
     hasLoadedServers,
-    showProfileWorkspace,
-  ])
+    showProfileWorkspace
+  ]);
 }
 
 export function resolveHubWorkspaceRestore({
@@ -65,25 +66,25 @@ export function resolveHubWorkspaceRestore({
   activeServerId,
   hasSelectedServerMembership,
   serverIds,
-  hasLoadedServers,
+  hasLoadedServers
 }: {
-  activeWorkspace: HubWorkspace
-  activeServerId: string | null
-  hasSelectedServerMembership: boolean
-  serverIds: string[]
-  hasLoadedServers: boolean
+  activeWorkspace: HubWorkspace;
+  activeServerId: string | null;
+  hasSelectedServerMembership: boolean;
+  serverIds: string[];
+  hasLoadedServers: boolean;
 }): 'none' | 'load-server-members' | 'show-profile' {
   if (
     activeWorkspace !== 'server' ||
     hasSelectedServerMembership ||
     !activeServerId
   ) {
-    return 'none'
+    return 'none';
   }
 
   if (serverIds.includes(activeServerId)) {
-    return 'load-server-members'
+    return 'load-server-members';
   }
 
-  return hasLoadedServers ? 'show-profile' : 'none'
+  return hasLoadedServers ? 'show-profile' : 'none';
 }

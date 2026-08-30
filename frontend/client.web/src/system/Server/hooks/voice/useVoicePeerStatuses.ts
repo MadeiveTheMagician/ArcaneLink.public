@@ -1,30 +1,30 @@
-import { useState } from 'react'
-import type { VoicePeerStatus } from './voiceChannelTypes'
-import { normalizeUserId } from './voiceChannelUtils'
+import { useState } from 'react';
+
+import type { VoicePeerStatus } from './voiceChannelTypes';
+import { normalizeUserId } from './voiceChannelUtils';
 
 export function useVoicePeerStatuses() {
-  const [peerStatusesByParticipantId, setPeerStatusesByParticipantId] = useState<
-    Record<string, VoicePeerStatus>
-  >({})
+  const [peerStatusesByParticipantId, setPeerStatusesByParticipantId] =
+    useState<Record<string, VoicePeerStatus>>({});
 
   function setPeerStatus(participantId: string, status: VoicePeerStatus) {
     setPeerStatusesByParticipantId((current) => ({
       ...current,
-      [normalizeUserId(participantId)]: status,
-    }))
+      [normalizeUserId(participantId)]: status
+    }));
   }
 
   function removePeerStatus(participantId: string) {
     setPeerStatusesByParticipantId((current) => {
-      const next = { ...current }
-      delete next[normalizeUserId(participantId)]
-      return next
-    })
+      const next = { ...current };
+      delete next[normalizeUserId(participantId)];
+      return next;
+    });
   }
 
   return {
     peerStatusesByParticipantId,
     setPeerStatus,
-    removePeerStatus,
-  }
+    removePeerStatus
+  };
 }

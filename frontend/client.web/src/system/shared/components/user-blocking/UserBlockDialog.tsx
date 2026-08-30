@@ -1,53 +1,55 @@
-import { useEffect, useId, useState } from 'react'
-import { SystemCloseIcon } from '../../icons/components/SystemCloseIcon'
+import { useEffect, useId, useState } from 'react';
+
+import { SystemCloseIcon } from '../../icons/components/SystemCloseIcon';
 import {
   normalizeUserBlockComment,
-  userBlockCommentMaxLength,
-} from './userBlockModel'
-import styles from './UserBlockDialog.module.css'
+  userBlockCommentMaxLength
+} from './userBlockModel';
+
+import styles from './UserBlockDialog.module.css';
 
 export type UserBlockDialogTarget = {
-  userId: string
-  displayName: string
-  login?: string | null
-}
+  userId: string;
+  displayName: string;
+  login?: string | null;
+};
 
 type UserBlockDialogProps = {
-  target: UserBlockDialogTarget
-  initialComment?: string | null
-  isSubmitting?: boolean
-  onClose: () => void
-  onConfirm: (comment: string | null) => Promise<void> | void
-}
+  target: UserBlockDialogTarget;
+  initialComment?: string | null;
+  isSubmitting?: boolean;
+  onClose: () => void;
+  onConfirm: (comment: string | null) => Promise<void> | void;
+};
 
 export function UserBlockDialog({
   target,
   initialComment = null,
   isSubmitting = false,
   onClose,
-  onConfirm,
+  onConfirm
 }: UserBlockDialogProps) {
-  const titleId = useId()
-  const descriptionId = useId()
-  const [comment, setComment] = useState(initialComment ?? '')
+  const titleId = useId();
+  const descriptionId = useId();
+  const [comment, setComment] = useState(initialComment ?? '');
 
   useEffect(() => {
     function closeByEscape(event: KeyboardEvent) {
       if (event.key === 'Escape' && !isSubmitting) {
-        onClose()
+        onClose();
       }
     }
 
-    window.addEventListener('keydown', closeByEscape)
-    return () => window.removeEventListener('keydown', closeByEscape)
-  }, [isSubmitting, onClose])
+    window.addEventListener('keydown', closeByEscape);
+    return () => window.removeEventListener('keydown', closeByEscape);
+  }, [isSubmitting, onClose]);
 
   return (
     <div
       className={styles.overlay}
       role="presentation"
       onMouseDown={() => {
-        if (!isSubmitting) onClose()
+        if (!isSubmitting) onClose();
       }}
     >
       <section
@@ -123,5 +125,5 @@ export function UserBlockDialog({
         </footer>
       </section>
     </div>
-  )
+  );
 }

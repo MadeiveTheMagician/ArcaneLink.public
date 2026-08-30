@@ -1,14 +1,18 @@
-import { authCopy, SystemIcon } from '../../../system/shared/index'
-import type { AuthRequirement, ValidatedRegisterFieldKey } from './AuthPageValidation'
-import type { RegisterForm } from '../model/AuthPageModel'
-import { registerSteps } from '../model/AuthPageModel'
-import { AuthPasswordField } from '../fields/AuthPasswordField'
+import { SystemIcon, authCopy } from '../../../system/shared/index';
+import { AuthPasswordField } from '../fields/AuthPasswordField';
+import type { RegisterForm } from '../model/AuthPageModel';
+import { registerSteps } from '../model/AuthPageModel';
+import type {
+  AuthRequirement,
+  ValidatedRegisterFieldKey
+} from './AuthPageValidation';
 import {
   RegisterRequirementsPanel,
-  ValidatedRegisterField,
-} from './AuthRegisterShared'
-import formStyles from '../login/AuthFormControls.module.css'
-import styles from './AuthRegisterForm.module.css'
+  ValidatedRegisterField
+} from './AuthRegisterShared';
+
+import formStyles from '../login/AuthFormControls.module.css';
+import styles from './AuthRegisterForm.module.css';
 
 export function AuthDesktopRegisterForm({
   registerForm,
@@ -21,19 +25,19 @@ export function AuthDesktopRegisterForm({
   isPasswordVisible,
   onChange,
   onFocusRequirements,
-  onPasswordVisibilityChange,
+  onPasswordVisibilityChange
 }: {
-  registerForm: RegisterForm
-  registerProgress: boolean[]
-  activeRegisterStep: number
-  activeRequirements: ValidatedRegisterFieldKey | null
-  activeRequirementTitle: string
-  activeRequirementList: AuthRequirement[]
-  isLoading: boolean
-  isPasswordVisible: boolean
-  onChange: (form: RegisterForm) => void
-  onFocusRequirements: (field: ValidatedRegisterFieldKey | null) => void
-  onPasswordVisibilityChange: (isVisible: boolean) => void
+  registerForm: RegisterForm;
+  registerProgress: boolean[];
+  activeRegisterStep: number;
+  activeRequirements: ValidatedRegisterFieldKey | null;
+  activeRequirementTitle: string;
+  activeRequirementList: AuthRequirement[];
+  isLoading: boolean;
+  isPasswordVisible: boolean;
+  onChange: (form: RegisterForm) => void;
+  onFocusRequirements: (field: ValidatedRegisterFieldKey | null) => void;
+  onPasswordVisibilityChange: (isVisible: boolean) => void;
 }) {
   return (
     <>
@@ -42,8 +46,8 @@ export function AuthDesktopRegisterForm({
         aria-label={authCopy.aria.registerSteps}
       >
         {registerSteps.map((step, index) => {
-          const isComplete = registerProgress[index]
-          const isActive = index === activeRegisterStep
+          const isComplete = registerProgress[index];
+          const isActive = index === activeRegisterStep;
 
           return (
             <li
@@ -57,7 +61,7 @@ export function AuthDesktopRegisterForm({
               </span>
               <strong>{step.label}</strong>
             </li>
-          )
+          );
         })}
       </ol>
 
@@ -148,5 +152,5 @@ export function AuthDesktopRegisterForm({
           : authCopy.actions.createAccount}
       </button>
     </>
-  )
+  );
 }

@@ -1,73 +1,73 @@
-import { apiJson, apiNoContent } from '../../../../../shared/api/api'
+import { apiJson, apiNoContent } from '../../../../../shared/api/api';
 import type {
   PermissionResponse,
-  ServerPermissionCatalogResponse,
   ServerEffectivePermissionsResponse,
   ServerMemberDisplayColorResponse,
   ServerMemberPageResponse,
   ServerMemberRoleResponse,
+  ServerPermissionCatalogResponse,
   ServerRoleDeletionImpactResponse,
-  ServerRoleResponse,
-} from '../../../../../shared/types'
+  ServerRoleResponse
+} from '../../../../../shared/types';
 import type {
   ServerMemberDisplayColorSelection,
-  ServerRoleDraft,
-} from './serverRoleSettingsModel'
-import { normalizeServerRoleDraft } from './serverRoleSettingsModel'
+  ServerRoleDraft
+} from './serverRoleSettingsModel';
+import { normalizeServerRoleDraft } from './serverRoleSettingsModel';
 
 type ServerRoleApiContext = {
-  accessToken: string
-  serverId: string
-}
+  accessToken: string;
+  serverId: string;
+};
 
 export async function loadServerRoleSettingsData({
   accessToken,
-  serverId,
+  serverId
 }: ServerRoleApiContext) {
   const [roles, permissions, effectivePermissions] = await Promise.all([
     apiJson<ServerRoleResponse[]>(`/api/servers/${serverId}/roles`, {
-      accessToken,
+      accessToken
     }),
     apiJson<ServerPermissionCatalogResponse>('/api/permissions/server/v1', {
-      accessToken,
+      accessToken
     }),
     apiJson<ServerEffectivePermissionsResponse>(
       `/api/servers/${serverId}/members/me/effective-permissions`,
-      { accessToken },
-    ),
-  ])
+      { accessToken }
+    )
+  ]);
 
   return {
     roles,
     permissions: toPermissionResponses(permissions),
-    effectivePermissions,
-  }
+    effectivePermissions
+  };
 }
 
 export function loadServerEffectivePermissions({
   accessToken,
-  serverId,
+  serverId
 }: ServerRoleApiContext) {
   return apiJson<ServerEffectivePermissionsResponse>(
     `/api/servers/${serverId}/members/me/effective-permissions`,
-    { accessToken },
-  )
+    { accessToken }
+  );
 }
 
 export function loadServerMemberDisplayColor({
   accessToken,
-  serverId,
+  serverId
 }: ServerRoleApiContext) {
   return apiJson<ServerMemberDisplayColorResponse>(
     `/api/servers/${serverId}/members/me/display-color`,
-    { accessToken },
-  )
+    { accessToken }
+  );
 }
 
 export function updateServerMemberDisplayColor(
   context: ServerRoleApiContext,
   current: ServerMemberDisplayColorResponse,
-  selection: ServerMemberDisplayColorSelection,
+  selection: ServerMemberDisplayColorSelection
 ) {
   return apiJson<ServerMemberDisplayColorResponse>(
     `/api/servers/${context.serverId}/members/me/display-color`,
@@ -77,38 +77,35 @@ export function updateServerMemberDisplayColor(
       body: {
         mode: selection.mode,
         roleId: selection.roleId,
-        expectedRolesVersion: current.rolesVersion,
-      },
-    },
-  )
+        expectedRolesVersion: current.rolesVersion
+      }
+    }
+  );
 }
 
 export function createServerRole(
   context: ServerRoleApiContext,
-  draft: ServerRoleDraft,
+  draft: ServerRoleDraft
 ) {
-  const normalized = normalizeServerRoleDraft(draft)
+  const normalized = normalizeServerRoleDraft(draft);
 
-  return apiJson<ServerRoleResponse>(
-    `/api/servers/${context.serverId}/roles`,
-    {
-      method: 'POST',
-      accessToken: context.accessToken,
-      body: {
-        ...normalized,
-        permissionSchemaVersion: 1,
-      },
-    },
-  )
+  return apiJson<ServerRoleResponse>(`/api/servers/${context.serverId}/roles`, {
+    method: 'POST',
+    accessToken: context.accessToken,
+    body: {
+      ...normalized,
+      permissionSchemaVersion: 1
+    }
+  });
 }
 
 export function updateServerRole(
   context: ServerRoleApiContext,
   roleId: string,
   expectedVersion: string,
-  draft: ServerRoleDraft,
+  draft: ServerRoleDraft
 ) {
-  const normalized = normalizeServerRoleDraft(draft)
+  const normalized = normalizeServerRoleDraft(draft);
 
   return apiJson<ServerRoleResponse>(
     `/api/servers/${context.serverId}/roles/${roleId}`,
@@ -118,33 +115,33 @@ export function updateServerRole(
       body: {
         ...normalized,
         permissionSchemaVersion: 1,
-        expectedVersion,
-      },
-    },
-  )
+        expectedVersion
+      }
+    }
+  );
 }
 
 function toPermissionResponses(
-  catalog: ServerPermissionCatalogResponse,
+  catalog: ServerPermissionCatalogResponse
 ): PermissionResponse[] {
   if (catalog.permissionSchemaVersion !== 1) {
     throw new Error(
-      `Unsupported server permission schema: ${catalog.permissionSchemaVersion}`,
-    )
+      `Unsupported server permission schema: ${catalog.permissionSchemaVersion}`
+    );
   }
 
   return catalog.permissions.map((permission) => ({
     id: permission.code,
     code: permission.code,
     title: permission.title,
-    description: permission.description,
-  }))
+    description: permission.description
+  }));
 }
 
 export function duplicateServerRole(
   context: ServerRoleApiContext,
   role: ServerRoleResponse,
-  confirmAdministrator: boolean,
+  confirmAdministrator: boolean
 ) {
   return apiJson<ServerRoleResponse>(
     `/api/servers/${context.serverId}/roles/${role.id}/duplicate`,
@@ -153,102 +150,99 @@ export function duplicateServerRole(
       accessToken: context.accessToken,
       body: {
         expectedVersion: role.version,
-        confirmAdministrator,
-      },
-    },
-  )
+        confirmAdministrator
+      }
+    }
+  );
 }
 
 export function loadServerRoleDeletionImpact(
   context: ServerRoleApiContext,
-  roleId: string,
+  roleId: string
 ) {
   return apiJson<ServerRoleDeletionImpactResponse>(
     `/api/servers/${context.serverId}/roles/${roleId}/deletion-impact`,
-    { accessToken: context.accessToken },
-  )
+    { accessToken: context.accessToken }
+  );
 }
 
 export function deleteServerRole(
   context: ServerRoleApiContext,
-  role: ServerRoleResponse,
+  role: ServerRoleResponse
 ) {
-  const params = new URLSearchParams({ expectedVersion: role.version })
+  const params = new URLSearchParams({ expectedVersion: role.version });
 
   return apiNoContent(
     `/api/servers/${context.serverId}/roles/${role.id}?${params.toString()}`,
     {
       method: 'DELETE',
-      accessToken: context.accessToken,
-    },
-  )
+      accessToken: context.accessToken
+    }
+  );
 }
 
 export function reorderServerRoles(
   context: ServerRoleApiContext,
   authorizationVersion: string,
-  roles: readonly ServerRoleResponse[],
+  roles: readonly ServerRoleResponse[]
 ) {
-  return apiNoContent(
-    `/api/servers/${context.serverId}/roles/order`,
-    {
-      method: 'PUT',
-      accessToken: context.accessToken,
-      body: {
-        expectedAuthorizationVersion: authorizationVersion,
-        roles: roles.map((role) => ({
-          roleId: role.id,
-          expectedVersion: role.version,
-        })),
-      },
-    },
-  )
+  return apiNoContent(`/api/servers/${context.serverId}/roles/order`, {
+    method: 'PUT',
+    accessToken: context.accessToken,
+    body: {
+      expectedAuthorizationVersion: authorizationVersion,
+      roles: roles.map((role) => ({
+        roleId: role.id,
+        expectedVersion: role.version
+      }))
+    }
+  });
 }
 
 export function loadServerRoleMembers(
   context: ServerRoleApiContext,
   roleId: string,
-  query = '',
+  query = ''
 ) {
-  const params = new URLSearchParams({ limit: '100' })
-  const normalizedQuery = query.trim()
+  const params = new URLSearchParams({ limit: '100' });
+  const normalizedQuery = query.trim();
 
   if (normalizedQuery) {
-    params.set('q', normalizedQuery)
+    params.set('q', normalizedQuery);
   } else {
-    params.set('roleId', roleId)
+    params.set('roleId', roleId);
   }
 
   return apiJson<ServerMemberPageResponse>(
     `/api/servers/${context.serverId}/members?${params.toString()}`,
-    { accessToken: context.accessToken },
-  )
+    { accessToken: context.accessToken }
+  );
 }
 
 export function assignServerRoleToMember(
   context: ServerRoleApiContext,
   memberId: string,
-  roleId: string,
+  roleId: string
 ) {
   return apiJson<ServerMemberRoleResponse>(
     `/api/servers/${context.serverId}/members/${memberId}/roles`,
     {
       method: 'POST',
       accessToken: context.accessToken,
-      body: { roleId },
-    },
-  )
+      body: { roleId }
+    }
+  );
 }
 
 export function revokeServerMemberRole(
   context: ServerRoleApiContext,
-  memberRoleId: string,
+  memberRoleId: string
 ) {
   return apiNoContent(
     `/api/servers/${context.serverId}/member-roles/${memberRoleId}`,
     {
       method: 'DELETE',
-      accessToken: context.accessToken,
-    },
-  )
+      accessToken: context.accessToken
+    }
+  );
 }

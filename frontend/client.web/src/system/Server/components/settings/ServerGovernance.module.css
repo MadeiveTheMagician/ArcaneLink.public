@@ -9,7 +9,11 @@
   padding: 16px;
   color: var(--color-text);
   background:
-    linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong)),
+    linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    ),
     var(--profile-surface-control);
 }
 
@@ -123,4 +127,3 @@
     grid-column: 1 / -1;
   }
 }
-

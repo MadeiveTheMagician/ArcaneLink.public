@@ -1,22 +1,25 @@
 import type {
   PrivateSpaceMemberResponse,
-  PrivateSpaceResponse,
-} from '../../../../shared/types'
-import { commonCopy, communityCopy, PresenceName } from '../../../shared'
-import { MessageSearchControl } from '../../../shared/components/message-search/MessageSearchControl'
-import { MessageSearchResults } from '../../../shared/components/message-search/MessageSearchResults'
-import type { useMessageSearch } from '../../../shared/hooks/useMessageSearch'
-import { PrivateMemberAvatar } from './PrivateSpaceVoiceParts'
-import styles from './PrivateSpaceInfoPanel.module.css'
+  PrivateSpaceResponse
+} from '../../../../shared/types';
+import { PresenceName, commonCopy, communityCopy } from '../../../shared';
+import { MessageSearchControl } from '../../../shared/components/message-search/MessageSearchControl';
+import { MessageSearchResults } from '../../../shared/components/message-search/MessageSearchResults';
+import type { useMessageSearch } from '../../../shared/hooks/useMessageSearch';
+import { PrivateMemberAvatar } from './PrivateSpaceVoiceParts';
+
+import styles from './PrivateSpaceInfoPanel.module.css';
 
 type PrivateSpaceInfoPanelProps = {
-  spaceKind: PrivateSpaceResponse['kind'] | null
-  activeMembers: PrivateSpaceMemberResponse[]
-  isCompact: boolean
-  otherMember: PrivateSpaceMemberResponse | null
-  messageSearch: ReturnType<typeof useMessageSearch>
-  onOpenSearchResult: (message: import('../../../../shared/types').SpaceMessageResponse) => void
-}
+  spaceKind: PrivateSpaceResponse['kind'] | null;
+  activeMembers: PrivateSpaceMemberResponse[];
+  isCompact: boolean;
+  otherMember: PrivateSpaceMemberResponse | null;
+  messageSearch: ReturnType<typeof useMessageSearch>;
+  onOpenSearchResult: (
+    message: import('../../../../shared/types').SpaceMessageResponse
+  ) => void;
+};
 
 export function PrivateSpaceInfoPanel({
   spaceKind,
@@ -24,11 +27,11 @@ export function PrivateSpaceInfoPanel({
   isCompact,
   otherMember,
   messageSearch,
-  onOpenSearchResult,
+  onOpenSearchResult
 }: PrivateSpaceInfoPanelProps) {
   const otherMemberLastSeenLabel = otherMember
     ? getLastSeenLabel(otherMember)
-    : null
+    : null;
 
   return (
     <aside
@@ -49,7 +52,7 @@ export function PrivateSpaceInfoPanel({
             avatarAssetId: member.user.avatarAssetId,
             avatarCropOffsetX: member.user.avatarCropOffsetX,
             avatarCropOffsetY: member.user.avatarCropOffsetY,
-            avatarCropZoom: member.user.avatarCropZoom,
+            avatarCropZoom: member.user.avatarCropZoom
           }))}
           placeholder={communityCopy.direct.searchPlaceholder}
           onQueryChange={messageSearch.setQuery}
@@ -73,11 +76,7 @@ export function PrivateSpaceInfoPanel({
           aria-label={communityCopy.direct.serverMembers}
         >
           {activeMembers.map((member) => (
-            <PrivateSpaceMemberCard
-              key={member.id}
-              member={member}
-              isCompact
-            />
+            <PrivateSpaceMemberCard key={member.id} member={member} isCompact />
           ))}
         </section>
       ) : spaceKind === 'direct' && otherMember ? (
@@ -101,21 +100,21 @@ export function PrivateSpaceInfoPanel({
         </section>
       )}
     </aside>
-  )
+  );
 }
 
 function PrivateSpaceMemberCard({
   member,
-  isCompact = false,
+  isCompact = false
 }: {
-  member: PrivateSpaceMemberResponse
-  isCompact?: boolean
+  member: PrivateSpaceMemberResponse;
+  isCompact?: boolean;
 }) {
   const presenceLabel =
     member.user.presenceStatus === 'online'
       ? commonCopy.status.online
-      : commonCopy.status.offline
-  const tooltip = `${member.user.displayName} (@${member.user.login}) · ${presenceLabel}`
+      : commonCopy.status.offline;
+  const tooltip = `${member.user.displayName} (@${member.user.login}) · ${presenceLabel}`;
 
   return (
     <article
@@ -134,30 +133,30 @@ function PrivateSpaceMemberCard({
         </small>
       </span>
     </article>
-  )
+  );
 }
 
 function getLastSeenLabel(member: PrivateSpaceMemberResponse) {
   if (member.user.presenceStatus === 'online') {
-    return null
+    return null;
   }
 
   if (!member.user.lastSeenAt) {
-    return communityCopy.states.offline
+    return communityCopy.states.offline;
   }
 
-  const lastSeenAt = new Date(member.user.lastSeenAt)
+  const lastSeenAt = new Date(member.user.lastSeenAt);
 
   if (Number.isNaN(lastSeenAt.getTime())) {
-    return communityCopy.states.offline
+    return communityCopy.states.offline;
   }
 
   const formattedDate = new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
-    minute: '2-digit',
-  }).format(lastSeenAt)
+    minute: '2-digit'
+  }).format(lastSeenAt);
 
-  return `${communityCopy.direct.invitedWasOnline} ${formattedDate}`
+  return `${communityCopy.direct.invitedWasOnline} ${formattedDate}`;
 }

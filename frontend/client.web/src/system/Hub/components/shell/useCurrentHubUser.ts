@@ -1,37 +1,38 @@
-import { useState } from 'react'
-import { apiJson } from '../../../../shared/api/api'
-import type { UserResponse } from '../../../../shared/types'
-import { useUserPresenceChanged } from '../../../shared/hooks/useUserPresenceChanged'
-import { patchCurrentUserPresence } from '../../../shared/presence/presenceModel'
+import { useState } from 'react';
+
+import { apiJson } from '../../../../shared/api/api';
+import type { UserResponse } from '../../../../shared/types';
+import { useUserPresenceChanged } from '../../../shared/hooks/useUserPresenceChanged';
 import {
   captureUserPresenceEventBoundary,
-  reconcileCurrentUserWithLatestPresence,
-} from '../../../shared/presence/presenceEventStore'
+  reconcileCurrentUserWithLatestPresence
+} from '../../../shared/presence/presenceEventStore';
+import { patchCurrentUserPresence } from '../../../shared/presence/presenceModel';
 
 export function useCurrentHubUser(
   accessToken: string,
-  initialUser: UserResponse,
+  initialUser: UserResponse
 ) {
-  const [user, setUser] = useState(initialUser)
+  const [user, setUser] = useState(initialUser);
 
   useUserPresenceChanged((payload) => {
-    setUser((current) => patchCurrentUserPresence(current, payload))
-  })
+    setUser((current) => patchCurrentUserPresence(current, payload));
+  });
 
   async function loadCurrentUser() {
-    const presenceBoundary = captureUserPresenceEventBoundary()
+    const presenceBoundary = captureUserPresenceEventBoundary();
     setUser(
       reconcileCurrentUserWithLatestPresence(
         await apiJson<UserResponse>('/api/users/me', {
-          accessToken,
+          accessToken
         }),
-        presenceBoundary,
-      ),
-    )
+        presenceBoundary
+      )
+    );
   }
 
   return {
     user,
-    loadCurrentUser,
-  }
+    loadCurrentUser
+  };
 }

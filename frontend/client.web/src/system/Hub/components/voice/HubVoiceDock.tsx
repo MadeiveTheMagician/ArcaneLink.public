@@ -1,38 +1,40 @@
 import {
+  type CSSProperties,
   useCallback,
   useEffect,
   useId,
   useLayoutEffect,
   useRef,
-  useState,
-  type CSSProperties,
-} from 'react'
-import type { UserResponse } from '../../../../shared/types'
-import { MobileVoiceDock } from '../../../Mobile/components/MobileVoiceDock'
+  useState
+} from 'react';
+
+import type { UserResponse } from '../../../../shared/types';
+import { MobileVoiceDock } from '../../../Mobile/components/MobileVoiceDock';
 import type {
   ConnectedVoiceChannel,
-  VoiceChannelController,
-} from '../../../Server/hooks/voice/useVoiceChannel'
-import { SystemIcon, voiceCopy } from '../../../shared'
-import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer'
-import { VoiceConnectionStatusIcon } from '../../../shared/icons/VoiceConnectionStatusIcon'
-import type { VoiceConnectionStatusIconState } from '../../../shared/icons/VoiceConnectionStatusIcon'
-import { requestSystemSettingsNavigation } from '../../../shared/navigation/systemSettingsNavigation'
-import { VoiceConnectionDiagnosticsDetails } from './VoiceConnectionDiagnosticsDetails'
-import type { VoiceConnectionDiagnosticsDisplay } from './VoiceConnectionDiagnosticsDetails'
-import styles from './HubVoiceDock.module.css'
+  VoiceChannelController
+} from '../../../Server/hooks/voice/useVoiceChannel';
+import { SystemIcon, voiceCopy } from '../../../shared';
+import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer';
+import { VoiceConnectionStatusIcon } from '../../../shared/icons/VoiceConnectionStatusIcon';
+import type { VoiceConnectionStatusIconState } from '../../../shared/icons/VoiceConnectionStatusIcon';
+import { requestSystemSettingsNavigation } from '../../../shared/navigation/systemSettingsNavigation';
+import { VoiceConnectionDiagnosticsDetails } from './VoiceConnectionDiagnosticsDetails';
+import type { VoiceConnectionDiagnosticsDisplay } from './VoiceConnectionDiagnosticsDetails';
+
+import styles from './HubVoiceDock.module.css';
 
 type HubVoiceDockProps = {
-  avatarSrc: string
-  isServerPanelOpen: boolean
-  isServerPanelPinned: boolean
-  onOpenSettings: () => void
-  onOpenActiveVoiceSpace: () => void
-  onToggleServerPanel: () => void
-  serverTitle: string | null
-  user: UserResponse
-  voice: VoiceChannelController
-}
+  avatarSrc: string;
+  isServerPanelOpen: boolean;
+  isServerPanelPinned: boolean;
+  onOpenSettings: () => void;
+  onOpenActiveVoiceSpace: () => void;
+  onToggleServerPanel: () => void;
+  serverTitle: string | null;
+  user: UserResponse;
+  voice: VoiceChannelController;
+};
 
 export function HubVoiceDock({
   avatarSrc,
@@ -43,158 +45,166 @@ export function HubVoiceDock({
   onToggleServerPanel,
   serverTitle,
   user,
-  voice,
+  voice
 }: HubVoiceDockProps) {
-  const connectedChannel = voice.connectedChannel
-  const connectionTargetChannel = voice.connectionTargetChannel
-  const connectionDiagnostics = voice.connectionDiagnostics
+  const connectedChannel = voice.connectedChannel;
+  const connectionTargetChannel = voice.connectionTargetChannel;
+  const connectionDiagnostics = voice.connectionDiagnostics;
   const isTargetChannelPending =
     voice.voiceLifecycleState === 'joining' ||
-    voice.voiceLifecycleState === 'switching'
+    voice.voiceLifecycleState === 'switching';
   const displayChannel =
     (isTargetChannelPending ? connectionTargetChannel : null) ??
     connectedChannel ??
-    connectionTargetChannel
-  const isConnected = Boolean(connectedChannel)
+    connectionTargetChannel;
+  const isConnected = Boolean(connectedChannel);
   const connectedConnectionTitle = createConnectionTitle(
     connectedChannel,
-    serverTitle,
-  )
+    serverTitle
+  );
   const connectionTitle =
     createConnectionTitle(displayChannel, serverTitle) ??
-    voiceCopy.dock.connectionPreparing
+    voiceCopy.dock.connectionPreparing;
   const connectionState = resolveConnectionState(
     connectionDiagnostics,
     voice.voiceLifecycleState,
-    isConnected,
-  )
+    isConnected
+  );
   const connectionStateLabel = resolveConnectionStateLabel(
     connectionState,
     voice.voiceLifecycleState,
     Boolean(voice.voiceError),
-    isConnected && connectionDiagnostics?.peerCount === 0,
-  )
+    isConnected && connectionDiagnostics?.peerCount === 0
+  );
   const shouldShowDesktopConnection =
-    Boolean(displayChannel) || voice.voiceLifecycleState !== 'idle'
+    Boolean(displayChannel) || voice.voiceLifecycleState !== 'idle';
   const [isConnectionVisible, setIsConnectionVisible] = useState(
-    shouldShowDesktopConnection,
-  )
-  const [isConnectionClosing, setIsConnectionClosing] = useState(false)
+    shouldShowDesktopConnection
+  );
+  const [isConnectionClosing, setIsConnectionClosing] = useState(false);
   const [displayConnectionTitle, setDisplayConnectionTitle] =
-    useState(connectionTitle)
+    useState(connectionTitle);
   const [isMobileConnectionVisible, setIsMobileConnectionVisible] =
-    useState(isConnected)
+    useState(isConnected);
   const [isMobileConnectionClosing, setIsMobileConnectionClosing] =
-    useState(false)
+    useState(false);
   const [displayMobileConnectionTitle, setDisplayMobileConnectionTitle] =
-    useState(connectedConnectionTitle)
-  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false)
-  const diagnosticsId = useId()
-  const diagnosticsTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const diagnosticsCloseRef = useRef<HTMLButtonElement | null>(null)
-  const diagnosticsLayerRef = useRef<HTMLElement | null>(null)
+    useState(connectedConnectionTitle);
+  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
+  const diagnosticsId = useId();
+  const diagnosticsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const diagnosticsCloseRef = useRef<HTMLButtonElement | null>(null);
+  const diagnosticsLayerRef = useRef<HTMLElement | null>(null);
   const [diagnosticsAvailableHeight, setDiagnosticsAvailableHeight] =
-    useState(420)
+    useState(420);
   const closeDiagnostics = useCallback(() => {
-    setIsDiagnosticsOpen(false)
-    window.requestAnimationFrame(() => diagnosticsTriggerRef.current?.focus())
-  }, [])
-  const isExpanded = shouldShowDesktopConnection || isConnectionVisible
+    setIsDiagnosticsOpen(false);
+    window.requestAnimationFrame(() => diagnosticsTriggerRef.current?.focus());
+  }, []);
+  const isExpanded = shouldShowDesktopConnection || isConnectionVisible;
 
   useDismissableLayer({
     isOpen: isDiagnosticsOpen,
     layerRef: diagnosticsLayerRef,
     onDismiss: closeDiagnostics,
-    triggerRef: diagnosticsTriggerRef,
-  })
+    triggerRef: diagnosticsTriggerRef
+  });
 
   useEffect(() => {
     if (shouldShowDesktopConnection) {
-      setIsConnectionVisible(true)
-      setIsConnectionClosing(false)
-      setDisplayConnectionTitle(connectionTitle)
-      return
+      setIsConnectionVisible(true);
+      setIsConnectionClosing(false);
+      setDisplayConnectionTitle(connectionTitle);
+      return;
     }
 
     if (!isConnectionVisible) {
-      return
+      return;
     }
 
-    setIsConnectionClosing(true)
+    setIsConnectionClosing(true);
     const timeoutId = window.setTimeout(() => {
-      setIsConnectionVisible(false)
-      setIsConnectionClosing(false)
-      setDisplayConnectionTitle(voiceCopy.dock.connectionPreparing)
-    }, 190)
+      setIsConnectionVisible(false);
+      setIsConnectionClosing(false);
+      setDisplayConnectionTitle(voiceCopy.dock.connectionPreparing);
+    }, 190);
 
-    return () => window.clearTimeout(timeoutId)
-  }, [connectionTitle, isConnectionVisible, shouldShowDesktopConnection])
+    return () => window.clearTimeout(timeoutId);
+  }, [connectionTitle, isConnectionVisible, shouldShowDesktopConnection]);
 
   useEffect(() => {
     if (isConnected) {
-      setIsMobileConnectionVisible(true)
-      setIsMobileConnectionClosing(false)
-      setDisplayMobileConnectionTitle(connectedConnectionTitle)
-      return
+      setIsMobileConnectionVisible(true);
+      setIsMobileConnectionClosing(false);
+      setDisplayMobileConnectionTitle(connectedConnectionTitle);
+      return;
     }
 
     if (!isMobileConnectionVisible) {
-      return
+      return;
     }
 
-    setIsMobileConnectionClosing(true)
+    setIsMobileConnectionClosing(true);
     const timeoutId = window.setTimeout(() => {
-      setIsMobileConnectionVisible(false)
-      setIsMobileConnectionClosing(false)
-      setDisplayMobileConnectionTitle(null)
-    }, 190)
+      setIsMobileConnectionVisible(false);
+      setIsMobileConnectionClosing(false);
+      setDisplayMobileConnectionTitle(null);
+    }, 190);
 
-    return () => window.clearTimeout(timeoutId)
-  }, [connectedConnectionTitle, isConnected, isMobileConnectionVisible])
+    return () => window.clearTimeout(timeoutId);
+  }, [connectedConnectionTitle, isConnected, isMobileConnectionVisible]);
 
   useEffect(() => {
     if (!shouldShowDesktopConnection) {
-      setIsDiagnosticsOpen(false)
+      setIsDiagnosticsOpen(false);
     }
-  }, [shouldShowDesktopConnection])
+  }, [shouldShowDesktopConnection]);
 
   useLayoutEffect(() => {
     if (!isDiagnosticsOpen) {
-      return undefined
+      return undefined;
     }
 
     function updateAvailableHeight() {
-      const trigger = diagnosticsTriggerRef.current
+      const trigger = diagnosticsTriggerRef.current;
       if (!trigger) {
-        return
+        return;
       }
 
-      const visualViewportTop = window.visualViewport?.offsetTop ?? 0
+      const visualViewportTop = window.visualViewport?.offsetTop ?? 0;
       const availableHeight = Math.floor(
-        trigger.getBoundingClientRect().top - visualViewportTop - 18,
-      )
-      setDiagnosticsAvailableHeight(Math.max(48, Math.min(420, availableHeight)))
+        trigger.getBoundingClientRect().top - visualViewportTop - 18
+      );
+      setDiagnosticsAvailableHeight(
+        Math.max(48, Math.min(420, availableHeight))
+      );
     }
 
-    updateAvailableHeight()
-    diagnosticsCloseRef.current?.focus()
-    window.addEventListener('resize', updateAvailableHeight)
-    window.visualViewport?.addEventListener('resize', updateAvailableHeight)
-    window.visualViewport?.addEventListener('scroll', updateAvailableHeight)
+    updateAvailableHeight();
+    diagnosticsCloseRef.current?.focus();
+    window.addEventListener('resize', updateAvailableHeight);
+    window.visualViewport?.addEventListener('resize', updateAvailableHeight);
+    window.visualViewport?.addEventListener('scroll', updateAvailableHeight);
 
     return () => {
-      window.removeEventListener('resize', updateAvailableHeight)
-      window.visualViewport?.removeEventListener('resize', updateAvailableHeight)
-      window.visualViewport?.removeEventListener('scroll', updateAvailableHeight)
-    }
-  }, [isDiagnosticsOpen])
+      window.removeEventListener('resize', updateAvailableHeight);
+      window.visualViewport?.removeEventListener(
+        'resize',
+        updateAvailableHeight
+      );
+      window.visualViewport?.removeEventListener(
+        'scroll',
+        updateAvailableHeight
+      );
+    };
+  }, [isDiagnosticsOpen]);
 
   function openDetailedVoiceSettings() {
-    setIsDiagnosticsOpen(false)
-    requestSystemSettingsNavigation('voice-diagnostics')
+    setIsDiagnosticsOpen(false);
+    requestSystemSettingsNavigation('voice-diagnostics');
   }
 
-  const showConnectionActions = isConnected || isConnectionClosing
+  const showConnectionActions = isConnected || isConnectionClosing;
 
   return (
     <>
@@ -231,8 +241,12 @@ export function HubVoiceDock({
                   />
                 </span>
                 <span className={styles.connectionText} aria-live="polite">
-                  <strong className="ui-ellipsis">{connectionStateLabel}</strong>
-                  <small className="ui-ellipsis">{displayConnectionTitle}</small>
+                  <strong className="ui-ellipsis">
+                    {connectionStateLabel}
+                  </strong>
+                  <small className="ui-ellipsis">
+                    {displayConnectionTitle}
+                  </small>
                 </span>
                 <SystemIcon
                   className={styles.connectionChevron}
@@ -248,7 +262,7 @@ export function HubVoiceDock({
                   className={styles.diagnosticsPopover}
                   style={
                     {
-                      '--voice-diagnostics-available-height': `${diagnosticsAvailableHeight}px`,
+                      '--voice-diagnostics-available-height': `${diagnosticsAvailableHeight}px`
                     } as CSSProperties
                   }
                   role="dialog"
@@ -419,7 +433,11 @@ export function HubVoiceDock({
             aria-label={voiceCopy.dock.systemSettings}
             onClick={onOpenSettings}
           >
-            <SystemIcon className={styles.controlIcon} name="settings" size={22} />
+            <SystemIcon
+              className={styles.controlIcon}
+              name="settings"
+              size={22}
+            />
           </button>
         </div>
       </aside>
@@ -436,33 +454,33 @@ export function HubVoiceDock({
         />
       )}
     </>
-  )
+  );
 }
 
 function createConnectionTitle(
   channel: ConnectedVoiceChannel | null | undefined,
-  serverTitle: string | null,
+  serverTitle: string | null
 ) {
   if (!channel) {
-    return null
+    return null;
   }
 
   return channel.channelScope === 'private'
     ? `${voiceCopy.dock.privateConversation} / ${channel.title}`
-    : `${serverTitle ?? voiceCopy.dock.server} / ${channel.title}`
+    : `${serverTitle ?? voiceCopy.dock.server} / ${channel.title}`;
 }
 
 function resolveConnectionState(
   diagnostics: VoiceConnectionDiagnosticsDisplay | null,
   lifecycleState: VoiceChannelController['voiceLifecycleState'],
-  isConnected: boolean,
+  isConnected: boolean
 ): VoiceConnectionStatusIconState {
   if (lifecycleState === 'joining' || lifecycleState === 'switching') {
-    return 'connecting'
+    return 'connecting';
   }
 
   if (lifecycleState === 'reconnecting') {
-    return 'reconnecting'
+    return 'reconnecting';
   }
 
   if (
@@ -470,44 +488,48 @@ function resolveConnectionState(
     lifecycleState === 'leaving' ||
     (lifecycleState === 'idle' && !isConnected)
   ) {
-    return 'disconnected'
+    return 'disconnected';
   }
 
-  return diagnostics?.qualityState ?? (isConnected ? 'unknown' : 'disconnected')
+  return (
+    diagnostics?.qualityState ?? (isConnected ? 'unknown' : 'disconnected')
+  );
 }
 
 function resolveConnectionStateLabel(
   state: VoiceConnectionStatusIconState,
   lifecycleState: VoiceChannelController['voiceLifecycleState'],
   hasError: boolean,
-  isSoloConnection: boolean,
+  isSoloConnection: boolean
 ) {
   switch (state) {
     case 'connecting':
       return lifecycleState === 'switching'
         ? voiceCopy.dock.switching
-        : voiceCopy.dock.connecting
+        : voiceCopy.dock.connecting;
     case 'good':
-      return voiceCopy.dock.connected
+      return voiceCopy.dock.connected;
     case 'degraded':
-      return voiceCopy.dock.degraded
+      return voiceCopy.dock.degraded;
     case 'poor':
-      return voiceCopy.dock.poor
+      return voiceCopy.dock.poor;
     case 'reconnecting':
-      return voiceCopy.dock.reconnecting
+      return voiceCopy.dock.reconnecting;
     case 'disconnected':
       if (lifecycleState === 'leaving') {
-        return voiceCopy.dock.disconnecting
+        return voiceCopy.dock.disconnecting;
       }
 
-      return hasError ? voiceCopy.dock.unavailable : voiceCopy.dock.disconnected
+      return hasError
+        ? voiceCopy.dock.unavailable
+        : voiceCopy.dock.disconnected;
     case 'unknown':
       if (lifecycleState === 'connected' && isSoloConnection) {
-        return voiceCopy.dock.connected
+        return voiceCopy.dock.connected;
       }
 
       return lifecycleState === 'connected'
         ? voiceCopy.dock.qualityUnknown
-        : voiceCopy.dock.unknown
+        : voiceCopy.dock.unknown;
   }
 }

@@ -1,7 +1,6 @@
-﻿namespace ArcaneLink.Services.Validators.Abstractions
+namespace ArcaneLink.Services.Validators.Abstractions;
+
+public interface IValidator<T>
 {
-    public interface IValidator<T>
-    {
-        public Task<bool> Validate(T validatedObject);
-    }
+    public Task<bool> Validate(T validatedObject);
 }

@@ -1,16 +1,13 @@
-import type {
-  CommunityPeopleSort,
-  CommunityTab,
-} from './communityTypes'
+import type { CommunityPeopleSort, CommunityTab } from './communityTypes';
 
 export function shouldRefreshPeopleDiscoveryForPresence({
   activeTab,
   onlineOnly,
-  sort,
+  sort
 }: {
-  activeTab: CommunityTab
-  onlineOnly: boolean
-  sort: CommunityPeopleSort
+  activeTab: CommunityTab;
+  onlineOnly: boolean;
+  sort: CommunityPeopleSort;
 }) {
   return (
     activeTab === 'people' &&
@@ -18,5 +15,5 @@ export function shouldRefreshPeopleDiscoveryForPresence({
       sort === 'online' ||
       sort === 'recommended' ||
       sort === 'recent')
-  )
+  );
 }

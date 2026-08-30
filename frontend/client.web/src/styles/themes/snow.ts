@@ -1,5 +1,5 @@
-import type { SystemTheme } from '../systemThemes'
-import { themeCopy } from '../theme.copy'
+import type { SystemTheme } from '../systemThemes';
+import { themeCopy } from '../theme.copy';
 
 export const snowTheme: SystemTheme = {
   code: 'snow',
@@ -48,12 +48,11 @@ export const snowTheme: SystemTheme = {
     '--theme-icon-glow-color': 'rgba(100, 113, 132, 0.2)',
     '--theme-surface-raised':
       'linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(237, 240, 244, 0.98))',
-    '--theme-surface-accent':
-      'linear-gradient(135deg, #647184, #515e6f)',
+    '--theme-surface-accent': 'linear-gradient(135deg, #647184, #515e6f)',
     '--theme-surface-accent-strong':
       'linear-gradient(180deg, #647184, #515e6f)',
     '--theme-arcane-backdrop':
       'linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(226, 230, 236, 0.18)), radial-gradient(circle at 76% 26%, rgba(126, 139, 157, 0.08), transparent 32%)',
-    '--shadow-sapphire': '0 24px 70px rgba(75, 85, 101, 0.16)',
-  },
-}
+    '--shadow-sapphire': '0 24px 70px rgba(75, 85, 101, 0.16)'
+  }
+};

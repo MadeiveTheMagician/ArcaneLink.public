@@ -1,49 +1,49 @@
-import * as signalR from '@microsoft/signalr'
+import * as signalR from '@microsoft/signalr';
+
 import type {
   ConnectedVoiceChannel,
   PrivateCallJoinResult,
   PrivateCallState,
-  VoiceStatePayload,
-} from './voiceChannelTypes'
+  VoiceStatePayload
+} from './voiceChannelTypes';
 
 type LocalVoiceState = {
-  isMuted: boolean
-  isDeafened: boolean
-  isCameraEnabled: boolean
-  isScreenSharing: boolean
-}
+  isMuted: boolean;
+  isDeafened: boolean;
+  isCameraEnabled: boolean;
+  isScreenSharing: boolean;
+};
 
 export async function prepareVoiceJoinMedia<TConnection>(
   ensureConnection: () => Promise<TConnection>,
-  ensureLocalStream: () => Promise<MediaStream>,
+  ensureLocalStream: () => Promise<MediaStream>
 ) {
   const [connectionResult, mediaResult] = await Promise.allSettled([
     ensureConnection(),
-    ensureLocalStream(),
-  ])
-  const connection = connectionResult.status === 'fulfilled'
-    ? connectionResult.value
-    : null
+    ensureLocalStream()
+  ]);
+  const connection =
+    connectionResult.status === 'fulfilled' ? connectionResult.value : null;
   if (mediaResult.status === 'rejected') {
     return {
       connection,
-      error: mediaResult.reason,
-    }
+      error: mediaResult.reason
+    };
   }
   if (connectionResult.status === 'rejected') {
     return {
       connection: null,
-      error: connectionResult.reason,
-    }
+      error: connectionResult.reason
+    };
   }
 
-  return { connection, error: null }
+  return { connection, error: null };
 }
 
 export function invokeJoinVoiceChannel(
   connection: signalR.HubConnection,
   channel: ConnectedVoiceChannel,
-  localVoiceState: LocalVoiceState,
+  localVoiceState: LocalVoiceState
 ) {
   if (channel.channelScope === 'private') {
     return connection.invoke<string | null>(
@@ -52,8 +52,8 @@ export function invokeJoinVoiceChannel(
       localVoiceState.isMuted,
       localVoiceState.isDeafened,
       localVoiceState.isCameraEnabled,
-      localVoiceState.isScreenSharing,
-    )
+      localVoiceState.isScreenSharing
+    );
   }
 
   return connection.invoke<string | null>(
@@ -63,62 +63,66 @@ export function invokeJoinVoiceChannel(
     localVoiceState.isMuted,
     localVoiceState.isDeafened,
     localVoiceState.isCameraEnabled,
-    localVoiceState.isScreenSharing,
-  )
+    localVoiceState.isScreenSharing
+  );
 }
 
 export function invokeGetVoiceChannelState(
   connection: signalR.HubConnection,
-  channel: ConnectedVoiceChannel,
+  channel: ConnectedVoiceChannel
 ) {
   return channel.channelScope === 'private'
     ? connection.invoke('GetPrivateVoiceChannelState', channel.spaceId)
-    : connection.invoke('GetVoiceChannelState', channel.serverId, channel.spaceId)
+    : connection.invoke(
+        'GetVoiceChannelState',
+        channel.serverId,
+        channel.spaceId
+      );
 }
 
 export function invokeRefreshCurrentVoiceIdentity(
-  connection: signalR.HubConnection,
+  connection: signalR.HubConnection
 ) {
-  return connection.invoke('RefreshCurrentVoiceIdentity')
+  return connection.invoke('RefreshCurrentVoiceIdentity');
 }
 
 export async function leavePreviousVoiceChannelAfterFailedSwitch(
   connection: signalR.HubConnection,
   previousChannel: ConnectedVoiceChannel | null,
-  nextChannel: ConnectedVoiceChannel,
+  nextChannel: ConnectedVoiceChannel
 ) {
   if (
     !previousChannel ||
     previousChannel.spaceId.trim().toLowerCase() ===
       nextChannel.spaceId.trim().toLowerCase()
   ) {
-    return false
+    return false;
   }
 
   try {
-    await connection.invoke('LeaveVoiceChannel', previousChannel.spaceId)
-    return true
+    await connection.invoke('LeaveVoiceChannel', previousChannel.spaceId);
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
 export async function leaveStaleVoiceJoin(
   connection: signalR.HubConnection,
-  channel: ConnectedVoiceChannel,
+  channel: ConnectedVoiceChannel
 ) {
   try {
-    await connection.invoke('LeaveVoiceChannel', channel.spaceId)
-    return true
+    await connection.invoke('LeaveVoiceChannel', channel.spaceId);
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
 export function invokeStartPrivateCall(
   connection: signalR.HubConnection,
   spaceId: string,
-  localVoiceState: LocalVoiceState,
+  localVoiceState: LocalVoiceState
 ) {
   return connection.invoke<PrivateCallJoinResult | null>(
     'StartPrivateCall',
@@ -126,15 +130,15 @@ export function invokeStartPrivateCall(
     localVoiceState.isMuted,
     localVoiceState.isDeafened,
     localVoiceState.isCameraEnabled,
-    localVoiceState.isScreenSharing,
-  )
+    localVoiceState.isScreenSharing
+  );
 }
 
 export function invokeAcceptPrivateCall(
   connection: signalR.HubConnection,
   spaceId: string,
   callId: string,
-  localVoiceState: LocalVoiceState,
+  localVoiceState: LocalVoiceState
 ) {
   return connection.invoke<PrivateCallJoinResult | null>(
     'AcceptPrivateCall',
@@ -143,40 +147,40 @@ export function invokeAcceptPrivateCall(
     localVoiceState.isMuted,
     localVoiceState.isDeafened,
     localVoiceState.isCameraEnabled,
-    localVoiceState.isScreenSharing,
-  )
+    localVoiceState.isScreenSharing
+  );
 }
 
 export function invokeDeclinePrivateCall(
   connection: signalR.HubConnection,
   spaceId: string,
-  callId: string,
+  callId: string
 ) {
-  return connection.invoke<boolean>('DeclinePrivateCall', spaceId, callId)
+  return connection.invoke<boolean>('DeclinePrivateCall', spaceId, callId);
 }
 
 export function invokeCancelPrivateCall(
   connection: signalR.HubConnection,
   spaceId: string,
-  callId: string,
+  callId: string
 ) {
-  return connection.invoke<boolean>('CancelPrivateCall', spaceId, callId)
+  return connection.invoke<boolean>('CancelPrivateCall', spaceId, callId);
 }
 
 export function invokeGetPrivateCallState(
   connection: signalR.HubConnection,
-  spaceId: string,
+  spaceId: string
 ) {
   return connection.invoke<PrivateCallState | null>(
     'GetPrivateCallState',
-    spaceId,
-  )
+    spaceId
+  );
 }
 
 export function invokeGetIncomingPrivateCalls(
-  connection: signalR.HubConnection,
+  connection: signalR.HubConnection
 ) {
-  return connection.invoke<PrivateCallState[]>('GetIncomingPrivateCalls')
+  return connection.invoke<PrivateCallState[]>('GetIncomingPrivateCalls');
 }
 
 export function invokeUpdateVoiceParticipantModeration(
@@ -186,14 +190,14 @@ export function invokeUpdateVoiceParticipantModeration(
     spaceId,
     participantId,
     isServerMuted,
-    isServerDeafened,
+    isServerDeafened
   }: {
-    serverId: string
-    spaceId: string
-    participantId: string
-    isServerMuted?: boolean
-    isServerDeafened?: boolean
-  },
+    serverId: string;
+    spaceId: string;
+    participantId: string;
+    isServerMuted?: boolean;
+    isServerDeafened?: boolean;
+  }
 ) {
   return connection.invoke<boolean>(
     'UpdateVoiceParticipantModeration',
@@ -201,8 +205,8 @@ export function invokeUpdateVoiceParticipantModeration(
     spaceId,
     participantId,
     isServerMuted ?? null,
-    isServerDeafened ?? null,
-  )
+    isServerDeafened ?? null
+  );
 }
 
 export function invokeDisconnectVoiceParticipant(
@@ -210,64 +214,64 @@ export function invokeDisconnectVoiceParticipant(
   {
     serverId,
     spaceId,
-    participantId,
+    participantId
   }: {
-    serverId: string
-    spaceId: string
-    participantId: string
-  },
+    serverId: string;
+    spaceId: string;
+    participantId: string;
+  }
 ) {
   return connection.invoke<boolean>(
     'DisconnectVoiceParticipant',
     serverId,
     spaceId,
-    participantId,
-  )
+    participantId
+  );
 }
 
 export function invokeRenewVoiceAccessLease(
   connection: signalR.HubConnection,
-  channel: ConnectedVoiceChannel,
+  channel: ConnectedVoiceChannel
 ) {
   return channel.channelScope === 'private'
     ? connection.invoke<VoiceStatePayload | null>(
         'RenewPrivateVoiceChannelAccessLease',
-        channel.spaceId,
+        channel.spaceId
       )
     : connection.invoke<VoiceStatePayload | null>(
         'RenewVoiceChannelAccessLease',
         channel.serverId,
-        channel.spaceId,
-      )
+        channel.spaceId
+      );
 }
 
 export function renewVoiceAccessLeaseWithTimeout(
   connection: signalR.HubConnection,
   channel: ConnectedVoiceChannel,
-  timeoutMs: number,
+  timeoutMs: number
 ) {
   return new Promise<VoiceStatePayload | null>((resolve, reject) => {
     const timeoutId = globalThis.setTimeout(() => {
-      reject(new Error('Voice access lease renewal timed out.'))
-    }, timeoutMs)
+      reject(new Error('Voice access lease renewal timed out.'));
+    }, timeoutMs);
 
     void invokeRenewVoiceAccessLease(connection, channel).then(
       (payload) => {
-        globalThis.clearTimeout(timeoutId)
-        resolve(payload)
+        globalThis.clearTimeout(timeoutId);
+        resolve(payload);
       },
       (error) => {
-        globalThis.clearTimeout(timeoutId)
-        reject(error)
-      },
-    )
-  })
+        globalThis.clearTimeout(timeoutId);
+        reject(error);
+      }
+    );
+  });
 }
 
 export function isVoiceAccessLeasePayloadForChannel(
   payload: VoiceStatePayload | null,
   channel: ConnectedVoiceChannel,
-  localParticipantId: string,
+  localParticipantId: string
 ): payload is VoiceStatePayload {
   if (
     !payload ||
@@ -276,31 +280,32 @@ export function isVoiceAccessLeasePayloadForChannel(
     !Array.isArray(payload.participants) ||
     !payload.participants.some(
       (participant) =>
-        participant.participantId.toLowerCase() === localParticipantId.toLowerCase(),
+        participant.participantId.toLowerCase() ===
+        localParticipantId.toLowerCase()
     )
   ) {
-    return false
+    return false;
   }
 
   if (channel.channelScope === 'private') {
-    return payload.serverId === null
+    return payload.serverId === null;
   }
 
   return Boolean(
     channel.serverId &&
-      payload.serverId &&
-      payload.serverId.toLowerCase() === channel.serverId.toLowerCase(),
-  )
+    payload.serverId &&
+    payload.serverId.toLowerCase() === channel.serverId.toLowerCase()
+  );
 }
 
 type VoiceAccessLeaseCheckOptions = {
-  renew: () => Promise<VoiceStatePayload | null>
-  isCurrent: () => boolean
-  isAccepted: (payload: VoiceStatePayload) => boolean
-  onAccepted: (payload: VoiceStatePayload) => Promise<void> | void
-  onDenied: () => Promise<void> | void
-  onTransportError: (error: unknown) => Promise<void> | void
-}
+  renew: () => Promise<VoiceStatePayload | null>;
+  isCurrent: () => boolean;
+  isAccepted: (payload: VoiceStatePayload) => boolean;
+  onAccepted: (payload: VoiceStatePayload) => Promise<void> | void;
+  onDenied: () => Promise<void> | void;
+  onTransportError: (error: unknown) => Promise<void> | void;
+};
 
 export async function runVoiceAccessLeaseCheck({
   renew,
@@ -308,36 +313,36 @@ export async function runVoiceAccessLeaseCheck({
   isAccepted,
   onAccepted,
   onDenied,
-  onTransportError,
+  onTransportError
 }: VoiceAccessLeaseCheckOptions) {
   try {
-    const payload = await renew()
+    const payload = await renew();
     if (!isCurrent()) {
-      return 'stale' as const
+      return 'stale' as const;
     }
 
     if (!payload || !isAccepted(payload)) {
-      await onDenied()
-      return 'denied' as const
+      await onDenied();
+      return 'denied' as const;
     }
 
-    await onAccepted(payload)
-    return 'renewed' as const
+    await onAccepted(payload);
+    return 'renewed' as const;
   } catch (error) {
     if (!isCurrent()) {
-      return 'stale' as const
+      return 'stale' as const;
     }
 
-    await onTransportError(error)
-    return 'unavailable' as const
+    await onTransportError(error);
+    return 'unavailable' as const;
   }
 }
 
 export function waitForConnected(
   connection: signalR.HubConnection,
-  timeoutMs = 4000,
+  timeoutMs = 4000
 ) {
-  const startedAt = Date.now()
+  const startedAt = Date.now();
 
   return new Promise<void>((resolve) => {
     function tick() {
@@ -345,13 +350,13 @@ export function waitForConnected(
         connection.state === signalR.HubConnectionState.Connected ||
         Date.now() - startedAt >= timeoutMs
       ) {
-        resolve()
-        return
+        resolve();
+        return;
       }
 
-      window.setTimeout(tick, 50)
+      window.setTimeout(tick, 50);
     }
 
-    tick()
-  })
+    tick();
+  });
 }

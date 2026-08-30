@@ -439,7 +439,7 @@ public sealed class SpaceReadStateIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            UserEvents.Enqueue(new UserEvent(userId, eventName, payload));
+            this.UserEvents.Enqueue(new UserEvent(userId, eventName, payload));
             return Task.CompletedTask;
         }
 
@@ -451,7 +451,7 @@ public sealed class SpaceReadStateIntegrationTests
         {
             foreach (var userId in userIds.Distinct())
             {
-                UserEvents.Enqueue(new UserEvent(userId, eventName, payload));
+                this.UserEvents.Enqueue(new UserEvent(userId, eventName, payload));
             }
 
             return Task.CompletedTask;
@@ -463,7 +463,7 @@ public sealed class SpaceReadStateIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            ServerEvents.Enqueue(new ServerEvent(serverId, eventName, payload));
+            this.ServerEvents.Enqueue(new ServerEvent(serverId, eventName, payload));
             return Task.CompletedTask;
         }
     }

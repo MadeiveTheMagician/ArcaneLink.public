@@ -136,8 +136,8 @@ public sealed class RealtimeServerGroupMembershipServiceTests
             string groupName,
             CancellationToken cancellationToken = default)
         {
-            AddCalls.Add(new GroupCall(connectionId, groupName));
-            return CompleteOrFail(connectionId);
+            this.AddCalls.Add(new GroupCall(connectionId, groupName));
+            return this.CompleteOrFail(connectionId);
         }
 
         public Task RemoveFromGroupAsync(
@@ -145,13 +145,13 @@ public sealed class RealtimeServerGroupMembershipServiceTests
             string groupName,
             CancellationToken cancellationToken = default)
         {
-            RemoveCalls.Add(new GroupCall(connectionId, groupName));
-            return CompleteOrFail(connectionId);
+            this.RemoveCalls.Add(new GroupCall(connectionId, groupName));
+            return this.CompleteOrFail(connectionId);
         }
 
         private Task CompleteOrFail(string connectionId)
         {
-            return _failingConnectionIds.Contains(connectionId)
+            return this._failingConnectionIds.Contains(connectionId)
                 ? Task.FromException(new InvalidOperationException("Simulated group update failure."))
                 : Task.CompletedTask;
         }

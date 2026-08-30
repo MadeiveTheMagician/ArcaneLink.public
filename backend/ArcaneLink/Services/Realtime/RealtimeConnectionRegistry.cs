@@ -1,132 +1,131 @@
-namespace ArcaneLink.Services.Realtime
+namespace ArcaneLink.Services.Realtime;
+
+public readonly record struct RealtimeConnectionRegistrationResult(
+    Guid UserId,
+    bool WasAdded,
+    bool IsFirstConnection,
+    Guid? PreviousUserId,
+    bool PreviousUserLostLastConnection);
+
+public readonly record struct RealtimeConnectionUnregistrationResult(
+    Guid UserId,
+    bool WasLastConnection);
+
+public sealed class RealtimeConnectionRegistry
 {
-    public readonly record struct RealtimeConnectionRegistrationResult(
-        Guid UserId,
-        bool WasAdded,
-        bool IsFirstConnection,
-        Guid? PreviousUserId,
-        bool PreviousUserLostLastConnection);
+    private readonly object _sync = new();
+    private readonly Dictionary<string, Guid> _usersByConnection =
+        new(StringComparer.Ordinal);
+    private readonly Dictionary<Guid, HashSet<string>> _connectionsByUser = [];
 
-    public readonly record struct RealtimeConnectionUnregistrationResult(
-        Guid UserId,
-        bool WasLastConnection);
-
-    public sealed class RealtimeConnectionRegistry
+    public RealtimeConnectionRegistrationResult Register(
+        Guid userId,
+        string connectionId)
     {
-        private readonly object _sync = new();
-        private readonly Dictionary<string, Guid> _usersByConnection =
-            new(StringComparer.Ordinal);
-        private readonly Dictionary<Guid, HashSet<string>> _connectionsByUser = [];
+        ArgumentNullException.ThrowIfNull(connectionId);
 
-        public RealtimeConnectionRegistrationResult Register(
-            Guid userId,
-            string connectionId)
+        lock (this._sync)
         {
-            ArgumentNullException.ThrowIfNull(connectionId);
+            Guid? previousUserId = null;
+            var previousUserLostLastConnection = false;
 
-            lock (_sync)
+            if (this._usersByConnection.TryGetValue(connectionId, out var currentUserId))
             {
-                Guid? previousUserId = null;
-                var previousUserLostLastConnection = false;
-
-                if (_usersByConnection.TryGetValue(connectionId, out var currentUserId))
+                if (currentUserId == userId)
                 {
-                    if (currentUserId == userId)
-                    {
-                        return new RealtimeConnectionRegistrationResult(
-                            userId,
-                            WasAdded: false,
-                            IsFirstConnection: false,
-                            PreviousUserId: null,
-                            PreviousUserLostLastConnection: false);
-                    }
-
-                    previousUserId = currentUserId;
-                    previousUserLostLastConnection = RemoveFromUser(
-                        currentUserId,
-                        connectionId);
+                    return new RealtimeConnectionRegistrationResult(
+                        userId,
+                        WasAdded: false,
+                        IsFirstConnection: false,
+                        PreviousUserId: null,
+                        PreviousUserLostLastConnection: false);
                 }
 
-                if (!_connectionsByUser.TryGetValue(userId, out var connectionIds))
-                {
-                    connectionIds = new HashSet<string>(StringComparer.Ordinal);
-                    _connectionsByUser.Add(userId, connectionIds);
-                }
-
-                var isFirstConnection = connectionIds.Count == 0;
-                connectionIds.Add(connectionId);
-                _usersByConnection[connectionId] = userId;
-
-                return new RealtimeConnectionRegistrationResult(
-                    userId,
-                    WasAdded: true,
-                    IsFirstConnection: isFirstConnection,
-                    PreviousUserId: previousUserId,
-                    PreviousUserLostLastConnection: previousUserLostLastConnection);
+                previousUserId = currentUserId;
+                previousUserLostLastConnection = this.RemoveFromUser(
+                    currentUserId,
+                    connectionId);
             }
-        }
 
-        public RealtimeConnectionUnregistrationResult? Unregister(string connectionId)
+            if (!this._connectionsByUser.TryGetValue(userId, out var connectionIds))
+            {
+                connectionIds = new HashSet<string>(StringComparer.Ordinal);
+                this._connectionsByUser.Add(userId, connectionIds);
+            }
+
+            var isFirstConnection = connectionIds.Count == 0;
+            connectionIds.Add(connectionId);
+            this._usersByConnection[connectionId] = userId;
+
+            return new RealtimeConnectionRegistrationResult(
+                userId,
+                WasAdded: true,
+                IsFirstConnection: isFirstConnection,
+                PreviousUserId: previousUserId,
+                PreviousUserLostLastConnection: previousUserLostLastConnection);
+        }
+    }
+
+    public RealtimeConnectionUnregistrationResult? Unregister(string connectionId)
+    {
+        ArgumentNullException.ThrowIfNull(connectionId);
+
+        lock (this._sync)
         {
-            ArgumentNullException.ThrowIfNull(connectionId);
-
-            lock (_sync)
+            if (!this._usersByConnection.Remove(connectionId, out var userId))
             {
-                if (!_usersByConnection.Remove(connectionId, out var userId))
-                {
-                    return null;
-                }
-
-                var wasLastConnection = RemoveFromUser(userId, connectionId);
-                return new RealtimeConnectionUnregistrationResult(
-                    userId,
-                    wasLastConnection);
+                return null;
             }
-        }
 
-        public IReadOnlyList<string> GetConnectionIds(Guid userId)
+            var wasLastConnection = this.RemoveFromUser(userId, connectionId);
+            return new RealtimeConnectionUnregistrationResult(
+                userId,
+                wasLastConnection);
+        }
+    }
+
+    public IReadOnlyList<string> GetConnectionIds(Guid userId)
+    {
+        lock (this._sync)
         {
-            lock (_sync)
-            {
-                return _connectionsByUser.TryGetValue(userId, out var connectionIds)
-                    ? connectionIds.ToArray()
-                    : [];
-            }
+            return this._connectionsByUser.TryGetValue(userId, out var connectionIds)
+                ? connectionIds.ToArray()
+                : [];
         }
+    }
 
-        public bool HasConnections(Guid userId)
+    public bool HasConnections(Guid userId)
+    {
+        lock (this._sync)
         {
-            lock (_sync)
-            {
-                return _connectionsByUser.ContainsKey(userId);
-            }
+            return this._connectionsByUser.ContainsKey(userId);
         }
+    }
 
-        public int GetConnectionCount(Guid userId)
+    public int GetConnectionCount(Guid userId)
+    {
+        lock (this._sync)
         {
-            lock (_sync)
-            {
-                return _connectionsByUser.TryGetValue(userId, out var connectionIds)
-                    ? connectionIds.Count
-                    : 0;
-            }
+            return this._connectionsByUser.TryGetValue(userId, out var connectionIds)
+                ? connectionIds.Count
+                : 0;
         }
+    }
 
-        private bool RemoveFromUser(Guid userId, string connectionId)
+    private bool RemoveFromUser(Guid userId, string connectionId)
+    {
+        if (!this._connectionsByUser.TryGetValue(userId, out var connectionIds))
         {
-            if (!_connectionsByUser.TryGetValue(userId, out var connectionIds))
-            {
-                return false;
-            }
-
-            connectionIds.Remove(connectionId);
-            if (connectionIds.Count > 0)
-            {
-                return false;
-            }
-
-            _connectionsByUser.Remove(userId);
-            return true;
+            return false;
         }
+
+        connectionIds.Remove(connectionId);
+        if (connectionIds.Count > 0)
+        {
+            return false;
+        }
+
+        this._connectionsByUser.Remove(userId);
+        return true;
     }
 }

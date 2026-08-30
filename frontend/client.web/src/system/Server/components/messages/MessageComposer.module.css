@@ -6,7 +6,11 @@
   border-top: 1px solid var(--theme-border-soft);
   padding: 8px 20px;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-accent), transparent 86%), transparent 62%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-accent), transparent 86%),
+      transparent 62%
+    ),
     var(--theme-control-bg-strong);
 }
 
@@ -137,7 +141,8 @@
   min-height: var(--server-composer-height);
   height: auto;
   margin: 0 14px 8px;
-  border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 48%);
+  border: 1px solid
+    color-mix(in srgb, var(--theme-border-control), transparent 48%);
   border-radius: 8px;
   padding: var(--server-composer-padding-start) 8px
     var(--server-composer-padding-end);
@@ -191,8 +196,7 @@
 .textComposer .attachButton:not(:disabled):hover {
   color: var(--color-text);
   background: transparent;
-  filter:
-    drop-shadow(0 0 5px var(--theme-glow-strong))
+  filter: drop-shadow(0 0 5px var(--theme-glow-strong))
     drop-shadow(0 0 14px var(--theme-glow));
 }
 
@@ -201,7 +205,7 @@
   opacity: 0.56;
 }
 
-.textComposer textarea[name="messageBody"] {
+.textComposer textarea[name='messageBody'] {
   position: relative;
   z-index: 1;
   display: block;
@@ -227,11 +231,11 @@
   overflow-y: hidden;
 }
 
-.textComposer textarea[name="messageBody"]::placeholder {
+.textComposer textarea[name='messageBody']::placeholder {
   color: var(--theme-text-faint);
 }
 
-.textComposer textarea[name="messageBody"]:disabled {
+.textComposer textarea[name='messageBody']:disabled {
   cursor: not-allowed;
   opacity: 0.72;
 }
@@ -267,8 +271,7 @@
 .sendButton:not(:disabled):hover {
   color: var(--color-text);
   background: transparent;
-  filter:
-    drop-shadow(0 0 5px var(--theme-glow-strong))
+  filter: drop-shadow(0 0 5px var(--theme-glow-strong))
     drop-shadow(0 0 14px var(--theme-glow));
 }
 
@@ -285,7 +288,7 @@
     align-items: end;
   }
 
-  .textComposer textarea[name="messageBody"] {
+  .textComposer textarea[name='messageBody'] {
     align-self: end;
   }
 

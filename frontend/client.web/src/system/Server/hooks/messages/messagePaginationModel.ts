@@ -1,89 +1,86 @@
-import type { SpaceMessageResponse } from '../../../../shared/types'
+import type { SpaceMessageResponse } from '../../../../shared/types';
 
-export const messageHistoryPageSize = 100
+export const messageHistoryPageSize = 100;
 
 export type OlderMessageLoadResult =
-  | 'loaded'
-  | 'exhausted'
-  | 'failed'
-  | 'stale'
+  'loaded' | 'exhausted' | 'failed' | 'stale';
 
 export type MessageHistoryCursor = {
-  createdAt: string
-  id: string
-}
+  createdAt: string;
+  id: string;
+};
 
 export function getOldestMessageCursor(
-  messages: readonly SpaceMessageResponse[],
+  messages: readonly SpaceMessageResponse[]
 ): MessageHistoryCursor | null {
-  const oldestMessage = messages[0]
+  const oldestMessage = messages[0];
 
   return oldestMessage
     ? {
         createdAt: oldestMessage.createdAt,
-        id: oldestMessage.id,
+        id: oldestMessage.id
       }
-    : null
+    : null;
 }
 
 export function getMessageWindowCursor(
   messageId: string,
-  createdAt: string,
+  createdAt: string
 ): MessageHistoryCursor | null {
-  const timestamp = Date.parse(createdAt)
+  const timestamp = Date.parse(createdAt);
   if (!messageId || !Number.isFinite(timestamp)) {
-    return null
+    return null;
   }
 
   return {
     createdAt: new Date(timestamp + 1).toISOString(),
-    id: messageId,
-  }
+    id: messageId
+  };
 }
 
 export function hasOlderMessagePage(
-  page: readonly SpaceMessageResponse[],
+  page: readonly SpaceMessageResponse[]
 ): boolean {
-  return page.length === messageHistoryPageSize
+  return page.length === messageHistoryPageSize;
 }
 
 export function prependOlderMessagePage(
   current: readonly SpaceMessageResponse[],
-  olderPage: readonly SpaceMessageResponse[],
+  olderPage: readonly SpaceMessageResponse[]
 ): SpaceMessageResponse[] {
   if (olderPage.length === 0) {
-    return [...current]
+    return [...current];
   }
 
-  const currentIds = new Set(current.map((message) => message.id))
+  const currentIds = new Set(current.map((message) => message.id));
   return [
     ...olderPage.filter((message) => !currentIds.has(message.id)),
-    ...current,
-  ]
+    ...current
+  ];
 }
 
 export function mergeLatestMessagePage(
   current: readonly SpaceMessageResponse[],
-  latestPage: readonly SpaceMessageResponse[],
+  latestPage: readonly SpaceMessageResponse[]
 ): SpaceMessageResponse[] {
   if (latestPage.length === 0) {
-    return [...latestPage]
+    return [...latestPage];
   }
 
-  const oldestLatestMessage = latestPage[0]
+  const oldestLatestMessage = latestPage[0];
   return [
     ...current.filter(
-      (message) => compareMessages(message, oldestLatestMessage) < 0,
+      (message) => compareMessages(message, oldestLatestMessage) < 0
     ),
-    ...latestPage,
-  ]
+    ...latestPage
+  ];
 }
 
 function compareMessages(
   left: SpaceMessageResponse,
-  right: SpaceMessageResponse,
+  right: SpaceMessageResponse
 ) {
   const createdAtDifference =
-    Date.parse(left.createdAt) - Date.parse(right.createdAt)
-  return createdAtDifference || left.id.localeCompare(right.id)
+    Date.parse(left.createdAt) - Date.parse(right.createdAt);
+  return createdAtDifference || left.id.localeCompare(right.id);
 }

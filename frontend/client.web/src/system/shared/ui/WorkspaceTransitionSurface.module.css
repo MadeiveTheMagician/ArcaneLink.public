@@ -7,7 +7,7 @@
   min-height: 0;
 }
 
-.entering [data-workspace-transition-content="true"] {
+.entering [data-workspace-transition-content='true'] {
   will-change: opacity, transform;
   animation: workspaceSurfaceEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -25,14 +25,14 @@
 }
 
 @media (max-width: 760px) {
-  .entering [data-workspace-transition-content="true"] {
+  .entering [data-workspace-transition-content='true'] {
     will-change: auto;
     animation: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .entering [data-workspace-transition-content="true"] {
+  .entering [data-workspace-transition-content='true'] {
     will-change: auto;
     animation: none;
   }

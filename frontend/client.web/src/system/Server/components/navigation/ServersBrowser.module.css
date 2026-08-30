@@ -11,9 +11,21 @@
   padding: 22px clamp(18px, 3vw, 38px) 30px;
   color: var(--color-text);
   background:
-    radial-gradient(circle at 18% 10%, var(--theme-backdrop-glow), transparent 28%),
-    radial-gradient(circle at 84% 18%, var(--theme-backdrop-glow), transparent 32%),
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+    radial-gradient(
+      circle at 18% 10%,
+      var(--theme-backdrop-glow),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 84% 18%,
+      var(--theme-backdrop-glow),
+      transparent 32%
+    ),
+    linear-gradient(
+      180deg,
+      var(--theme-frame-bg),
+      var(--theme-control-bg-strong)
+    );
 }
 
 .heading {
@@ -99,12 +111,11 @@
 
 @container server-browser (max-width: 560px) {
   .serverBrowser {
-    padding: 18px 14px calc(
-      var(--mobile-nav-height, 72px) +
-      var(--mobile-voice-dock-reserve, 0px) +
-      env(safe-area-inset-bottom) +
-      20px
-    );
+    padding: 18px 14px
+      calc(
+        var(--mobile-nav-height, 72px) + var(--mobile-voice-dock-reserve, 0px) +
+          env(safe-area-inset-bottom) + 20px
+      );
   }
 
   .heading {

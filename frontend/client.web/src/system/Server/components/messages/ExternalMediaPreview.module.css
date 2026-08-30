@@ -84,14 +84,13 @@
   position: absolute;
   z-index: 1;
   inset: 0;
-  background:
-    linear-gradient(
-      90deg,
-      rgb(5 7 19 / 28%) 0%,
-      transparent 35%,
-      transparent 65%,
-      rgb(5 7 19 / 28%) 100%
-    );
+  background: linear-gradient(
+    90deg,
+    rgb(5 7 19 / 28%) 0%,
+    transparent 35%,
+    transparent 65%,
+    rgb(5 7 19 / 28%) 100%
+  );
   content: '';
   pointer-events: none;
 }

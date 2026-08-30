@@ -1,12 +1,11 @@
 using ArcaneLink.Exceptions.ServerExceptions.Abstractions;
 
-namespace ArcaneLink.Exceptions.ServerExceptions
+namespace ArcaneLink.Exceptions.ServerExceptions;
+
+public class ServerOwnerCannotLeaveException : ServerException
 {
-    public class ServerOwnerCannotLeaveException : ServerException
+    public ServerOwnerCannotLeaveException()
+        : base(ExceptionMessages.ServerOwnerCannotLeave)
     {
-        public ServerOwnerCannotLeaveException()
-            : base(ExceptionMessages.ServerOwnerCannotLeave)
-        {
-        }
     }
 }

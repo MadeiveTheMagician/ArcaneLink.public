@@ -1,28 +1,27 @@
 using ArcaneLink.DataBase.Models.MessagesModels;
 
-namespace ArcaneLink.DataBase.DTOs.Messages
+namespace ArcaneLink.DataBase.DTOs.Messages;
+
+public class SpaceMessageAttachmentValidationResult
 {
-    public class SpaceMessageAttachmentValidationResult
+    public bool IsValid { get; init; }
+    public IReadOnlyList<SpaceMessageAsset> Attachments { get; init; } = [];
+
+    public static SpaceMessageAttachmentValidationResult Valid(
+        IReadOnlyList<SpaceMessageAsset> attachments)
     {
-        public bool IsValid { get; init; }
-        public IReadOnlyList<SpaceMessageAsset> Attachments { get; init; } = [];
-
-        public static SpaceMessageAttachmentValidationResult Valid(
-            IReadOnlyList<SpaceMessageAsset> attachments)
+        return new SpaceMessageAttachmentValidationResult
         {
-            return new SpaceMessageAttachmentValidationResult
-            {
-                IsValid = true,
-                Attachments = attachments
-            };
-        }
+            IsValid = true,
+            Attachments = attachments
+        };
+    }
 
-        public static SpaceMessageAttachmentValidationResult Invalid()
+    public static SpaceMessageAttachmentValidationResult Invalid()
+    {
+        return new SpaceMessageAttachmentValidationResult
         {
-            return new SpaceMessageAttachmentValidationResult
-            {
-                IsValid = false
-            };
-        }
+            IsValid = false
+        };
     }
 }

@@ -1,91 +1,91 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { ApiError, apiJson } from '../../../shared/api/api'
-import { createRealtimeRefreshCoalescer } from '../../shared/hooks/realtimeRefreshCoalescer'
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { ApiError, apiJson } from '../../../shared/api/api';
+import { createRealtimeRefreshCoalescer } from '../../shared/hooks/realtimeRefreshCoalescer';
 import {
-  isModerationEventForServer,
-  moderationCaseChangedWindowEvent,
   type ModerationCaseChangedPayload,
-} from '../../shared/moderation/moderationRealtime'
-import { moderationCopy } from '../moderationCopy.ru'
+  isModerationEventForServer,
+  moderationCaseChangedWindowEvent
+} from '../../shared/moderation/moderationRealtime';
+import {
+  type ModerationCaseFilter,
+  createModerationCaseListUrl,
+  mergeModerationCasePages,
+  replaceModerationCaseSummary
+} from '../models/moderationCaseModel';
+import { moderationCopy } from '../moderationCopy.ru';
 import type {
   ModerationCaseCursorResponse,
   ModerationCaseDetailResponse,
   ModerationCasePageResponse,
-  ModerationCaseStatus,
-} from '../moderationTypes'
-import {
-  createModerationCaseListUrl,
-  mergeModerationCasePages,
-  replaceModerationCaseSummary,
-  type ModerationCaseFilter,
-} from '../models/moderationCaseModel'
+  ModerationCaseStatus
+} from '../moderationTypes';
 
 export function useServerModeration({
   accessToken,
-  serverId,
+  serverId
 }: {
-  accessToken: string
-  serverId: string
+  accessToken: string;
+  serverId: string;
 }) {
   const [statusFilter, setStatusFilter] =
-    useState<ModerationCaseFilter>('open')
-  const [cases, setCases] =
-    useState<ModerationCasePageResponse['items']>([])
+    useState<ModerationCaseFilter>('open');
+  const [cases, setCases] = useState<ModerationCasePageResponse['items']>([]);
   const [nextCursor, setNextCursor] =
-    useState<ModerationCaseCursorResponse | null>(null)
+    useState<ModerationCaseCursorResponse | null>(null);
   const [selectedCase, setSelectedCase] =
-    useState<ModerationCaseDetailResponse | null>(null)
-  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
-  const [isLoadingCases, setIsLoadingCases] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
-  const [isUpdatingCase, setIsUpdatingCase] = useState(false)
-  const [listError, setListError] = useState<string | null>(null)
-  const [detailError, setDetailError] = useState<string | null>(null)
-  const [updateError, setUpdateError] = useState<string | null>(null)
-  const nextCursorRef = useRef(nextCursor)
-  const selectedCaseIdRef = useRef(selectedCaseId)
-  const casesRef = useRef(cases)
-  const selectedCaseRef = useRef(selectedCase)
-  const listRequestIdRef = useRef(0)
-  const detailRequestIdRef = useRef(0)
-  const refreshSelectedCaseRef = useRef(false)
+    useState<ModerationCaseDetailResponse | null>(null);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [isLoadingCases, setIsLoadingCases] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [isUpdatingCase, setIsUpdatingCase] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const nextCursorRef = useRef(nextCursor);
+  const selectedCaseIdRef = useRef(selectedCaseId);
+  const casesRef = useRef(cases);
+  const selectedCaseRef = useRef(selectedCase);
+  const listRequestIdRef = useRef(0);
+  const detailRequestIdRef = useRef(0);
+  const refreshSelectedCaseRef = useRef(false);
 
   useEffect(() => {
-    nextCursorRef.current = nextCursor
-  }, [nextCursor])
+    nextCursorRef.current = nextCursor;
+  }, [nextCursor]);
 
   useEffect(() => {
-    selectedCaseIdRef.current = selectedCaseId
-  }, [selectedCaseId])
+    selectedCaseIdRef.current = selectedCaseId;
+  }, [selectedCaseId]);
 
   useEffect(() => {
-    casesRef.current = cases
-  }, [cases])
+    casesRef.current = cases;
+  }, [cases]);
 
   useEffect(() => {
-    selectedCaseRef.current = selectedCase
-  }, [selectedCase])
+    selectedCaseRef.current = selectedCase;
+  }, [selectedCase]);
 
   const loadCases = useCallback(
     async ({ append = false, silent = false } = {}) => {
-      const cursor = append ? nextCursorRef.current : null
+      const cursor = append ? nextCursorRef.current : null;
       if (append && !cursor) {
-        return
+        return;
       }
 
-      const requestId = ++listRequestIdRef.current
+      const requestId = ++listRequestIdRef.current;
       if (append) {
-        setIsLoadingMore(true)
+        setIsLoadingMore(true);
       } else {
-        setIsLoadingMore(false)
+        setIsLoadingMore(false);
         if (!silent) {
-          setIsLoadingCases(true)
+          setIsLoadingCases(true);
         }
       }
 
       if (!silent) {
-        setListError(null)
+        setListError(null);
       }
 
       try {
@@ -93,24 +93,24 @@ export function useServerModeration({
           createModerationCaseListUrl({
             serverId,
             status: statusFilter,
-            cursor,
+            cursor
           }),
-          { accessToken },
-        )
+          { accessToken }
+        );
 
         if (requestId !== listRequestIdRef.current) {
-          return
+          return;
         }
 
         setCases((current) => {
           const nextCases = append
             ? mergeModerationCasePages(current, page)
-            : page.items
-          casesRef.current = nextCases
-          return nextCases
-        })
-        setNextCursor(page.nextCursor)
-        setListError(null)
+            : page.items;
+          casesRef.current = nextCases;
+          return nextCases;
+        });
+        setNextCursor(page.nextCursor);
+        setListError(null);
       } catch (requestError) {
         if (
           requestId === listRequestIdRef.current &&
@@ -119,138 +119,135 @@ export function useServerModeration({
           setListError(
             requestError instanceof Error && requestError.message
               ? requestError.message
-              : moderationCopy.cases.failed,
-          )
+              : moderationCopy.cases.failed
+          );
         }
       } finally {
         if (requestId === listRequestIdRef.current) {
           if (append) {
-            setIsLoadingMore(false)
+            setIsLoadingMore(false);
           } else {
-            setIsLoadingCases(false)
+            setIsLoadingCases(false);
           }
         }
       }
     },
-    [accessToken, serverId, statusFilter],
-  )
+    [accessToken, serverId, statusFilter]
+  );
 
   const loadCaseDetail = useCallback(
     async (caseId: string, silent = false) => {
-      const requestId = ++detailRequestIdRef.current
-      selectedCaseIdRef.current = caseId
-      setSelectedCaseId(caseId)
+      const requestId = ++detailRequestIdRef.current;
+      selectedCaseIdRef.current = caseId;
+      setSelectedCaseId(caseId);
       if (!silent) {
-        setIsLoadingDetail(true)
-        setDetailError(null)
+        setIsLoadingDetail(true);
+        setDetailError(null);
       }
 
       try {
         const detail = await apiJson<ModerationCaseDetailResponse>(
           `/api/servers/${serverId}/moderation/cases/${caseId}`,
-          { accessToken },
-        )
+          { accessToken }
+        );
 
         if (requestId === detailRequestIdRef.current) {
-          selectedCaseRef.current = detail
-          setSelectedCase(detail)
-          setDetailError(null)
+          selectedCaseRef.current = detail;
+          setSelectedCase(detail);
+          setDetailError(null);
         }
 
-        return detail
+        return detail;
       } catch (requestError) {
         if (
           requestId === detailRequestIdRef.current &&
           (!silent || selectedCaseRef.current === null)
         ) {
-          selectedCaseRef.current = null
-          setSelectedCase(null)
+          selectedCaseRef.current = null;
+          setSelectedCase(null);
           setDetailError(
             requestError instanceof Error && requestError.message
               ? requestError.message
-              : moderationCopy.cases.detailFailed,
-          )
+              : moderationCopy.cases.detailFailed
+          );
         }
-        return null
+        return null;
       } finally {
         if (requestId === detailRequestIdRef.current) {
-          setIsLoadingDetail(false)
+          setIsLoadingDetail(false);
         }
       }
     },
-    [accessToken, serverId],
-  )
+    [accessToken, serverId]
+  );
 
   useEffect(() => {
-    setCases([])
-    casesRef.current = []
-    setNextCursor(null)
-    nextCursorRef.current = null
-    setSelectedCase(null)
-    selectedCaseRef.current = null
-    setSelectedCaseId(null)
-    selectedCaseIdRef.current = null
-    setUpdateError(null)
-    void loadCases()
+    setCases([]);
+    casesRef.current = [];
+    setNextCursor(null);
+    nextCursorRef.current = null;
+    setSelectedCase(null);
+    selectedCaseRef.current = null;
+    setSelectedCaseId(null);
+    selectedCaseIdRef.current = null;
+    setUpdateError(null);
+    void loadCases();
 
     return () => {
-      listRequestIdRef.current += 1
-      detailRequestIdRef.current += 1
-    }
-  }, [loadCases])
+      listRequestIdRef.current += 1;
+      detailRequestIdRef.current += 1;
+    };
+  }, [loadCases]);
 
   useEffect(() => {
     const refresh = createRealtimeRefreshCoalescer(async () => {
-      const shouldRefreshSelectedCase = refreshSelectedCaseRef.current
-      refreshSelectedCaseRef.current = false
-      await loadCases({ silent: true })
-      const caseId = selectedCaseIdRef.current
+      const shouldRefreshSelectedCase = refreshSelectedCaseRef.current;
+      refreshSelectedCaseRef.current = false;
+      await loadCases({ silent: true });
+      const caseId = selectedCaseIdRef.current;
 
       if (caseId && shouldRefreshSelectedCase) {
-        await loadCaseDetail(caseId, true)
+        await loadCaseDetail(caseId, true);
       }
-    }, 120)
+    }, 120);
 
     function refreshFromRealtime(event: Event) {
       const payload = (
         event as CustomEvent<ModerationCaseChangedPayload | undefined>
-      ).detail
+      ).detail;
 
       if (isModerationEventForServer(payload, serverId)) {
-        const selectedCaseId = selectedCaseIdRef.current
+        const selectedCaseId = selectedCaseIdRef.current;
         refreshSelectedCaseRef.current ||= Boolean(
           selectedCaseId &&
-            (!payload?.caseId ||
-              payload.caseId.toLowerCase() === selectedCaseId.toLowerCase()),
-        )
-        refresh.request()
+          (!payload?.caseId ||
+            payload.caseId.toLowerCase() === selectedCaseId.toLowerCase())
+        );
+        refresh.request();
       }
     }
 
     window.addEventListener(
       moderationCaseChangedWindowEvent,
-      refreshFromRealtime,
-    )
+      refreshFromRealtime
+    );
 
     return () => {
-      refresh.dispose()
+      refresh.dispose();
       window.removeEventListener(
         moderationCaseChangedWindowEvent,
-        refreshFromRealtime,
-      )
-    }
-  }, [loadCaseDetail, loadCases, serverId])
+        refreshFromRealtime
+      );
+    };
+  }, [loadCaseDetail, loadCases, serverId]);
 
-  async function updateCase(
-    status: ModerationCaseStatus,
-    note: string,
-  ) {
+  async function updateCase(status: ModerationCaseStatus, note: string) {
     if (!selectedCase) {
-      return false
+      return false;
     }
 
-    setIsUpdatingCase(true)
-    setUpdateError(null)
+    setIsUpdatingCase(true);
+    setUpdateError(null);
 
     try {
       const updated = await apiJson<ModerationCaseDetailResponse>(
@@ -261,54 +258,55 @@ export function useServerModeration({
           body: {
             status,
             note: note.trim() || null,
-            expectedUpdatedAt: selectedCase.updatedAt,
-          },
-        },
-      )
+            expectedUpdatedAt: selectedCase.updatedAt
+          }
+        }
+      );
 
-      selectedCaseRef.current = updated
-      setSelectedCase(updated)
+      selectedCaseRef.current = updated;
+      setSelectedCase(updated);
       setCases((current) => {
-        const updatedCases = replaceModerationCaseSummary(current, updated)
+        const updatedCases = replaceModerationCaseSummary(current, updated);
 
-        const nextCases = statusFilter === 'all' || statusFilter === updated.status
-          ? updatedCases
-          : updatedCases.filter(
-              (item) =>
-                item.caseId.toLowerCase() !== updated.caseId.toLowerCase(),
-            )
-        casesRef.current = nextCases
-        return nextCases
-      })
-      return true
+        const nextCases =
+          statusFilter === 'all' || statusFilter === updated.status
+            ? updatedCases
+            : updatedCases.filter(
+                (item) =>
+                  item.caseId.toLowerCase() !== updated.caseId.toLowerCase()
+              );
+        casesRef.current = nextCases;
+        return nextCases;
+      });
+      return true;
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 409) {
-        setUpdateError(moderationCopy.cases.conflict)
+        setUpdateError(moderationCopy.cases.conflict);
         await Promise.all([
           loadCases({ silent: true }),
-          loadCaseDetail(selectedCase.caseId, true),
-        ])
+          loadCaseDetail(selectedCase.caseId, true)
+        ]);
       } else {
         setUpdateError(
           requestError instanceof Error && requestError.message
             ? requestError.message
-            : moderationCopy.cases.updateFailed,
-        )
+            : moderationCopy.cases.updateFailed
+        );
       }
-      return false
+      return false;
     } finally {
-      setIsUpdatingCase(false)
+      setIsUpdatingCase(false);
     }
   }
 
   function closeCase() {
-    detailRequestIdRef.current += 1
-    selectedCaseIdRef.current = null
-    selectedCaseRef.current = null
-    setSelectedCase(null)
-    setSelectedCaseId(null)
-    setDetailError(null)
-    setUpdateError(null)
+    detailRequestIdRef.current += 1;
+    selectedCaseIdRef.current = null;
+    selectedCaseRef.current = null;
+    setSelectedCase(null);
+    setSelectedCaseId(null);
+    setDetailError(null);
+    setUpdateError(null);
   }
 
   return {
@@ -328,6 +326,6 @@ export function useServerModeration({
     loadCases,
     loadCaseDetail,
     updateCase,
-    closeCase,
-  }
+    closeCase
+  };
 }

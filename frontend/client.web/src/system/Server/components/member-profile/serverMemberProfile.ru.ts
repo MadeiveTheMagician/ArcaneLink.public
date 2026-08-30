@@ -2,7 +2,7 @@ export const serverMemberProfileCopy = {
   actions: {
     close: 'Закрыть профиль',
     openFull: 'Просмотреть полный профиль',
-    retry: 'Повторить',
+    retry: 'Повторить'
   },
   labels: {
     about: 'О себе',
@@ -12,7 +12,7 @@ export const serverMemberProfileCopy = {
     mutualConnections: 'Общие связи',
     mutualServers: 'Общие серверы',
     profile: 'Профиль',
-    roles: 'Роли',
+    roles: 'Роли'
   },
   state: {
     loadFailed: 'Не удалось загрузить серверный профиль.',
@@ -22,6 +22,6 @@ export const serverMemberProfileCopy = {
     noMutualServers: 'Общих серверов пока нет.',
     noRoles: 'Роли не назначены',
     partialMutualList: (returnedCount: number, totalCount: number) =>
-      `Показано ${returnedCount} из ${totalCount}.`,
-  },
-} as const
+      `Показано ${returnedCount} из ${totalCount}.`
+  }
+} as const;

@@ -14,22 +14,22 @@ public sealed class AssetSecurityIntegrationTests : IClassFixture<ArcaneLinkApiF
 
     public AssetSecurityIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _factory = factory;
-        _client = factory.CreateClient();
+        this._factory = factory;
+        this._client = factory.CreateClient();
     }
 
     [Fact]
     public async Task LegacyMetadataCreation_CannotReferenceOrDeleteProviderKey()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
 
-        var storageRoot = Path.GetFullPath(_factory.AssetStorageRootPath);
+        var storageRoot = Path.GetFullPath(this._factory.AssetStorageRootPath);
         var siblingStorageRoot = $"{storageRoot}-victim";
         var victimPath = Path.Combine(siblingStorageRoot, "victim.txt");
         Directory.CreateDirectory(siblingStorageRoot);
         await File.WriteAllTextAsync(victimPath, "must remain");
 
-        using var createResponse = await _client.PostAsJsonAsync(
+        using var createResponse = await this._client.PostAsJsonAsync(
             "/api/assets",
             new
             {
@@ -47,7 +47,7 @@ public sealed class AssetSecurityIntegrationTests : IClassFixture<ArcaneLinkApiF
 
             if (assetId.HasValue)
             {
-                using var deleteResponse = await _client.DeleteAsync(
+                using var deleteResponse = await this._client.DeleteAsync(
                     $"/api/assets/{assetId.Value}");
                 deleteResponse.EnsureSuccessStatusCode();
             }
@@ -62,7 +62,7 @@ public sealed class AssetSecurityIntegrationTests : IClassFixture<ArcaneLinkApiF
     [Fact]
     public async Task MultipartUpload_HidesProviderKeyAndPreservesOwnerLifecycle()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
 
         using var form = new MultipartFormDataContent();
         form.Add(
@@ -73,7 +73,7 @@ public sealed class AssetSecurityIntegrationTests : IClassFixture<ArcaneLinkApiF
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
         form.Add(fileContent, "File", "safe.png");
 
-        using var uploadResponse = await _client.PostAsync(
+        using var uploadResponse = await this._client.PostAsync(
             "/api/assets/upload",
             form);
         uploadResponse.EnsureSuccessStatusCode();
@@ -85,13 +85,13 @@ public sealed class AssetSecurityIntegrationTests : IClassFixture<ArcaneLinkApiF
             uploaded!.ContainsKey("storageKey"),
             "Provider storage keys must not be serialized in asset responses.");
 
-        using var metadataResponse = await _client.GetAsync(
+        using var metadataResponse = await this._client.GetAsync(
             $"/api/assets/{assetId.Value}");
         metadataResponse.EnsureSuccessStatusCode();
         var metadata = await metadataResponse.Content.ReadFromJsonAsync<JsonObject>();
         Assert.False(metadata!.ContainsKey("storageKey"));
 
-        using var contentResponse = await _client.GetAsync(
+        using var contentResponse = await this._client.GetAsync(
             $"/api/assets/{assetId.Value}/content");
         contentResponse.EnsureSuccessStatusCode();
         Assert.Equal(
@@ -106,11 +106,11 @@ public sealed class AssetSecurityIntegrationTests : IClassFixture<ArcaneLinkApiF
             contentResponse.Headers.CacheControl?.ToString() ?? string.Empty,
             StringComparison.OrdinalIgnoreCase);
 
-        using var deleteResponse = await _client.DeleteAsync(
+        using var deleteResponse = await this._client.DeleteAsync(
             $"/api/assets/{assetId.Value}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
-        using var deletedContentResponse = await _client.GetAsync(
+        using var deletedContentResponse = await this._client.GetAsync(
             $"/api/assets/{assetId.Value}/content");
         Assert.Equal(HttpStatusCode.NotFound, deletedContentResponse.StatusCode);
     }

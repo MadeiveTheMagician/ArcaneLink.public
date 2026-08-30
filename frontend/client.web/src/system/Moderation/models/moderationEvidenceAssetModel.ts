@@ -1,21 +1,20 @@
-export type ModerationEvidenceTransferMode = 'open' | 'download'
+export type ModerationEvidenceTransferMode = 'open' | 'download';
 
 export type ModerationEvidenceResponseValidation =
-  | { ok: true; mode: ModerationEvidenceTransferMode }
-  | { ok: false }
+  { ok: true; mode: ModerationEvidenceTransferMode } | { ok: false };
 
 export function isExpectedModerationEvidenceResponseUrl({
   responseUrl,
   requestPath,
-  origin,
+  origin
 }: {
-  responseUrl: string
-  requestPath: string
-  origin: string
+  responseUrl: string;
+  requestPath: string;
+  origin: string;
 }) {
   try {
-    const baseUrl = new URL(origin)
-    const resolvedUrl = new URL(responseUrl, baseUrl)
+    const baseUrl = new URL(origin);
+    const resolvedUrl = new URL(responseUrl, baseUrl);
 
     return (
       resolvedUrl.origin === baseUrl.origin &&
@@ -24,9 +23,9 @@ export function isExpectedModerationEvidenceResponseUrl({
       !resolvedUrl.hash &&
       !resolvedUrl.username &&
       !resolvedUrl.password
-    )
+    );
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -35,26 +34,26 @@ export function resolveModerationEvidenceContentUrl({
   origin,
   serverId,
   caseId,
-  evidenceAssetId,
+  evidenceAssetId
 }: {
-  contentUrl: string
-  origin: string
-  serverId: string
-  caseId: string
-  evidenceAssetId: string
+  contentUrl: string;
+  origin: string;
+  serverId: string;
+  caseId: string;
+  evidenceAssetId: string;
 }) {
   if (
     !contentUrl.startsWith('/') ||
     contentUrl.includes('\\') ||
     hasControlCharacters(contentUrl)
   ) {
-    return null
+    return null;
   }
 
   try {
-    const baseUrl = new URL(origin)
-    const resolvedUrl = new URL(contentUrl, baseUrl)
-    const segments = resolvedUrl.pathname.split('/')
+    const baseUrl = new URL(origin);
+    const resolvedUrl = new URL(contentUrl, baseUrl);
+    const segments = resolvedUrl.pathname.split('/');
 
     if (
       resolvedUrl.origin !== baseUrl.origin ||
@@ -74,12 +73,12 @@ export function resolveModerationEvidenceContentUrl({
       !sameIdentifier(segments[8], evidenceAssetId) ||
       segments[9] !== 'content'
     ) {
-      return null
+      return null;
     }
 
-    return resolvedUrl.pathname
+    return resolvedUrl.pathname;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -88,112 +87,112 @@ export function validateModerationEvidenceResponse({
   recordedSizeBytes,
   responseContentType,
   responseContentDisposition,
-  responseSizeBytes,
+  responseSizeBytes
 }: {
-  recordedMimeType: string
-  recordedSizeBytes: number
-  responseContentType: string | null
-  responseContentDisposition: string | null
-  responseSizeBytes: number
+  recordedMimeType: string;
+  recordedSizeBytes: number;
+  responseContentType: string | null;
+  responseContentDisposition: string | null;
+  responseSizeBytes: number;
 }): ModerationEvidenceResponseValidation {
   if (
     !Number.isSafeInteger(recordedSizeBytes) ||
     recordedSizeBytes < 0 ||
     responseSizeBytes !== recordedSizeBytes
   ) {
-    return { ok: false }
+    return { ok: false };
   }
 
-  const contentType = normalizeMimeType(responseContentType)
-  const recordedType = normalizeMimeType(recordedMimeType)
+  const contentType = normalizeMimeType(responseContentType);
+  const recordedType = normalizeMimeType(recordedMimeType);
   const disposition = responseContentDisposition
     ?.match(/^\s*(inline|attachment)(?:\s*;|\s*$)/i)?.[1]
-    ?.toLowerCase()
+    ?.toLowerCase();
 
   if (
     disposition === 'inline' &&
     contentType === recordedType &&
     isSafeInlineMimeType(contentType)
   ) {
-    return { ok: true, mode: 'open' }
+    return { ok: true, mode: 'open' };
   }
 
   if (
     disposition === 'attachment' &&
     contentType === 'application/octet-stream'
   ) {
-    return { ok: true, mode: 'download' }
+    return { ok: true, mode: 'download' };
   }
 
-  return { ok: false }
+  return { ok: false };
 }
 
 export function isMatchingModerationEvidenceSha256(
   expectedSha256: string,
-  actualSha256: string,
+  actualSha256: string
 ) {
-  const normalizedExpected = expectedSha256.trim().toLowerCase()
-  const normalizedActual = actualSha256.trim().toLowerCase()
+  const normalizedExpected = expectedSha256.trim().toLowerCase();
+  const normalizedActual = actualSha256.trim().toLowerCase();
 
   return (
     /^[a-f0-9]{64}$/.test(normalizedExpected) &&
     normalizedExpected === normalizedActual
-  )
+  );
 }
 
 export function sanitizeModerationEvidenceFileName(value: string) {
   const sanitized = replaceUnsafeFileNameCharacters(value)
     .replace(/[. ]+$/g, '')
     .trim()
-    .slice(0, 180)
+    .slice(0, 180);
 
-  return sanitized || 'moderation-evidence'
+  return sanitized || 'moderation-evidence';
 }
 
 function normalizeMimeType(value: string | null) {
-  return value?.split(';', 1)[0]?.trim().toLowerCase() ?? ''
+  return value?.split(';', 1)[0]?.trim().toLowerCase() ?? '';
 }
 
 function isSafeInlineMimeType(value: string) {
   return (
     (value.startsWith('image/') && value !== 'image/svg+xml') ||
     value.startsWith('video/')
-  )
+  );
 }
 
 function replaceUnsafeFileNameCharacters(value: string) {
-  let result = ''
-  let previousWasUnsafe = false
+  let result = '';
+  let previousWasUnsafe = false;
 
   for (const character of value) {
     const isUnsafe =
-      isControlCharacter(character) || '\\/:*?"<>|'.includes(character)
+      isControlCharacter(character) || '\\/:*?"<>|'.includes(character);
 
     if (isUnsafe) {
       if (!previousWasUnsafe) {
-        result += '_'
+        result += '_';
       }
 
-      previousWasUnsafe = true
-      continue
+      previousWasUnsafe = true;
+      continue;
     }
 
-    result += character
-    previousWasUnsafe = false
+    result += character;
+    previousWasUnsafe = false;
   }
 
-  return result
+  return result;
 }
 
 function hasControlCharacters(value: string) {
-  return Array.from(value).some(isControlCharacter)
+  return Array.from(value).some(isControlCharacter);
 }
 
 function isControlCharacter(value: string) {
-  const code = value.charCodeAt(0)
-  return code <= 31 || code === 127
+  const code = value.charCodeAt(0);
+  return code <= 31 || code === 127;
 }
 
 function sameIdentifier(first: string, second: string) {
-  return first.toLowerCase() === second.toLowerCase()
+  return first.toLowerCase() === second.toLowerCase();
 }

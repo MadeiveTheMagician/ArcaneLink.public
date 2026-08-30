@@ -1,17 +1,16 @@
 using ArcaneLink.Exceptions.AssetExceptions.Abstractions;
 
-namespace ArcaneLink.Exceptions.AssetExceptions
-{
-    public class InvalidAssetDataException : AssetException
-    {
-        public InvalidAssetDataException()
-            : base(ExceptionMessages.InvalidAssetData)
-        {
-        }
+namespace ArcaneLink.Exceptions.AssetExceptions;
 
-        public InvalidAssetDataException(string message)
-            : base(message)
-        {
-        }
+public class InvalidAssetDataException : AssetException
+{
+    public InvalidAssetDataException()
+        : base(ExceptionMessages.InvalidAssetData)
+    {
+    }
+
+    public InvalidAssetDataException(string message)
+        : base(message)
+    {
     }
 }

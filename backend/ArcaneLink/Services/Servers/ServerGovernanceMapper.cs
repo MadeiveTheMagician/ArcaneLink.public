@@ -1,20 +1,20 @@
-using ArcaneLink.DataBase.DTOs.Servers;
 using ArcaneLink.DataBase.Constants;
+using ArcaneLink.DataBase.DTOs.Servers;
 using ArcaneLink.DataBase.Models.ServersModels;
 using ArcaneLink.Services.Servers.Authorization;
 
-namespace ArcaneLink.Services.Servers
-{
-    internal static class ServerGovernanceMapper
-    {
-        private static readonly LegacyServerPermissionMaskAdapter LegacyPermissionAdapter =
-            new();
+namespace ArcaneLink.Services.Servers;
 
-        public static ServerInviteResponse ToInviteResponse(
-            ServerInvite invite,
-            DateTime now,
-            int memberCount = 0,
-            int onlineCount = 0) => new()
+internal static class ServerGovernanceMapper
+{
+    private static readonly LegacyServerPermissionMaskAdapter LegacyPermissionAdapter =
+        new();
+
+    public static ServerInviteResponse ToInviteResponse(
+        ServerInvite invite,
+        DateTime now,
+        int memberCount = 0,
+        int onlineCount = 0) => new()
         {
             Id = invite.Id,
             ServerId = invite.ServerId,
@@ -37,9 +37,9 @@ namespace ArcaneLink.Services.Servers
             IsActive = ServerInviteRules.IsActive(invite, now)
         };
 
-        public static ServerRoleResponse ToRoleResponse(
-            ServerRole role,
-            int directAssignmentCount = 0) => new()
+    public static ServerRoleResponse ToRoleResponse(
+        ServerRole role,
+        int directAssignmentCount = 0) => new()
         {
             Id = role.Id,
             ServerId = role.ServerId,
@@ -57,72 +57,71 @@ namespace ArcaneLink.Services.Servers
             PermissionSchemaVersion = ServerPermissionRegistry.SchemaVersion,
             PermissionCodes = GetPermissionCodes(role),
             Permissions = role.Permissions
-                .Where(x =>
-                    x.IsGranted &&
-                    ServerGovernanceIds.ServerPermissionIds.Contains(
-                        x.PermissionId))
-                .Select(x => new PermissionResponse
-                {
-                    Id = x.Permission.Id,
-                    Code = x.Permission.Code,
-                    Title = x.Permission.Title,
-                    Description = x.Permission.Description
-                })
-                .ToList(),
+            .Where(x =>
+                x.IsGranted &&
+                ServerGovernanceIds.ServerPermissionIds.Contains(
+                    x.PermissionId))
+            .Select(x => new PermissionResponse
+            {
+                Id = x.Permission.Id,
+                Code = x.Permission.Code,
+                Title = x.Permission.Title,
+                Description = x.Permission.Description
+            })
+            .ToList(),
             CreatedAt = role.CreatedAt,
             UpdatedAt = role.UpdatedAt
         };
 
-        private static IReadOnlyList<string> GetPermissionCodes(ServerRole role)
-        {
-            return ServerRolePermissionMaskResolver.TryResolve(
-                role,
-                LegacyPermissionAdapter,
-                out var permissionMask,
-                out _)
-                ? ServerPermissionRegistry.GetCodes(permissionMask)
-                : [];
-        }
-
-        public static ServerMemberRoleResponse ToMemberRoleResponse(ServerMemberRole assignment, string roleTitle) => new()
-        {
-            Id = assignment.Id,
-            ServerId = assignment.ServerId,
-            MemberId = assignment.MemberId,
-            RoleId = assignment.RoleId,
-            RoleTitle = roleTitle,
-            AssignedAt = assignment.AssignedAt,
-            RevokedAt = assignment.RevokedAt
-        };
-
-        public static ServerMemberResponse ToServerMemberResponse(ServerMember member) => new()
-        {
-            Id = member.Id,
-            ServerId = member.ServerId,
-            UserId = member.UserId,
-            StatusCode = member.Status.Code,
-            JoinedAt = member.JoinedAt,
-            LeftAt = member.LeftAt,
-            AddedByUserId = member.AddedByUserId,
-            CreatedAt = member.CreatedAt,
-            UpdatedAt = member.UpdatedAt,
-            Server = new ServerResponse
-            {
-                Id = member.Server.Id,
-                CreatedByUserId = member.Server.CreatedByUserId,
-                OwnerUserId = member.Server.OwnerUserId,
-                Slug = member.Server.Slug,
-                Title = member.Server.Title,
-                Description = member.Server.Description,
-                IconAssetId = member.Server.IconAssetId,
-                IconCropOffsetX = member.Server.IconCropOffsetX,
-                IconCropOffsetY = member.Server.IconCropOffsetY,
-                IconCropZoom = member.Server.IconCropZoom,
-                AccessMode = member.Server.AccessMode,
-                IsSystem = member.Server.IsSystem,
-                CreatedAt = member.Server.CreatedAt,
-                UpdatedAt = member.Server.UpdatedAt
-            }
-        };
+    private static IReadOnlyList<string> GetPermissionCodes(ServerRole role)
+    {
+        return ServerRolePermissionMaskResolver.TryResolve(
+            role,
+            LegacyPermissionAdapter,
+            out var permissionMask,
+            out _)
+            ? ServerPermissionRegistry.GetCodes(permissionMask)
+            : [];
     }
+
+    public static ServerMemberRoleResponse ToMemberRoleResponse(ServerMemberRole assignment, string roleTitle) => new()
+    {
+        Id = assignment.Id,
+        ServerId = assignment.ServerId,
+        MemberId = assignment.MemberId,
+        RoleId = assignment.RoleId,
+        RoleTitle = roleTitle,
+        AssignedAt = assignment.AssignedAt,
+        RevokedAt = assignment.RevokedAt
+    };
+
+    public static ServerMemberResponse ToServerMemberResponse(ServerMember member) => new()
+    {
+        Id = member.Id,
+        ServerId = member.ServerId,
+        UserId = member.UserId,
+        StatusCode = member.Status.Code,
+        JoinedAt = member.JoinedAt,
+        LeftAt = member.LeftAt,
+        AddedByUserId = member.AddedByUserId,
+        CreatedAt = member.CreatedAt,
+        UpdatedAt = member.UpdatedAt,
+        Server = new ServerResponse
+        {
+            Id = member.Server.Id,
+            CreatedByUserId = member.Server.CreatedByUserId,
+            OwnerUserId = member.Server.OwnerUserId,
+            Slug = member.Server.Slug,
+            Title = member.Server.Title,
+            Description = member.Server.Description,
+            IconAssetId = member.Server.IconAssetId,
+            IconCropOffsetX = member.Server.IconCropOffsetX,
+            IconCropOffsetY = member.Server.IconCropOffsetY,
+            IconCropZoom = member.Server.IconCropZoom,
+            AccessMode = member.Server.AccessMode,
+            IsSystem = member.Server.IsSystem,
+            CreatedAt = member.Server.CreatedAt,
+            UpdatedAt = member.Server.UpdatedAt
+        }
+    };
 }

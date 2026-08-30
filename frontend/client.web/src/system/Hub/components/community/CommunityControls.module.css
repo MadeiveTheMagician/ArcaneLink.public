@@ -36,7 +36,8 @@
 .communitySearch:focus-within {
   border-color: color-mix(in srgb, var(--theme-border-accent), transparent 18%);
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--theme-border-accent), transparent 34%),
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-border-accent), transparent 34%),
     0 0 22px color-mix(in srgb, var(--theme-glow), transparent 38%);
 }
 
@@ -178,7 +179,11 @@
   border: 1px solid var(--theme-border-soft);
   border-radius: 12px;
   background:
-    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--theme-accent), transparent 76%), transparent 40%),
+    radial-gradient(
+      circle at 18% 0%,
+      color-mix(in srgb, var(--theme-accent), transparent 76%),
+      transparent 40%
+    ),
     color-mix(in srgb, var(--theme-control-bg-strong), #000 12%);
   box-shadow:
     0 22px 48px rgba(0, 0, 0, 0.36),

@@ -1,14 +1,15 @@
-import type { InputHTMLAttributes, ReactNode } from 'react'
-import styles from './SelectedFrame.module.css'
+import type { InputHTMLAttributes, ReactNode } from 'react';
+
+import styles from './SelectedFrame.module.css';
 
 type SelectedFrameProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'checked' | 'children' | 'onChange' | 'type'
 > & {
-  checked: boolean
-  children: ReactNode
-  onChange: (checked: boolean) => void
-}
+  checked: boolean;
+  children: ReactNode;
+  onChange: (checked: boolean) => void;
+};
 
 export function SelectedFrame({
   checked,
@@ -30,5 +31,5 @@ export function SelectedFrame({
       />
       <span className={styles.content}>{children}</span>
     </label>
-  )
+  );
 }

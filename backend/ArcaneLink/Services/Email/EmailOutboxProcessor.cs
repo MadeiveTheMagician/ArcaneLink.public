@@ -32,18 +32,18 @@ public sealed class EmailOutboxProcessor
         IOptions<EmailOutboxOptions> options,
         ILogger<EmailOutboxProcessor> logger)
     {
-        _db = db;
-        _accountLifecycle = accountLifecycle;
-        _emailSender = emailSender;
-        _protector = dataProtection.CreateProtector(ProtectorPurpose);
-        _options = options.Value;
-        _logger = logger;
+        this._db = db;
+        this._accountLifecycle = accountLifecycle;
+        this._emailSender = emailSender;
+        this._protector = dataProtection.CreateProtector(ProtectorPurpose);
+        this._options = options.Value;
+        this._logger = logger;
     }
 
     public async Task<bool> ProcessOneAsync(
         CancellationToken cancellationToken = default)
     {
-        var claim = await TryClaimAsync(cancellationToken);
+        var claim = await this.TryClaimAsync(cancellationToken);
         if (claim is null)
         {
             return false;
@@ -53,8 +53,8 @@ public sealed class EmailOutboxProcessor
         {
             if (claim.Kind == EmailOutboxKinds.Send)
             {
-                var email = Unprotect<OutboxEmail>(claim.ProtectedPayload);
-                await _emailSender.SendAsync(
+                var email = this.Unprotect<OutboxEmail>(claim.ProtectedPayload);
+                await this._emailSender.SendAsync(
                     email.Recipient,
                     email.Subject,
                     email.TextBody,
@@ -64,14 +64,14 @@ public sealed class EmailOutboxProcessor
                 claim.LeaseId = null;
                 claim.LeaseExpiresAt = null;
                 claim.LastError = null;
-                await _db.SaveChangesAsync(cancellationToken);
+                await this._db.SaveChangesAsync(cancellationToken);
                 return true;
             }
 
             if (claim.Kind is EmailOutboxKinds.VerificationLookup or
                 EmailOutboxKinds.PasswordResetLookup)
             {
-                await PrepareLookupAsync(claim, cancellationToken);
+                await this.PrepareLookupAsync(claim, cancellationToken);
                 return true;
             }
 
@@ -83,7 +83,7 @@ public sealed class EmailOutboxProcessor
         }
         catch (Exception exception)
         {
-            await ScheduleRetryAsync(claim.Id, claim.LeaseId, exception, cancellationToken);
+            await this.ScheduleRetryAsync(claim.Id, claim.LeaseId, exception, cancellationToken);
             return true;
         }
     }
@@ -92,7 +92,7 @@ public sealed class EmailOutboxProcessor
         CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
-        var candidateId = await _db.EmailOutboxMessages
+        var candidateId = await this._db.EmailOutboxMessages
             .AsNoTracking()
             .Where(x => x.ProcessedAt == null &&
                         x.DeadLetteredAt == null &&
@@ -107,7 +107,7 @@ public sealed class EmailOutboxProcessor
         }
 
         var leaseId = Guid.NewGuid();
-        var affected = await _db.EmailOutboxMessages
+        var affected = await this._db.EmailOutboxMessages
             .Where(x => x.Id == candidateId.Value &&
                         x.ProcessedAt == null &&
                         x.DeadLetteredAt == null &&
@@ -118,7 +118,7 @@ public sealed class EmailOutboxProcessor
                     .SetProperty(x => x.LeaseId, leaseId)
                     .SetProperty(
                         x => x.LeaseExpiresAt,
-                        now.AddSeconds(_options.LeaseSeconds))
+                        now.AddSeconds(this._options.LeaseSeconds))
                     .SetProperty(x => x.AttemptCount, x => x.AttemptCount + 1),
                 cancellationToken);
         if (affected == 0)
@@ -126,7 +126,7 @@ public sealed class EmailOutboxProcessor
             return null;
         }
 
-        return await _db.EmailOutboxMessages.FirstAsync(
+        return await this._db.EmailOutboxMessages.FirstAsync(
             x => x.Id == candidateId.Value && x.LeaseId == leaseId,
             cancellationToken);
     }
@@ -135,11 +135,11 @@ public sealed class EmailOutboxProcessor
         EmailOutboxMessage claim,
         CancellationToken cancellationToken)
     {
-        await using var transaction = await _db.Database.BeginTransactionAsync(
+        await using var transaction = await this._db.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
-        var lookup = Unprotect<EmailLookupPayload>(claim.ProtectedPayload);
-        var email = await _accountLifecycle.PrepareDeferredEmailAsync(
+        var lookup = this.Unprotect<EmailLookupPayload>(claim.ProtectedPayload);
+        var email = await this._accountLifecycle.PrepareDeferredEmailAsync(
             claim.Kind,
             lookup.Lookup,
             cancellationToken);
@@ -152,7 +152,7 @@ public sealed class EmailOutboxProcessor
         else
         {
             claim.Kind = EmailOutboxKinds.Send;
-            claim.ProtectedPayload = Protect(email);
+            claim.ProtectedPayload = this.Protect(email);
             claim.AvailableAt = DateTime.UtcNow;
             claim.AttemptCount = 0;
             claim.LeaseId = null;
@@ -160,7 +160,7 @@ public sealed class EmailOutboxProcessor
             claim.LastError = null;
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await this._db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
 
@@ -170,8 +170,8 @@ public sealed class EmailOutboxProcessor
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _db.ChangeTracker.Clear();
-        var message = await _db.EmailOutboxMessages.FirstOrDefaultAsync(
+        this._db.ChangeTracker.Clear();
+        var message = await this._db.EmailOutboxMessages.FirstOrDefaultAsync(
             x => x.Id == messageId && x.LeaseId == leaseId,
             cancellationToken);
         if (message is null)
@@ -182,10 +182,10 @@ public sealed class EmailOutboxProcessor
         message.LeaseId = null;
         message.LeaseExpiresAt = null;
         message.LastError = LimitError(exception.GetType().Name);
-        if (message.AttemptCount >= _options.MaxAttempts)
+        if (message.AttemptCount >= this._options.MaxAttempts)
         {
             message.DeadLetteredAt = DateTime.UtcNow;
-            _logger.LogError(
+            this._logger.LogError(
                 "Email outbox message moved to dead letter. MessageId={MessageId} Kind={Kind} Attempts={Attempts}",
                 message.Id,
                 message.Kind,
@@ -195,25 +195,25 @@ public sealed class EmailOutboxProcessor
         {
             var delayMinutes = Math.Min(
                 Math.Pow(2, Math.Max(0, message.AttemptCount - 1)),
-                _options.MaxBackoffMinutes);
+                this._options.MaxBackoffMinutes);
             message.AvailableAt = DateTime.UtcNow.AddMinutes(delayMinutes);
-            _logger.LogWarning(
+            this._logger.LogWarning(
                 "Email outbox delivery failed and will retry. MessageId={MessageId} Kind={Kind} Attempt={Attempt}",
                 message.Id,
                 message.Kind,
                 message.AttemptCount);
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await this._db.SaveChangesAsync(cancellationToken);
     }
 
     private T Unprotect<T>(string protectedPayload) =>
         JsonSerializer.Deserialize<T>(
-            _protector.Unprotect(protectedPayload),
+            this._protector.Unprotect(protectedPayload),
             JsonOptions) ?? throw new InvalidOperationException("Email outbox payload is invalid.");
 
     private string Protect<T>(T payload) =>
-        _protector.Protect(JsonSerializer.Serialize(payload, JsonOptions));
+        this._protector.Protect(JsonSerializer.Serialize(payload, JsonOptions));
 
     private static string LimitError(string value) =>
         value.Length <= 512 ? value : value[..512];

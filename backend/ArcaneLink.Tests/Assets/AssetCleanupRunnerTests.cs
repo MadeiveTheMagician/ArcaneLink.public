@@ -158,10 +158,10 @@ public sealed class AssetCleanupRunnerTests
             TestAssetStorage storage,
             AssetCleanupRunner runner)
         {
-            _connection = connection;
-            Db = db;
-            Storage = storage;
-            Runner = runner;
+            this._connection = connection;
+            this.Db = db;
+            this.Storage = storage;
+            this.Runner = runner;
         }
 
         public AppDbContext Db { get; }
@@ -217,16 +217,16 @@ public sealed class AssetCleanupRunnerTests
                 PhysicalDeletedAt = physicalDeletedAt
             };
 
-            Storage.Bytes.Add(storageKey);
-            Db.Assets.Add(asset);
-            await Db.SaveChangesAsync();
+            this.Storage.Bytes.Add(storageKey);
+            this.Db.Assets.Add(asset);
+            await this.Db.SaveChangesAsync();
             return asset;
         }
 
         public async ValueTask DisposeAsync()
         {
-            await Db.DisposeAsync();
-            await _connection.DisposeAsync();
+            await this.Db.DisposeAsync();
+            await this._connection.DisposeAsync();
         }
     }
 
@@ -261,14 +261,14 @@ public sealed class AssetCleanupRunnerTests
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            DeleteCalls.Add(storageKey);
+            this.DeleteCalls.Add(storageKey);
 
-            if (FailDeletes.Contains(storageKey))
+            if (this.FailDeletes.Contains(storageKey))
             {
                 throw new IOException("Simulated storage delete failure.");
             }
 
-            Bytes.Remove(storageKey);
+            this.Bytes.Remove(storageKey);
             return Task.CompletedTask;
         }
     }

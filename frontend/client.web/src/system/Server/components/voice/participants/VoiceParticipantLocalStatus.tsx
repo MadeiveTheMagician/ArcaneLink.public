@@ -1,38 +1,39 @@
-import type { VoiceUserAudioSettings } from '../../../../shared/types/voicePlayback'
-import { SystemIcon, voiceCopy } from '../../../../shared'
-import type { VoiceParticipant } from '../../../hooks/voice/useVoiceChannel'
-import { getActiveVoiceParticipantAudioStatuses } from './voiceParticipantCards'
-import styles from './VoiceParticipantLocalStatus.module.css'
+import { SystemIcon, voiceCopy } from '../../../../shared';
+import type { VoiceUserAudioSettings } from '../../../../shared/types/voicePlayback';
+import type { VoiceParticipant } from '../../../hooks/voice/useVoiceChannel';
+import { getActiveVoiceParticipantAudioStatuses } from './voiceParticipantCards';
+
+import styles from './VoiceParticipantLocalStatus.module.css';
 
 type VoiceParticipantLocalStatusProps = {
-  participant: Pick<VoiceParticipant, 'isMuted' | 'isDeafened'>
-  settings?: VoiceUserAudioSettings
-  className?: string
-}
+  participant: Pick<VoiceParticipant, 'isMuted' | 'isDeafened'>;
+  settings?: VoiceUserAudioSettings;
+  className?: string;
+};
 
 export function VoiceParticipantLocalStatus({
   participant,
   settings,
-  className = '',
+  className = ''
 }: VoiceParticipantLocalStatusProps) {
   const participantStatuses =
-    getActiveVoiceParticipantAudioStatuses(participant)
+    getActiveVoiceParticipantAudioStatuses(participant);
 
   if (
     participantStatuses.length === 0 &&
     !settings?.isMuted &&
     settings?.isVideoHidden !== true
   ) {
-    return null
+    return null;
   }
 
   return (
     <span className={`${styles.statuses} ${className}`}>
       {participantStatuses.map((status) => {
-        const isMuted = status === 'muted'
+        const isMuted = status === 'muted';
         const label = isMuted
           ? voiceCopy.participantMenu.microphoneOff
-          : voiceCopy.participantMenu.soundOff
+          : voiceCopy.participantMenu.soundOff;
 
         return (
           <span
@@ -48,7 +49,7 @@ export function VoiceParticipantLocalStatus({
               tone={'danger'}
             />
           </span>
-        )
+        );
       })}
       {settings?.isMuted && (
         <span
@@ -71,5 +72,5 @@ export function VoiceParticipantLocalStatus({
         </span>
       )}
     </span>
-  )
+  );
 }

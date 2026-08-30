@@ -6,7 +6,8 @@
   border-radius: 10px;
   padding: 15px 16px 16px;
   background: color-mix(in srgb, var(--theme-control-bg), transparent 24%);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text), transparent 94%);
+  box-shadow: inset 0 1px 0
+    color-mix(in srgb, var(--color-text), transparent 94%);
 }
 
 .section + .section {
@@ -105,7 +106,8 @@
 .sectionContent {
   display: grid;
   gap: 14px;
-  border-top: 1px solid color-mix(in srgb, var(--theme-section-border), transparent 18%);
+  border-top: 1px solid
+    color-mix(in srgb, var(--theme-section-border), transparent 18%);
   padding: 14px 2px 0;
 }
 
@@ -173,7 +175,8 @@
 
 .control + .control,
 .toggleRow + .toggleRow {
-  border-top: 1px solid color-mix(in srgb, var(--theme-section-border), transparent 28%);
+  border-top: 1px solid
+    color-mix(in srgb, var(--theme-section-border), transparent 28%);
 }
 
 .control span {
@@ -279,7 +282,9 @@
   border-radius: 50%;
   background: var(--color-muted);
   content: '';
-  transition: transform 160ms ease, background 160ms ease;
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
 }
 
 .switch input:checked + span {
@@ -325,7 +330,11 @@
   border-radius: 7px;
   padding: 0 14px;
   color: rgb(255, 194, 204);
-  background: linear-gradient(135deg, rgba(108, 28, 46, 0.72), rgba(58, 10, 24, 0.72));
+  background: linear-gradient(
+    135deg,
+    rgba(108, 28, 46, 0.72),
+    rgba(58, 10, 24, 0.72)
+  );
   font: inherit;
   font-weight: 900;
 }

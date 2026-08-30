@@ -1,37 +1,39 @@
-import { useRef, useState } from 'react'
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
-import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes'
-import type { VoiceNoiseSuppressionTelemetry } from '../../../Server/hooks/voice/useVoiceChannel'
-import { settingsCopy } from '../../../shared/copy'
-import { SystemSelect } from '../../../shared/ui/SystemSelect'
+import { useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+
+import type { VoiceNoiseSuppressionTelemetry } from '../../../Server/hooks/voice/useVoiceChannel';
+import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes';
+import { settingsCopy } from '../../../shared/copy';
+import { SystemSelect } from '../../../shared/ui/SystemSelect';
+import { useVoiceSettings } from '../../../shared/voice/useVoiceSettings';
 import {
   getVoiceSettings,
-  isVoiceSpatialAudioAvailable,
   isPushToTalkKeyCodeAllowed,
-} from '../../../shared/voice/voiceSettings'
+  isVoiceSpatialAudioAvailable
+} from '../../../shared/voice/voiceSettings';
 import type {
   VoiceInputMode,
   VoiceSpatialAudioMode,
   VoiceThresholdMode,
-  VoiceTransmissionQualityProfile,
-} from '../../../shared/voice/voiceSettings'
-import { useVoiceSettings } from '../../../shared/voice/useVoiceSettings'
-import { SettingsSection, ToggleField } from './SystemSettingsControls'
-import sharedStyles from './SystemSettingsControls.module.css'
-import styles from './VoiceSettingsTab.module.css'
-import { VoiceConnectionDiagnosticsSettings } from './VoiceConnectionDiagnosticsSettings'
-import { VoiceInputSensitivityMeter } from './VoiceInputSensitivityMeter'
-import { VoiceProfilesPanel } from './VoiceProfilesPanel'
-import { useVoiceAudioDevices } from './useVoiceAudioDevices'
+  VoiceTransmissionQualityProfile
+} from '../../../shared/voice/voiceSettings';
+import { SettingsSection, ToggleField } from './SystemSettingsControls';
+import { VoiceConnectionDiagnosticsSettings } from './VoiceConnectionDiagnosticsSettings';
+import { VoiceInputSensitivityMeter } from './VoiceInputSensitivityMeter';
+import { VoiceProfilesPanel } from './VoiceProfilesPanel';
+import { useVoiceAudioDevices } from './useVoiceAudioDevices';
+
+import sharedStyles from './SystemSettingsControls.module.css';
+import styles from './VoiceSettingsTab.module.css';
 
 export function VoiceSettingsTab({
   diagnostics = null,
-  noiseSuppressionTelemetry = null,
+  noiseSuppressionTelemetry = null
 }: {
-  diagnostics?: VoiceConnectionDiagnostics | null
-  noiseSuppressionTelemetry?: VoiceNoiseSuppressionTelemetry | null
+  diagnostics?: VoiceConnectionDiagnostics | null;
+  noiseSuppressionTelemetry?: VoiceNoiseSuppressionTelemetry | null;
 }) {
-  const { settings, updateSettings, resetSettings } = useVoiceSettings()
+  const { settings, updateSettings, resetSettings } = useVoiceSettings();
   const {
     chooseAudioOutput,
     deviceListStatus,
@@ -51,70 +53,68 @@ export function VoiceSettingsTab({
     supportsAudioOutputRouting,
     supportsKeyboardPushToTalk,
     testSpeaker,
-    voiceProcessingCapabilities,
-  } = useVoiceAudioDevices(settings)
-  const [isCapturingKey, setIsCapturingKey] = useState(false)
-  const [keyCaptureStatus, setKeyCaptureStatus] = useState<string | null>(null)
-  const [outputSelectionError, setOutputSelectionError] = useState(false)
-  const keyCaptureButtonRef = useRef<HTMLButtonElement>(null)
+    voiceProcessingCapabilities
+  } = useVoiceAudioDevices(settings);
+  const [isCapturingKey, setIsCapturingKey] = useState(false);
+  const [keyCaptureStatus, setKeyCaptureStatus] = useState<string | null>(null);
+  const [outputSelectionError, setOutputSelectionError] = useState(false);
+  const keyCaptureButtonRef = useRef<HTMLButtonElement>(null);
 
   function beginKeyCapture() {
-    setKeyCaptureStatus(null)
-    setIsCapturingKey(true)
-    requestAnimationFrame(() => keyCaptureButtonRef.current?.focus())
+    setKeyCaptureStatus(null);
+    setIsCapturingKey(true);
+    requestAnimationFrame(() => keyCaptureButtonRef.current?.focus());
   }
 
-  function handlePushToTalkKey(
-    event: ReactKeyboardEvent<HTMLButtonElement>,
-  ) {
+  function handlePushToTalkKey(event: ReactKeyboardEvent<HTMLButtonElement>) {
     if (!isCapturingKey) {
-      return
+      return;
     }
 
-    event.preventDefault()
-    event.stopPropagation()
+    event.preventDefault();
+    event.stopPropagation();
 
     if (event.code === 'Escape') {
-      setIsCapturingKey(false)
-      setKeyCaptureStatus(settingsCopy.voice.keyCaptureCancelled)
-      return
+      setIsCapturingKey(false);
+      setKeyCaptureStatus(settingsCopy.voice.keyCaptureCancelled);
+      return;
     }
 
     if (event.code === 'Delete' || event.code === 'Backspace') {
-      updateSettings({ pushToTalkKeyCode: null })
-      setIsCapturingKey(false)
-      setKeyCaptureStatus(null)
-      return
+      updateSettings({ pushToTalkKeyCode: null });
+      setIsCapturingKey(false);
+      setKeyCaptureStatus(null);
+      return;
     }
 
     if (!isPushToTalkKeyCodeAllowed(event.code, event)) {
-      setKeyCaptureStatus(settingsCopy.voice.keyCaptureInvalid)
-      return
+      setKeyCaptureStatus(settingsCopy.voice.keyCaptureInvalid);
+      return;
     }
 
-    updateSettings({ pushToTalkKeyCode: event.code })
-    setIsCapturingKey(false)
-    setKeyCaptureStatus(null)
+    updateSettings({ pushToTalkKeyCode: event.code });
+    setIsCapturingKey(false);
+    setKeyCaptureStatus(null);
   }
 
   async function selectAudioOutput() {
-    setOutputSelectionError(false)
-    const result = await chooseAudioOutput()
+    setOutputSelectionError(false);
+    const result = await chooseAudioOutput();
     if (result.status === 'selected') {
-      updateSettings({ outputDeviceId: result.device.deviceId })
-      return
+      updateSettings({ outputDeviceId: result.device.deviceId });
+      return;
     }
 
-    setOutputSelectionError(true)
+    setOutputSelectionError(true);
   }
 
   async function testAudioOutput() {
-    const result = await testSpeaker()
+    const result = await testSpeaker();
     if (
       result?.didFallback &&
       getVoiceSettings().outputDeviceId === result.requestedOutputDeviceId
     ) {
-      updateSettings({ outputDeviceId: 'default' })
+      updateSettings({ outputDeviceId: 'default' });
     }
   }
 
@@ -136,9 +136,9 @@ export function VoiceSettingsTab({
             emptyLabel={settingsCopy.voice.inputDeviceMissing}
             disabled={deviceListStatus === 'unsupported'}
             onChange={(inputDeviceId) => {
-              updateSettings({ inputDeviceId })
+              updateSettings({ inputDeviceId });
               if (microphoneTestStatus === 'running') {
-                void switchMicrophoneTestInput(inputDeviceId)
+                void switchMicrophoneTestInput(inputDeviceId);
               }
             }}
           />
@@ -150,9 +150,7 @@ export function VoiceSettingsTab({
             fallbackLabel={settingsCopy.voice.outputDeviceFallback}
             emptyLabel={settingsCopy.voice.outputDeviceMissing}
             disabled={!supportsAudioOutputRouting}
-            onChange={(outputDeviceId) =>
-              updateSettings({ outputDeviceId })
-            }
+            onChange={(outputDeviceId) => updateSettings({ outputDeviceId })}
           />
         </div>
 
@@ -230,9 +228,9 @@ export function VoiceSettingsTab({
               disabled={microphoneTestStatus === 'starting'}
               onClick={() => {
                 if (microphoneTestStatus === 'running') {
-                  stopMicrophoneTest()
+                  stopMicrophoneTest();
                 } else {
-                  void startMicrophoneTest()
+                  void startMicrophoneTest();
                 }
               }}
             >
@@ -281,7 +279,7 @@ export function VoiceSettingsTab({
             label={settingsCopy.voice.echoCancellation}
             description={getProcessingDescription(
               settingsCopy.voice.echoCancellationDescription,
-              voiceProcessingCapabilities.echoCancellation,
+              voiceProcessingCapabilities.echoCancellation
             )}
             checked={settings.echoCancellation}
             disabled={!voiceProcessingCapabilities.echoCancellation}
@@ -293,7 +291,7 @@ export function VoiceSettingsTab({
             label={settingsCopy.voice.noiseSuppression}
             description={getProcessingDescription(
               settingsCopy.voice.noiseSuppressionDescription,
-              voiceProcessingCapabilities.noiseSuppression,
+              voiceProcessingCapabilities.noiseSuppression
             )}
             checked={settings.noiseSuppression}
             disabled={!voiceProcessingCapabilities.noiseSuppression}
@@ -317,13 +315,11 @@ export function VoiceSettingsTab({
             label={settingsCopy.voice.autoGainControl}
             description={getProcessingDescription(
               settingsCopy.voice.autoGainControlDescription,
-              voiceProcessingCapabilities.autoGainControl,
+              voiceProcessingCapabilities.autoGainControl
             )}
             checked={settings.autoGainControl}
             disabled={!voiceProcessingCapabilities.autoGainControl}
-            onChange={(autoGainControl) =>
-              updateSettings({ autoGainControl })
-            }
+            onChange={(autoGainControl) => updateSettings({ autoGainControl })}
           />
         </div>
       </SettingsSection>
@@ -341,24 +337,20 @@ export function VoiceSettingsTab({
             {
               value: 'off',
               label: settingsCopy.voice.spatialAudioOff,
-              description: settingsCopy.voice.spatialAudioOffDescription,
+              description: settingsCopy.voice.spatialAudioOffDescription
             },
             {
               value: 'balanced',
               label: settingsCopy.voice.spatialAudioBalanced,
-              description:
-                settingsCopy.voice.spatialAudioBalancedDescription,
+              description: settingsCopy.voice.spatialAudioBalancedDescription
             },
             {
               value: 'immersive',
               label: settingsCopy.voice.spatialAudioImmersive,
-              description:
-                settingsCopy.voice.spatialAudioImmersiveDescription,
-            },
+              description: settingsCopy.voice.spatialAudioImmersiveDescription
+            }
           ]}
-          onChange={(spatialAudioMode) =>
-            updateSettings({ spatialAudioMode })
-          }
+          onChange={(spatialAudioMode) => updateSettings({ spatialAudioMode })}
         />
       </SettingsSection>
 
@@ -374,23 +366,23 @@ export function VoiceSettingsTab({
             {
               value: 'automatic',
               label: settingsCopy.voice.qualityAutomatic,
-              description: settingsCopy.voice.qualityAutomaticDescription,
+              description: settingsCopy.voice.qualityAutomaticDescription
             },
             {
               value: 'data-saver',
               label: settingsCopy.voice.qualityDataSaver,
-              description: settingsCopy.voice.qualityDataSaverDescription,
+              description: settingsCopy.voice.qualityDataSaverDescription
             },
             {
               value: 'balanced',
               label: settingsCopy.voice.qualityBalanced,
-              description: settingsCopy.voice.qualityBalancedDescription,
+              description: settingsCopy.voice.qualityBalancedDescription
             },
             {
               value: 'high',
               label: settingsCopy.voice.qualityHigh,
-              description: settingsCopy.voice.qualityHighDescription,
-            },
+              description: settingsCopy.voice.qualityHighDescription
+            }
           ]}
           onChange={(qualityProfile) => updateSettings({ qualityProfile })}
         />
@@ -424,16 +416,14 @@ export function VoiceSettingsTab({
             {
               value: 'voice-activity',
               label: settingsCopy.voice.inputModeVoiceActivity,
-              description:
-                settingsCopy.voice.inputModeVoiceActivityDescription,
+              description: settingsCopy.voice.inputModeVoiceActivityDescription
             },
             {
               value: 'push-to-talk',
               label: settingsCopy.voice.inputModePushToTalk,
-              description:
-                settingsCopy.voice.inputModePushToTalkDescription,
-              disabled: !supportsKeyboardPushToTalk,
-            },
+              description: settingsCopy.voice.inputModePushToTalkDescription,
+              disabled: !supportsKeyboardPushToTalk
+            }
           ]}
           onChange={(inputMode) => updateSettings({ inputMode })}
         />
@@ -471,9 +461,7 @@ export function VoiceSettingsTab({
                 <button
                   className={sharedStyles.secondaryAction}
                   type="button"
-                  onClick={() =>
-                    updateSettings({ pushToTalkKeyCode: null })
-                  }
+                  onClick={() => updateSettings({ pushToTalkKeyCode: null })}
                 >
                   {settingsCopy.voice.clearPushToTalkKey}
                 </button>
@@ -528,9 +516,7 @@ export function VoiceSettingsTab({
           />
           <ToggleField
             label={settingsCopy.voice.warnSpeakingWhileMuted}
-            description={
-              settingsCopy.voice.warnSpeakingWhileMutedDescription
-            }
+            description={settingsCopy.voice.warnSpeakingWhileMutedDescription}
             checked={settings.warnSpeakingWhileMuted}
             onChange={(warnSpeakingWhileMuted) =>
               updateSettings({ warnSpeakingWhileMuted })
@@ -546,41 +532,41 @@ export function VoiceSettingsTab({
         className={sharedStyles.secondaryAction}
         type="button"
         onClick={() => {
-          stopMicrophoneTest()
-          resetSettings()
+          stopMicrophoneTest();
+          resetSettings();
         }}
       >
         {settingsCopy.actions.resetVoice}
       </button>
     </>
-  )
+  );
 }
 
 type ChoiceOption<TValue extends string> = {
-  value: TValue
-  label: string
-  description: string
-  disabled?: boolean
-}
+  value: TValue;
+  label: string;
+  description: string;
+  disabled?: boolean;
+};
 
 function ChoiceGroup<
   TValue extends
     | VoiceInputMode
     | VoiceSpatialAudioMode
     | VoiceThresholdMode
-    | VoiceTransmissionQualityProfile,
+    | VoiceTransmissionQualityProfile
 >({
   label,
   name,
   value,
   options,
-  onChange,
+  onChange
 }: {
-  label: string
-  name: string
-  value: TValue
-  options: readonly ChoiceOption<TValue>[]
-  onChange: (value: TValue) => void
+  label: string;
+  name: string;
+  value: TValue;
+  options: readonly ChoiceOption<TValue>[];
+  onChange: (value: TValue) => void;
 }) {
   return (
     <fieldset className={styles.choiceFieldset} aria-label={label}>
@@ -608,7 +594,7 @@ function ChoiceGroup<
         ))}
       </div>
     </fieldset>
-  )
+  );
 }
 
 function DeviceSelect({
@@ -619,19 +605,19 @@ function DeviceSelect({
   fallbackLabel,
   emptyLabel,
   disabled,
-  onChange,
+  onChange
 }: {
-  id: string
-  label: string
-  value: string
-  devices: readonly MediaDeviceInfo[]
-  fallbackLabel: string
-  emptyLabel: string
-  disabled: boolean
-  onChange: (value: string) => void
+  id: string;
+  label: string;
+  value: string;
+  devices: readonly MediaDeviceInfo[];
+  fallbackLabel: string;
+  emptyLabel: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
 }) {
   const isSelectedDeviceAvailable =
-    value === 'default' || devices.some((device) => device.deviceId === value)
+    value === 'default' || devices.some((device) => device.deviceId === value);
 
   return (
     <label className={styles.deviceField} htmlFor={id}>
@@ -658,7 +644,7 @@ function DeviceSelect({
       </SystemSelect>
       {devices.length === 0 ? <small>{emptyLabel}</small> : null}
     </label>
-  )
+  );
 }
 
 function RangeField({
@@ -670,17 +656,17 @@ function RangeField({
   max,
   step,
   valueLabel,
-  onChange,
+  onChange
 }: {
-  id: string
-  label: string
-  description: string
-  value: number
-  min: number
-  max: number
-  step: number
-  valueLabel: string
-  onChange: (value: number) => void
+  id: string;
+  label: string;
+  description: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  valueLabel: string;
+  onChange: (value: number) => void;
 }) {
   return (
     <label className={styles.rangeField} htmlFor={id}>
@@ -699,43 +685,43 @@ function RangeField({
         onChange={(event) => onChange(Number(event.target.value))}
       />
     </label>
-  )
+  );
 }
 
 function formatKeyboardCode(code: string) {
   if (/^Key[A-Z]$/.test(code)) {
-    return code.slice(3)
+    return code.slice(3);
   }
 
   if (/^Digit[0-9]$/.test(code)) {
-    return code.slice(5)
+    return code.slice(5);
   }
 
-  return code
+  return code;
 }
 
 function getProcessingDescription(description: string, isSupported: boolean) {
   return isSupported
     ? description
-    : `${description} ${settingsCopy.voice.processingUnavailable}`
+    : `${description} ${settingsCopy.voice.processingUnavailable}`;
 }
 
 function NoiseSuppressionRuntimeStatus({
   enabled,
-  telemetry,
+  telemetry
 }: {
-  enabled: boolean
-  telemetry: VoiceNoiseSuppressionTelemetry | null
+  enabled: boolean;
+  telemetry: VoiceNoiseSuppressionTelemetry | null;
 }) {
   if (!enabled) {
-    return null
+    return null;
   }
 
-  const status = resolveNoiseSuppressionRuntimeStatus(telemetry)
+  const status = resolveNoiseSuppressionRuntimeStatus(telemetry);
   const isDegraded =
     telemetry?.health === 'degraded' ||
     telemetry?.health === 'failed' ||
-    telemetry?.lifecycle === 'fallback'
+    telemetry?.lifecycle === 'fallback';
 
   return (
     <aside
@@ -760,10 +746,7 @@ function NoiseSuppressionRuntimeStatus({
           />
           <RuntimeMetric
             label={settingsCopy.voice.mlNoiseRuntimeProcessing}
-            value={formatRuntimeMetric(
-              telemetry.averageProcessingTimeMs,
-              'мс',
-            )}
+            value={formatRuntimeMetric(telemetry.averageProcessingTimeMs, 'мс')}
           />
           <RuntimeMetric
             label={settingsCopy.voice.mlNoiseRuntimeCpu}
@@ -776,7 +759,7 @@ function NoiseSuppressionRuntimeStatus({
         </dl>
       ) : null}
     </aside>
-  )
+  );
 }
 
 function RuntimeMetric({ label, value }: { label: string; value: string }) {
@@ -785,28 +768,28 @@ function RuntimeMetric({ label, value }: { label: string; value: string }) {
       <dt>{label}</dt>
       <dd>{value}</dd>
     </div>
-  )
+  );
 }
 
 function resolveNoiseSuppressionRuntimeStatus(
-  telemetry: VoiceNoiseSuppressionTelemetry | null,
+  telemetry: VoiceNoiseSuppressionTelemetry | null
 ) {
   if (!telemetry) {
-    return settingsCopy.voice.mlNoiseRuntimeIdle
+    return settingsCopy.voice.mlNoiseRuntimeIdle;
   }
   if (telemetry.lifecycle === 'initializing') {
-    return settingsCopy.voice.mlNoiseRuntimeInitializing
+    return settingsCopy.voice.mlNoiseRuntimeInitializing;
   }
   if (telemetry.lifecycle === 'active' && telemetry.activeMode === 'ml') {
-    return settingsCopy.voice.mlNoiseRuntimeActive
+    return settingsCopy.voice.mlNoiseRuntimeActive;
   }
   if (telemetry.activeMode === 'native') {
-    return settingsCopy.voice.mlNoiseRuntimeFallback
+    return settingsCopy.voice.mlNoiseRuntimeFallback;
   }
 
-  return settingsCopy.voice.mlNoiseRuntimeFailed
+  return settingsCopy.voice.mlNoiseRuntimeFailed;
 }
 
 function formatRuntimeMetric(value: number | null, unit: string) {
-  return value === null ? '—' : `${Math.round(value * 10) / 10} ${unit}`
+  return value === null ? '—' : `${Math.round(value * 10) / 10} ${unit}`;
 }

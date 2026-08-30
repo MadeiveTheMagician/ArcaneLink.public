@@ -3,31 +3,33 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
-  useState,
-} from 'react'
-import { createPortal } from 'react-dom'
-import type { ServerMemberDetailsResponse } from '../../../../shared/types'
-import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel'
-import { SystemIcon } from '../../../shared'
-import {
-  getVoiceParticipantMember,
-  VoiceParticipantAvatar,
-} from '../voice/participants/VoiceParticipantIdentity'
-import styles from './ServerTooltip.module.css'
+  useState
+} from 'react';
+import { createPortal } from 'react-dom';
 
-const showDelayMs = 0
-const viewportGutter = 8
-const anchorGap = 10
-const visibleParticipantLimit = 4
+import type { ServerMemberDetailsResponse } from '../../../../shared/types';
+import { SystemIcon } from '../../../shared';
+import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel';
+import {
+  VoiceParticipantAvatar,
+  getVoiceParticipantMember
+} from '../voice/participants/VoiceParticipantIdentity';
+
+import styles from './ServerTooltip.module.css';
+
+const showDelayMs = 0;
+const viewportGutter = 8;
+const anchorGap = 10;
+const visibleParticipantLimit = 4;
 
 type ServerTooltipProps = {
-  anchorRef: RefObject<HTMLElement | null>
-  id: string
-  isOpen: boolean
-  members: ServerMemberDetailsResponse[]
-  participants: VoiceParticipant[]
-  serverTitle: string
-}
+  anchorRef: RefObject<HTMLElement | null>;
+  id: string;
+  isOpen: boolean;
+  members: ServerMemberDetailsResponse[];
+  participants: VoiceParticipant[];
+  serverTitle: string;
+};
 
 export function ServerTooltip({
   anchorRef,
@@ -35,46 +37,47 @@ export function ServerTooltip({
   isOpen,
   members,
   participants,
-  serverTitle,
+  serverTitle
 }: ServerTooltipProps) {
-  const tooltipRef = useRef<HTMLDivElement | null>(null)
-  const [isVisible, setIsVisible] = useState(false)
-  const [position, setPosition] = useState({ left: 0, top: 0 })
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [position, setPosition] = useState({ left: 0, top: 0 });
 
   useEffect(() => {
     if (!isOpen) {
-      setIsVisible(false)
-      return
+      setIsVisible(false);
+      return;
     }
 
-    const showTimer = window.setTimeout(() => setIsVisible(true), showDelayMs)
-    return () => window.clearTimeout(showTimer)
-  }, [isOpen])
+    const showTimer = window.setTimeout(() => setIsVisible(true), showDelayMs);
+    return () => window.clearTimeout(showTimer);
+  }, [isOpen]);
 
   useLayoutEffect(() => {
-    if (!isVisible) return
+    if (!isVisible) return;
 
-    const anchor = anchorRef.current
-    const tooltip = tooltipRef.current
-    if (!anchor || !tooltip) return
+    const anchor = anchorRef.current;
+    const tooltip = tooltipRef.current;
+    if (!anchor || !tooltip) return;
 
-    const anchorRect = anchor.getBoundingClientRect()
-    const tooltipHeight = tooltip.offsetHeight
-    const preferredTop = anchorRect.top + (anchorRect.height - tooltipHeight) / 2
+    const anchorRect = anchor.getBoundingClientRect();
+    const tooltipHeight = tooltip.offsetHeight;
+    const preferredTop =
+      anchorRect.top + (anchorRect.height - tooltipHeight) / 2;
 
     setPosition({
       left: anchorRect.right + anchorGap,
       top: Math.min(
         window.innerHeight - tooltipHeight - viewportGutter,
-        Math.max(viewportGutter, preferredTop),
-      ),
-    })
-  }, [anchorRef, isVisible, participants.length, serverTitle])
+        Math.max(viewportGutter, preferredTop)
+      )
+    });
+  }, [anchorRef, isVisible, participants.length, serverTitle]);
 
-  if (!isVisible) return null
+  if (!isVisible) return null;
 
-  const visibleParticipants = participants.slice(0, visibleParticipantLimit)
-  const hasOverflow = participants.length > visibleParticipantLimit
+  const visibleParticipants = participants.slice(0, visibleParticipantLimit);
+  const hasOverflow = participants.length > visibleParticipantLimit;
 
   return createPortal(
     <div
@@ -108,6 +111,6 @@ export function ServerTooltip({
         </span>
       )}
     </div>,
-    document.body,
-  )
+    document.body
+  );
 }

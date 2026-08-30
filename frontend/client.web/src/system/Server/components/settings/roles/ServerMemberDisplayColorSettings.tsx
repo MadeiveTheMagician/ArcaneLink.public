@@ -1,111 +1,119 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react';
 
-import { ApiError } from '../../../../../shared/api/api'
-import type { ServerMemberDisplayColorResponse } from '../../../../../shared/types'
-import { SystemIcon, SystemSelect } from '../../../../shared'
+import { ApiError } from '../../../../../shared/api/api';
+import type { ServerMemberDisplayColorResponse } from '../../../../../shared/types';
+import { SystemIcon, SystemSelect } from '../../../../shared';
 import {
   loadServerMemberDisplayColor,
-  updateServerMemberDisplayColor,
-} from './serverRoleSettingsApi'
+  updateServerMemberDisplayColor
+} from './serverRoleSettingsApi';
 import {
   formatDisplayColorSelection,
-  parseDisplayColorSelection,
-} from './serverRoleSettingsModel'
-import styles from './ServerRolesSettings.module.css'
+  parseDisplayColorSelection
+} from './serverRoleSettingsModel';
+
+import styles from './ServerRolesSettings.module.css';
 
 type ServerMemberDisplayColorSettingsProps = {
-  accessToken: string
-  serverId: string
-}
+  accessToken: string;
+  serverId: string;
+};
 
 export function ServerMemberDisplayColorSettings({
   accessToken,
-  serverId,
+  serverId
 }: ServerMemberDisplayColorSettingsProps) {
   const [settings, setSettings] =
-    useState<ServerMemberDisplayColorResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+    useState<ServerMemberDisplayColorResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const apiContext = useMemo(
     () => ({ accessToken, serverId }),
-    [accessToken, serverId],
-  )
+    [accessToken, serverId]
+  );
 
   useEffect(() => {
-    let isCancelled = false
-    setIsLoading(true)
-    setError(null)
-    setNotice(null)
+    let isCancelled = false;
+    setIsLoading(true);
+    setError(null);
+    setNotice(null);
 
     void loadServerMemberDisplayColor(apiContext)
       .then((response) => {
         if (!isCancelled) {
-          setSettings(response)
+          setSettings(response);
         }
       })
       .catch(() => {
         if (!isCancelled) {
-          setSettings(null)
-          setError('Не удалось загрузить настройку цвета имени.')
+          setSettings(null);
+          setError('Не удалось загрузить настройку цвета имени.');
         }
       })
       .finally(() => {
         if (!isCancelled) {
-          setIsLoading(false)
+          setIsLoading(false);
         }
-      })
+      });
 
     return () => {
-      isCancelled = true
-    }
-  }, [apiContext])
+      isCancelled = true;
+    };
+  }, [apiContext]);
 
   const selectionValue = settings
     ? formatDisplayColorSelection(settings.mode, settings.roleId)
-    : 'default'
+    : 'default';
 
   async function selectDisplayColor(value: string) {
     if (!settings || isSaving) {
-      return
+      return;
     }
 
-    const selection = parseDisplayColorSelection(value)
+    const selection = parseDisplayColorSelection(value);
     if (!selection) {
-      return
+      return;
     }
 
-    setIsSaving(true)
-    setError(null)
-    setNotice(null)
+    setIsSaving(true);
+    setError(null);
+    setNotice(null);
 
     try {
       const response = await updateServerMemberDisplayColor(
         apiContext,
         settings,
-        selection,
-      )
-      setSettings(response)
-      setNotice('Цвет имени обновлён.')
+        selection
+      );
+      setSettings(response);
+      setNotice('Цвет имени обновлён.');
     } catch (caughtError) {
-      if (getApiErrorCode(caughtError) === 'server_member_display_color_conflict') {
+      if (
+        getApiErrorCode(caughtError) === 'server_member_display_color_conflict'
+      ) {
         try {
-          setSettings(await loadServerMemberDisplayColor(apiContext))
+          setSettings(await loadServerMemberDisplayColor(apiContext));
         } catch {
-          setSettings(null)
+          setSettings(null);
         }
-        setError('Состав ваших ролей изменился. Настройка обновлена — выберите цвет снова.')
+        setError(
+          'Состав ваших ролей изменился. Настройка обновлена — выберите цвет снова.'
+        );
       } else {
-        setError('Не удалось изменить цвет имени.')
+        setError('Не удалось изменить цвет имени.');
       }
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   return (
-    <section className={styles.displayColorSettings} aria-labelledby="server-display-color-title">
+    <section
+      className={styles.displayColorSettings}
+      aria-labelledby="server-display-color-title"
+    >
       <span
         className={styles.displayColorSwatch}
         style={{ backgroundColor: settings?.resolvedColor ?? 'transparent' }}
@@ -125,9 +133,7 @@ export function ServerMemberDisplayColorSettings({
           aria-label="Цвет имени на сервере"
           value={selectionValue}
           disabled={isLoading || isSaving || !settings}
-          onValueChange={(value) =>
-            void selectDisplayColor(value)
-          }
+          onValueChange={(value) => void selectDisplayColor(value)}
         >
           <option value="auto">Автоматически</option>
           <option value="default">Системный цвет</option>
@@ -145,7 +151,9 @@ export function ServerMemberDisplayColorSettings({
         </strong>
       </span>
       {isLoading ? (
-        <small className={styles.displayColorStatus}>Загружаем настройку…</small>
+        <small className={styles.displayColorStatus}>
+          Загружаем настройку…
+        </small>
       ) : error ? (
         <small className={styles.displayColorError} role="alert">
           {error}
@@ -156,15 +164,19 @@ export function ServerMemberDisplayColorSettings({
         </small>
       ) : null}
     </section>
-  )
+  );
 }
 
 function getApiErrorCode(error: unknown) {
-  if (!(error instanceof ApiError) || !error.data || typeof error.data !== 'object') {
-    return null
+  if (
+    !(error instanceof ApiError) ||
+    !error.data ||
+    typeof error.data !== 'object'
+  ) {
+    return null;
   }
 
   return 'code' in error.data && typeof error.data.code === 'string'
     ? error.data.code
-    : null
+    : null;
 }

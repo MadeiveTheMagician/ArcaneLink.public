@@ -1,57 +1,61 @@
-import { useState } from 'react'
-import type { PrivateSpaceResponse } from '../../../../shared/types'
-import type { PrivateCallState } from '../../../Server/hooks/voice/voiceChannelTypes'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import { PrivateSpaceAvatar } from '../direct-messages/DirectMessageAvatar'
-import { getPrivateSpaceTitle } from '../direct-messages/directMessageModel'
-import { privateCallCopy } from './privateCallCopy.ru'
-import styles from './PrivateCallNotificationStack.module.css'
+import { useState } from 'react';
+
+import type { PrivateSpaceResponse } from '../../../../shared/types';
+import type { PrivateCallState } from '../../../Server/hooks/voice/voiceChannelTypes';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
+import { PrivateSpaceAvatar } from '../direct-messages/DirectMessageAvatar';
+import { getPrivateSpaceTitle } from '../direct-messages/directMessageModel';
+import { privateCallCopy } from './privateCallCopy.ru';
+
+import styles from './PrivateCallNotificationStack.module.css';
 
 type PrivateCallNotificationStackProps = {
-  calls: PrivateCallState[]
-  currentUserId: string
-  privateSpaces: PrivateSpaceResponse[]
-  onAccept: (call: PrivateCallState, title: string) => Promise<void>
-  onDecline: (call: PrivateCallState) => Promise<boolean>
-}
+  calls: PrivateCallState[];
+  currentUserId: string;
+  privateSpaces: PrivateSpaceResponse[];
+  onAccept: (call: PrivateCallState, title: string) => Promise<void>;
+  onDecline: (call: PrivateCallState) => Promise<boolean>;
+};
 
 export function PrivateCallNotificationStack({
   calls,
   currentUserId,
   privateSpaces,
   onAccept,
-  onDecline,
+  onDecline
 }: PrivateCallNotificationStackProps) {
   const [pendingActionByCallId, setPendingActionByCallId] = useState<
     Record<string, 'accept' | 'decline'>
-  >({})
-  const [errorCallIds, setErrorCallIds] = useState<Set<string>>(() => new Set())
+  >({});
+  const [errorCallIds, setErrorCallIds] = useState<Set<string>>(
+    () => new Set()
+  );
 
-  if (!calls.length) return null
+  if (!calls.length) return null;
 
   async function runAction(
     call: PrivateCallState,
     action: 'accept' | 'decline',
-    title: string,
+    title: string
   ) {
-    const callId = call.callId.toLowerCase()
-    setPendingActionByCallId((current) => ({ ...current, [callId]: action }))
+    const callId = call.callId.toLowerCase();
+    setPendingActionByCallId((current) => ({ ...current, [callId]: action }));
     setErrorCallIds((current) => {
-      const next = new Set(current)
-      next.delete(callId)
-      return next
-    })
+      const next = new Set(current);
+      next.delete(callId);
+      return next;
+    });
     try {
-      if (action === 'accept') await onAccept(call, title)
-      else if (!(await onDecline(call))) throw new Error('decline-failed')
+      if (action === 'accept') await onAccept(call, title);
+      else if (!(await onDecline(call))) throw new Error('decline-failed');
     } catch {
-      setErrorCallIds((current) => new Set(current).add(callId))
+      setErrorCallIds((current) => new Set(current).add(callId));
     } finally {
       setPendingActionByCallId((current) => {
-        const next = { ...current }
-        delete next[callId]
-        return next
-      })
+        const next = { ...current };
+        delete next[callId];
+        return next;
+      });
     }
   }
 
@@ -63,13 +67,13 @@ export function PrivateCallNotificationStack({
     >
       {calls.map((call) => {
         const space = privateSpaces.find(
-          (item) => item.spaceId.toLowerCase() === call.spaceId.toLowerCase(),
-        )
+          (item) => item.spaceId.toLowerCase() === call.spaceId.toLowerCase()
+        );
         const title = space
           ? getPrivateSpaceTitle(space, currentUserId)
-          : call.caller.displayName
-        const callId = call.callId.toLowerCase()
-        const pendingAction = pendingActionByCallId[callId]
+          : call.caller.displayName;
+        const callId = call.callId.toLowerCase();
+        const pendingAction = pendingActionByCallId[callId];
 
         return (
           <article className={styles.card} key={call.callId}>
@@ -97,7 +101,9 @@ export function PrivateCallNotificationStack({
                   : privateCallCopy.directDescription}
               </p>
               {errorCallIds.has(callId) ? (
-                <span className={styles.error}>{privateCallCopy.unavailable}</span>
+                <span className={styles.error}>
+                  {privateCallCopy.unavailable}
+                </span>
               ) : null}
               <div className={styles.actions}>
                 <button
@@ -123,8 +129,8 @@ export function PrivateCallNotificationStack({
               </div>
             </div>
           </article>
-        )
+        );
       })}
     </aside>
-  )
+  );
 }

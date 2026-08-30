@@ -1,35 +1,37 @@
-import type { MouseEvent as ReactMouseEvent } from 'react'
-import { voiceCopy } from '../../../../shared/copy/voice.ru.ts'
-import type { VoiceParticipant } from '../../../hooks/voice/useVoiceChannel'
-import type { VoiceUserAudioSettings } from '../../../../shared/types/voicePlayback'
-import { normalizeVoiceUserId } from '../../../../shared/voice/voicePlaybackPreferences'
-import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes'
-import { VoiceParticipantCardView } from './VoiceParticipantCardView'
-import { isVoiceWorkspaceCardVisible } from './voiceWorkspaceViewPreferences'
-import styles from './VoiceParticipants.module.css'
+import type { MouseEvent as ReactMouseEvent } from 'react';
+
+import { voiceCopy } from '../../../../shared/copy/voice.ru.ts';
+import type { VoiceUserAudioSettings } from '../../../../shared/types/voicePlayback';
+import { normalizeVoiceUserId } from '../../../../shared/voice/voicePlaybackPreferences';
+import type { VoiceParticipant } from '../../../hooks/voice/useVoiceChannel';
+import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes';
+import { VoiceParticipantCardView } from './VoiceParticipantCardView';
+import { isVoiceWorkspaceCardVisible } from './voiceWorkspaceViewPreferences';
+
+import styles from './VoiceParticipants.module.css';
 
 type VoiceParticipantsGridProps = {
-  participantCards: VoiceParticipantCard[]
-  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  participantCount: number
-  title: string
-  joinSummary: string
-  isConnected: boolean
-  canJoin: boolean
-  showParticipantsWithoutVideo: boolean
-  showSelfCamera: boolean
-  expandedParticipantId: string | null
-  avatarAccentsByParticipantId: Record<string, string>
-  onExpandedParticipantChange: (participantId: string | null) => void
-  onMobileChromeVisibilityChange: (isVisible: boolean) => void
-  onToggleMobileChrome: () => void
-  onAccentChange: (participantId: string, accent: string) => void
+  participantCards: VoiceParticipantCard[];
+  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  participantCount: number;
+  title: string;
+  joinSummary: string;
+  isConnected: boolean;
+  canJoin: boolean;
+  showParticipantsWithoutVideo: boolean;
+  showSelfCamera: boolean;
+  expandedParticipantId: string | null;
+  avatarAccentsByParticipantId: Record<string, string>;
+  onExpandedParticipantChange: (participantId: string | null) => void;
+  onMobileChromeVisibilityChange: (isVisible: boolean) => void;
+  onToggleMobileChrome: () => void;
+  onAccentChange: (participantId: string, accent: string) => void;
   onOpenContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
-    participant: VoiceParticipant,
-  ) => void
-  onJoin: () => void
-}
+    participant: VoiceParticipant
+  ) => void;
+  onJoin: () => void;
+};
 
 export function VoiceParticipantsGrid({
   participantCards,
@@ -48,41 +50,39 @@ export function VoiceParticipantsGrid({
   onToggleMobileChrome,
   onAccentChange,
   onOpenContextMenu,
-  onJoin,
+  onJoin
 }: VoiceParticipantsGridProps) {
   const isVideoHidden = (card: VoiceParticipantCard) =>
-    audioSettingsByUserId[
-      normalizeVoiceUserId(card.participant.userId)
-    ]?.isVideoHidden === true
+    audioSettingsByUserId[normalizeVoiceUserId(card.participant.userId)]
+      ?.isVideoHidden === true;
   const selfCameraFilteredCards = participantCards.filter((card) =>
-    isVoiceWorkspaceCardVisible(card, showSelfCamera),
-  )
+    isVoiceWorkspaceCardVisible(card, showSelfCamera)
+  );
   const participantDisplayCards = showParticipantsWithoutVideo
     ? selfCameraFilteredCards
     : selfCameraFilteredCards.filter(
         (card) =>
-          card.participant.isCameraEnabled ||
-          card.participant.isScreenSharing,
-      )
+          card.participant.isCameraEnabled || card.participant.isScreenSharing
+      );
   const availableCards = participantDisplayCards.filter(
-    (card) => !isVideoHidden(card) || card.mediaKind === 'camera',
-  )
+    (card) => !isVideoHidden(card) || card.mediaKind === 'camera'
+  );
   const visibleCards = isConnected
     ? availableCards
-    : availableCards.filter((card) => card.mediaKind === 'camera')
+    : availableCards.filter((card) => card.mediaKind === 'camera');
   const expandedCard = visibleCards.find(
-    (card) => card.normalizedParticipantId === expandedParticipantId,
-  )
+    (card) => card.normalizedParticipantId === expandedParticipantId
+  );
   const sideCards = expandedCard
     ? visibleCards.filter(
         (card) =>
-          card.normalizedParticipantId !== expandedCard.normalizedParticipantId,
+          card.normalizedParticipantId !== expandedCard.normalizedParticipantId
       )
-    : visibleCards
+    : visibleCards;
 
   function renderCard(
     card: VoiceParticipantCard,
-    variant: 'grid' | 'expanded' | 'side',
+    variant: 'grid' | 'expanded' | 'side'
   ) {
     return (
       <VoiceParticipantCardView
@@ -90,26 +90,24 @@ export function VoiceParticipantsGrid({
         card={card}
         isVideoHidden={isVideoHidden(card)}
         audioSettings={
-          audioSettingsByUserId[
-            normalizeVoiceUserId(card.participant.userId)
-          ]
+          audioSettingsByUserId[normalizeVoiceUserId(card.participant.userId)]
         }
         variant={variant}
         isConnected={isConnected}
         accent={avatarAccentsByParticipantId[card.normalizedParticipantId]}
         onAccentChange={onAccentChange}
         onExpand={(participantId, hideMobileChrome) => {
-          onExpandedParticipantChange(participantId)
-          if (hideMobileChrome) onMobileChromeVisibilityChange(false)
+          onExpandedParticipantChange(participantId);
+          if (hideMobileChrome) onMobileChromeVisibilityChange(false);
         }}
         onCollapse={(showMobileChrome) => {
-          onExpandedParticipantChange(null)
-          if (showMobileChrome) onMobileChromeVisibilityChange(true)
+          onExpandedParticipantChange(null);
+          if (showMobileChrome) onMobileChromeVisibilityChange(true);
         }}
         onToggleMobileChrome={onToggleMobileChrome}
         onOpenContextMenu={onOpenContextMenu}
       />
-    )
+    );
   }
 
   return (
@@ -178,5 +176,5 @@ export function VoiceParticipantsGrid({
         </div>
       )}
     </div>
-  )
+  );
 }

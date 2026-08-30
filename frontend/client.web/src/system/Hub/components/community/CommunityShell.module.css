@@ -18,9 +18,21 @@
   width: 100%;
   padding: 28px 30px 10px;
   background:
-    radial-gradient(circle at 88% 0%, var(--theme-backdrop-glow), transparent 28%),
-    radial-gradient(circle at 12% 94%, var(--theme-backdrop-glow), transparent 32%),
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+    radial-gradient(
+      circle at 88% 0%,
+      var(--theme-backdrop-glow),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 12% 94%,
+      var(--theme-backdrop-glow),
+      transparent 32%
+    ),
+    linear-gradient(
+      180deg,
+      var(--theme-frame-bg),
+      var(--theme-control-bg-strong)
+    );
 }
 
 .communityHeader {
@@ -116,9 +128,8 @@
 @media (max-width: 760px) {
   .communitySurface {
     padding-bottom: calc(
-      var(--mobile-nav-height, 72px) +
-      var(--mobile-voice-dock-reserve, 0px) +
-      14px
+      var(--mobile-nav-height, 72px) + var(--mobile-voice-dock-reserve, 0px) +
+        14px
     );
   }
 }

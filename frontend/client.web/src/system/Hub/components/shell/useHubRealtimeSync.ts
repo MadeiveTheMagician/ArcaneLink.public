@@ -1,37 +1,39 @@
-import type { ServerMemberResponse } from '../../../../shared/types'
-import type { ServerCoreTab } from '../../../Server/utils/serverWorkspaceModel'
-import { useAutoRefresh } from '../../../shared/hooks/useAutoRefresh'
-import { useRealtime } from '../../../shared/hooks/useRealtime'
+import type { ServerMemberResponse } from '../../../../shared/types';
+import type { ServerCoreTab } from '../../../Server/utils/serverWorkspaceModel';
+import { useAutoRefresh } from '../../../shared/hooks/useAutoRefresh';
+import { useRealtime } from '../../../shared/hooks/useRealtime';
 
 type UseHubRealtimeSyncOptions = {
-  accessToken: string
-  currentUserId: string
-  currentDeviceSessionId?: string | null
-  selectedServerMembership: ServerMemberResponse | null
-  activeWorkspace: string
-  serverCoreTab: ServerCoreTab
-  avatarLibraryIsOpen: boolean
-  serverIconLibraryIsOpen: boolean
-  loadServers: (silent?: boolean) => Promise<ServerMemberResponse[] | undefined>
+  accessToken: string;
+  currentUserId: string;
+  currentDeviceSessionId?: string | null;
+  selectedServerMembership: ServerMemberResponse | null;
+  activeWorkspace: string;
+  serverCoreTab: ServerCoreTab;
+  avatarLibraryIsOpen: boolean;
+  serverIconLibraryIsOpen: boolean;
+  loadServers: (
+    silent?: boolean
+  ) => Promise<ServerMemberResponse[] | undefined>;
   loadServerMembers: (
     membership: ServerMemberResponse,
-    silent?: boolean,
-  ) => Promise<void>
+    silent?: boolean
+  ) => Promise<void>;
   loadServerGovernance: (
     tab?: ServerCoreTab,
-    silent?: boolean,
-  ) => Promise<void>
-  loadServerSpaces: (silent?: boolean) => Promise<void>
-  loadPrivateSpaces: (silent?: boolean) => Promise<void>
-  loadFriends: (silent?: boolean) => Promise<void>
-  loadDirectServerInvites: (silent?: boolean) => Promise<void>
-  loadPublicProfile: () => Promise<void>
-  loadCurrentUser: () => Promise<void>
-  loadProfileSettings: (silent?: boolean) => Promise<void>
-  loadAvatarAssets: () => Promise<void>
-  loadServerIconAssets: () => Promise<void>
-  onCurrentSessionRevoked: () => Promise<void>
-}
+    silent?: boolean
+  ) => Promise<void>;
+  loadServerSpaces: (silent?: boolean) => Promise<void>;
+  loadPrivateSpaces: (silent?: boolean) => Promise<void>;
+  loadFriends: (silent?: boolean) => Promise<void>;
+  loadDirectServerInvites: (silent?: boolean) => Promise<void>;
+  loadPublicProfile: () => Promise<void>;
+  loadCurrentUser: () => Promise<void>;
+  loadProfileSettings: (silent?: boolean) => Promise<void>;
+  loadAvatarAssets: () => Promise<void>;
+  loadServerIconAssets: () => Promise<void>;
+  onCurrentSessionRevoked: () => Promise<void>;
+};
 
 export function useHubRealtimeSync({
   accessToken,
@@ -54,7 +56,7 @@ export function useHubRealtimeSync({
   loadProfileSettings,
   loadAvatarAssets,
   loadServerIconAssets,
-  onCurrentSessionRevoked,
+  onCurrentSessionRevoked
 }: UseHubRealtimeSyncOptions) {
   useAutoRefresh({
     intervalMs: 90000,
@@ -72,10 +74,10 @@ export function useHubRealtimeSync({
           : Promise.resolve(),
         selectedServerMembership && activeWorkspace === 'server'
           ? loadServerSpaces(true)
-          : Promise.resolve(),
-      ])
-    },
-  })
+          : Promise.resolve()
+      ]);
+    }
+  });
 
   useRealtime({
     accessToken,
@@ -86,7 +88,7 @@ export function useHubRealtimeSync({
     onPrivateSpacesChanged: () => loadPrivateSpaces(true),
     onDirectServerInvitesChanged: () => loadDirectServerInvites(true),
     onServersChanged: async () => {
-      await loadServers(true)
+      await loadServers(true);
     },
     onCurrentServerMembersChanged: () =>
       selectedServerMembership
@@ -99,15 +101,15 @@ export function useHubRealtimeSync({
     onCurrentServerSpacesChanged: () =>
       selectedServerMembership ? loadServerSpaces(true) : undefined,
     onUserProfileChanged: async () => {
-      await Promise.all([loadPublicProfile(), loadCurrentUser()])
+      await Promise.all([loadPublicProfile(), loadCurrentUser()]);
     },
     onUserProfileSettingsChanged: () => loadProfileSettings(true),
     onUserAssetsChanged: async () => {
       await Promise.all([
         avatarLibraryIsOpen ? loadAvatarAssets() : Promise.resolve(),
-        serverIconLibraryIsOpen ? loadServerIconAssets() : Promise.resolve(),
-      ])
+        serverIconLibraryIsOpen ? loadServerIconAssets() : Promise.resolve()
+      ]);
     },
-    onCurrentSessionRevoked,
-  })
+    onCurrentSessionRevoked
+  });
 }

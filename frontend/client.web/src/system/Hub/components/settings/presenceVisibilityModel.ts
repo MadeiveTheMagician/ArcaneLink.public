@@ -1,190 +1,175 @@
 import type {
   PresenceCustomVisibility,
-  PresenceVisibility,
-} from '../../../../shared/types'
+  PresenceVisibility
+} from '../../../../shared/types';
 
-export const defaultPresenceVisibility: PresenceVisibility = 'everyone'
+export const defaultPresenceVisibility: PresenceVisibility = 'everyone';
 
-export type PresenceVisibilityMode = 'everyone' | 'custom' | 'nobody'
+export type PresenceVisibilityMode = 'everyone' | 'custom' | 'nobody';
 export type PresenceVisibilityCategory =
-  | 'friends'
-  | 'friends_of_friends'
-  | 'shared_servers'
+  'friends' | 'friends_of_friends' | 'shared_servers';
 
 export type PresenceVisibilityDraft = {
-  mode: PresenceVisibilityMode
-  friends: boolean
-  friendsOfFriends: boolean
-  sharedServers: boolean
-}
+  mode: PresenceVisibilityMode;
+  friends: boolean;
+  friendsOfFriends: boolean;
+  sharedServers: boolean;
+};
 
-const customPrefix = 'custom:'
+const customPrefix = 'custom:';
 const customCategoryOrder: PresenceVisibilityCategory[] = [
   'friends',
   'friends_of_friends',
-  'shared_servers',
-]
+  'shared_servers'
+];
 const legacyVisibilities = new Set<PresenceVisibility>([
   'everyone',
   'friends',
-  'nobody',
-])
+  'nobody'
+]);
 
 export function normalizePresenceVisibility(
-  value: unknown,
+  value: unknown
 ): PresenceVisibility {
   if (typeof value !== 'string') {
-    return defaultPresenceVisibility
+    return defaultPresenceVisibility;
   }
 
-  const normalized = value.trim().toLowerCase()
+  const normalized = value.trim().toLowerCase();
   if (legacyVisibilities.has(normalized as PresenceVisibility)) {
-    return normalized as PresenceVisibility
+    return normalized as PresenceVisibility;
   }
 
-  const categories = parseCustomCategories(normalized)
+  const categories = parseCustomCategories(normalized);
   return categories == null
     ? defaultPresenceVisibility
-    : encodeCustomVisibility(categories)
+    : encodeCustomVisibility(categories);
 }
 
 export function isCanonicalPresenceVisibility(
-  value: unknown,
+  value: unknown
 ): value is PresenceVisibility {
   return (
-    typeof value === 'string' &&
-    normalizePresenceVisibility(value) === value
-  )
+    typeof value === 'string' && normalizePresenceVisibility(value) === value
+  );
 }
 
 export function toPresenceVisibilityDraft(
-  value: unknown,
+  value: unknown
 ): PresenceVisibilityDraft {
-  const visibility = normalizePresenceVisibility(value)
+  const visibility = normalizePresenceVisibility(value);
   if (visibility === 'everyone') {
-    return emptyDraft('everyone')
+    return emptyDraft('everyone');
   }
   if (visibility === 'nobody') {
-    return emptyDraft('nobody')
+    return emptyDraft('nobody');
   }
   if (visibility === 'friends') {
     return {
       ...emptyDraft('custom'),
-      friends: true,
-    }
+      friends: true
+    };
   }
 
-  return categoriesToDraft(
-    parseCustomCategories(visibility) ?? new Set(),
-  )
+  return categoriesToDraft(parseCustomCategories(visibility) ?? new Set());
 }
 
 export function serializePresenceVisibility(
-  draft: PresenceVisibilityDraft,
+  draft: PresenceVisibilityDraft
 ): PresenceVisibility {
   if (draft.mode === 'everyone') {
-    return 'everyone'
+    return 'everyone';
   }
   if (draft.mode === 'nobody') {
-    return 'nobody'
+    return 'nobody';
   }
 
-  const categories = new Set<PresenceVisibilityCategory>()
-  if (draft.friends) categories.add('friends')
-  if (draft.friendsOfFriends) categories.add('friends_of_friends')
-  if (draft.sharedServers) categories.add('shared_servers')
+  const categories = new Set<PresenceVisibilityCategory>();
+  if (draft.friends) categories.add('friends');
+  if (draft.friendsOfFriends) categories.add('friends_of_friends');
+  if (draft.sharedServers) categories.add('shared_servers');
 
-  return categories.size === 0
-    ? 'nobody'
-    : encodeCustomVisibility(categories)
+  return categories.size === 0 ? 'nobody' : encodeCustomVisibility(categories);
 }
 
 export function selectPresenceVisibilityGlobal(
-  mode: Exclude<PresenceVisibilityMode, 'custom'>,
+  mode: Exclude<PresenceVisibilityMode, 'custom'>
 ): PresenceVisibilityDraft {
-  return emptyDraft(mode)
+  return emptyDraft(mode);
 }
 
 export function togglePresenceVisibilityCategory(
   draft: PresenceVisibilityDraft,
   category: PresenceVisibilityCategory,
-  checked: boolean,
+  checked: boolean
 ): PresenceVisibilityDraft {
   const next = {
     ...draft,
     mode: 'custom' as const,
-    friends:
-      category === 'friends' ? checked : draft.friends,
+    friends: category === 'friends' ? checked : draft.friends,
     friendsOfFriends:
-      category === 'friends_of_friends'
-        ? checked
-        : draft.friendsOfFriends,
-    sharedServers:
-      category === 'shared_servers' ? checked : draft.sharedServers,
-  }
+      category === 'friends_of_friends' ? checked : draft.friendsOfFriends,
+    sharedServers: category === 'shared_servers' ? checked : draft.sharedServers
+  };
 
-  return next.friends ||
-    next.friendsOfFriends ||
-    next.sharedServers
+  return next.friends || next.friendsOfFriends || next.sharedServers
     ? next
-    : emptyDraft('nobody')
+    : emptyDraft('nobody');
 }
 
 function parseCustomCategories(
-  value: string,
+  value: string
 ): Set<PresenceVisibilityCategory> | null {
   if (!value.startsWith(customPrefix)) {
-    return null
+    return null;
   }
 
   const tokens = value
     .slice(customPrefix.length)
     .split(',')
     .map((token) => token.trim())
-    .filter(Boolean)
-  const categories = new Set(tokens)
+    .filter(Boolean);
+  const categories = new Set(tokens);
   if (
     tokens.length === 0 ||
     categories.size !== tokens.length ||
     [...categories].some(
       (category) =>
-        !customCategoryOrder.includes(
-          category as PresenceVisibilityCategory,
-        ),
+        !customCategoryOrder.includes(category as PresenceVisibilityCategory)
     )
   ) {
-    return null
+    return null;
   }
 
-  return categories as Set<PresenceVisibilityCategory>
+  return categories as Set<PresenceVisibilityCategory>;
 }
 
 function encodeCustomVisibility(
-  categories: ReadonlySet<PresenceVisibilityCategory>,
+  categories: ReadonlySet<PresenceVisibilityCategory>
 ): PresenceCustomVisibility {
   return `${customPrefix}${customCategoryOrder
     .filter((category) => categories.has(category))
-    .join(',')}` as PresenceCustomVisibility
+    .join(',')}` as PresenceCustomVisibility;
 }
 
 function categoriesToDraft(
-  categories: ReadonlySet<PresenceVisibilityCategory>,
+  categories: ReadonlySet<PresenceVisibilityCategory>
 ): PresenceVisibilityDraft {
   return {
     mode: 'custom',
     friends: categories.has('friends'),
     friendsOfFriends: categories.has('friends_of_friends'),
-    sharedServers: categories.has('shared_servers'),
-  }
+    sharedServers: categories.has('shared_servers')
+  };
 }
 
 function emptyDraft(
-  mode: Exclude<PresenceVisibilityMode, 'custom'> | 'custom',
+  mode: Exclude<PresenceVisibilityMode, 'custom'> | 'custom'
 ): PresenceVisibilityDraft {
   return {
     mode,
     friends: false,
     friendsOfFriends: false,
-    sharedServers: false,
-  }
+    sharedServers: false
+  };
 }

@@ -1,28 +1,30 @@
-import { lazy, StrictMode, Suspense } from 'react'
-import { createRoot } from 'react-dom/client'
-import './styles/global.css'
-import './styles/system-patterns.css'
-import App from './App.tsx'
-import { appCopy } from './shared/app.copy'
-import { applyLastSystemThemeFromStorage } from './styles/systemThemes'
-import { SystemErrorBoundary } from './system/shared/errors/SystemErrorBoundary'
-import { SystemTooltipProvider } from './system/shared/ui/SystemTooltipProvider'
-import { resolveAppEntryRoute } from './appEntryRoute'
+import { StrictMode, Suspense, lazy } from 'react';
+import { createRoot } from 'react-dom/client';
 
-applyLastSystemThemeFromStorage()
+import App from './App.tsx';
+import { resolveAppEntryRoute } from './appEntryRoute';
+import { appCopy } from './shared/app.copy';
+import { applyLastSystemThemeFromStorage } from './styles/systemThemes';
+import { SystemErrorBoundary } from './system/shared/errors/SystemErrorBoundary';
+import { SystemTooltipProvider } from './system/shared/ui/SystemTooltipProvider';
+
+import './styles/global.css';
+import './styles/system-patterns.css';
+
+applyLastSystemThemeFromStorage();
 
 const ApiTestPage = import.meta.env.DEV
   ? lazy(() =>
       import('./pages/ApiTest/ApiTestPage.tsx').then((module) => ({
-        default: module.ApiTestPage,
-      })),
+        default: module.ApiTestPage
+      }))
     )
-  : null
+  : null;
 
 const entryRoute = resolveAppEntryRoute(
   window.location.pathname,
-  import.meta.env.DEV,
-)
+  import.meta.env.DEV
+);
 
 function AppLoading() {
   return (
@@ -30,7 +32,7 @@ function AppLoading() {
       <img src="/brand/logo-mark.svg" alt="" />
       <span>{appCopy.loading.default}</span>
     </main>
-  )
+  );
 }
 
 createRoot(document.getElementById('root')!).render(
@@ -42,5 +44,5 @@ createRoot(document.getElementById('root')!).render(
         </Suspense>
       </SystemTooltipProvider>
     </SystemErrorBoundary>
-  </StrictMode>,
-)
+  </StrictMode>
+);

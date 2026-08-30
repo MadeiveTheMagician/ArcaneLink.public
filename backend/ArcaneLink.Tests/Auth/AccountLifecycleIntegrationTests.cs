@@ -6,8 +6,8 @@ using ArcaneLink.DataBase.Constants;
 using ArcaneLink.DataBase.DTOs.Auth;
 using ArcaneLink.DataBase.DTOs.Login;
 using ArcaneLink.DataBase.DTOs.Users;
-using ArcaneLink.Services.Email.Abstractions;
 using ArcaneLink.Services.Email;
+using ArcaneLink.Services.Email.Abstractions;
 using ArcaneLink.Tests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -376,13 +376,13 @@ public sealed class AccountLifecycleIntegrationTests
             string htmlBody,
             CancellationToken cancellationToken = default)
         {
-            _messages.Add(new SentEmail(recipient, subject, textBody));
+            this._messages.Add(new SentEmail(recipient, subject, textBody));
             return Task.CompletedTask;
         }
 
         public string GetLatestToken(string expectedAction)
         {
-            var message = _messages.Last(x => x.TextBody.Contains(
+            var message = this._messages.Last(x => x.TextBody.Contains(
                 $"action={expectedAction}",
                 StringComparison.Ordinal));
             var link = message.TextBody.Split(
@@ -402,7 +402,7 @@ public sealed class AccountLifecycleIntegrationTests
         }
 
         public int CountForRecipient(string recipient) =>
-            _messages.Count(message => string.Equals(
+            this._messages.Count(message => string.Equals(
                 message.Recipient,
                 recipient,
                 StringComparison.OrdinalIgnoreCase));

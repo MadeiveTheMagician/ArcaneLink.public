@@ -1,281 +1,284 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { apiJson, apiNoContent } from '../../../../shared/api/api'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react';
+
+import { apiJson, apiNoContent } from '../../../../shared/api/api';
 import type {
   AssetResponse,
   CreateSpaceMessageRequest,
   PrivateDeletedMessageResponse,
   PrivateMessageDeletionScope,
-  SpaceMessageResponse,
   SpaceMessageMentionRequest,
+  SpaceMessageResponse,
   SpaceReadStateResponse,
-  UpdateSpaceMessageRequest,
-} from '../../../../shared/types'
-import type { MessageAttachmentDraft } from '../../../Server/components/messages/messageAttachmentDraft'
-import { replaceMessage } from '../../../Server/components/messages/messageReactionModel'
-import { communityCopy, serverCopy } from '../../../shared'
-import { createRealtimeRefreshCoalescer } from '../../../shared/hooks/realtimeRefreshCoalescer'
-import type { MessageFocusRequest } from '../../../shared/messages/messageFocusModel'
-import { isVisiblePrivateMessage } from '../../../shared/messages/privateMessageDeletionModel'
+  UpdateSpaceMessageRequest
+} from '../../../../shared/types';
+import type { MessageAttachmentDraft } from '../../../Server/components/messages/messageAttachmentDraft';
+import { replaceMessage } from '../../../Server/components/messages/messageReactionModel';
 import {
-  getMessageWindowCursor,
   type OlderMessageLoadResult,
-} from '../../../Server/hooks/messages/messagePaginationModel'
+  getMessageWindowCursor
+} from '../../../Server/hooks/messages/messagePaginationModel';
+import { communityCopy, serverCopy } from '../../../shared';
+import { createRealtimeRefreshCoalescer } from '../../../shared/hooks/realtimeRefreshCoalescer';
+import type { MessageFocusRequest } from '../../../shared/messages/messageFocusModel';
+import { isVisiblePrivateMessage } from '../../../shared/messages/privateMessageDeletionModel';
 
 type PrivateSpaceMessagesChangedPayload = {
-  spaceId?: string | null
-  messageId?: string | null
-}
+  spaceId?: string | null;
+  messageId?: string | null;
+};
 
-export type FocusPrivateMessageRequest = MessageFocusRequest
-const messagePageSize = 100
-const trashPageSize = 100
+export type FocusPrivateMessageRequest = MessageFocusRequest;
+const messagePageSize = 100;
+const trashPageSize = 100;
 
 export function usePrivateSpaceMessages(
   accessToken: string,
   spaceId: string | null,
-  focusMessage: FocusPrivateMessageRequest | null = null,
+  focusMessage: FocusPrivateMessageRequest | null = null
 ) {
-  const [messages, setMessages] = useState<SpaceMessageResponse[]>([])
+  const [messages, setMessages] = useState<SpaceMessageResponse[]>([]);
   const [loadedMessagesSpaceId, setLoadedMessagesSpaceId] = useState<
     string | null
-  >(null)
-  const [pinnedMessages, setPinnedMessages] = useState<SpaceMessageResponse[]>([])
+  >(null);
+  const [pinnedMessages, setPinnedMessages] = useState<SpaceMessageResponse[]>(
+    []
+  );
   const [loadedPinnedMessagesSpaceId, setLoadedPinnedMessagesSpaceId] =
-    useState<string | null>(null)
+    useState<string | null>(null);
   const [deletedMessages, setDeletedMessages] = useState<
     PrivateDeletedMessageResponse[]
-  >([])
+  >([]);
   const [loadedDeletedMessagesSpaceId, setLoadedDeletedMessagesSpaceId] =
-    useState<string | null>(null)
-  const [isLoadingPinnedMessages, setIsLoadingPinnedMessages] = useState(false)
-  const [isLoadingDeletedMessages, setIsLoadingDeletedMessages] = useState(false)
-  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false)
-  const [hasOlderMessages, setHasOlderMessages] = useState(false)
+    useState<string | null>(null);
+  const [isLoadingPinnedMessages, setIsLoadingPinnedMessages] = useState(false);
+  const [isLoadingDeletedMessages, setIsLoadingDeletedMessages] =
+    useState(false);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [isLoadingOlderDeletedMessages, setIsLoadingOlderDeletedMessages] =
-    useState(false)
-  const [hasOlderDeletedMessages, setHasOlderDeletedMessages] = useState(false)
+    useState(false);
+  const [hasOlderDeletedMessages, setHasOlderDeletedMessages] = useState(false);
   const [isClearingDeletedMessages, setIsClearingDeletedMessages] =
-    useState(false)
+    useState(false);
   const [restoringMessage, setRestoringMessage] = useState<{
-    spaceId: string
-    messageId: string
-  } | null>(null)
-  const [trashError, setTrashError] = useState<string | null>(null)
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
-  const [isSendingMessage, setIsSendingMessage] = useState(false)
-  const [messageError, setMessageError] = useState<string | null>(null)
-  const messagesRequestIdRef = useRef(0)
-  const olderMessagesRequestIdRef = useRef(0)
-  const pinnedMessagesRequestIdRef = useRef(0)
-  const deletedMessagesRequestIdRef = useRef(0)
-  const olderDeletedMessagesRequestIdRef = useRef(0)
-  const activeSpaceIdRef = useRef(spaceId)
+    spaceId: string;
+    messageId: string;
+  } | null>(null);
+  const [trashError, setTrashError] = useState<string | null>(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
+  const messagesRequestIdRef = useRef(0);
+  const olderMessagesRequestIdRef = useRef(0);
+  const pinnedMessagesRequestIdRef = useRef(0);
+  const deletedMessagesRequestIdRef = useRef(0);
+  const olderDeletedMessagesRequestIdRef = useRef(0);
+  const activeSpaceIdRef = useRef(spaceId);
   useLayoutEffect(() => {
-    activeSpaceIdRef.current = spaceId
-  }, [spaceId])
+    activeSpaceIdRef.current = spaceId;
+  }, [spaceId]);
   const visibleMessages =
     loadedMessagesSpaceId === spaceId
       ? messages.filter(isVisiblePrivateMessage)
-      : []
+      : [];
   const visiblePinnedMessages =
     loadedPinnedMessagesSpaceId === spaceId
       ? pinnedMessages.filter(isVisiblePrivateMessage)
-      : []
+      : [];
   const visibleDeletedMessages =
-    loadedDeletedMessagesSpaceId === spaceId ? deletedMessages : []
+    loadedDeletedMessagesSpaceId === spaceId ? deletedMessages : [];
   const isLoadingVisibleMessages =
-    Boolean(spaceId && loadedMessagesSpaceId !== spaceId) || isLoadingMessages
+    Boolean(spaceId && loadedMessagesSpaceId !== spaceId) || isLoadingMessages;
 
   async function loadMessages(
     silent = false,
-    before?: { createdAt: string; id: string } | null,
+    before?: { createdAt: string; id: string } | null
   ): Promise<SpaceMessageResponse[] | null> {
-    const requestId = ++messagesRequestIdRef.current
-    ++olderMessagesRequestIdRef.current
-    const requestedSpaceId = spaceId
+    const requestId = ++messagesRequestIdRef.current;
+    ++olderMessagesRequestIdRef.current;
+    const requestedSpaceId = spaceId;
 
-    setIsLoadingOlderMessages(false)
+    setIsLoadingOlderMessages(false);
     if (!silent) {
-      setHasOlderMessages(false)
+      setHasOlderMessages(false);
     }
 
     if (!requestedSpaceId) {
-      setMessages([])
-      setLoadedMessagesSpaceId(null)
-      setPinnedMessages([])
-      setLoadedPinnedMessagesSpaceId(null)
-      setDeletedMessages([])
-      setLoadedDeletedMessagesSpaceId(null)
-      setIsLoadingMessages(false)
-      setIsLoadingOlderMessages(false)
-      setHasOlderMessages(false)
-      setIsLoadingOlderDeletedMessages(false)
-      setHasOlderDeletedMessages(false)
-      setTrashError(null)
-      setMessageError(null)
-      return null
+      setMessages([]);
+      setLoadedMessagesSpaceId(null);
+      setPinnedMessages([]);
+      setLoadedPinnedMessagesSpaceId(null);
+      setDeletedMessages([]);
+      setLoadedDeletedMessagesSpaceId(null);
+      setIsLoadingMessages(false);
+      setIsLoadingOlderMessages(false);
+      setHasOlderMessages(false);
+      setIsLoadingOlderDeletedMessages(false);
+      setHasOlderDeletedMessages(false);
+      setTrashError(null);
+      setMessageError(null);
+      return null;
     }
 
     if (!silent) {
-      setIsLoadingMessages(true)
+      setIsLoadingMessages(true);
     }
 
     try {
-      setMessageError(null)
-      const params = new URLSearchParams({ limit: String(messagePageSize) })
+      setMessageError(null);
+      const params = new URLSearchParams({ limit: String(messagePageSize) });
 
       if (before) {
-        params.set('beforeCreatedAt', before.createdAt)
-        params.set('beforeId', before.id)
+        params.set('beforeCreatedAt', before.createdAt);
+        params.set('beforeId', before.id);
       }
 
       const loadedMessages = await apiJson<SpaceMessageResponse[]>(
-          `/api/private-spaces/${requestedSpaceId}/messages?${params.toString()}`,
-          { accessToken },
-        )
+        `/api/private-spaces/${requestedSpaceId}/messages?${params.toString()}`,
+        { accessToken }
+      );
 
       if (messagesRequestIdRef.current !== requestId) {
-        return null
+        return null;
       }
 
       setMessages((current) =>
         silent && !before
           ? mergeLatestMessagePage(current, loadedMessages)
-          : loadedMessages,
-      )
+          : loadedMessages
+      );
       if (!silent || before) {
-        setHasOlderMessages(loadedMessages.length === messagePageSize)
+        setHasOlderMessages(loadedMessages.length === messagePageSize);
       }
-      setLoadedMessagesSpaceId(requestedSpaceId)
-      return loadedMessages
+      setLoadedMessagesSpaceId(requestedSpaceId);
+      return loadedMessages;
     } catch {
       if (messagesRequestIdRef.current !== requestId) {
-        return null
+        return null;
       }
 
-      setMessageError(communityCopy.direct.messagesLoadFailed)
-      setMessages([])
-      setLoadedMessagesSpaceId(requestedSpaceId)
-      return null
+      setMessageError(communityCopy.direct.messagesLoadFailed);
+      setMessages([]);
+      setLoadedMessagesSpaceId(requestedSpaceId);
+      return null;
     } finally {
       if (!silent && messagesRequestIdRef.current === requestId) {
-        setIsLoadingMessages(false)
+        setIsLoadingMessages(false);
       }
     }
   }
 
   async function loadMessageWindow(messageId: string, createdAt: string) {
-    const cursor = getMessageWindowCursor(messageId, createdAt)
+    const cursor = getMessageWindowCursor(messageId, createdAt);
     if (!cursor) {
-      return false
+      return false;
     }
 
-    const loadedMessages = await loadMessages(false, cursor)
-    return Boolean(
-      loadedMessages?.some((message) => message.id === messageId),
-    )
+    const loadedMessages = await loadMessages(false, cursor);
+    return Boolean(loadedMessages?.some((message) => message.id === messageId));
   }
 
   async function loadOlderMessages(): Promise<OlderMessageLoadResult> {
-    const requestedSpaceId = spaceId
+    const requestedSpaceId = spaceId;
     const oldestMessage =
-      loadedMessagesSpaceId === requestedSpaceId ? messages[0] : null
-    if (
-      !requestedSpaceId ||
-      isLoadingOlderMessages
-    ) {
-      return 'stale'
+      loadedMessagesSpaceId === requestedSpaceId ? messages[0] : null;
+    if (!requestedSpaceId || isLoadingOlderMessages) {
+      return 'stale';
     }
 
     if (!hasOlderMessages) {
-      return 'exhausted'
+      return 'exhausted';
     }
 
     if (!oldestMessage) {
-      setHasOlderMessages(false)
-      return 'exhausted'
+      setHasOlderMessages(false);
+      return 'exhausted';
     }
 
-    const requestId = ++olderMessagesRequestIdRef.current
-    setIsLoadingOlderMessages(true)
+    const requestId = ++olderMessagesRequestIdRef.current;
+    setIsLoadingOlderMessages(true);
     try {
-      setMessageError(null)
+      setMessageError(null);
       const params = new URLSearchParams({
         limit: String(messagePageSize),
         beforeCreatedAt: oldestMessage.createdAt,
-        beforeId: oldestMessage.id,
-      })
+        beforeId: oldestMessage.id
+      });
       const olderMessages = await apiJson<SpaceMessageResponse[]>(
         `/api/private-spaces/${requestedSpaceId}/messages?${params.toString()}`,
-        { accessToken },
-      )
+        { accessToken }
+      );
       if (
         olderMessagesRequestIdRef.current !== requestId ||
         activeSpaceIdRef.current !== requestedSpaceId
       ) {
-        return 'stale'
+        return 'stale';
       }
 
-      setMessages((current) => mergeMessagePages(olderMessages, current))
-      setHasOlderMessages(olderMessages.length === messagePageSize)
-      return olderMessages.length > 0 ? 'loaded' : 'exhausted'
+      setMessages((current) => mergeMessagePages(olderMessages, current));
+      setHasOlderMessages(olderMessages.length === messagePageSize);
+      return olderMessages.length > 0 ? 'loaded' : 'exhausted';
     } catch {
       if (
         olderMessagesRequestIdRef.current === requestId &&
         activeSpaceIdRef.current === requestedSpaceId
       ) {
-        setMessageError(communityCopy.direct.messagesLoadFailed)
+        setMessageError(communityCopy.direct.messagesLoadFailed);
       }
-      return (
-        olderMessagesRequestIdRef.current === requestId &&
+      return olderMessagesRequestIdRef.current === requestId &&
         activeSpaceIdRef.current === requestedSpaceId
-          ? 'failed'
-          : 'stale'
-      )
+        ? 'failed'
+        : 'stale';
     } finally {
       if (olderMessagesRequestIdRef.current === requestId) {
-        setIsLoadingOlderMessages(false)
+        setIsLoadingOlderMessages(false);
       }
     }
   }
 
   async function loadPinnedMessages(silent = false) {
-    const requestId = ++pinnedMessagesRequestIdRef.current
-    const requestedSpaceId = spaceId
+    const requestId = ++pinnedMessagesRequestIdRef.current;
+    const requestedSpaceId = spaceId;
 
     if (!requestedSpaceId) {
-      setPinnedMessages([])
-      setLoadedPinnedMessagesSpaceId(null)
-      setIsLoadingPinnedMessages(false)
-      return
+      setPinnedMessages([]);
+      setLoadedPinnedMessagesSpaceId(null);
+      setIsLoadingPinnedMessages(false);
+      return;
     }
 
     if (!silent) {
-      setIsLoadingPinnedMessages(true)
+      setIsLoadingPinnedMessages(true);
     }
 
     try {
       const loadedPinnedMessages = await apiJson<SpaceMessageResponse[]>(
         `/api/private-spaces/${requestedSpaceId}/messages/pinned`,
-        { accessToken },
-      )
+        { accessToken }
+      );
       if (pinnedMessagesRequestIdRef.current !== requestId) {
-        return
+        return;
       }
 
-      setPinnedMessages(loadedPinnedMessages)
-      setLoadedPinnedMessagesSpaceId(requestedSpaceId)
+      setPinnedMessages(loadedPinnedMessages);
+      setLoadedPinnedMessagesSpaceId(requestedSpaceId);
     } catch {
       if (pinnedMessagesRequestIdRef.current !== requestId) {
-        return
+        return;
       }
 
-      setMessageError(communityCopy.direct.pinnedMessagesLoadFailed)
-      setPinnedMessages([])
-      setLoadedPinnedMessagesSpaceId(requestedSpaceId)
+      setMessageError(communityCopy.direct.pinnedMessagesLoadFailed);
+      setPinnedMessages([]);
+      setLoadedPinnedMessagesSpaceId(requestedSpaceId);
     } finally {
       if (!silent && pinnedMessagesRequestIdRef.current === requestId) {
-        setIsLoadingPinnedMessages(false)
+        setIsLoadingPinnedMessages(false);
       }
     }
   }
@@ -283,132 +286,135 @@ export function usePrivateSpaceMessages(
   async function loadDeletedMessages(
     silent = false,
     before?: { deletedAt: string; id: string } | null,
-    append = false,
+    append = false
   ) {
-    const requestId = ++deletedMessagesRequestIdRef.current
-    const requestedSpaceId = spaceId
+    const requestId = ++deletedMessagesRequestIdRef.current;
+    const requestedSpaceId = spaceId;
 
     if (!requestedSpaceId) {
-      setDeletedMessages([])
-      setLoadedDeletedMessagesSpaceId(null)
-      setIsLoadingDeletedMessages(false)
-      setIsLoadingOlderDeletedMessages(false)
-      setHasOlderDeletedMessages(false)
-      setTrashError(null)
-      return false
+      setDeletedMessages([]);
+      setLoadedDeletedMessagesSpaceId(null);
+      setIsLoadingDeletedMessages(false);
+      setIsLoadingOlderDeletedMessages(false);
+      setHasOlderDeletedMessages(false);
+      setTrashError(null);
+      return false;
     }
 
     if (!silent) {
-      setIsLoadingDeletedMessages(true)
+      setIsLoadingDeletedMessages(true);
     }
 
     try {
-      setTrashError(null)
-      const params = new URLSearchParams({ limit: String(trashPageSize) })
+      setTrashError(null);
+      const params = new URLSearchParams({ limit: String(trashPageSize) });
       if (before) {
-        params.set('beforeDeletedAt', before.deletedAt)
-        params.set('beforeId', before.id)
+        params.set('beforeDeletedAt', before.deletedAt);
+        params.set('beforeId', before.id);
       }
       const loadedDeletedMessages = await apiJson<
         PrivateDeletedMessageResponse[]
-      >(`/api/private-spaces/${requestedSpaceId}/messages/trash?${params.toString()}`, {
-        accessToken,
-      })
+      >(
+        `/api/private-spaces/${requestedSpaceId}/messages/trash?${params.toString()}`,
+        {
+          accessToken
+        }
+      );
 
       if (deletedMessagesRequestIdRef.current !== requestId) {
-        return false
+        return false;
       }
 
       setDeletedMessages((current) =>
         append
           ? mergeDeletedMessagePages(current, loadedDeletedMessages)
-          : loadedDeletedMessages,
-      )
+          : loadedDeletedMessages
+      );
       setHasOlderDeletedMessages(
-        loadedDeletedMessages.length === trashPageSize,
-      )
-      setLoadedDeletedMessagesSpaceId(requestedSpaceId)
-      return true
+        loadedDeletedMessages.length === trashPageSize
+      );
+      setLoadedDeletedMessagesSpaceId(requestedSpaceId);
+      return true;
     } catch {
       if (deletedMessagesRequestIdRef.current !== requestId) {
-        return false
+        return false;
       }
 
-      setTrashError(communityCopy.direct.trashLoadFailed)
-      setDeletedMessages([])
-      setLoadedDeletedMessagesSpaceId(requestedSpaceId)
-      return false
+      setTrashError(communityCopy.direct.trashLoadFailed);
+      setDeletedMessages([]);
+      setLoadedDeletedMessagesSpaceId(requestedSpaceId);
+      return false;
     } finally {
       if (!silent && deletedMessagesRequestIdRef.current === requestId) {
-        setIsLoadingDeletedMessages(false)
+        setIsLoadingDeletedMessages(false);
       }
     }
   }
 
   async function loadOlderDeletedMessages() {
-    const requestedSpaceId = spaceId
+    const requestedSpaceId = spaceId;
     const oldestDeletion =
       loadedDeletedMessagesSpaceId === requestedSpaceId
         ? deletedMessages.at(-1)
-        : null
+        : null;
     if (
       !requestedSpaceId ||
       !oldestDeletion ||
       !hasOlderDeletedMessages ||
       isLoadingOlderDeletedMessages
     ) {
-      return false
+      return false;
     }
 
-    const requestId = ++olderDeletedMessagesRequestIdRef.current
-    setIsLoadingOlderDeletedMessages(true)
+    const requestId = ++olderDeletedMessagesRequestIdRef.current;
+    setIsLoadingOlderDeletedMessages(true);
     try {
       const didLoad = await loadDeletedMessages(
         true,
         {
           deletedAt: oldestDeletion.deletedAt,
-          id: oldestDeletion.message.id,
+          id: oldestDeletion.message.id
         },
-        true,
-      )
+        true
+      );
       return (
         didLoad &&
         olderDeletedMessagesRequestIdRef.current === requestId &&
         activeSpaceIdRef.current === requestedSpaceId
-      )
+      );
     } finally {
       if (olderDeletedMessagesRequestIdRef.current === requestId) {
-        setIsLoadingOlderDeletedMessages(false)
+        setIsLoadingOlderDeletedMessages(false);
       }
     }
   }
 
   async function clearDeletedMessages() {
-    const requestedSpaceId = spaceId
+    const requestedSpaceId = spaceId;
     if (!requestedSpaceId || isClearingDeletedMessages) {
-      return false
+      return false;
     }
 
-    setIsClearingDeletedMessages(true)
+    setIsClearingDeletedMessages(true);
     try {
-      setTrashError(null)
+      setTrashError(null);
       await apiNoContent(
         `/api/private-spaces/${requestedSpaceId}/messages/trash`,
-        { method: 'DELETE', accessToken },
-      )
+        { method: 'DELETE', accessToken }
+      );
       if (activeSpaceIdRef.current === requestedSpaceId) {
-        setDeletedMessages([])
-        setHasOlderDeletedMessages(false)
-        await loadMessages(true)
+        setDeletedMessages([]);
+        setHasOlderDeletedMessages(false);
+        await loadMessages(true);
       }
-      return true
+      return true;
     } catch {
       if (activeSpaceIdRef.current === requestedSpaceId) {
-        setTrashError(communityCopy.direct.trashClearFailed)
+        setTrashError(communityCopy.direct.trashClearFailed);
       }
-      return false
+      return false;
     } finally {
-      setIsClearingDeletedMessages(false)
+      setIsClearingDeletedMessages(false);
     }
   }
 
@@ -416,303 +422,300 @@ export function usePrivateSpaceMessages(
     body: string,
     attachments: MessageAttachmentDraft[] = [],
     replyToMessageId: string | null = null,
-    mentions: SpaceMessageMentionRequest[] = [],
+    mentions: SpaceMessageMentionRequest[] = []
   ) {
     if (!spaceId || (!body.trim() && attachments.length === 0)) {
-      return null
+      return null;
     }
 
-    setIsSendingMessage(true)
+    setIsSendingMessage(true);
 
     try {
-      setMessageError(null)
+      setMessageError(null);
       const uploadedAssets = await uploadMessageAttachments(
-        attachments.map((item) => item.file),
-      )
+        attachments.map((item) => item.file)
+      );
       const request: CreateSpaceMessageRequest = {
         body: body.trim() || null,
         attachments: uploadedAssets.map((asset, index) => ({
           assetId: asset.id,
           displayName: attachments[index]?.displayName || null,
-          isSpoiler: attachments[index]?.isSpoiler ?? false,
+          isSpoiler: attachments[index]?.isSpoiler ?? false
         })),
         replyToMessageId,
-        mentions,
-      }
+        mentions
+      };
       const message = await apiJson<SpaceMessageResponse>(
         `/api/private-spaces/${spaceId}/messages`,
         {
           method: 'POST',
           accessToken,
-          body: request,
-        },
-      )
+          body: request
+        }
+      );
 
       setMessages((current) =>
         current.some((item) => item.id === message.id)
           ? current
-          : [...current, message],
-      )
+          : [...current, message]
+      );
 
-      return message
+      return message;
     } catch {
-      setMessageError(communityCopy.direct.messageSendFailed)
-      return null
+      setMessageError(communityCopy.direct.messageSendFailed);
+      return null;
     } finally {
-      setIsSendingMessage(false)
+      setIsSendingMessage(false);
     }
   }
 
   async function updateMessage(
     messageId: string,
-    request: UpdateSpaceMessageRequest,
+    request: UpdateSpaceMessageRequest
   ) {
     if (!spaceId) {
-      return null
+      return null;
     }
 
     try {
-      setMessageError(null)
+      setMessageError(null);
       const message = await apiJson<SpaceMessageResponse>(
         `/api/private-spaces/${spaceId}/messages/${messageId}`,
         {
           method: 'PATCH',
           accessToken,
-          body: request,
-        },
-      )
+          body: request
+        }
+      );
 
       setMessages((current) =>
-        current.map((item) => (item.id === message.id ? message : item)),
-      )
+        current.map((item) => (item.id === message.id ? message : item))
+      );
 
-      return message
+      return message;
     } catch {
-      setMessageError(communityCopy.direct.messageUpdateFailed)
-      return null
+      setMessageError(communityCopy.direct.messageUpdateFailed);
+      return null;
     }
   }
 
   async function deleteMessage(
     messageId: string,
-    scope: PrivateMessageDeletionScope = 'everyone',
+    scope: PrivateMessageDeletionScope = 'everyone'
   ) {
-    const requestedSpaceId = spaceId
+    const requestedSpaceId = spaceId;
     if (!requestedSpaceId) {
-      return false
+      return false;
     }
 
     try {
-      setMessageError(null)
+      setMessageError(null);
       await apiNoContent(
         `/api/private-spaces/${requestedSpaceId}/messages/${messageId}?scope=${scope}`,
         {
           method: 'DELETE',
-          accessToken,
-        },
-      )
+          accessToken
+        }
+      );
       if (activeSpaceIdRef.current !== requestedSpaceId) {
-        return true
+        return true;
       }
 
-      setMessages((current) => current.filter((item) => item.id !== messageId))
+      setMessages((current) => current.filter((item) => item.id !== messageId));
       setPinnedMessages((current) =>
-        current.filter((item) => item.id !== messageId),
-      )
+        current.filter((item) => item.id !== messageId)
+      );
       await Promise.all([
         loadMessages(true),
         loadPinnedMessages(true),
-        loadDeletedMessages(true),
-      ])
-      return true
+        loadDeletedMessages(true)
+      ]);
+      return true;
     } catch {
       if (activeSpaceIdRef.current !== requestedSpaceId) {
-        return false
+        return false;
       }
 
-      setMessageError(communityCopy.direct.messageDeleteFailed)
-      return false
+      setMessageError(communityCopy.direct.messageDeleteFailed);
+      return false;
     }
   }
 
   async function restoreMessage(messageId: string) {
-    const requestedSpaceId = spaceId
-    if (
-      !requestedSpaceId ||
-      restoringMessage?.spaceId === requestedSpaceId
-    ) {
-      return false
+    const requestedSpaceId = spaceId;
+    if (!requestedSpaceId || restoringMessage?.spaceId === requestedSpaceId) {
+      return false;
     }
 
-    setRestoringMessage({ spaceId: requestedSpaceId, messageId })
+    setRestoringMessage({ spaceId: requestedSpaceId, messageId });
 
     try {
-      setTrashError(null)
+      setTrashError(null);
       await apiNoContent(
         `/api/private-spaces/${requestedSpaceId}/messages/${messageId}/restore`,
         {
           method: 'POST',
-          accessToken,
-        },
-      )
+          accessToken
+        }
+      );
       if (activeSpaceIdRef.current !== requestedSpaceId) {
-        return true
+        return true;
       }
 
       await Promise.all([
         loadMessages(true),
         loadPinnedMessages(true),
-        loadDeletedMessages(true),
-      ])
-      return true
+        loadDeletedMessages(true)
+      ]);
+      return true;
     } catch {
       if (activeSpaceIdRef.current !== requestedSpaceId) {
-        return false
+        return false;
       }
 
-      setTrashError(communityCopy.direct.restoreFailed)
-      return false
+      setTrashError(communityCopy.direct.restoreFailed);
+      return false;
     } finally {
       setRestoringMessage((current) =>
-        current?.spaceId === requestedSpaceId ? null : current,
-      )
+        current?.spaceId === requestedSpaceId ? null : current
+      );
     }
   }
 
   async function pinMessage(messageId: string) {
-    const requestedSpaceId = spaceId
+    const requestedSpaceId = spaceId;
     if (!requestedSpaceId) {
-      return null
+      return null;
     }
 
     try {
-      setMessageError(null)
+      setMessageError(null);
       const message = await apiJson<SpaceMessageResponse>(
         `/api/private-spaces/${requestedSpaceId}/messages/${messageId}/pin`,
         {
           method: 'POST',
-          accessToken,
-        },
-      )
+          accessToken
+        }
+      );
       if (activeSpaceIdRef.current !== requestedSpaceId) {
-        return message
+        return message;
       }
 
-      await Promise.all([
-        loadMessages(true),
-        loadPinnedMessages(true),
-      ])
-      return message
+      await Promise.all([loadMessages(true), loadPinnedMessages(true)]);
+      return message;
     } catch {
       if (activeSpaceIdRef.current !== requestedSpaceId) {
-        return null
+        return null;
       }
 
-      setMessageError(communityCopy.direct.messagePinFailed)
-      return null
+      setMessageError(communityCopy.direct.messagePinFailed);
+      return null;
     }
   }
 
   async function unpinMessage(messageId: string) {
-    const requestedSpaceId = spaceId
+    const requestedSpaceId = spaceId;
     if (!requestedSpaceId) {
-      return false
+      return false;
     }
 
     try {
-      setMessageError(null)
+      setMessageError(null);
       await apiNoContent(
         `/api/private-spaces/${requestedSpaceId}/messages/${messageId}/pin`,
         {
           method: 'DELETE',
-          accessToken,
-        },
-      )
+          accessToken
+        }
+      );
       if (activeSpaceIdRef.current === requestedSpaceId) {
         setPinnedMessages((current) =>
-          current.filter((message) => message.id !== messageId),
-        )
+          current.filter((message) => message.id !== messageId)
+        );
       }
-      return true
+      return true;
     } catch {
       if (activeSpaceIdRef.current === requestedSpaceId) {
-        setMessageError(communityCopy.direct.messageUnpinFailed)
+        setMessageError(communityCopy.direct.messageUnpinFailed);
       }
-      return false
+      return false;
     }
   }
 
   async function setMessageReaction(
     messageId: string,
     emojiCode: string,
-    isPresent: boolean,
+    isPresent: boolean
   ) {
     if (!spaceId) {
-      return null
+      return null;
     }
 
     try {
-      setMessageError(null)
+      setMessageError(null);
       const message = await apiJson<SpaceMessageResponse>(
         `/api/private-spaces/${spaceId}/messages/${messageId}/reactions`,
         {
           method: isPresent ? 'PUT' : 'DELETE',
           accessToken,
-          body: { emojiCode },
-        },
-      )
+          body: { emojiCode }
+        }
+      );
 
-      setMessages((current) => replaceMessage(current, message))
+      setMessages((current) => replaceMessage(current, message));
       setPinnedMessages((current) =>
         current.some((item) => item.id === message.id)
           ? replaceMessage(current, message)
-          : current,
-      )
-      return message
+          : current
+      );
+      return message;
     } catch {
-      setMessageError(serverCopy.messages.reactionFailed)
-      return null
+      setMessageError(serverCopy.messages.reactionFailed);
+      return null;
     }
   }
 
-  const markMessagesRead = useCallback(async (throughMessageId: string) => {
-    if (!spaceId) {
-      return null
-    }
+  const markMessagesRead = useCallback(
+    async (throughMessageId: string) => {
+      if (!spaceId) {
+        return null;
+      }
 
-    try {
-      const readState = await apiJson<SpaceReadStateResponse>(
-        `/api/private-spaces/${spaceId}/messages/read-state`,
-        {
-          method: 'PUT',
-          accessToken,
-          body: { throughMessageId },
-        },
-      )
-
-      window.dispatchEvent(
-        new CustomEvent<SpaceReadStateResponse>(
-          'arcanelink:space-read-state-committed',
+      try {
+        const readState = await apiJson<SpaceReadStateResponse>(
+          `/api/private-spaces/${spaceId}/messages/read-state`,
           {
-            detail: {
-              ...readState,
-              serverId: null,
-            },
-          },
-        ),
-      )
-      return readState
-    } catch {
-      return null
-    }
-  }, [accessToken, spaceId])
+            method: 'PUT',
+            accessToken,
+            body: { throughMessageId }
+          }
+        );
+
+        window.dispatchEvent(
+          new CustomEvent<SpaceReadStateResponse>(
+            'arcanelink:space-read-state-committed',
+            {
+              detail: {
+                ...readState,
+                serverId: null
+              }
+            }
+          )
+        );
+        return readState;
+      } catch {
+        return null;
+      }
+    },
+    [accessToken, spaceId]
+  );
 
   async function uploadMessageAttachments(files: File[]) {
-    const uploadedAssets: AssetResponse[] = []
+    const uploadedAssets: AssetResponse[] = [];
 
     for (const file of files) {
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append('file', file);
 
       uploadedAssets.push(
         await apiJson<AssetResponse>(
@@ -720,13 +723,13 @@ export function usePrivateSpaceMessages(
           {
             method: 'POST',
             accessToken,
-            body: formData,
-          },
-        ),
-      )
+            body: formData
+          }
+        )
+      );
     }
 
-    return uploadedAssets
+    return uploadedAssets;
   }
 
   useEffect(() => {
@@ -734,55 +737,55 @@ export function usePrivateSpaceMessages(
       focusMessage?.spaceId === spaceId
         ? {
             createdAt: new Date(
-              new Date(focusMessage.createdAt).getTime() + 1,
+              new Date(focusMessage.createdAt).getTime() + 1
             ).toISOString(),
-            id: focusMessage.messageId,
+            id: focusMessage.messageId
           }
-        : null
+        : null;
 
-    void loadMessages(false, focusBefore)
-    void loadPinnedMessages(true)
-    void loadDeletedMessages(false)
+    void loadMessages(false, focusBefore);
+    void loadPinnedMessages(true);
+    void loadDeletedMessages(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, spaceId, focusMessage?.messageId])
+  }, [accessToken, spaceId, focusMessage?.messageId]);
 
   useEffect(() => {
     if (!spaceId) {
-      return undefined
+      return undefined;
     }
 
-    const activeSpaceId = spaceId
+    const activeSpaceId = spaceId;
     const refreshMessages = createRealtimeRefreshCoalescer(async () => {
       await Promise.all([
         loadMessages(true),
         loadPinnedMessages(true),
-        loadDeletedMessages(true),
-      ])
-    })
+        loadDeletedMessages(true)
+      ]);
+    });
 
     function reloadCurrentSpaceMessages(event: Event) {
       const payload = (event as CustomEvent<PrivateSpaceMessagesChangedPayload>)
-        .detail
+        .detail;
 
       if (payload?.spaceId?.toLowerCase() === activeSpaceId.toLowerCase()) {
-        refreshMessages.request()
+        refreshMessages.request();
       }
     }
 
     window.addEventListener(
       'arcanelink:private-space-messages-changed',
-      reloadCurrentSpaceMessages,
-    )
+      reloadCurrentSpaceMessages
+    );
 
     return () => {
-      refreshMessages.dispose()
+      refreshMessages.dispose();
       window.removeEventListener(
         'arcanelink:private-space-messages-changed',
-        reloadCurrentSpaceMessages,
-      )
-    }
+        reloadCurrentSpaceMessages
+      );
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, spaceId])
+  }, [accessToken, spaceId]);
 
   return {
     messages: visibleMessages,
@@ -801,9 +804,7 @@ export function usePrivateSpaceMessages(
     hasOlderDeletedMessages,
     isClearingDeletedMessages,
     restoringMessageId:
-      restoringMessage?.spaceId === spaceId
-        ? restoringMessage.messageId
-        : null,
+      restoringMessage?.spaceId === spaceId ? restoringMessage.messageId : null,
     isSendingMessage,
     messageError,
     trashError,
@@ -821,60 +822,54 @@ export function usePrivateSpaceMessages(
     pinMessage,
     unpinMessage,
     setMessageReaction,
-    markMessagesRead,
-  }
+    markMessagesRead
+  };
 }
 
 function mergeMessagePages(
   ...pages: SpaceMessageResponse[][]
 ): SpaceMessageResponse[] {
-  const byId = new Map<string, SpaceMessageResponse>()
-  pages.flat().forEach((message) => byId.set(message.id, message))
-  return [...byId.values()].sort(compareMessages)
+  const byId = new Map<string, SpaceMessageResponse>();
+  pages.flat().forEach((message) => byId.set(message.id, message));
+  return [...byId.values()].sort(compareMessages);
 }
 
 function mergeLatestMessagePage(
   current: SpaceMessageResponse[],
-  latest: SpaceMessageResponse[],
+  latest: SpaceMessageResponse[]
 ) {
   if (latest.length === 0) {
-    return []
+    return [];
   }
 
-  const oldestLatest = latest[0]
+  const oldestLatest = latest[0];
   const older = current.filter(
-    (message) => compareMessages(message, oldestLatest) < 0,
-  )
-  return mergeMessagePages(older, latest)
+    (message) => compareMessages(message, oldestLatest) < 0
+  );
+  return mergeMessagePages(older, latest);
 }
 
 function compareMessages(
   left: SpaceMessageResponse,
-  right: SpaceMessageResponse,
+  right: SpaceMessageResponse
 ) {
   const createdAtDifference =
-    Date.parse(left.createdAt) - Date.parse(right.createdAt)
-  return createdAtDifference || left.id.localeCompare(right.id)
+    Date.parse(left.createdAt) - Date.parse(right.createdAt);
+  return createdAtDifference || left.id.localeCompare(right.id);
 }
 
-function mergeDeletedMessagePages(
-  ...pages: PrivateDeletedMessageResponse[][]
-) {
-  const byIdAndScope = new Map<string, PrivateDeletedMessageResponse>()
+function mergeDeletedMessagePages(...pages: PrivateDeletedMessageResponse[][]) {
+  const byIdAndScope = new Map<string, PrivateDeletedMessageResponse>();
   pages
     .flat()
     .forEach((deletion) =>
-      byIdAndScope.set(
-        `${deletion.message.id}:${deletion.scope}`,
-        deletion,
-      ),
-    )
+      byIdAndScope.set(`${deletion.message.id}:${deletion.scope}`, deletion)
+    );
   return [...byIdAndScope.values()].sort((left, right) => {
     const deletedAtDifference =
-      Date.parse(right.deletedAt) - Date.parse(left.deletedAt)
+      Date.parse(right.deletedAt) - Date.parse(left.deletedAt);
     return (
-      deletedAtDifference ||
-      right.message.id.localeCompare(left.message.id)
-    )
-  })
+      deletedAtDifference || right.message.id.localeCompare(left.message.id)
+    );
+  });
 }

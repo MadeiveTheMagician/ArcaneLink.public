@@ -1,93 +1,99 @@
 export type VoiceWorkspaceViewPreferences = {
-  showParticipantsWithoutVideo: boolean
-  showSelfCamera: boolean
-}
+  showParticipantsWithoutVideo: boolean;
+  showSelfCamera: boolean;
+};
 
 type VoiceWorkspaceViewPreferencesStorage = {
-  version: 1
-  accounts: Record<string, VoiceWorkspaceViewPreferences>
-}
+  version: 1;
+  accounts: Record<string, VoiceWorkspaceViewPreferences>;
+};
 
 const voiceWorkspaceViewPreferencesStorageKey =
-  'arcanelink.voiceWorkspaceViewPreferences.v1'
+  'arcanelink.voiceWorkspaceViewPreferences.v1';
 
 export const defaultVoiceWorkspaceViewPreferences = {
   showParticipantsWithoutVideo: true,
-  showSelfCamera: true,
-} as const satisfies VoiceWorkspaceViewPreferences
+  showSelfCamera: true
+} as const satisfies VoiceWorkspaceViewPreferences;
 
 export function loadVoiceWorkspaceViewPreferences(
-  userId: string,
+  userId: string
 ): VoiceWorkspaceViewPreferences {
-  const accountKey = normalizeAccountKey(userId)
+  const accountKey = normalizeAccountKey(userId);
   if (!accountKey || typeof window === 'undefined') {
-    return { ...defaultVoiceWorkspaceViewPreferences }
+    return { ...defaultVoiceWorkspaceViewPreferences };
   }
 
   try {
     const raw = window.localStorage.getItem(
-      voiceWorkspaceViewPreferencesStorageKey,
-    )
+      voiceWorkspaceViewPreferencesStorageKey
+    );
     if (!raw) {
-      return { ...defaultVoiceWorkspaceViewPreferences }
+      return { ...defaultVoiceWorkspaceViewPreferences };
     }
 
-    const parsed = JSON.parse(raw) as Partial<VoiceWorkspaceViewPreferencesStorage>
-    return normalizeVoiceWorkspaceViewPreferences(parsed.accounts?.[accountKey])
+    const parsed = JSON.parse(
+      raw
+    ) as Partial<VoiceWorkspaceViewPreferencesStorage>;
+    return normalizeVoiceWorkspaceViewPreferences(
+      parsed.accounts?.[accountKey]
+    );
   } catch {
-    return { ...defaultVoiceWorkspaceViewPreferences }
+    return { ...defaultVoiceWorkspaceViewPreferences };
   }
 }
 
 export function saveVoiceWorkspaceViewPreferences(
   userId: string,
-  preferences: VoiceWorkspaceViewPreferences,
+  preferences: VoiceWorkspaceViewPreferences
 ) {
-  const accountKey = normalizeAccountKey(userId)
+  const accountKey = normalizeAccountKey(userId);
   if (!accountKey || typeof window === 'undefined') {
-    return
+    return;
   }
 
-  let accounts: Record<string, VoiceWorkspaceViewPreferences> = {}
+  let accounts: Record<string, VoiceWorkspaceViewPreferences> = {};
   try {
     const raw = window.localStorage.getItem(
-      voiceWorkspaceViewPreferencesStorageKey,
-    )
+      voiceWorkspaceViewPreferencesStorageKey
+    );
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<VoiceWorkspaceViewPreferencesStorage>
+      const parsed = JSON.parse(
+        raw
+      ) as Partial<VoiceWorkspaceViewPreferencesStorage>;
       if (parsed.accounts && typeof parsed.accounts === 'object') {
-        accounts = parsed.accounts
+        accounts = parsed.accounts;
       }
     }
   } catch {
-    accounts = {}
+    accounts = {};
   }
 
   const snapshot: VoiceWorkspaceViewPreferencesStorage = {
     version: 1,
     accounts: {
       ...accounts,
-      [accountKey]: normalizeVoiceWorkspaceViewPreferences(preferences),
-    },
-  }
+      [accountKey]: normalizeVoiceWorkspaceViewPreferences(preferences)
+    }
+  };
   window.localStorage.setItem(
     voiceWorkspaceViewPreferencesStorageKey,
-    JSON.stringify(snapshot),
-  )
+    JSON.stringify(snapshot)
+  );
 }
 
 export function isVoiceWorkspaceCardVisible(
   card: {
-    isSelf: boolean
-    mediaKind: 'camera' | 'screen'
+    isSelf: boolean;
+    mediaKind: 'camera' | 'screen';
   },
-  showSelfCamera: boolean,
+  showSelfCamera: boolean
 ) {
-  return showSelfCamera || !card.isSelf || card.mediaKind !== 'camera'
+  return showSelfCamera || !card.isSelf || card.mediaKind !== 'camera';
 }
 
 function normalizeVoiceWorkspaceViewPreferences(
-  value: Partial<VoiceWorkspaceViewPreferences> | null | undefined,
+  value: Partial<VoiceWorkspaceViewPreferences> | null | undefined
 ): VoiceWorkspaceViewPreferences {
   return {
     showParticipantsWithoutVideo:
@@ -95,12 +101,10 @@ function normalizeVoiceWorkspaceViewPreferences(
         ? value.showParticipantsWithoutVideo
         : true,
     showSelfCamera:
-      typeof value?.showSelfCamera === 'boolean'
-        ? value.showSelfCamera
-        : true,
-  }
+      typeof value?.showSelfCamera === 'boolean' ? value.showSelfCamera : true
+  };
 }
 
 function normalizeAccountKey(value: string) {
-  return value.trim().toLowerCase()
+  return value.trim().toLowerCase();
 }

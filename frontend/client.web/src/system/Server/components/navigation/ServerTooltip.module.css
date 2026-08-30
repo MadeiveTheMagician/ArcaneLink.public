@@ -17,7 +17,11 @@
     ),
     linear-gradient(
       145deg,
-      color-mix(in srgb, var(--theme-control-bg-strong), var(--theme-accent) 8%),
+      color-mix(
+        in srgb,
+        var(--theme-control-bg-strong),
+        var(--theme-accent) 8%
+      ),
       var(--theme-surface-raised)
     );
   box-shadow:
@@ -82,7 +86,7 @@
   height: 18px;
   border: 1px solid var(--theme-border-accent);
   border-radius: 50%;
-  content: "";
+  content: '';
   background: var(--theme-control-bg);
 }
 

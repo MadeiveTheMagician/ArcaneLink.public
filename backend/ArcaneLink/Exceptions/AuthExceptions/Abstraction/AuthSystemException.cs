@@ -1,10 +1,9 @@
-﻿namespace ArcaneLink.Exceptions.AuthExceptions.Abstractions
+namespace ArcaneLink.Exceptions.AuthExceptions.Abstractions;
+
+public abstract class AuthSystemException : Exception
 {
-    public abstract class AuthSystemException : Exception
+    protected AuthSystemException(string message)
+        : base(message)
     {
-        protected AuthSystemException(string message)
-            : base(message)
-        {
-        }
     }
 }

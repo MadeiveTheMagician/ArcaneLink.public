@@ -1,56 +1,57 @@
-import { useEffect, useId, useState, type FormEvent } from 'react'
-import { createPortal } from 'react-dom'
-import { apiJson } from '../../../shared/api/api'
-import type { SpaceMessageResponse } from '../../../shared/types'
-import { SystemCloseIcon } from '../../shared/icons/components/SystemCloseIcon'
-import { SystemSelect } from '../../shared/ui/SystemSelect'
-import buttonStyles from '../../shared/styles/Button.module.css'
-import dialogStyles from '../../shared/styles/Dialog.module.css'
-import { moderationCopy, moderationReasonOptions } from '../moderationCopy.ru'
+import { type FormEvent, useEffect, useId, useState } from 'react';
+import { createPortal } from 'react-dom';
+
+import { apiJson } from '../../../shared/api/api';
+import type { SpaceMessageResponse } from '../../../shared/types';
+import { SystemCloseIcon } from '../../shared/icons/components/SystemCloseIcon';
+import { SystemSelect } from '../../shared/ui/SystemSelect';
+import type { ServerMessageReportContext } from '../models/messageReportModel';
+import { moderationCopy, moderationReasonOptions } from '../moderationCopy.ru';
 import type {
   ModerationReasonCode,
-  ModerationReportResponse,
-} from '../moderationTypes'
-import type { ServerMessageReportContext } from '../models/messageReportModel'
-import styles from './MessageReportDialog.module.css'
+  ModerationReportResponse
+} from '../moderationTypes';
+
+import buttonStyles from '../../shared/styles/Button.module.css';
+import dialogStyles from '../../shared/styles/Dialog.module.css';
+import styles from './MessageReportDialog.module.css';
 
 type MessageReportDialogProps = {
-  context: ServerMessageReportContext
-  message: SpaceMessageResponse
-  onClose: () => void
-}
+  context: ServerMessageReportContext;
+  message: SpaceMessageResponse;
+  onClose: () => void;
+};
 
 export function MessageReportDialog({
   context,
   message,
-  onClose,
+  onClose
 }: MessageReportDialogProps) {
-  const [reasonCode, setReasonCode] =
-    useState<ModerationReasonCode>('spam')
-  const [details, setDetails] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [reasonCode, setReasonCode] = useState<ModerationReasonCode>('spam');
+  const [details, setDetails] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedReport, setSubmittedReport] =
-    useState<ModerationReportResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const reasonSelectId = useId()
+    useState<ModerationReportResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const reasonSelectId = useId();
 
   useEffect(() => {
-    document.getElementById(reasonSelectId)?.focus()
+    document.getElementById(reasonSelectId)?.focus();
 
     function closeFromKeyboard(event: KeyboardEvent) {
       if (event.key === 'Escape' && !event.defaultPrevented && !isSubmitting) {
-        onClose()
+        onClose();
       }
     }
 
-    window.addEventListener('keydown', closeFromKeyboard)
-    return () => window.removeEventListener('keydown', closeFromKeyboard)
-  }, [isSubmitting, onClose, reasonSelectId])
+    window.addEventListener('keydown', closeFromKeyboard);
+    return () => window.removeEventListener('keydown', closeFromKeyboard);
+  }, [isSubmitting, onClose, reasonSelectId]);
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setIsSubmitting(true)
-    setError(null)
+    event.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
 
     try {
       const report = await apiJson<ModerationReportResponse>(
@@ -60,19 +61,19 @@ export function MessageReportDialog({
           accessToken: context.accessToken,
           body: {
             reasonCode,
-            details: details.trim() || null,
-          },
-        },
-      )
-      setSubmittedReport(report)
+            details: details.trim() || null
+          }
+        }
+      );
+      setSubmittedReport(report);
     } catch (requestError) {
       setError(
         requestError instanceof Error && requestError.message
           ? requestError.message
-          : moderationCopy.report.failed,
-      )
+          : moderationCopy.report.failed
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
@@ -185,6 +186,6 @@ export function MessageReportDialog({
         )}
       </section>
     </div>,
-    document.body,
-  )
+    document.body
+  );
 }

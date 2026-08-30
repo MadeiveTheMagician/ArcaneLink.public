@@ -1,18 +1,18 @@
 import {
   createDefaultDetachedVoicePreset,
   detachedVoiceLayoutDefaultColumns,
-  detachedVoiceLayoutDefaultRows,
-} from './detachedVoiceLayoutModel'
-import { saveDetachedVoiceLayoutStorage } from './detachedVoiceLayoutStorage'
+  detachedVoiceLayoutDefaultRows
+} from './detachedVoiceLayoutModel';
+import { saveDetachedVoiceLayoutStorage } from './detachedVoiceLayoutStorage';
 import type {
   DetachedVoiceLayoutPreset,
   DetachedVoiceLayoutSlot,
   DetachedVoiceLayoutStorage,
-  DetachedVoiceWorkspaceLayoutState,
-} from './detachedVoiceLayoutTypes'
+  DetachedVoiceWorkspaceLayoutState
+} from './detachedVoiceLayoutTypes';
 
 export function createDetachedWorkspaceLayoutState(
-  storage: DetachedVoiceLayoutStorage,
+  storage: DetachedVoiceLayoutStorage
 ): DetachedVoiceWorkspaceLayoutState {
   return {
     activePresetId: null,
@@ -31,12 +31,12 @@ export function createDetachedWorkspaceLayoutState(
     slotInteractionOrder: {},
     slotMenuPositionUnlocked: false,
     slotMenuPosition: null,
-    slotMenuPlacementSlot: null,
-  }
+    slotMenuPlacementSlot: null
+  };
 }
 
 export function persistDetachedWorkspaceLayoutState(
-  state: DetachedVoiceWorkspaceLayoutState,
+  state: DetachedVoiceWorkspaceLayoutState
 ) {
   saveDetachedVoiceLayoutStorage({
     version: 1,
@@ -44,46 +44,46 @@ export function persistDetachedWorkspaceLayoutState(
     lastPresetId: state.activePresetId,
     showParticipantsWithoutVideo: state.showParticipantsWithoutVideo,
     showSelfCamera: state.showSelfCamera,
-    isTableView: state.isTableView,
-  })
+    isTableView: state.isTableView
+  });
 }
 
 export function getActiveDetachedVoicePreset(
-  state: DetachedVoiceWorkspaceLayoutState,
+  state: DetachedVoiceWorkspaceLayoutState
 ) {
-  return state.presets.find(
-    (preset) => preset.id === state.activePresetId,
-  ) ?? null
+  return (
+    state.presets.find((preset) => preset.id === state.activePresetId) ?? null
+  );
 }
 
 export function saveDetachedActivePreset(
   state: DetachedVoiceWorkspaceLayoutState,
-  patch: Partial<DetachedVoiceLayoutPreset>,
+  patch: Partial<DetachedVoiceLayoutPreset>
 ) {
-  const activePreset = getActiveDetachedVoicePreset(state)
+  const activePreset = getActiveDetachedVoicePreset(state);
   if (!activePreset) {
-    return
+    return;
   }
 
   state.presets = state.presets.map((preset) =>
     preset.id === activePreset.id
       ? {
           ...preset,
-          ...patch,
+          ...patch
         }
-      : preset,
-  )
-  persistDetachedWorkspaceLayoutState(state)
+      : preset
+  );
+  persistDetachedWorkspaceLayoutState(state);
 }
 
 export function updateDetachedActivePresetSlot(
   state: DetachedVoiceWorkspaceLayoutState,
   slotIndex: number,
-  patch: Partial<DetachedVoiceLayoutSlot>,
+  patch: Partial<DetachedVoiceLayoutSlot>
 ) {
-  const activePreset = getActiveDetachedVoicePreset(state)
+  const activePreset = getActiveDetachedVoicePreset(state);
   if (!activePreset) {
-    return
+    return;
   }
 
   saveDetachedActivePreset(state, {
@@ -91,97 +91,97 @@ export function updateDetachedActivePresetSlot(
       slot.index === slotIndex
         ? {
             ...slot,
-            ...patch,
+            ...patch
           }
-        : slot,
-    ),
-  })
+        : slot
+    )
+  });
 }
 
 export function activateDetachedVoicePreset(
   state: DetachedVoiceWorkspaceLayoutState,
-  presetId: string | null,
+  presetId: string | null
 ) {
-  const preset = state.presets.find((item) => item.id === presetId) ?? null
-  state.activePresetId = preset?.id ?? null
-  state.editMode = false
-  state.selectedSlotIndex = null
-  state.slotMenuPositionUnlocked = false
-  state.slotMenuPosition = null
-  state.slotMenuPlacementSlot = null
-  state.gridColumns = preset?.gridColumns ?? detachedVoiceLayoutDefaultColumns
-  state.gridRows = preset?.gridRows ?? detachedVoiceLayoutDefaultRows
+  const preset = state.presets.find((item) => item.id === presetId) ?? null;
+  state.activePresetId = preset?.id ?? null;
+  state.editMode = false;
+  state.selectedSlotIndex = null;
+  state.slotMenuPositionUnlocked = false;
+  state.slotMenuPosition = null;
+  state.slotMenuPlacementSlot = null;
+  state.gridColumns = preset?.gridColumns ?? detachedVoiceLayoutDefaultColumns;
+  state.gridRows = preset?.gridRows ?? detachedVoiceLayoutDefaultRows;
   state.showParticipantsWithoutVideo =
-    preset?.showParticipantsWithoutVideo ?? state.showParticipantsWithoutVideo
-  state.slotAssignments = {}
-  persistDetachedWorkspaceLayoutState(state)
+    preset?.showParticipantsWithoutVideo ?? state.showParticipantsWithoutVideo;
+  state.slotAssignments = {};
+  persistDetachedWorkspaceLayoutState(state);
 }
 
 export function createDetachedPresetFromCards(
   state: DetachedVoiceWorkspaceLayoutState,
   {
     cardCount,
-    namePrefix,
+    namePrefix
   }: {
-    cardCount: number
-    namePrefix: string
-  },
+    cardCount: number;
+    namePrefix: string;
+  }
 ) {
-  const presetNamePattern = new RegExp(`^${namePrefix} (\\d+)$`, 'i')
+  const presetNamePattern = new RegExp(`^${namePrefix} (\\d+)$`, 'i');
   const existingNumbers = state.presets
     .map((preset) => presetNamePattern.exec(preset.name)?.[1])
     .filter((value): value is string => Boolean(value))
-    .map(Number)
-  const nextNumber = Math.max(0, ...existingNumbers) + 1
-  const name = `${namePrefix} ${nextNumber}`
+    .map(Number);
+  const nextNumber = Math.max(0, ...existingNumbers) + 1;
+  const name = `${namePrefix} ${nextNumber}`;
 
   const preset = createDefaultDetachedVoicePreset(
     name,
     cardCount,
-    state.showParticipantsWithoutVideo,
-  )
-  state.presets = [...state.presets, preset]
-  activateDetachedVoicePreset(state, preset.id)
-  persistDetachedWorkspaceLayoutState(state)
-  return preset
+    state.showParticipantsWithoutVideo
+  );
+  state.presets = [...state.presets, preset];
+  activateDetachedVoicePreset(state, preset.id);
+  persistDetachedWorkspaceLayoutState(state);
+  return preset;
 }
 
 export function deleteDetachedActivePreset(
-  state: DetachedVoiceWorkspaceLayoutState,
+  state: DetachedVoiceWorkspaceLayoutState
 ) {
-  const activePreset = getActiveDetachedVoicePreset(state)
+  const activePreset = getActiveDetachedVoicePreset(state);
   if (!activePreset) {
-    return null
+    return null;
   }
 
   state.presets = state.presets.filter(
-    (preset) => preset.id !== activePreset.id,
-  )
-  state.activePresetId = null
-  state.editMode = false
-  state.selectedSlotIndex = null
-  state.slotMenuPositionUnlocked = false
-  state.slotMenuPosition = null
-  state.slotMenuPlacementSlot = null
-  state.slotAssignments = {}
-  persistDetachedWorkspaceLayoutState(state)
-  return activePreset
+    (preset) => preset.id !== activePreset.id
+  );
+  state.activePresetId = null;
+  state.editMode = false;
+  state.selectedSlotIndex = null;
+  state.slotMenuPositionUnlocked = false;
+  state.slotMenuPosition = null;
+  state.slotMenuPlacementSlot = null;
+  state.slotAssignments = {};
+  persistDetachedWorkspaceLayoutState(state);
+  return activePreset;
 }
 
 export function resetDetachedActivePreset(
   state: DetachedVoiceWorkspaceLayoutState,
-  cardCount: number,
+  cardCount: number
 ) {
-  const activePreset = getActiveDetachedVoicePreset(state)
+  const activePreset = getActiveDetachedVoicePreset(state);
   if (!activePreset) {
-    return
+    return;
   }
 
   const defaultPreset = createDefaultDetachedVoicePreset(
     activePreset.name,
     cardCount,
-    state.showParticipantsWithoutVideo,
-  )
+    state.showParticipantsWithoutVideo
+  );
 
   state.presets = state.presets.map((preset) =>
     preset.id === activePreset.id
@@ -190,38 +190,40 @@ export function resetDetachedActivePreset(
           id: activePreset.id,
           name: activePreset.name,
           isPinned: false,
-          isPersisted: activePreset.isPersisted,
+          isPersisted: activePreset.isPersisted
         }
-      : preset,
-  )
-  state.editMode = true
-  state.selectedSlotIndex = null
-  state.slotMenuPositionUnlocked = false
-  state.slotMenuPosition = null
-  state.slotMenuPlacementSlot = null
-  state.slotAssignments = {}
-  persistDetachedWorkspaceLayoutState(state)
+      : preset
+  );
+  state.editMode = true;
+  state.selectedSlotIndex = null;
+  state.slotMenuPositionUnlocked = false;
+  state.slotMenuPosition = null;
+  state.slotMenuPlacementSlot = null;
+  state.slotAssignments = {};
+  persistDetachedWorkspaceLayoutState(state);
 }
 
 export function getDetachedSlotStackOrder(
   layoutState: DetachedVoiceWorkspaceLayoutState,
-  slotIndex: number,
+  slotIndex: number
 ) {
-  return layoutState.slotInteractionOrder[slotIndex] ?? 0
+  return layoutState.slotInteractionOrder[slotIndex] ?? 0;
 }
 
 export function getDetachedSlotVisualZIndex(
   layoutState: DetachedVoiceWorkspaceLayoutState,
-  slot: DetachedVoiceLayoutSlot,
+  slot: DetachedVoiceLayoutSlot
 ) {
-  return slot.zIndex * 1000 + getDetachedSlotStackOrder(layoutState, slot.index)
+  return (
+    slot.zIndex * 1000 + getDetachedSlotStackOrder(layoutState, slot.index)
+  );
 }
 
 export function bringDetachedSlotToFront(
   layoutState: DetachedVoiceWorkspaceLayoutState,
-  slotIndex: number,
+  slotIndex: number
 ) {
-  layoutState.slotInteractionCounter += 1
+  layoutState.slotInteractionCounter += 1;
   layoutState.slotInteractionOrder[slotIndex] =
-    layoutState.slotInteractionCounter
+    layoutState.slotInteractionCounter;
 }

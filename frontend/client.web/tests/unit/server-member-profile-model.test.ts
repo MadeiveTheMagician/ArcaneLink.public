@@ -1,13 +1,13 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
 
-import type { OwnServerMemberProfileResponse } from '../../src/shared/types'
+import type { OwnServerMemberProfileResponse } from '../../src/shared/types';
 import {
   createServerMemberProfileDraft,
   createServerMemberProfileUpdate,
   createServerProfileAssetReset,
   hasServerMemberProfileOverrides,
-  validateServerMemberProfileDraft,
-} from '../../src/system/Hub/components/settings/serverMemberProfileModel'
+  validateServerMemberProfileDraft
+} from '../../src/system/Hub/components/settings/serverMemberProfileModel';
 
 const inheritedProfile: OwnServerMemberProfileResponse = {
   serverId: 'server-1',
@@ -27,24 +27,24 @@ const inheritedProfile: OwnServerMemberProfileResponse = {
     displayName: true,
     avatar: true,
     banner: true,
-    about: true,
-  },
-}
+    about: true
+  }
+};
 
 test.describe('server member profile model', () => {
   test('keeps effective global values while every field is inherited', () => {
-    const draft = createServerMemberProfileDraft(inheritedProfile)
+    const draft = createServerMemberProfileDraft(inheritedProfile);
 
     expect(draft).toEqual({
       displayName: 'Global name',
       about: 'Global about',
       statusText: '',
       useGlobalDisplayName: true,
-      useGlobalAbout: true,
-    })
-    expect(createServerMemberProfileUpdate(inheritedProfile, draft)).toBeNull()
-    expect(hasServerMemberProfileOverrides(inheritedProfile)).toBe(false)
-  })
+      useGlobalAbout: true
+    });
+    expect(createServerMemberProfileUpdate(inheritedProfile, draft)).toBeNull();
+    expect(hasServerMemberProfileOverrides(inheritedProfile)).toBe(false);
+  });
 
   test('creates text overrides without changing inherited assets', () => {
     const draft = {
@@ -53,15 +53,15 @@ test.describe('server member profile model', () => {
       about: ' Server about ',
       statusText: ' In voice ',
       useGlobalDisplayName: false,
-      useGlobalAbout: false,
-    }
+      useGlobalAbout: false
+    };
 
     expect(createServerMemberProfileUpdate(inheritedProfile, draft)).toEqual({
       displayName: 'Server name',
       about: 'Server about',
-      statusText: 'In voice',
-    })
-  })
+      statusText: 'In voice'
+    });
+  });
 
   test('returns individual and complete override state to inheritance', () => {
     const overridden = {
@@ -73,55 +73,55 @@ test.describe('server member profile model', () => {
         displayName: false,
         avatar: false,
         banner: false,
-        about: false,
-      },
-    }
+        about: false
+      }
+    };
     const draft = {
       ...createServerMemberProfileDraft(overridden),
       statusText: '',
       useGlobalDisplayName: true,
-      useGlobalAbout: true,
-    }
+      useGlobalAbout: true
+    };
 
     expect(createServerMemberProfileUpdate(overridden, draft)).toEqual({
       useGlobalDisplayName: true,
       useGlobalAbout: true,
-      clearStatusText: true,
-    })
+      clearStatusText: true
+    });
     expect(createServerProfileAssetReset('avatar')).toEqual({
-      useGlobalAvatar: true,
-    })
+      useGlobalAvatar: true
+    });
     expect(createServerProfileAssetReset('banner')).toEqual({
-      useGlobalBanner: true,
-    })
-    expect(hasServerMemberProfileOverrides(overridden)).toBe(true)
-  })
+      useGlobalBanner: true
+    });
+    expect(hasServerMemberProfileOverrides(overridden)).toBe(true);
+  });
 
   test('requires meaningful custom display name and about values', () => {
     const draft = {
       ...createServerMemberProfileDraft(inheritedProfile),
       displayName: ' ',
-      useGlobalDisplayName: false,
-    }
+      useGlobalDisplayName: false
+    };
 
     expect(validateServerMemberProfileDraft(draft)).toBe(
-      'display-name-required',
-    )
+      'display-name-required'
+    );
     expect(
       validateServerMemberProfileDraft({
         ...draft,
         displayName: 'Server name',
         about: ' ',
-        useGlobalAbout: false,
-      }),
-    ).toBe('about-required')
+        useGlobalAbout: false
+      })
+    ).toBe('about-required');
     expect(
       createServerMemberProfileUpdate(inheritedProfile, {
         ...draft,
         displayName: 'Server name',
         about: ' ',
-        useGlobalAbout: false,
-      }),
-    ).toBeNull()
-  })
-})
+        useGlobalAbout: false
+      })
+    ).toBeNull();
+  });
+});

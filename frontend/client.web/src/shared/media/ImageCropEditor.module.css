@@ -5,11 +5,7 @@
 
 .frame {
   position: relative;
-  width: min(
-    100%,
-    520px,
-    clamp(220px, calc(100dvh - 300px), 520px)
-  );
+  width: min(100%, 520px, clamp(220px, calc(100dvh - 300px), 520px));
   margin: 0 auto;
   overflow: hidden;
   border: 1px solid var(--theme-section-border);

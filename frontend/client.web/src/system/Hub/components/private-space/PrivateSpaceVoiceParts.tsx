@@ -1,54 +1,56 @@
 import {
-  useEffect,
-  useRef,
-  useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-} from 'react'
+  useEffect,
+  useRef,
+  useState
+} from 'react';
+
+import { apiJson, apiNoContent } from '../../../../shared/api/api';
 import type {
-  DirectMessageBlockedUserResponse,
   DirectMessageBlockStatusResponse,
+  DirectMessageBlockedUserResponse,
   FriendUserResponse,
   PrivateSpaceResponse,
-  ServerMemberResponse,
-} from '../../../../shared/types'
-import { apiJson, apiNoContent } from '../../../../shared/api/api'
-import { VoiceCallControlPanel } from '../../../Server/components/voice/controls/VoiceCallControlPanel'
+  ServerMemberResponse
+} from '../../../../shared/types';
+import { VoiceCallControlPanel } from '../../../Server/components/voice/controls/VoiceCallControlPanel';
+import { useVoiceMediaTrackVersion } from '../../../Server/components/voice/participants/useVoiceMediaTrackVersion';
 import {
-  communityCopy,
-  dispatchUserBlockChanged,
-  getUserBlockedNotice,
+  createTrackStream,
+  selectParticipantVideoTracks
+} from '../../../Server/components/voice/participants/voiceMediaTracks';
+import type {
+  VoiceParticipant,
+  VoicePeerStatus
+} from '../../../Server/hooks/voice/useVoiceChannel';
+import {
   SystemIcon,
   UserBlockDialog,
   type UserBlockDialogTarget,
-  voiceCopy,
-} from '../../../shared'
-import type {
-  VoiceParticipant,
-  VoicePeerStatus,
-} from '../../../Server/hooks/voice/useVoiceChannel'
+  communityCopy,
+  dispatchUserBlockChanged,
+  getUserBlockedNotice,
+  voiceCopy
+} from '../../../shared';
+import { ContextMenu } from '../../../shared/components/context-menu/ContextMenu';
 import type {
   VoicePlaybackState,
-  VoiceUserAudioSettings,
-} from '../../../shared/types/voicePlayback'
-import { ContextMenu } from '../../../shared/components/context-menu/ContextMenu'
-import { UserAvatar } from '../direct-messages/DirectMessageAvatar'
-import {
-  createTrackStream,
-  selectParticipantVideoTracks,
-} from '../../../Server/components/voice/participants/voiceMediaTracks'
-import { useVoiceMediaTrackVersion } from '../../../Server/components/voice/participants/useVoiceMediaTrackVersion'
+  VoiceUserAudioSettings
+} from '../../../shared/types/voicePlayback';
+import { UserAvatar } from '../direct-messages/DirectMessageAvatar';
 import {
   buildPrivateVoiceParticipantContextMenuItems,
-  isPrivateVoiceContextMenuKey,
-} from './privateVoiceParticipantContextMenuItems'
-import styles from './PrivateVoice.module.css'
+  isPrivateVoiceContextMenuKey
+} from './privateVoiceParticipantContextMenuItems';
+
+import styles from './PrivateVoice.module.css';
 
 type PrivateVoiceContextMenuState = {
-  participant: VoiceParticipant
-  x: number
-  y: number
-}
+  participant: VoiceParticipant;
+  x: number;
+  y: number;
+};
 
 export function PrivateVoiceStrip({
   accessToken,
@@ -85,159 +87,157 @@ export function PrivateVoiceStrip({
   onToggleDeafened,
   onToggleCamera,
   onToggleScreenShare,
-  onLeaveVoiceChannel,
+  onLeaveVoiceChannel
 }: {
-  accessToken: string
-  currentUserId: string
-  localParticipantId: string | null
-  participants: VoiceParticipant[]
-  privateSpace: PrivateSpaceResponse
-  localCameraPreviewStream: MediaStream | null
-  localScreenPreviewStream: MediaStream | null
-  remoteStreamsByParticipantId: Record<string, MediaStream>
-  peerStatusesByParticipantId: Record<string, VoicePeerStatus>
-  speakingParticipantIds: Record<string, boolean>
-  hasLocalAudioTrack: boolean
-  error: string | null
-  isMuted: boolean
-  isDeafened: boolean
-  isCameraEnabled: boolean
-  isScreenSharing: boolean
-  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  playbackStatesByParticipantId: Record<string, VoicePlaybackState>
-  friendUserIds: ReadonlySet<string>
-  pendingOutgoingUserIds: ReadonlySet<string>
-  isMutatingFriends: boolean
-  onOpenProfile: (member: PrivateSpaceResponse['members'][number]) => void
-  onMentionUser: (participant: VoiceParticipant) => void
-  onOpenDirectSpace: (userId: string) => void
-  onStartDirectVoice: (user: FriendUserResponse) => void
+  accessToken: string;
+  currentUserId: string;
+  localParticipantId: string | null;
+  participants: VoiceParticipant[];
+  privateSpace: PrivateSpaceResponse;
+  localCameraPreviewStream: MediaStream | null;
+  localScreenPreviewStream: MediaStream | null;
+  remoteStreamsByParticipantId: Record<string, MediaStream>;
+  peerStatusesByParticipantId: Record<string, VoicePeerStatus>;
+  speakingParticipantIds: Record<string, boolean>;
+  hasLocalAudioTrack: boolean;
+  error: string | null;
+  isMuted: boolean;
+  isDeafened: boolean;
+  isCameraEnabled: boolean;
+  isScreenSharing: boolean;
+  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  playbackStatesByParticipantId: Record<string, VoicePlaybackState>;
+  friendUserIds: ReadonlySet<string>;
+  pendingOutgoingUserIds: ReadonlySet<string>;
+  isMutatingFriends: boolean;
+  onOpenProfile: (member: PrivateSpaceResponse['members'][number]) => void;
+  onMentionUser: (participant: VoiceParticipant) => void;
+  onOpenDirectSpace: (userId: string) => void;
+  onStartDirectVoice: (user: FriendUserResponse) => void;
   onLoadInviteTargetServers: (
-    targetUserId: string,
-  ) => Promise<ServerMemberResponse[]>
-  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void
-  onSendFriendRequest: (userId: string) => void
-  onRemoveFriend: (userId: string) => void
+    targetUserId: string
+  ) => Promise<ServerMemberResponse[]>;
+  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void;
+  onSendFriendRequest: (userId: string) => void;
+  onRemoveFriend: (userId: string) => void;
   onChangeAudioSettings: (
     participantId: string,
-    patch: Partial<VoiceUserAudioSettings>,
-  ) => void
-  onToggleMuted: () => void
-  onToggleDeafened: () => void
-  onToggleCamera: () => void
-  onToggleScreenShare: () => void
-  onLeaveVoiceChannel: () => void
+    patch: Partial<VoiceUserAudioSettings>
+  ) => void;
+  onToggleMuted: () => void;
+  onToggleDeafened: () => void;
+  onToggleCamera: () => void;
+  onToggleScreenShare: () => void;
+  onLeaveVoiceChannel: () => void;
 }) {
   const [contextMenu, setContextMenu] =
-    useState<PrivateVoiceContextMenuState | null>(null)
+    useState<PrivateVoiceContextMenuState | null>(null);
   const [inviteServersByUserId, setInviteServersByUserId] = useState<
     Record<string, ServerMemberResponse[]>
-  >({})
-  const [loadingInviteTargetUserIds, setLoadingInviteTargetUserIds] =
-    useState<ReadonlySet<string>>(() => new Set())
+  >({});
+  const [loadingInviteTargetUserIds, setLoadingInviteTargetUserIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
   const [blockStatusByUserId, setBlockStatusByUserId] = useState<
     Record<string, DirectMessageBlockStatusResponse>
-  >({})
-  const [mutatingBlockUserId, setMutatingBlockUserId] =
-    useState<string | null>(null)
+  >({});
+  const [mutatingBlockUserId, setMutatingBlockUserId] = useState<string | null>(
+    null
+  );
   const [userBlockDialogTarget, setUserBlockDialogTarget] =
-    useState<UserBlockDialogTarget | null>(null)
+    useState<UserBlockDialogTarget | null>(null);
   const mediaTrackVersion = useVoiceMediaTrackVersion({
     localCameraPreviewStream,
     localScreenPreviewStream,
-    remoteStreamsByParticipantId,
-  })
+    remoteStreamsByParticipantId
+  });
   const memberByUserId = new Map(
     privateSpace.members.map((member) => [
       normalizePrivateVoiceId(member.userId),
-      member,
-    ]),
-  )
+      member
+    ])
+  );
 
   useEffect(() => {
-    setContextMenu(null)
-    setUserBlockDialogTarget(null)
-  }, [privateSpace.spaceId])
+    setContextMenu(null);
+    setUserBlockDialogTarget(null);
+  }, [privateSpace.spaceId]);
 
   function getAudioSettings(userId: string) {
     return (
       audioSettingsByUserId[normalizePrivateVoiceId(userId)] ?? {
         volume: 1,
         isMuted: false,
-        isVideoHidden: false,
+        isVideoHidden: false
       }
-    )
+    );
   }
 
   function openParticipantMenu(
     event: ReactMouseEvent<HTMLElement>,
-    participant: VoiceParticipant,
+    participant: VoiceParticipant
   ) {
-    event.preventDefault()
-    event.stopPropagation()
-    openParticipantMenuAt(
-      participant,
-      event.clientX,
-      event.clientY,
-    )
+    event.preventDefault();
+    event.stopPropagation();
+    openParticipantMenuAt(participant, event.clientX, event.clientY);
   }
 
   function openParticipantMenuByKeyboard(
     event: ReactKeyboardEvent<HTMLElement>,
-    participant: VoiceParticipant,
+    participant: VoiceParticipant
   ) {
     if (!isPrivateVoiceContextMenuKey(event.key, event.shiftKey)) {
-      return
+      return;
     }
 
-    event.preventDefault()
-    event.stopPropagation()
-    const bounds = event.currentTarget.getBoundingClientRect()
+    event.preventDefault();
+    event.stopPropagation();
+    const bounds = event.currentTarget.getBoundingClientRect();
     openParticipantMenuAt(
       participant,
       bounds.left + Math.min(bounds.width / 2, 48),
-      bounds.top + Math.min(bounds.height / 2, 48),
-    )
+      bounds.top + Math.min(bounds.height / 2, 48)
+    );
   }
 
   function openParticipantMenuAt(
     participant: VoiceParticipant,
     x: number,
-    y: number,
+    y: number
   ) {
     setContextMenu({
       participant,
       x,
-      y,
-    })
+      y
+    });
 
-    const userId = normalizePrivateVoiceId(participant.userId)
+    const userId = normalizePrivateVoiceId(participant.userId);
     if (
       !Object.prototype.hasOwnProperty.call(inviteServersByUserId, userId) &&
       !loadingInviteTargetUserIds.has(userId)
     ) {
-      setLoadingInviteTargetUserIds((current) => new Set(current).add(userId))
+      setLoadingInviteTargetUserIds((current) => new Set(current).add(userId));
       void onLoadInviteTargetServers(participant.userId)
         .then((memberships) => {
           setInviteServersByUserId((current) => ({
             ...current,
-            [userId]: memberships,
-          }))
+            [userId]: memberships
+          }));
         })
         .catch(() => {
-          showPrivateVoiceNotice(communityCopy.direct.inviteTargetsLoadFailed)
+          showPrivateVoiceNotice(communityCopy.direct.inviteTargetsLoadFailed);
         })
         .finally(() => {
           setLoadingInviteTargetUserIds((current) => {
-            const next = new Set(current)
-            next.delete(userId)
-            return next
-          })
-        })
+            const next = new Set(current);
+            next.delete(userId);
+            return next;
+          });
+        });
     }
 
     if (!Object.prototype.hasOwnProperty.call(blockStatusByUserId, userId)) {
-      void loadUserBlockStatus(participant.userId)
+      void loadUserBlockStatus(participant.userId);
     }
   }
 
@@ -245,108 +245,108 @@ export function PrivateVoiceStrip({
     try {
       const status = await apiJson<DirectMessageBlockStatusResponse>(
         `/api/users/me/direct-message-blocks/${encodeURIComponent(targetUserId)}`,
-        { accessToken },
-      )
+        { accessToken }
+      );
       setBlockStatusByUserId((current) => ({
         ...current,
-        [normalizePrivateVoiceId(targetUserId)]: status,
-      }))
+        [normalizePrivateVoiceId(targetUserId)]: status
+      }));
     } catch {
-      showPrivateVoiceNotice(communityCopy.direct.blockStatusLoadFailed)
+      showPrivateVoiceNotice(communityCopy.direct.blockStatusLoadFailed);
     }
   }
 
   function requestUserBlockChange(participant: VoiceParticipant) {
-    const userId = normalizePrivateVoiceId(participant.userId)
-    const status = blockStatusByUserId[userId]
-    if (!status || mutatingBlockUserId) return
+    const userId = normalizePrivateVoiceId(participant.userId);
+    const status = blockStatusByUserId[userId];
+    if (!status || mutatingBlockUserId) return;
 
     if (!status.isBlocked) {
       setUserBlockDialogTarget({
         userId: participant.userId,
         displayName: participant.displayName,
-        login: participant.login,
-      })
-      return
+        login: participant.login
+      });
+      return;
     }
 
-    void unblockUser(participant)
+    void unblockUser(participant);
   }
 
   async function unblockUser(participant: VoiceParticipant) {
-    const userId = normalizePrivateVoiceId(participant.userId)
-    const status = blockStatusByUserId[userId]
-    if (!status?.isBlocked || mutatingBlockUserId) return
+    const userId = normalizePrivateVoiceId(participant.userId);
+    const status = blockStatusByUserId[userId];
+    if (!status?.isBlocked || mutatingBlockUserId) return;
 
-    setMutatingBlockUserId(userId)
+    setMutatingBlockUserId(userId);
     try {
       await apiNoContent(
         `/api/users/me/direct-message-blocks/${encodeURIComponent(participant.userId)}`,
-        { method: 'DELETE', accessToken },
-      )
+        { method: 'DELETE', accessToken }
+      );
       setBlockStatusByUserId((current) => ({
         ...current,
         [userId]: {
           ...status,
           isBlocked: false,
           comment: null,
-          createdAt: null,
-        },
-      }))
+          createdAt: null
+        }
+      }));
       dispatchUserBlockChanged({
         userId: participant.userId,
         isBlocked: false,
-        comment: null,
-      })
+        comment: null
+      });
       showPrivateVoiceNotice(
-        communityCopy.direct.userUnblockedNotice(participant.displayName),
-      )
+        communityCopy.direct.userUnblockedNotice(participant.displayName)
+      );
     } catch {
-      showPrivateVoiceNotice(communityCopy.direct.unblockFailed)
+      showPrivateVoiceNotice(communityCopy.direct.unblockFailed);
     } finally {
-      setMutatingBlockUserId(null)
+      setMutatingBlockUserId(null);
     }
   }
 
   async function blockUser(
     target: UserBlockDialogTarget,
-    comment: string | null,
+    comment: string | null
   ) {
-    const userId = normalizePrivateVoiceId(target.userId)
-    if (mutatingBlockUserId) return
+    const userId = normalizePrivateVoiceId(target.userId);
+    if (mutatingBlockUserId) return;
 
-    setMutatingBlockUserId(userId)
+    setMutatingBlockUserId(userId);
     try {
       const blocked = await apiJson<DirectMessageBlockedUserResponse>(
         `/api/users/me/direct-message-blocks/${encodeURIComponent(target.userId)}`,
         {
           method: 'PUT',
           accessToken,
-          body: { comment },
-        },
-      )
+          body: { comment }
+        }
+      );
       setBlockStatusByUserId((current) => ({
         ...current,
         [userId]: {
           userId: blocked.userId,
           isBlocked: true,
           comment: blocked.comment,
-          createdAt: blocked.createdAt,
-        },
-      }))
+          createdAt: blocked.createdAt
+        }
+      }));
       dispatchUserBlockChanged({
         userId: blocked.userId,
         isBlocked: true,
-        comment: blocked.comment,
-      })
-      setUserBlockDialogTarget(null)
+        comment: blocked.comment
+      });
+      setUserBlockDialogTarget(null);
       showPrivateVoiceNotice(
-        getUserBlockedNotice(target.displayName, blocked.comment),
-      )
+        getUserBlockedNotice(target.displayName, blocked.comment)
+      );
     } catch {
-      showPrivateVoiceNotice(communityCopy.direct.blockFailed)
+      showPrivateVoiceNotice(communityCopy.direct.blockFailed);
     } finally {
-      setMutatingBlockUserId(null)
+      setMutatingBlockUserId(null);
     }
   }
 
@@ -359,36 +359,39 @@ export function PrivateVoiceStrip({
 
       <div className={styles.privateVoiceParticipants}>
         {participants.flatMap((participant) => {
-          const participantId = normalizePrivateVoiceId(participant.participantId)
-          const userId = normalizePrivateVoiceId(participant.userId)
+          const participantId = normalizePrivateVoiceId(
+            participant.participantId
+          );
+          const userId = normalizePrivateVoiceId(participant.userId);
           const isSelf =
-            participantId === normalizePrivateVoiceId(localParticipantId ?? '') ||
-            userId === normalizePrivateVoiceId(currentUserId)
+            participantId ===
+              normalizePrivateVoiceId(localParticipantId ?? '') ||
+            userId === normalizePrivateVoiceId(currentUserId);
           const remoteStream = isSelf
             ? null
-            : remoteStreamsByParticipantId[participantId]
+            : remoteStreamsByParticipantId[participantId];
           const remoteTracks = selectParticipantVideoTracks(
             remoteStream,
             participant,
-            mediaTrackVersion,
-          )
+            mediaTrackVersion
+          );
           const cameraStream = isSelf
             ? isCameraEnabled
               ? localCameraPreviewStream
               : null
-            : createTrackStream(remoteTracks.camera)
+            : createTrackStream(remoteTracks.camera);
           const screenStream = isSelf
             ? isScreenSharing
               ? localScreenPreviewStream
               : null
-            : createTrackStream(remoteTracks.screen)
-          const member = memberByUserId.get(userId)
+            : createTrackStream(remoteTracks.screen);
+          const member = memberByUserId.get(userId);
           const isDirectPeer =
-            privateSpace.kind === 'direct' && !isSelf && Boolean(member)
+            privateSpace.kind === 'direct' && !isSelf && Boolean(member);
           const displayName =
             isDirectPeer && privateSpace.viewerSettings.customNickname
               ? privateSpace.viewerSettings.customNickname
-              : participant.displayName
+              : participant.displayName;
           const avatarUser =
             isDirectPeer &&
             member &&
@@ -402,16 +405,16 @@ export function PrivateVoiceStrip({
                   avatarCropOffsetY:
                     privateSpace.viewerSettings.customAvatarCropOffsetY,
                   avatarCropZoom:
-                    privateSpace.viewerSettings.customAvatarCropZoom,
+                    privateSpace.viewerSettings.customAvatarCropZoom
                 }
-              : member?.user
+              : member?.user;
           const status = getPrivateVoiceParticipantStatus(
             participant,
             peerStatusesByParticipantId[participantId],
             playbackStatesByParticipantId[participantId],
             isSelf,
-            hasLocalAudioTrack,
-          )
+            hasLocalAudioTrack
+          );
 
           const cameraCard = (
             <article
@@ -422,12 +425,12 @@ export function PrivateVoiceStrip({
               tabIndex={isSelf ? undefined : 0}
               onContextMenu={(event) => {
                 if (!isSelf) {
-                  openParticipantMenu(event, participant)
+                  openParticipantMenu(event, participant);
                 }
               }}
               onKeyDown={(event) => {
                 if (!isSelf) {
-                  openParticipantMenuByKeyboard(event, participant)
+                  openParticipantMenuByKeyboard(event, participant);
                 }
               }}
             >
@@ -445,10 +448,10 @@ export function PrivateVoiceStrip({
                 <small className="ui-ellipsis">{status}</small>
               </div>
             </article>
-          )
+          );
 
           if (!participant.isScreenSharing && !screenStream) {
-            return [cameraCard]
+            return [cameraCard];
           }
 
           return [
@@ -461,12 +464,12 @@ export function PrivateVoiceStrip({
               tabIndex={isSelf ? undefined : 0}
               onContextMenu={(event) => {
                 if (!isSelf) {
-                  openParticipantMenu(event, participant)
+                  openParticipantMenu(event, participant);
                 }
               }}
               onKeyDown={(event) => {
                 if (!isSelf) {
-                  openParticipantMenuByKeyboard(event, participant)
+                  openParticipantMenuByKeyboard(event, participant);
                 }
               }}
             >
@@ -489,8 +492,8 @@ export function PrivateVoiceStrip({
                     : voiceCopy.channel.screenShareWaiting}
                 </small>
               </div>
-            </article>,
-          ]
+            </article>
+          ];
         })}
       </div>
 
@@ -515,7 +518,7 @@ export function PrivateVoiceStrip({
             participant: contextMenu.participant,
             member:
               memberByUserId.get(
-                normalizePrivateVoiceId(contextMenu.participant.userId),
+                normalizePrivateVoiceId(contextMenu.participant.userId)
               ) ?? null,
             currentUserId,
             spaceKind: privateSpace.kind,
@@ -526,17 +529,16 @@ export function PrivateVoiceStrip({
               inviteServersByUserId[
                 normalizePrivateVoiceId(contextMenu.participant.userId)
               ] ?? [],
-            isLoadingInviteServers:
-              loadingInviteTargetUserIds.has(
-                normalizePrivateVoiceId(contextMenu.participant.userId),
-              ),
+            isLoadingInviteServers: loadingInviteTargetUserIds.has(
+              normalizePrivateVoiceId(contextMenu.participant.userId)
+            ),
             isMutatingFriends,
             isMutatingBlock:
               mutatingBlockUserId ===
               normalizePrivateVoiceId(contextMenu.participant.userId),
             isUserBlockStatusResolved: Object.prototype.hasOwnProperty.call(
               blockStatusByUserId,
-              normalizePrivateVoiceId(contextMenu.participant.userId),
+              normalizePrivateVoiceId(contextMenu.participant.userId)
             ),
             isUserBlocked:
               blockStatusByUserId[
@@ -550,13 +552,13 @@ export function PrivateVoiceStrip({
             onRemoveFriend,
             onCreateDirectInvite: onCreateDirectServerInvite,
             onToggleUserBlock: (participant) => {
-              requestUserBlockChange(participant)
+              requestUserBlockChange(participant);
             },
             onChangeAudioSettings: (patch) =>
               onChangeAudioSettings(contextMenu.participant.userId, patch),
             onCopyUserId: (userId) => {
-              void navigator.clipboard.writeText(userId)
-            },
+              void navigator.clipboard.writeText(userId);
+            }
           })}
           onClose={() => setContextMenu(null)}
         />
@@ -570,33 +572,33 @@ export function PrivateVoiceStrip({
           }
           onClose={() => {
             if (!mutatingBlockUserId) {
-              setUserBlockDialogTarget(null)
+              setUserBlockDialogTarget(null);
             }
           }}
           onConfirm={(comment) => blockUser(userBlockDialogTarget, comment)}
         />
       )}
     </section>
-  )
+  );
 }
 
 function PrivateVoiceVideo({
   stream,
-  isMuted,
+  isMuted
 }: {
-  stream: MediaStream
-  isMuted: boolean
+  stream: MediaStream;
+  isMuted: boolean;
 }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
-    const video = videoRef.current
+    const video = videoRef.current;
     if (!video) {
-      return
+      return;
     }
 
-    video.srcObject = stream
-  }, [stream])
+    video.srcObject = stream;
+  }, [stream]);
 
   return (
     <video
@@ -606,26 +608,26 @@ function PrivateVoiceVideo({
       playsInline
       muted={isMuted}
     />
-  )
+  );
 }
 
 function PrivateVoiceAvatar({
   displayName,
   user,
-  participant,
+  participant
 }: {
-  displayName: string
-  user: FriendUserResponse | undefined
-  participant: VoiceParticipant
+  displayName: string;
+  user: FriendUserResponse | undefined;
+  participant: VoiceParticipant;
 }) {
   const participantAvatar = participant.avatarAssetId
     ? {
         avatarAssetId: participant.avatarAssetId,
         avatarCropOffsetX: participant.avatarCropOffsetX ?? 0,
         avatarCropOffsetY: participant.avatarCropOffsetY ?? 0,
-        avatarCropZoom: participant.avatarCropZoom ?? 1,
+        avatarCropZoom: participant.avatarCropZoom ?? 1
       }
-    : undefined
+    : undefined;
 
   return (
     <UserAvatar
@@ -633,7 +635,7 @@ function PrivateVoiceAvatar({
       user={user ?? participantAvatar}
       title={displayName}
     />
-  )
+  );
 }
 
 function getPrivateVoiceParticipantStatus(
@@ -641,53 +643,53 @@ function getPrivateVoiceParticipantStatus(
   peerStatus: VoicePeerStatus | undefined,
   playbackState: VoicePlaybackState | undefined,
   isSelf: boolean,
-  hasLocalAudioTrack: boolean,
+  hasLocalAudioTrack: boolean
 ) {
   if (isSelf && !hasLocalAudioTrack) {
-    return voiceCopy.participantMenu.microphoneMissing
+    return voiceCopy.participantMenu.microphoneMissing;
   }
 
   if (participant.isScreenSharing) {
-    return voiceCopy.participantMenu.screenShare
+    return voiceCopy.participantMenu.screenShare;
   }
 
   if (participant.isCameraEnabled) {
-    return voiceCopy.participantMenu.cameraEnabled
+    return voiceCopy.participantMenu.cameraEnabled;
   }
 
   if (participant.isDeafened) {
-    return voiceCopy.participantMenu.soundOff
+    return voiceCopy.participantMenu.soundOff;
   }
 
   if (participant.isMuted) {
-    return voiceCopy.participantMenu.microphoneOff
+    return voiceCopy.participantMenu.microphoneOff;
   }
 
   if (isSelf) {
-    return voiceCopy.participantMenu.you
+    return voiceCopy.participantMenu.you;
   }
 
   if (!peerStatus) {
-    return voiceCopy.participantMenu.waitingWebRtc
+    return voiceCopy.participantMenu.waitingWebRtc;
   }
 
   if (!peerStatus.hasRemoteStream) {
-    return `${peerStatus.connectionState}/${peerStatus.iceConnectionState}`
+    return `${peerStatus.connectionState}/${peerStatus.iceConnectionState}`;
   }
 
   if (playbackState === 'blocked') {
-    return voiceCopy.participantMenu.audioNeedsEnable
+    return voiceCopy.participantMenu.audioNeedsEnable;
   }
 
   if (playbackState === 'playing') {
-    return voiceCopy.participantMenu.audioPlaying
+    return voiceCopy.participantMenu.audioPlaying;
   }
 
-  return voiceCopy.participantMenu.audioConnected
+  return voiceCopy.participantMenu.audioConnected;
 }
 
 function normalizePrivateVoiceId(value: string) {
-  return value.trim().toLowerCase()
+  return value.trim().toLowerCase();
 }
 
 function showPrivateVoiceNotice(body: string) {
@@ -697,10 +699,10 @@ function showPrivateVoiceNotice(body: string) {
         id: `private-voice:${Date.now()}:${Math.random().toString(36).slice(2)}`,
         title: communityCopy.direct.noticeTitle,
         body,
-        force: true,
-      },
-    }),
-  )
+        force: true
+      }
+    })
+  );
 }
 
 export function PrivateSpaceHeaderActions({
@@ -711,16 +713,16 @@ export function PrivateSpaceHeaderActions({
   isInviteOpen,
   onToggleCall,
   onToggleCamera,
-  onOpenInvite,
+  onOpenInvite
 }: {
-  isVoiceConnected: boolean
-  isCameraEnabled: boolean
-  isVoiceConnecting: boolean
-  canUseVoice: boolean
-  isInviteOpen: boolean
-  onToggleCall: () => void
-  onToggleCamera: () => void
-  onOpenInvite: () => void
+  isVoiceConnected: boolean;
+  isCameraEnabled: boolean;
+  isVoiceConnecting: boolean;
+  canUseVoice: boolean;
+  isInviteOpen: boolean;
+  onToggleCall: () => void;
+  onToggleCamera: () => void;
+  onOpenInvite: () => void;
 }) {
   return (
     <>
@@ -731,10 +733,14 @@ export function PrivateSpaceHeaderActions({
         type="button"
         disabled={!canUseVoice || isVoiceConnecting}
         aria-label={
-          isVoiceConnected ? voiceCopy.controls.leaveCall : voiceCopy.controls.joinCall
+          isVoiceConnected
+            ? voiceCopy.controls.leaveCall
+            : voiceCopy.controls.joinCall
         }
         title={
-          isVoiceConnected ? voiceCopy.controls.leaveCall : voiceCopy.controls.joinCall
+          isVoiceConnected
+            ? voiceCopy.controls.leaveCall
+            : voiceCopy.controls.joinCall
         }
         onClick={onToggleCall}
       >
@@ -778,15 +784,15 @@ export function PrivateSpaceHeaderActions({
         <SystemIcon name="user-plus" size={16} />
       </button>
     </>
-  )
+  );
 }
 
 export function PrivateMemberAvatar({
   user,
-  large = false,
+  large = false
 }: {
-  user: FriendUserResponse
-  large?: boolean
+  user: FriendUserResponse;
+  large?: boolean;
 }) {
   return (
     <UserAvatar
@@ -794,5 +800,5 @@ export function PrivateMemberAvatar({
       user={user}
       title={user.displayName}
     />
-  )
+  );
 }

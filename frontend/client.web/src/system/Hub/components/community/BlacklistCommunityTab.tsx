@@ -1,58 +1,57 @@
-import { useMemo, useState, type UIEvent } from 'react'
+import { type UIEvent, useMemo, useState } from 'react';
+
 import type {
   DirectMessageBlockedUserResponse,
-  FriendUserResponse,
-} from '../../../../shared/types'
+  FriendUserResponse
+} from '../../../../shared/types';
 import {
   SystemSkeleton,
+  type SystemSkeletonPresencePhase,
   SystemSkeletonRegion,
   UserBlockDialog,
-  useSystemSkeletonPresence,
-  type SystemSkeletonPresencePhase,
   type UserBlockDialogTarget,
-} from '../../../shared'
-import { settingsCopy } from '../../../shared/copy'
-import { useDirectMessageBlocklist } from './useDirectMessageBlocklist'
-import styles from './BlacklistCommunityTab.module.css'
+  useSystemSkeletonPresence
+} from '../../../shared';
+import { settingsCopy } from '../../../shared/copy';
+import { useDirectMessageBlocklist } from './useDirectMessageBlocklist';
+
+import styles from './BlacklistCommunityTab.module.css';
 
 type BlacklistCommunityTabProps = {
-  accessToken: string
-}
+  accessToken: string;
+};
 
 export function BlacklistCommunityTab({
-  accessToken,
+  accessToken
 }: BlacklistCommunityTabProps) {
-  const blocklist = useDirectMessageBlocklist(accessToken)
+  const blocklist = useDirectMessageBlocklist(accessToken);
   const [dialogTarget, setDialogTarget] =
-    useState<UserBlockDialogTarget | null>(null)
-  const normalizedQuery = blocklist.searchQuery.trim().toLowerCase()
+    useState<UserBlockDialogTarget | null>(null);
+  const normalizedQuery = blocklist.searchQuery.trim().toLowerCase();
   const visibleBlockedUsers = useMemo(
     () =>
       normalizedQuery.length < 2
         ? blocklist.blockedUsers
         : blocklist.blockedUsers.filter((user) =>
-            matchesUserQuery(user, normalizedQuery),
+            matchesUserQuery(user, normalizedQuery)
           ),
-    [blocklist.blockedUsers, normalizedQuery],
-  )
+    [blocklist.blockedUsers, normalizedQuery]
+  );
   const visibleSearchResults = useMemo(
     () =>
       blocklist.searchResults.filter(
-        (user) => !blocklist.blockedUserIds.has(user.id),
+        (user) => !blocklist.blockedUserIds.has(user.id)
       ),
-    [blocklist.blockedUserIds, blocklist.searchResults],
-  )
+    [blocklist.blockedUserIds, blocklist.searchResults]
+  );
   const showBlocklistSkeleton =
-    blocklist.isLoading && blocklist.blockedUsers.length === 0
-  const blocklistSkeleton =
-    useSystemSkeletonPresence(showBlocklistSkeleton)
+    blocklist.isLoading && blocklist.blockedUsers.length === 0;
+  const blocklistSkeleton = useSystemSkeletonPresence(showBlocklistSkeleton);
 
   function loadMoreNearListEnd(event: UIEvent<HTMLDivElement>) {
-    const target = event.currentTarget
-    if (
-      target.scrollTop + target.clientHeight >= target.scrollHeight * 0.85
-    ) {
-      void blocklist.loadMoreBlockedUsers()
+    const target = event.currentTarget;
+    if (target.scrollTop + target.clientHeight >= target.scrollHeight * 0.85) {
+      void blocklist.loadMoreBlockedUsers();
     }
   }
 
@@ -64,9 +63,7 @@ export function BlacklistCommunityTab({
             <h2>{settingsCopy.privacy.blocklistTitle}</h2>
             <p>{settingsCopy.privacy.blocklistDescription}</p>
           </div>
-          <span className={styles.totalCount}>
-            {blocklist.totalCount}
-          </span>
+          <span className={styles.totalCount}>{blocklist.totalCount}</span>
         </header>
 
         <label className={styles.search}>
@@ -120,7 +117,7 @@ export function BlacklistCommunityTab({
                     setDialogTarget({
                       userId: user.id,
                       displayName: user.displayName,
-                      login: user.login,
+                      login: user.login
                     })
                   }
                 />
@@ -202,13 +199,13 @@ export function BlacklistCommunityTab({
           isSubmitting={blocklist.mutatingUserId === dialogTarget.userId}
           onClose={() => setDialogTarget(null)}
           onConfirm={async (comment) => {
-            await blocklist.blockUser(dialogTarget.userId, comment)
-            setDialogTarget(null)
+            await blocklist.blockUser(dialogTarget.userId, comment);
+            setDialogTarget(null);
           }}
         />
       )}
     </div>
-  )
+  );
 }
 
 type BlocklistUser = Pick<
@@ -219,7 +216,7 @@ type BlocklistUser = Pick<
   | 'avatarCropOffsetX'
   | 'avatarCropOffsetY'
   | 'avatarCropZoom'
->
+>;
 
 function BlocklistUserRow({
   user,
@@ -227,14 +224,14 @@ function BlocklistUserRow({
   actionLabel,
   disabled,
   isDanger = false,
-  onAction,
+  onAction
 }: {
-  user: BlocklistUser
-  comment?: string | null
-  actionLabel: string
-  disabled: boolean
-  isDanger?: boolean
-  onAction: () => void
+  user: BlocklistUser;
+  comment?: string | null;
+  actionLabel: string;
+  disabled: boolean;
+  isDanger?: boolean;
+  onAction: () => void;
 }) {
   return (
     <article className={styles.userRow}>
@@ -247,7 +244,7 @@ function BlocklistUserRow({
             style={{
               transform: `translate(${user.avatarCropOffsetX * 100}%, ${
                 user.avatarCropOffsetY * 100
-              }%) scale(${user.avatarCropZoom})`,
+              }%) scale(${user.avatarCropZoom})`
             }}
           />
         ) : (
@@ -272,13 +269,13 @@ function BlocklistUserRow({
         {actionLabel}
       </button>
     </article>
-  )
+  );
 }
 
 function BlocklistSkeleton({
-  presencePhase,
+  presencePhase
 }: {
-  presencePhase: SystemSkeletonPresencePhase
+  presencePhase: SystemSkeletonPresencePhase;
 }) {
   return (
     <SystemSkeletonRegion
@@ -297,16 +294,16 @@ function BlocklistSkeleton({
         </div>
       ))}
     </SystemSkeletonRegion>
-  )
+  );
 }
 
 function matchesUserQuery(
   user: DirectMessageBlockedUserResponse,
-  normalizedQuery: string,
+  normalizedQuery: string
 ) {
   return (
     user.displayName.toLowerCase().includes(normalizedQuery) ||
     user.login.toLowerCase().includes(normalizedQuery) ||
     user.comment?.toLowerCase().includes(normalizedQuery) === true
-  )
+  );
 }

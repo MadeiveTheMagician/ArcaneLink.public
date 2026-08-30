@@ -1,13 +1,12 @@
 using ArcaneLink.DataBase.DTOs.Spaces;
 
-namespace ArcaneLink.Services.Spaces.Abstractions
+namespace ArcaneLink.Services.Spaces.Abstractions;
+
+public interface ISpaceReorderService
 {
-    public interface ISpaceReorderService
-    {
-        Task<bool> ReorderSpacesAsync(
-            Guid currentUserId,
-            Guid serverId,
-            ReorderSpacesRequest request,
-            CancellationToken cancellationToken = default);
-    }
+    Task<bool> ReorderSpacesAsync(
+        Guid currentUserId,
+        Guid serverId,
+        ReorderSpacesRequest request,
+        CancellationToken cancellationToken = default);
 }

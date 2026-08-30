@@ -1,6 +1,6 @@
-export const SYSTEM_THEME_STORAGE_KEY = 'arcanelink.systemThemeCode'
+export const SYSTEM_THEME_STORAGE_KEY = 'arcanelink.systemThemeCode';
 
-export type SystemThemeVariableMap = Record<string, string>
+export type SystemThemeVariableMap = Record<string, string>;
 
 export const SYSTEM_THEME_VARIABLE_NAMES = [
   '--color-bg',
@@ -54,11 +54,11 @@ export const SYSTEM_THEME_VARIABLE_NAMES = [
   '--theme-settings-icon-image',
   '--theme-pin-icon-image',
   '--theme-plane-icon-image',
-  '--shadow-sapphire',
-]
+  '--shadow-sapphire'
+];
 
 export function buildSystemThemeVariables(
-  variables: SystemThemeVariableMap,
+  variables: SystemThemeVariableMap
 ): SystemThemeVariableMap {
   return {
     '--theme-accent': 'var(--color-sapphire)',
@@ -66,8 +66,10 @@ export function buildSystemThemeVariables(
     '--theme-bg-start': 'color-mix(in srgb, var(--color-bg), #000 48%)',
     '--theme-bg-mid': 'var(--color-bg)',
     '--theme-bg-end': 'color-mix(in srgb, var(--color-bg), #000 34%)',
-    '--theme-text-soft': 'color-mix(in srgb, var(--color-text), transparent 20%)',
-    '--theme-text-faint': 'color-mix(in srgb, var(--color-text), transparent 42%)',
+    '--theme-text-soft':
+      'color-mix(in srgb, var(--color-text), transparent 20%)',
+    '--theme-text-faint':
+      'color-mix(in srgb, var(--color-text), transparent 42%)',
     '--theme-border-soft':
       'color-mix(in srgb, var(--color-border), var(--theme-accent) 16%)',
     '--theme-border-control':
@@ -75,8 +77,7 @@ export function buildSystemThemeVariables(
     '--theme-border-accent':
       'color-mix(in srgb, var(--theme-accent), transparent 42%)',
     '--theme-frame-bg': 'color-mix(in srgb, var(--color-bg), transparent 18%)',
-    '--theme-frame-bg-strong':
-      'color-mix(in srgb, var(--color-bg), #000 8%)',
+    '--theme-frame-bg-strong': 'color-mix(in srgb, var(--color-bg), #000 8%)',
     '--theme-control-bg':
       'color-mix(in srgb, var(--color-bg), transparent 30%)',
     '--theme-control-bg-strong':
@@ -87,8 +88,7 @@ export function buildSystemThemeVariables(
       'color-mix(in srgb, var(--theme-accent), transparent 68%)',
     '--theme-section-border':
       'color-mix(in srgb, var(--theme-accent-light), transparent 72%)',
-    '--theme-scrollbar-track':
-      'color-mix(in srgb, var(--color-bg), #000 18%)',
+    '--theme-scrollbar-track': 'color-mix(in srgb, var(--color-bg), #000 18%)',
     '--theme-scrollbar-thumb':
       'color-mix(in srgb, var(--theme-accent), transparent 26%)',
     '--theme-glow': 'color-mix(in srgb, var(--theme-accent), transparent 76%)',
@@ -120,6 +120,6 @@ export function buildSystemThemeVariables(
     '--theme-settings-icon-image': 'none',
     '--theme-pin-icon-image': 'none',
     '--theme-plane-icon-image': 'none',
-    ...variables,
-  }
+    ...variables
+  };
 }

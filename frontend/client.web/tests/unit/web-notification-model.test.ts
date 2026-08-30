@@ -1,14 +1,15 @@
-import { expect, test } from '@playwright/test'
-import type { UserNotificationResponse } from '../../src/shared/types'
+import { expect, test } from '@playwright/test';
+
+import type { UserNotificationResponse } from '../../src/shared/types';
 import {
   mapStoredWebNotification,
   trimWebNotificationQueue,
-  webNotificationPriority,
-} from '../../src/system/Hub/components/notifications/webNotificationModel'
-import type { WebNotificationItem } from '../../src/system/Hub/components/notifications/webNotificationModel'
+  webNotificationPriority
+} from '../../src/system/Hub/components/notifications/webNotificationModel';
+import type { WebNotificationItem } from '../../src/system/Hub/components/notifications/webNotificationModel';
 
 function notification(
-  patch: Partial<UserNotificationResponse>,
+  patch: Partial<UserNotificationResponse>
 ): UserNotificationResponse {
   return {
     id: 'notification-id',
@@ -35,8 +36,8 @@ function notification(
     inviteId: null,
     createdAt: '2026-07-26T10:00:00.000Z',
     readAt: null,
-    ...patch,
-  }
+    ...patch
+  };
 }
 
 test.describe('stored web notification mapping', () => {
@@ -50,9 +51,9 @@ test.describe('stored web notification mapping', () => {
       messageId: 'message-id',
       serverId: 'server-id',
       spaceId: 'space-id',
-      senderAvatarAssetId: 'avatar-id',
-    })
-  })
+      senderAvatarAssetId: 'avatar-id'
+    });
+  });
 
   test('maps private-space invitation and ignores read or unrelated rows', () => {
     expect(
@@ -60,21 +61,23 @@ test.describe('stored web notification mapping', () => {
         notification({
           kind: 'private-space-invite',
           serverId: null,
-          messageId: null,
-        }),
-      ),
+          messageId: null
+        })
+      )
     ).toMatchObject({
       kind: 'private-space-invite',
       spaceId: 'space-id',
-      body: 'Автор',
-    })
+      body: 'Автор'
+    });
     expect(
       mapStoredWebNotification(
-        notification({ readAt: '2026-07-26T10:01:00.000Z' }),
-      ),
-    ).toBeNull()
-    expect(mapStoredWebNotification(notification({ kind: 'system' }))).toBeNull()
-  })
+        notification({ readAt: '2026-07-26T10:01:00.000Z' })
+      )
+    ).toBeNull();
+    expect(
+      mapStoredWebNotification(notification({ kind: 'system' }))
+    ).toBeNull();
+  });
 
   test('maps a persistent friend-request record to an actor notification', () => {
     expect(
@@ -83,51 +86,51 @@ test.describe('stored web notification mapping', () => {
           kind: 'friend-request',
           serverId: null,
           spaceId: null,
-          messageId: null,
-        }),
-      ),
+          messageId: null
+        })
+      )
     ).toMatchObject({
       id: 'friend-request:notification-id',
       storedNotificationId: 'notification-id',
       kind: 'friend-request',
       body: 'Вас упомянули в #general на сервере «Сервер»',
-      senderAvatarAssetId: 'avatar-id',
-    })
-  })
+      senderAvatarAssetId: 'avatar-id'
+    });
+  });
 
   test('gives mention priority over an ordinary private message', () => {
     expect(webNotificationPriority('mention')).toBeGreaterThan(
-      webNotificationPriority('private-message'),
-    )
-  })
+      webNotificationPriority('private-message')
+    );
+  });
 
   test('keeps an incoming alert visible when persistent invites fill the stack', () => {
     const persistentInvites = Array.from({ length: 4 }, (_, index) =>
       webNotification({
         id: `invite-${index}`,
         kind: 'server-invite',
-        persistent: true,
-      }),
-    )
+        persistent: true
+      })
+    );
     const incoming = webNotification({
       id: 'incoming-mention',
-      kind: 'mention',
-    })
+      kind: 'mention'
+    });
 
     const result = trimWebNotificationQueue(
       [...persistentInvites, incoming],
       incoming.id,
-      4,
-    )
+      4
+    );
 
-    expect(result.items).toContainEqual(incoming)
-    expect(result.items).toHaveLength(4)
-    expect(result.evicted?.id).toBe('invite-0')
-  })
-})
+    expect(result.items).toContainEqual(incoming);
+    expect(result.items).toHaveLength(4);
+    expect(result.evicted?.id).toBe('invite-0');
+  });
+});
 
 function webNotification(
-  patch: Partial<WebNotificationItem>,
+  patch: Partial<WebNotificationItem>
 ): WebNotificationItem {
   return {
     id: 'web-notification',
@@ -135,6 +138,6 @@ function webNotification(
     title: 'Уведомление',
     body: 'Текст',
     createdAt: '2026-07-26T10:00:00.000Z',
-    ...patch,
-  }
+    ...patch
+  };
 }

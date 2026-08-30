@@ -1,11 +1,13 @@
-import { useEffect } from 'react'
-import type { PrivateDeletedMessageResponse } from '../../../../shared/types'
-import { communityCopy, serverCopy, SystemIcon } from '../../../shared'
-import { isPrivateMessageRestorable } from '../../../shared/messages/privateMessageDeletionModel'
-import styles from './DeletedMessagesPanel.module.css'
-import { formatPinnedMessageDateTime } from './messageUtils'
+import { useEffect } from 'react';
 
-const minuteInMilliseconds = 60_000
+import type { PrivateDeletedMessageResponse } from '../../../../shared/types';
+import { SystemIcon, communityCopy, serverCopy } from '../../../shared';
+import { isPrivateMessageRestorable } from '../../../shared/messages/privateMessageDeletionModel';
+import { formatPinnedMessageDateTime } from './messageUtils';
+
+import styles from './DeletedMessagesPanel.module.css';
+
+const minuteInMilliseconds = 60_000;
 
 export function DeletedMessagesPanel({
   isOpen,
@@ -20,37 +22,37 @@ export function DeletedMessagesPanel({
   onRestore,
   onLoadOlder,
   onClear,
-  onClose,
+  onClose
 }: {
-  isOpen: boolean
-  isLoading: boolean
-  messages: PrivateDeletedMessageResponse[]
-  error: string | null
-  restoringMessageId: string | null
-  isLoadingOlder: boolean
-  hasOlder: boolean
-  isClearing: boolean
-  now: number
-  onRestore: (messageId: string) => void
-  onLoadOlder: () => void
-  onClear: () => void
-  onClose: () => void
+  isOpen: boolean;
+  isLoading: boolean;
+  messages: PrivateDeletedMessageResponse[];
+  error: string | null;
+  restoringMessageId: string | null;
+  isLoadingOlder: boolean;
+  hasOlder: boolean;
+  isClearing: boolean;
+  now: number;
+  onRestore: (messageId: string) => void;
+  onLoadOlder: () => void;
+  onClear: () => void;
+  onClose: () => void;
 }) {
   useEffect(() => {
     if (!isOpen) {
-      return undefined
+      return undefined;
     }
 
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        onClose()
+        onClose();
       }
     }
 
-    window.addEventListener('keydown', closeOnEscape)
+    window.addEventListener('keydown', closeOnEscape);
 
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [isOpen, onClose])
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen, onClose]);
 
   return (
     <aside
@@ -62,7 +64,10 @@ export function DeletedMessagesPanel({
       <header>
         <div className={styles.trashTitle}>
           <strong>{communityCopy.direct.deletedMessages}</strong>
-          <span>{messages.length}{hasOlder ? '+' : ''}</span>
+          <span>
+            {messages.length}
+            {hasOlder ? '+' : ''}
+          </span>
         </div>
         <div className={styles.trashActions}>
           <button
@@ -70,8 +75,10 @@ export function DeletedMessagesPanel({
             type="button"
             disabled={messages.length === 0 || isClearing}
             onClick={() => {
-              if (window.confirm(communityCopy.direct.clearDeletedMessagesConfirm)) {
-                onClear()
+              if (
+                window.confirm(communityCopy.direct.clearDeletedMessagesConfirm)
+              ) {
+                onClear();
               }
             }}
           >
@@ -91,9 +98,13 @@ export function DeletedMessagesPanel({
         </div>
       </header>
 
-      <p className={styles.trashHint}>{communityCopy.direct.deletedMessagesHint}</p>
+      <p className={styles.trashHint}>
+        {communityCopy.direct.deletedMessagesHint}
+      </p>
       {error ? (
-        <p className={styles.trashError} role="alert">{error}</p>
+        <p className={styles.trashError} role="alert">
+          {error}
+        </p>
       ) : null}
 
       {isLoading ? (
@@ -101,31 +112,36 @@ export function DeletedMessagesPanel({
           {communityCopy.direct.loadingDeletedMessages}
         </p>
       ) : messages.length === 0 ? (
-        <p className={styles.trashEmpty}>{communityCopy.direct.deletedMessagesEmpty}</p>
+        <p className={styles.trashEmpty}>
+          {communityCopy.direct.deletedMessagesEmpty}
+        </p>
       ) : (
         <div
           className={styles.trashList}
           onScroll={(event) => {
-            const list = event.currentTarget
+            const list = event.currentTarget;
             const progress =
               (list.scrollTop + list.clientHeight) /
-              Math.max(list.scrollHeight, 1)
+              Math.max(list.scrollHeight, 1);
             if (hasOlder && !isLoadingOlder && progress >= 0.85) {
-              onLoadOlder()
+              onLoadOlder();
             }
           }}
         >
           {messages.map((deletion) => {
-            const { message } = deletion
-            const isRestorable = isPrivateMessageRestorable(deletion, now)
-            const isRestoring = restoringMessageId === message.id
+            const { message } = deletion;
+            const isRestorable = isPrivateMessageRestorable(deletion, now);
+            const isRestoring = restoringMessageId === message.id;
             const remainingLabel = getRestoreRemainingLabel(
               deletion.restoreUntil,
-              now,
-            )
+              now
+            );
 
             return (
-              <article className={styles.trashCard} key={`${message.id}-${deletion.scope}`}>
+              <article
+                className={styles.trashCard}
+                key={`${message.id}-${deletion.scope}`}
+              >
                 <header>
                   <div>
                     <strong>{message.senderDisplayName}</strong>
@@ -142,14 +158,16 @@ export function DeletedMessagesPanel({
                 <p>{message.body ?? serverCopy.messages.emptyBody}</p>
                 {message.assets.length > 0 ? (
                   <small className={styles.trashAttachments}>
-                    {communityCopy.direct.trashAttachmentCount(message.assets.length)}
+                    {communityCopy.direct.trashAttachmentCount(
+                      message.assets.length
+                    )}
                   </small>
                 ) : null}
                 <footer>
                   <span
                     className={isRestorable ? '' : styles.expired}
                     title={communityCopy.direct.restoreAvailableUntil(
-                      formatRestoreDeadline(deletion.restoreUntil),
+                      formatRestoreDeadline(deletion.restoreUntil)
                     )}
                   >
                     {remainingLabel}
@@ -165,7 +183,7 @@ export function DeletedMessagesPanel({
                   </button>
                 </footer>
               </article>
-            )
+            );
           })}
           {isLoadingOlder ? (
             <p className={styles.loadingOlder} aria-live="polite">
@@ -175,33 +193,33 @@ export function DeletedMessagesPanel({
         </div>
       )}
     </aside>
-  )
+  );
 }
 
 function getRestoreRemainingLabel(restoreUntil: string, now: number) {
-  const remainingMilliseconds = Date.parse(restoreUntil) - now
+  const remainingMilliseconds = Date.parse(restoreUntil) - now;
 
   if (!Number.isFinite(remainingMilliseconds) || remainingMilliseconds <= 0) {
-    return communityCopy.direct.restoreExpired
+    return communityCopy.direct.restoreExpired;
   }
 
   const totalMinutes = Math.max(
     1,
-    Math.ceil(remainingMilliseconds / minuteInMilliseconds),
-  )
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
+    Math.ceil(remainingMilliseconds / minuteInMilliseconds)
+  );
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
 
-  return communityCopy.direct.restoreRemaining(hours, minutes)
+  return communityCopy.direct.restoreRemaining(hours, minutes);
 }
 
 function formatRestoreDeadline(value: string) {
-  const date = new Date(value)
+  const date = new Date(value);
 
   return Number.isNaN(date.getTime())
     ? value
     : new Intl.DateTimeFormat('ru-RU', {
         dateStyle: 'short',
-        timeStyle: 'short',
-      }).format(date)
+        timeStyle: 'short'
+      }).format(date);
 }

@@ -1,12 +1,12 @@
-import type { DetachedVoiceWorkspaceWindow } from './detachedVoiceWorkspaceTypes'
+import type { DetachedVoiceWorkspaceWindow } from './detachedVoiceWorkspaceTypes';
 
 export function disposeAndCloseDetachedVoiceWorkspaceWindow(
-  popup: DetachedVoiceWorkspaceWindow | null,
+  popup: DetachedVoiceWorkspaceWindow | null
 ) {
   if (!popup || popup.closed) {
-    return
+    return;
   }
 
-  popup.disposeVoiceWorkspaceRuntime?.()
-  popup.close()
+  popup.disposeVoiceWorkspaceRuntime?.();
+  popup.close();
 }

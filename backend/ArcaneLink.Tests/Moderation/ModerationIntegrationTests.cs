@@ -765,9 +765,9 @@ public sealed class ModerationIntegrationTests
         {
             get
             {
-                lock (_sync)
+                lock (this._sync)
                 {
-                    return _calls.ToList();
+                    return this._calls.ToList();
                 }
             }
         }
@@ -778,7 +778,7 @@ public sealed class ModerationIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return RecordAsync([userId], null, eventName);
+            return this.RecordAsync([userId], null, eventName);
         }
 
         public Task NotifyUsersAsync(
@@ -787,7 +787,7 @@ public sealed class ModerationIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return RecordAsync(userIds.OrderBy(x => x).ToList(), null, eventName);
+            return this.RecordAsync(userIds.OrderBy(x => x).ToList(), null, eventName);
         }
 
         public Task NotifyServerAsync(
@@ -796,14 +796,14 @@ public sealed class ModerationIntegrationTests
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
-            return RecordAsync([], serverId, eventName);
+            return this.RecordAsync([], serverId, eventName);
         }
 
         public void Clear()
         {
-            lock (_sync)
+            lock (this._sync)
             {
-                _calls.Clear();
+                this._calls.Clear();
             }
         }
 
@@ -812,12 +812,12 @@ public sealed class ModerationIntegrationTests
             Guid? serverId,
             string eventName)
         {
-            lock (_sync)
+            lock (this._sync)
             {
-                _calls.Add(new RealtimeCall(userIds, serverId, eventName));
+                this._calls.Add(new RealtimeCall(userIds, serverId, eventName));
             }
 
-            return ThrowForModerationEvents && eventName is
+            return this.ThrowForModerationEvents && eventName is
                 RealtimeEventNames.ModerationCaseChanged or
                 RealtimeEventNames.MyModerationReportsChanged
                     ? Task.FromException(new InvalidOperationException(

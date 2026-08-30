@@ -1,5 +1,5 @@
-import type { SystemTheme } from '../systemThemes'
-import { themeCopy } from '../theme.copy'
+import type { SystemTheme } from '../systemThemes';
+import { themeCopy } from '../theme.copy';
 
 export const grayTheme: SystemTheme = {
   code: 'gray',
@@ -64,6 +64,6 @@ export const grayTheme: SystemTheme = {
     '--color-danger': '#ff7474',
     '--color-success': '#9be4bd',
     '--theme-accent-contrast': '#15181e',
-    '--shadow-sapphire': '0 26px 90px rgba(143, 152, 168, 0.2)',
-  },
-}
+    '--shadow-sapphire': '0 26px 90px rgba(143, 152, 168, 0.2)'
+  }
+};

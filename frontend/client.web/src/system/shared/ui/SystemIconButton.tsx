@@ -1,12 +1,20 @@
-import type { ButtonHTMLAttributes } from 'react'
-import { SystemIcon, type SystemIconName, type SystemIconSize } from '../icons/SystemIcon'
-import { SystemButton } from './SystemButton'
+import type { ButtonHTMLAttributes } from 'react';
 
-type SystemIconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
-  icon: SystemIconName
-  iconSize?: SystemIconSize
-  label: string
-}
+import {
+  SystemIcon,
+  type SystemIconName,
+  type SystemIconSize
+} from '../icons/SystemIcon';
+import { SystemButton } from './SystemButton';
+
+type SystemIconButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'children'
+> & {
+  icon: SystemIconName;
+  iconSize?: SystemIconSize;
+  label: string;
+};
 
 export function SystemIconButton({
   className = '',
@@ -15,7 +23,9 @@ export function SystemIconButton({
   label,
   variant = undefined,
   ...props
-}: SystemIconButtonProps & { variant?: 'primary' | 'ghost' | 'danger' | 'asset' }) {
+}: SystemIconButtonProps & {
+  variant?: 'primary' | 'ghost' | 'danger' | 'asset';
+}) {
   return (
     <SystemButton
       {...props}
@@ -26,5 +36,5 @@ export function SystemIconButton({
     >
       <SystemIcon name={icon} size={iconSize} />
     </SystemButton>
-  )
+  );
 }

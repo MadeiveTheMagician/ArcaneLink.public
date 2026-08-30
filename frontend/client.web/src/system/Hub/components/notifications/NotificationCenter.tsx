@@ -1,50 +1,52 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { apiJson, apiNoContent } from '../../../../shared/api/api'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { apiJson, apiNoContent } from '../../../../shared/api/api';
 import type {
   ServerInviteResponse,
-  UserNotificationResponse,
-} from '../../../../shared/types'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import { notificationCopy } from '../../../shared/copy'
+  UserNotificationResponse
+} from '../../../../shared/types';
 import {
   SystemTabPanel,
   SystemTabs,
-  useSystemSkeletonPresence,
-} from '../../../shared'
-import { useNotificationPreferences } from './notificationPreferences'
+  useSystemSkeletonPresence
+} from '../../../shared';
+import { notificationCopy } from '../../../shared/copy';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
+import { NotificationListSkeleton } from './NotificationListSkeleton';
 import {
+  type NotificationReadRollback,
   applyAllNotificationsRead,
   applyNotificationRead,
   clearReadNotificationHistory,
   rollbackAllNotificationsRead,
-  rollbackNotificationRead,
-  type NotificationReadRollback,
-} from './notificationCenterModel'
-import { NotificationListSkeleton } from './NotificationListSkeleton'
+  rollbackNotificationRead
+} from './notificationCenterModel';
 import {
-  resolveNotificationTarget,
   type NotificationTarget,
-} from './notificationNavigation'
-import styles from './NotificationCenter.module.css'
+  resolveNotificationTarget
+} from './notificationNavigation';
+import { useNotificationPreferences } from './notificationPreferences';
 
-type NotificationFilter = 'all' | 'unread' | 'mention' | 'invite' | 'system'
+import styles from './NotificationCenter.module.css';
+
+type NotificationFilter = 'all' | 'unread' | 'mention' | 'invite' | 'system';
 
 type NotificationCenterProps = {
-  accessToken: string
-  currentUserId: string
-  directServerInvites: ServerInviteResponse[]
-  onAcceptDirectServerInvite: (inviteId: string) => void
-  onDeclineDirectServerInvite: (inviteId: string) => void
-  onOpenTarget: (target: NotificationTarget) => void
-}
+  accessToken: string;
+  currentUserId: string;
+  directServerInvites: ServerInviteResponse[];
+  onAcceptDirectServerInvite: (inviteId: string) => void;
+  onDeclineDirectServerInvite: (inviteId: string) => void;
+  onOpenTarget: (target: NotificationTarget) => void;
+};
 
 const filters: { id: NotificationFilter; label: string }[] = [
   { id: 'all', label: notificationCopy.center.filters.all },
   { id: 'unread', label: notificationCopy.center.filters.unread },
   { id: 'mention', label: notificationCopy.center.filters.mention },
   { id: 'invite', label: notificationCopy.center.filters.invite },
-  { id: 'system', label: notificationCopy.center.filters.system },
-]
+  { id: 'system', label: notificationCopy.center.filters.system }
+];
 
 export function NotificationCenter({
   accessToken,
@@ -52,114 +54,113 @@ export function NotificationCenter({
   directServerInvites,
   onAcceptDirectServerInvite,
   onDeclineDirectServerInvite,
-  onOpenTarget,
+  onOpenTarget
 }: NotificationCenterProps) {
-  const [notifications, setNotifications] = useState<UserNotificationResponse[]>(
-    [],
-  )
-  const [activeFilter, setActiveFilter] =
-    useState<NotificationFilter>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [mutationError, setMutationError] = useState<string | null>(null)
+  const [notifications, setNotifications] = useState<
+    UserNotificationResponse[]
+  >([]);
+  const [activeFilter, setActiveFilter] = useState<NotificationFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [pendingReadIds, setPendingReadIds] = useState<Set<string>>(
-    () => new Set(),
-  )
-  const [isMarkingAllRead, setIsMarkingAllRead] = useState(false)
-  const [isClearingHistory, setIsClearingHistory] = useState(false)
-  const loadRequestIdRef = useRef(0)
-  const pendingReadIdsRef = useRef(new Set<string>())
+    () => new Set()
+  );
+  const [isMarkingAllRead, setIsMarkingAllRead] = useState(false);
+  const [isClearingHistory, setIsClearingHistory] = useState(false);
+  const loadRequestIdRef = useRef(0);
+  const pendingReadIdsRef = useRef(new Set<string>());
   const { preferences, updatePreferences } =
-    useNotificationPreferences(currentUserId)
+    useNotificationPreferences(currentUserId);
 
-  const loadNotifications = useCallback(async (showLoading = false) => {
-    const requestId = ++loadRequestIdRef.current
-    if (showLoading) {
-      setIsLoading(true)
-    }
-    setLoadError(null)
+  const loadNotifications = useCallback(
+    async (showLoading = false) => {
+      const requestId = ++loadRequestIdRef.current;
+      if (showLoading) {
+        setIsLoading(true);
+      }
+      setLoadError(null);
 
-    try {
-      const response = await apiJson<UserNotificationResponse[]>(
-        '/api/notifications',
-        { accessToken },
-      )
-      if (loadRequestIdRef.current === requestId) {
-        setNotifications(response)
+      try {
+        const response = await apiJson<UserNotificationResponse[]>(
+          '/api/notifications',
+          { accessToken }
+        );
+        if (loadRequestIdRef.current === requestId) {
+          setNotifications(response);
+        }
+      } catch {
+        if (loadRequestIdRef.current === requestId) {
+          setLoadError(notificationCopy.center.loadError);
+        }
+      } finally {
+        if (loadRequestIdRef.current === requestId) {
+          setIsLoading(false);
+        }
       }
-    } catch {
-      if (loadRequestIdRef.current === requestId) {
-        setLoadError(notificationCopy.center.loadError)
-      }
-    } finally {
-      if (loadRequestIdRef.current === requestId) {
-        setIsLoading(false)
-      }
-    }
-  }, [accessToken])
+    },
+    [accessToken]
+  );
 
   useEffect(() => {
-    void loadNotifications(true)
+    void loadNotifications(true);
 
     function handleChanged() {
-      void loadNotifications()
+      void loadNotifications();
     }
 
     window.addEventListener(
       'arcanelink:user-notifications-changed',
-      handleChanged,
-    )
+      handleChanged
+    );
     return () => {
-      loadRequestIdRef.current += 1
+      loadRequestIdRef.current += 1;
       window.removeEventListener(
         'arcanelink:user-notifications-changed',
-        handleChanged,
-      )
-    }
-  }, [loadNotifications])
+        handleChanged
+      );
+    };
+  }, [loadNotifications]);
 
   const items = useMemo(
     () => mergeActiveInvites(notifications, directServerInvites),
-    [directServerInvites, notifications],
-  )
+    [directServerInvites, notifications]
+  );
   const counts = useMemo(
     () => ({
       all: items.length,
       unread: items.filter((item) => !item.readAt).length,
       mention: items.filter((item) => item.kind === 'mention').length,
       invite: items.filter((item) => isInviteKind(item.kind)).length,
-      system: items.filter((item) => item.kind === 'system').length,
+      system: items.filter((item) => item.kind === 'system').length
     }),
-    [items],
-  )
+    [items]
+  );
   const visibleItems = useMemo(() => {
-    const query = searchQuery
-      .trim()
-      .toLocaleLowerCase(notificationCopy.locale)
+    const query = searchQuery.trim().toLocaleLowerCase(notificationCopy.locale);
     return items.filter((item) => {
       const matchesFilter =
         activeFilter === 'all' ||
         (activeFilter === 'unread' && !item.readAt) ||
         item.kind === activeFilter ||
-        (activeFilter === 'invite' && isInviteKind(item.kind))
+        (activeFilter === 'invite' && isInviteKind(item.kind));
       const matchesSearch =
         !query ||
         `${item.title} ${item.body} ${item.detail ?? ''} ${
           item.actorDisplayName ?? ''
         } ${item.serverTitle ?? ''}`
           .toLocaleLowerCase(notificationCopy.locale)
-          .includes(query)
-      return matchesFilter && matchesSearch
-    })
-  }, [activeFilter, items, searchQuery])
+          .includes(query);
+      return matchesFilter && matchesSearch;
+    });
+  }, [activeFilter, items, searchQuery]);
   const hasUnreadStoredNotifications = notifications.some(
-    (item) => !item.readAt,
-  )
-  const hasReadStoredNotifications = notifications.some((item) => item.readAt)
-  const isInitialLoading = isLoading && items.length === 0
-  const initialLoadingSkeleton =
-    useSystemSkeletonPresence(isInitialLoading)
+    (item) => !item.readAt
+  );
+  const hasReadStoredNotifications = notifications.some((item) => item.readAt);
+  const isInitialLoading = isLoading && items.length === 0;
+  const initialLoadingSkeleton = useSystemSkeletonPresence(isInitialLoading);
 
   async function markRead(item: UserNotificationResponse) {
     if (
@@ -169,37 +170,36 @@ export function NotificationCenter({
       isMarkingAllRead ||
       isClearingHistory
     ) {
-      return
+      return;
     }
 
-    const readAt = new Date().toISOString()
+    const readAt = new Date().toISOString();
     const rollback: NotificationReadRollback = {
       id: item.id,
       previousReadAt: item.readAt,
-      optimisticReadAt: readAt,
-    }
+      optimisticReadAt: readAt
+    };
 
-    setMutationError(null)
+    setMutationError(null);
     setNotifications(
-      (current) =>
-        applyNotificationRead(current, item.id, readAt).notifications,
-    )
-    pendingReadIdsRef.current.add(item.id)
-    setPendingReadIds(new Set(pendingReadIdsRef.current))
+      (current) => applyNotificationRead(current, item.id, readAt).notifications
+    );
+    pendingReadIdsRef.current.add(item.id);
+    setPendingReadIds(new Set(pendingReadIdsRef.current));
 
     try {
       await apiNoContent(`/api/notifications/${item.id}/read`, {
         accessToken,
-        method: 'POST',
-      })
+        method: 'POST'
+      });
     } catch {
       setNotifications((current) =>
-        rollbackNotificationRead(current, rollback),
-      )
-      setMutationError(notificationCopy.center.updateError)
+        rollbackNotificationRead(current, rollback)
+      );
+      setMutationError(notificationCopy.center.updateError);
     } finally {
-      pendingReadIdsRef.current.delete(item.id)
-      setPendingReadIds(new Set(pendingReadIdsRef.current))
+      pendingReadIdsRef.current.delete(item.id);
+      setPendingReadIds(new Set(pendingReadIdsRef.current));
     }
   }
 
@@ -210,27 +210,27 @@ export function NotificationCenter({
       pendingReadIdsRef.current.size > 0 ||
       !hasUnreadStoredNotifications
     ) {
-      return
+      return;
     }
 
-    const readAt = new Date().toISOString()
-    const optimistic = applyAllNotificationsRead(notifications, readAt)
-    setMutationError(null)
-    setIsMarkingAllRead(true)
-    setNotifications(optimistic.notifications)
+    const readAt = new Date().toISOString();
+    const optimistic = applyAllNotificationsRead(notifications, readAt);
+    setMutationError(null);
+    setIsMarkingAllRead(true);
+    setNotifications(optimistic.notifications);
 
     try {
       await apiNoContent('/api/notifications/read-all', {
         accessToken,
-        method: 'POST',
-      })
+        method: 'POST'
+      });
     } catch {
       setNotifications((current) =>
-        rollbackAllNotificationsRead(current, optimistic.rollbacks),
-      )
-      setMutationError(notificationCopy.center.updateError)
+        rollbackAllNotificationsRead(current, optimistic.rollbacks)
+      );
+      setMutationError(notificationCopy.center.updateError);
     } finally {
-      setIsMarkingAllRead(false)
+      setIsMarkingAllRead(false);
     }
   }
 
@@ -242,22 +242,22 @@ export function NotificationCenter({
       !hasReadStoredNotifications ||
       !window.confirm(notificationCopy.center.clearHistoryConfirmation)
     ) {
-      return
+      return;
     }
 
-    setMutationError(null)
-    setIsClearingHistory(true)
+    setMutationError(null);
+    setIsClearingHistory(true);
 
     try {
       await apiNoContent('/api/notifications/history', {
         accessToken,
-        method: 'DELETE',
-      })
-      setNotifications(clearReadNotificationHistory)
+        method: 'DELETE'
+      });
+      setNotifications(clearReadNotificationHistory);
     } catch {
-      setMutationError(notificationCopy.center.clearHistoryError)
+      setMutationError(notificationCopy.center.clearHistoryError);
     } finally {
-      setIsClearingHistory(false)
+      setIsClearingHistory(false);
     }
   }
 
@@ -335,7 +335,7 @@ export function NotificationCenter({
         options={filters.map((filter) => ({
           badge: counts[filter.id],
           label: filter.label,
-          value: filter.id,
+          value: filter.id
         }))}
         value={activeFilter}
       />
@@ -364,8 +364,8 @@ export function NotificationCenter({
             label={notificationCopy.center.loading}
             presencePhase={initialLoadingSkeleton.phase}
           />
-        ) : loadError && items.length === 0 ? null
-        : visibleItems.length === 0 ? (
+        ) : loadError && items.length === 0 ? null : visibleItems.length ===
+          0 ? (
           <div className={styles.empty}>
             <SystemIcon name="mail" size={30} />
             <strong>{notificationCopy.center.emptyTitle}</strong>
@@ -379,24 +379,24 @@ export function NotificationCenter({
                 {group.items.map((item) => {
                   const activeInvite = item.inviteId
                     ? directServerInvites.find(
-                        (invite) => invite.id === item.inviteId,
+                        (invite) => invite.id === item.inviteId
                       )
-                    : null
+                    : null;
                   return (
                     <NotificationRow
                       key={item.id}
                       item={item}
                       activeInvite={activeInvite}
                       onAccept={(inviteId) => {
-                        onAcceptDirectServerInvite(inviteId)
+                        onAcceptDirectServerInvite(inviteId);
                       }}
                       onDecline={(inviteId) => {
-                        onDeclineDirectServerInvite(inviteId)
+                        onDeclineDirectServerInvite(inviteId);
                       }}
                       onRead={() => void markRead(item)}
                       onOpenTarget={onOpenTarget}
                     />
-                  )
+                  );
                 })}
               </div>
             </section>
@@ -404,7 +404,7 @@ export function NotificationCenter({
         )}
       </SystemTabPanel>
     </section>
-  )
+  );
 }
 
 function NotificationRow({
@@ -413,21 +413,21 @@ function NotificationRow({
   onAccept,
   onDecline,
   onRead,
-  onOpenTarget,
+  onOpenTarget
 }: {
-  item: UserNotificationResponse
-  activeInvite: ServerInviteResponse | null | undefined
-  onAccept: (inviteId: string) => void
-  onDecline: (inviteId: string) => void
-  onRead: () => void
-  onOpenTarget: (target: NotificationTarget) => void
+  item: UserNotificationResponse;
+  activeInvite: ServerInviteResponse | null | undefined;
+  onAccept: (inviteId: string) => void;
+  onDecline: (inviteId: string) => void;
+  onRead: () => void;
+  onOpenTarget: (target: NotificationTarget) => void;
 }) {
-  const image = getNotificationImage(item, activeInvite)
-  const target = resolveNotificationTarget(item)
+  const image = getNotificationImage(item, activeInvite);
+  const target = resolveNotificationTarget(item);
   function activate() {
-    onRead()
+    onRead();
     if (target) {
-      onOpenTarget(target)
+      onOpenTarget(target);
     }
   }
   return (
@@ -438,8 +438,8 @@ function NotificationRow({
       onClick={activate}
       onKeyDown={(event) => {
         if (target && (event.key === 'Enter' || event.key === ' ')) {
-          event.preventDefault()
-          activate()
+          event.preventDefault();
+          activate();
         }
       }}
       role={target ? 'button' : undefined}
@@ -472,8 +472,8 @@ function NotificationRow({
           <button
             type="button"
             onClick={(event) => {
-              event.stopPropagation()
-              onDecline(activeInvite.id)
+              event.stopPropagation();
+              onDecline(activeInvite.id);
             }}
           >
             {notificationCopy.actions.decline}
@@ -482,8 +482,8 @@ function NotificationRow({
             className={styles.accept}
             type="button"
             onClick={(event) => {
-              event.stopPropagation()
-              onAccept(activeInvite.id)
+              event.stopPropagation();
+              onAccept(activeInvite.id);
             }}
           >
             {notificationCopy.actions.accept}
@@ -491,18 +491,18 @@ function NotificationRow({
         </div>
       ) : null}
     </article>
-  )
+  );
 }
 
 function mergeActiveInvites(
   notifications: UserNotificationResponse[],
-  invites: ServerInviteResponse[],
+  invites: ServerInviteResponse[]
 ) {
   const knownInviteIds = new Set(
     notifications
       .map((item) => item.inviteId)
-      .filter((id): id is string => Boolean(id)),
-  )
+      .filter((id): id is string => Boolean(id))
+  );
   const missing = invites
     .filter((invite) => !knownInviteIds.has(invite.id))
     .map<UserNotificationResponse>((invite) => ({
@@ -529,80 +529,82 @@ function mergeActiveInvites(
       messageCreatedAt: null,
       inviteId: invite.id,
       createdAt: invite.createdAt,
-      readAt: null,
-    }))
+      readAt: null
+    }));
   return [...notifications, ...missing].sort(
     (first, second) =>
-      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
-  )
+      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime()
+  );
 }
 
 function getNotificationImage(
   item: UserNotificationResponse,
-  invite?: ServerInviteResponse | null,
+  invite?: ServerInviteResponse | null
 ) {
   const assetId =
     item.kind === 'invite'
-      ? invite?.serverIconAssetId ?? item.serverIconAssetId
-      : item.actorAvatarAssetId
+      ? (invite?.serverIconAssetId ?? item.serverIconAssetId)
+      : item.actorAvatarAssetId;
   if (!assetId) {
-    return null
+    return null;
   }
 
   const offsetX =
     item.kind === 'invite'
-      ? invite?.serverIconCropOffsetX ?? item.serverIconCropOffsetX
-      : item.actorAvatarCropOffsetX
+      ? (invite?.serverIconCropOffsetX ?? item.serverIconCropOffsetX)
+      : item.actorAvatarCropOffsetX;
   const offsetY =
     item.kind === 'invite'
-      ? invite?.serverIconCropOffsetY ?? item.serverIconCropOffsetY
-      : item.actorAvatarCropOffsetY
+      ? (invite?.serverIconCropOffsetY ?? item.serverIconCropOffsetY)
+      : item.actorAvatarCropOffsetY;
   const zoom =
     item.kind === 'invite'
-      ? invite?.serverIconCropZoom ?? item.serverIconCropZoom
-      : item.actorAvatarCropZoom
+      ? (invite?.serverIconCropZoom ?? item.serverIconCropZoom)
+      : item.actorAvatarCropZoom;
   return {
     src: `/api/assets/${assetId}/content`,
-    transform: `translate(${offsetX * 100}%, ${offsetY * 100}%) scale(${zoom})`,
-  }
+    transform: `translate(${offsetX * 100}%, ${offsetY * 100}%) scale(${zoom})`
+  };
 }
 
 function iconForKind(kind: string) {
-  if (isInviteKind(kind)) return 'user-plus'
-  if (kind === 'mention') return 'message'
-  if (kind === 'achievement') return 'pin'
-  return 'server'
+  if (isInviteKind(kind)) return 'user-plus';
+  if (kind === 'mention') return 'message';
+  if (kind === 'achievement') return 'pin';
+  return 'server';
 }
 
 function isInviteKind(kind: string) {
-  return kind === 'invite' ||
+  return (
+    kind === 'invite' ||
     kind === 'private-space-invite' ||
     kind === 'friend-request'
+  );
 }
 
 function groupByDay(items: UserNotificationResponse[]) {
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(today.getDate() - 1)
-  const groups = new Map<string, UserNotificationResponse[]>()
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const groups = new Map<string, UserNotificationResponse[]>();
 
   for (const item of items) {
-    const date = new Date(item.createdAt)
+    const date = new Date(item.createdAt);
     const label = isSameDay(date, today)
       ? notificationCopy.center.today
       : isSameDay(date, yesterday)
         ? notificationCopy.center.yesterday
         : new Intl.DateTimeFormat(notificationCopy.locale, {
             day: 'numeric',
-            month: 'long',
-          }).format(date)
-    groups.set(label, [...(groups.get(label) ?? []), item])
+            month: 'long'
+          }).format(date);
+    groups.set(label, [...(groups.get(label) ?? []), item]);
   }
 
   return Array.from(groups, ([label, groupItems]) => ({
     label,
-    items: groupItems,
-  }))
+    items: groupItems
+  }));
 }
 
 function isSameDay(first: Date, second: Date) {
@@ -610,24 +612,24 @@ function isSameDay(first: Date, second: Date) {
     first.getFullYear() === second.getFullYear() &&
     first.getMonth() === second.getMonth() &&
     first.getDate() === second.getDate()
-  )
+  );
 }
 
 function formatTime(value: string) {
-  const date = new Date(value)
+  const date = new Date(value);
   const elapsedMinutes = Math.max(
     0,
-    Math.floor((Date.now() - date.getTime()) / 60000),
-  )
-  if (elapsedMinutes < 1) return notificationCopy.center.now
+    Math.floor((Date.now() - date.getTime()) / 60000)
+  );
+  if (elapsedMinutes < 1) return notificationCopy.center.now;
   if (elapsedMinutes < 60) {
-    return notificationCopy.center.minutesAgo(elapsedMinutes)
+    return notificationCopy.center.minutesAgo(elapsedMinutes);
   }
   if (isSameDay(date, new Date())) {
-    return notificationCopy.center.hoursAgo(Math.floor(elapsedMinutes / 60))
+    return notificationCopy.center.hoursAgo(Math.floor(elapsedMinutes / 60));
   }
   return new Intl.DateTimeFormat(notificationCopy.locale, {
     hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+    minute: '2-digit'
+  }).format(date);
 }

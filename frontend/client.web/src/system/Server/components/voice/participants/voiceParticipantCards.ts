@@ -1,64 +1,64 @@
-import type { ServerMemberDetailsResponse } from '../../../../../shared/types'
-import type { VoicePlaybackState } from '../../../../shared/types/voicePlayback'
-import { voiceCopy } from '../../../../shared/copy/voice.ru.ts'
-import { fallbackAvatarAccent } from '../../../../shared/utils/avatarAccent'
+import type { ServerMemberDetailsResponse } from '../../../../../shared/types';
+import { voiceCopy } from '../../../../shared/copy/voice.ru.ts';
+import type { VoicePlaybackState } from '../../../../shared/types/voicePlayback';
+import { fallbackAvatarAccent } from '../../../../shared/utils/avatarAccent';
 import type {
   VoiceParticipant,
-  VoicePeerStatus,
-} from '../../../hooks/voice/useVoiceChannel'
+  VoicePeerStatus
+} from '../../../hooks/voice/useVoiceChannel';
+import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes';
+import {
+  getVoiceParticipantMember,
+  normalizeVoiceParticipantUserId
+} from './VoiceParticipantIdentity';
 import {
   createTrackStream,
   hasActiveVideoTrack,
-  selectParticipantVideoTracks,
-} from './voiceMediaTracks'
-import type { VoiceParticipantCard } from '../detached/detachedVoiceWorkspaceTypes'
-import {
-  getVoiceParticipantMember,
-  normalizeVoiceParticipantUserId,
-} from './VoiceParticipantIdentity'
+  selectParticipantVideoTracks
+} from './voiceMediaTracks';
 
 type EffectiveVoiceParticipantsOptions = {
-  participants: VoiceParticipant[]
-  serverMembers: ServerMemberDetailsResponse[]
-  isConnected: boolean
-  localParticipantId: string | null
-  currentUserId: string
-  isMuted: boolean
-  isDeafened: boolean
-  isCameraEnabled: boolean
-  isScreenSharing: boolean
-}
+  participants: VoiceParticipant[];
+  serverMembers: ServerMemberDetailsResponse[];
+  isConnected: boolean;
+  localParticipantId: string | null;
+  currentUserId: string;
+  isMuted: boolean;
+  isDeafened: boolean;
+  isCameraEnabled: boolean;
+  isScreenSharing: boolean;
+};
 
 type VoiceParticipantCardsOptions = {
-  participants: VoiceParticipant[]
-  serverMembers: ServerMemberDetailsResponse[]
-  currentUserId: string
-  localParticipantId: string | null
-  localCameraPreviewStream: MediaStream | null
-  localScreenPreviewStream: MediaStream | null
-  remoteStreamsByParticipantId: Record<string, MediaStream>
-  peerStatusesByParticipantId: Record<string, VoicePeerStatus>
-  playbackStatesByParticipantId: Record<string, VoicePlaybackState>
-  speakingParticipantIds: Record<string, boolean>
-  avatarAccentsByParticipantId: Record<string, string>
-  mediaTrackVersion: number
-}
+  participants: VoiceParticipant[];
+  serverMembers: ServerMemberDetailsResponse[];
+  currentUserId: string;
+  localParticipantId: string | null;
+  localCameraPreviewStream: MediaStream | null;
+  localScreenPreviewStream: MediaStream | null;
+  remoteStreamsByParticipantId: Record<string, MediaStream>;
+  peerStatusesByParticipantId: Record<string, VoicePeerStatus>;
+  playbackStatesByParticipantId: Record<string, VoicePlaybackState>;
+  speakingParticipantIds: Record<string, boolean>;
+  avatarAccentsByParticipantId: Record<string, string>;
+  mediaTrackVersion: number;
+};
 
-export type VoiceParticipantAudioStatus = 'muted' | 'deafened'
+export type VoiceParticipantAudioStatus = 'muted' | 'deafened';
 
 export function getActiveVoiceParticipantAudioStatuses(
-  participant: Pick<VoiceParticipant, 'isMuted' | 'isDeafened'>,
+  participant: Pick<VoiceParticipant, 'isMuted' | 'isDeafened'>
 ): VoiceParticipantAudioStatus[] {
-  const statuses: VoiceParticipantAudioStatus[] = []
+  const statuses: VoiceParticipantAudioStatus[] = [];
 
   if (participant.isMuted) {
-    statuses.push('muted')
+    statuses.push('muted');
   }
   if (participant.isDeafened) {
-    statuses.push('deafened')
+    statuses.push('deafened');
   }
 
-  return statuses
+  return statuses;
 }
 
 export function createEffectiveVoiceParticipants({
@@ -70,48 +70,56 @@ export function createEffectiveVoiceParticipants({
   isMuted,
   isDeafened,
   isCameraEnabled,
-  isScreenSharing,
+  isScreenSharing
 }: EffectiveVoiceParticipantsOptions) {
-  const participantsWithCurrentServerIdentity = participants.map((participant) => {
-    const member = getVoiceParticipantMember(participant, serverMembers)
-    if (!member) return participant
+  const participantsWithCurrentServerIdentity = participants.map(
+    (participant) => {
+      const member = getVoiceParticipantMember(participant, serverMembers);
+      if (!member) return participant;
 
-    const login = member.user.login.trim() || participant.login
-    const displayName = member.user.displayName.trim() || login
-    if (
-      participant.login === login &&
-      participant.displayName === displayName
-    ) {
-      return participant
-    }
+      const login = member.user.login.trim() || participant.login;
+      const displayName = member.user.displayName.trim() || login;
+      if (
+        participant.login === login &&
+        participant.displayName === displayName
+      ) {
+        return participant;
+      }
 
-    return {
-      ...participant,
-      login,
-      displayName,
+      return {
+        ...participant,
+        login,
+        displayName
+      };
     }
-  })
+  );
 
   if (!isConnected || !localParticipantId) {
-    return participantsWithCurrentServerIdentity
+    return participantsWithCurrentServerIdentity;
   }
 
-  const normalizedCurrentUserId = normalizeVoiceParticipantUserId(currentUserId)
-  const hasLocalParticipant = participantsWithCurrentServerIdentity.some((participant) => {
-    const participantId = normalizeVoiceParticipantUserId(
-      participant.participantId,
-    )
-    const userId = normalizeVoiceParticipantUserId(participant.userId)
+  const normalizedCurrentUserId =
+    normalizeVoiceParticipantUserId(currentUserId);
+  const hasLocalParticipant = participantsWithCurrentServerIdentity.some(
+    (participant) => {
+      const participantId = normalizeVoiceParticipantUserId(
+        participant.participantId
+      );
+      const userId = normalizeVoiceParticipantUserId(participant.userId);
 
-    return participantId === localParticipantId || userId === normalizedCurrentUserId
-  })
+      return (
+        participantId === localParticipantId ||
+        userId === normalizedCurrentUserId
+      );
+    }
+  );
 
-  if (hasLocalParticipant) return participantsWithCurrentServerIdentity
+  if (hasLocalParticipant) return participantsWithCurrentServerIdentity;
 
   const currentMember = serverMembers.find(
     (member) =>
-      normalizeVoiceParticipantUserId(member.userId) === normalizedCurrentUserId,
-  )
+      normalizeVoiceParticipantUserId(member.userId) === normalizedCurrentUserId
+  );
   const fallbackParticipant: VoiceParticipant = {
     participantId: localParticipantId,
     userId: currentUserId,
@@ -124,10 +132,10 @@ export function createEffectiveVoiceParticipants({
     isDeafened,
     isCameraEnabled,
     isScreenSharing,
-    joinedAt: '',
-  }
+    joinedAt: ''
+  };
 
-  return [...participantsWithCurrentServerIdentity, fallbackParticipant]
+  return [...participantsWithCurrentServerIdentity, fallbackParticipant];
 }
 
 export function createVoiceParticipantCards({
@@ -142,51 +150,57 @@ export function createVoiceParticipantCards({
   playbackStatesByParticipantId,
   speakingParticipantIds,
   avatarAccentsByParticipantId,
-  mediaTrackVersion,
+  mediaTrackVersion
 }: VoiceParticipantCardsOptions): VoiceParticipantCard[] {
   return participants.flatMap((participant) => {
     const normalizedParticipantId = normalizeVoiceParticipantUserId(
-      participant.participantId,
-    )
-    const participantMember = getVoiceParticipantMember(participant, serverMembers)
+      participant.participantId
+    );
+    const participantMember = getVoiceParticipantMember(
+      participant,
+      serverMembers
+    );
     const isSelf =
       normalizedParticipantId === localParticipantId ||
       normalizeVoiceParticipantUserId(participant.userId) ===
-        normalizeVoiceParticipantUserId(currentUserId)
-    const isSpeaking = Boolean(speakingParticipantIds[normalizedParticipantId])
-    const remoteStream = remoteStreamsByParticipantId[normalizedParticipantId]
+        normalizeVoiceParticipantUserId(currentUserId);
+    const isSpeaking = Boolean(speakingParticipantIds[normalizedParticipantId]);
+    const remoteStream = remoteStreamsByParticipantId[normalizedParticipantId];
     const remoteVideoTracks = selectParticipantVideoTracks(
       remoteStream,
       participant,
-      mediaTrackVersion,
-    )
-    const canRenderCamera = participant.canUseVideo !== false
-    const canRenderScreen = participant.canShareScreen !== false
-    const cameraTrack = participant.isCameraEnabled && canRenderCamera
-      ? remoteVideoTracks.camera
-      : null
-    const screenTrack = participant.isScreenSharing && canRenderScreen
-      ? remoteVideoTracks.screen
-      : null
+      mediaTrackVersion
+    );
+    const canRenderCamera = participant.canUseVideo !== false;
+    const canRenderScreen = participant.canShareScreen !== false;
+    const cameraTrack =
+      participant.isCameraEnabled && canRenderCamera
+        ? remoteVideoTracks.camera
+        : null;
+    const screenTrack =
+      participant.isScreenSharing && canRenderScreen
+        ? remoteVideoTracks.screen
+        : null;
     const cameraStream = isSelf
       ? canRenderCamera
         ? localCameraPreviewStream
         : null
-      : createTrackStream(cameraTrack)
+      : createTrackStream(cameraTrack);
     const screenStream = isSelf
       ? canRenderScreen
         ? localScreenPreviewStream
         : null
-      : createTrackStream(screenTrack)
+      : createTrackStream(screenTrack);
     const status = getVoiceParticipantStatus(
       participant,
       peerStatusesByParticipantId[normalizedParticipantId],
-      playbackStatesByParticipantId[normalizedParticipantId],
-    )
+      playbackStatesByParticipantId[normalizedParticipantId]
+    );
     const accent =
-      avatarAccentsByParticipantId[normalizedParticipantId] ?? fallbackAvatarAccent
-    const hasCameraVideo = hasActiveVideoTrack(cameraStream, mediaTrackVersion)
-    const hasScreenVideo = hasActiveVideoTrack(screenStream, mediaTrackVersion)
+      avatarAccentsByParticipantId[normalizedParticipantId] ??
+      fallbackAvatarAccent;
+    const hasCameraVideo = hasActiveVideoTrack(cameraStream, mediaTrackVersion);
+    const hasScreenVideo = hasActiveVideoTrack(screenStream, mediaTrackVersion);
     const cards: VoiceParticipantCard[] = [
       {
         accent,
@@ -198,9 +212,9 @@ export function createVoiceParticipantCards({
         participant,
         participantMember,
         participantStream: cameraStream,
-        status,
-      },
-    ]
+        status
+      }
+    ];
 
     if (canRenderScreen && (participant.isScreenSharing || hasScreenVideo)) {
       cards.push({
@@ -215,33 +229,34 @@ export function createVoiceParticipantCards({
         participantStream: screenStream,
         status: hasScreenVideo
           ? voiceCopy.channel.screenShare
-          : voiceCopy.channel.screenShareWaiting,
-      })
+          : voiceCopy.channel.screenShareWaiting
+      });
     }
 
-    return cards
-  })
+    return cards;
+  });
 }
 
 export function getVoiceParticipantStatus(
   participant: VoiceParticipant,
   peerStatus: VoicePeerStatus | undefined,
-  playbackState: VoicePlaybackState | undefined,
+  playbackState: VoicePlaybackState | undefined
 ) {
-  if (participant.isDeafened) return voiceCopy.participantMenu.soundOff
-  if (participant.isMuted) return voiceCopy.participantMenu.microphoneOff
-  if (!peerStatus) return voiceCopy.participantMenu.waitingWebRtc
+  if (participant.isDeafened) return voiceCopy.participantMenu.soundOff;
+  if (participant.isMuted) return voiceCopy.participantMenu.microphoneOff;
+  if (!peerStatus) return voiceCopy.participantMenu.waitingWebRtc;
 
   if (!peerStatus.hasRemoteStream) {
-    return `${peerStatus.connectionState}/${peerStatus.iceConnectionState}`
+    return `${peerStatus.connectionState}/${peerStatus.iceConnectionState}`;
   }
 
   if (playbackState === 'blocked') {
-    return voiceCopy.participantMenu.audioNeedsEnable
+    return voiceCopy.participantMenu.audioNeedsEnable;
   }
 
-  if (playbackState === 'silent') return voiceCopy.participantMenu.audioSilent
-  if (playbackState === 'playing') return voiceCopy.participantMenu.audioPlaying
+  if (playbackState === 'silent') return voiceCopy.participantMenu.audioSilent;
+  if (playbackState === 'playing')
+    return voiceCopy.participantMenu.audioPlaying;
 
-  return voiceCopy.participantMenu.audioConnected
+  return voiceCopy.participantMenu.audioConnected;
 }

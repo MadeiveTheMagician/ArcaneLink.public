@@ -1,7 +1,8 @@
-import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton'
-import styles from './ServerChannelTreeSkeleton.module.css'
+import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton';
 
-const skeletonGroups = [3, 4, 3]
+import styles from './ServerChannelTreeSkeleton.module.css';
+
+const skeletonGroups = [3, 4, 3];
 
 export function ServerChannelTreeSkeleton() {
   return (
@@ -49,5 +50,5 @@ export function ServerChannelTreeSkeleton() {
         </section>
       ))}
     </div>
-  )
+  );
 }

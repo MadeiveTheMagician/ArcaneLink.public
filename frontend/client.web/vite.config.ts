@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
-const apiTarget = process.env.ARCANELINK_API_TARGET ?? 'http://localhost:5207'
+const apiTarget = process.env.ARCANELINK_API_TARGET ?? 'http://localhost:5207';
 
 export default defineConfig({
   plugins: [react()],
@@ -10,9 +10,9 @@ export default defineConfig({
       '^/api(/|$)': apiTarget,
       '^/hubs(/|$)': {
         target: apiTarget,
-        ws: true,
+        ws: true
       },
-      '/ping': apiTarget,
-    },
-  },
-})
+      '/ping': apiTarget
+    }
+  }
+});

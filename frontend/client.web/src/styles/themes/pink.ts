@@ -1,5 +1,5 @@
-import type { SystemTheme } from '../systemThemes'
-import { themeCopy } from '../theme.copy'
+import type { SystemTheme } from '../systemThemes';
+import { themeCopy } from '../theme.copy';
 
 export const pinkTheme: SystemTheme = {
   code: 'pink',
@@ -64,6 +64,6 @@ export const pinkTheme: SystemTheme = {
     '--color-danger': '#ff6b75',
     '--color-success': '#98f0bd',
     '--theme-accent-contrast': '#281a23',
-    '--shadow-sapphire': '0 26px 90px rgba(201, 135, 169, 0.2)',
-  },
-}
+    '--shadow-sapphire': '0 26px 90px rgba(201, 135, 169, 0.2)'
+  }
+};

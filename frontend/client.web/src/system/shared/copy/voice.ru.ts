@@ -17,7 +17,7 @@ export const voiceCopy = {
     micOn: 'Включить микрофон',
     screenOff: 'Остановить демонстрацию',
     screenOn: 'Показать экран',
-    settings: 'Настройки',
+    settings: 'Настройки'
   },
   channel: {
     closeChat: 'Закрыть чат голосового спейса',
@@ -37,7 +37,7 @@ export const voiceCopy = {
     screenSuffix: 'экран',
     shrinkStream: 'Свернуть трансляцию',
     screenShare: 'Демонстрация экрана',
-    screenShareWaiting: 'Ожидание демонстрации',
+    screenShareWaiting: 'Ожидание демонстрации'
   },
   detached: {
     aspectRatioLegend: 'Пропорции окна слота',
@@ -67,7 +67,8 @@ export const voiceCopy = {
       `${participantName} — голосовой спейс`,
     presetNamePrefix: 'Пресет',
     presetName: 'Название пресета',
-    presetSettingsTitle: (presetName: string) => `Настройки пресета ${presetName}`,
+    presetSettingsTitle: (presetName: string) =>
+      `Настройки пресета ${presetName}`,
     resetPreset: 'Сбросить к дефолту',
     savePreset: 'Сохранить пресет',
     settingsTitle: 'Настройки трансляции',
@@ -81,12 +82,13 @@ export const voiceCopy = {
     slotTitle: (index: number) => `Слот №${index}`,
     slotZLayerTitle: 'Слой слота',
     tableView: 'Табличный вид',
-    tableViewUnavailable: 'Табличный вид доступен только для стандартного расположения.',
+    tableViewUnavailable:
+      'Табличный вид доступен только для стандартного расположения.',
     userCameraLayout: 'Пользовательское положение камер',
     widthShort: 'Шир.',
     heightShort: 'Выс.',
     windowClose: 'Закрыть окно',
-    windowFullscreen: 'Развернуть окно на весь экран',
+    windowFullscreen: 'Развернуть окно на весь экран'
   },
   dock: {
     bitsPerSecondShort: 'бит/с',
@@ -132,7 +134,7 @@ export const voiceCopy = {
     switching: 'Переключаем голосовой спейс…',
     systemSettings: 'Открыть настройки системы',
     unavailable: 'Голосовая связь недоступна',
-    unknown: 'Состояние связи определяется',
+    unknown: 'Состояние связи определяется'
   },
   errors: {
     joinFailed: 'Не удалось войти в голосовой канал.',
@@ -146,11 +148,11 @@ export const voiceCopy = {
     turnConnectionFailed:
       'Браузер не смог подключиться к TURN/STUN серверу. Проверь DNS arcane-link.ru и открытые порты 3478/tcp, 3478/udp.',
     turnRelayMissing:
-      'WebRTC не нашёл TURN relay-кандидаты. Проверь временные TURN-данные и открытые порты 3478/tcp, 3478/udp, 49160-49200/udp.',
+      'WebRTC не нашёл TURN relay-кандидаты. Проверь временные TURN-данные и открытые порты 3478/tcp, 3478/udp, 49160-49200/udp.'
   },
   panel: {
     activity: 'Голосовая активность',
-    title: 'Voice',
+    title: 'Voice'
   },
   participantMenu: {
     audioConnected: 'Аудио подключено',
@@ -179,7 +181,7 @@ export const voiceCopy = {
     serverDeafen: 'Сервер: откл. звук',
     serverManagement: 'Серверное управление',
     waitingWebRtc: 'Ожидание WebRTC',
-    you: 'Это вы',
+    you: 'Это вы'
   },
   state: {
     noChannel: 'Голосовой канал не выбран.',
@@ -188,6 +190,6 @@ export const voiceCopy = {
     notConnected: 'Голос не подключён',
     participantSummary: (summary: string) => `В голосовом спейсе:\n${summary}`,
     participantSummaryMore: (visibleNames: string, hiddenCount: number) =>
-      `${visibleNames}\nи ещё ${hiddenCount} человек`,
-  },
-} as const
+      `${visibleNames}\nи ещё ${hiddenCount} человек`
+  }
+} as const;

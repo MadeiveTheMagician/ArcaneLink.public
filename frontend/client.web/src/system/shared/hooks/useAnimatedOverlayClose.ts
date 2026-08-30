@@ -1,63 +1,63 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
+  type AnimatedOverlayPhase,
   beginAnimatedOverlayClose,
   canRequestAnimatedOverlayClose,
-  getAnimatedOverlayCloseDelayMs,
-  type AnimatedOverlayPhase,
-} from '../overlays/animatedOverlayPhaseModel'
+  getAnimatedOverlayCloseDelayMs
+} from '../overlays/animatedOverlayPhaseModel';
 
-type CloseCompletion = () => void
+type CloseCompletion = () => void;
 
 function prefersReducedMotion() {
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  return (
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  );
 }
 
 export function useAnimatedOverlayClose(durationMs: number) {
-  const [phase, setPhase] = useState<AnimatedOverlayPhase>('open')
-  const phaseRef = useRef<AnimatedOverlayPhase>('open')
-  const closeTimerRef = useRef<number | null>(null)
+  const [phase, setPhase] = useState<AnimatedOverlayPhase>('open');
+  const phaseRef = useRef<AnimatedOverlayPhase>('open');
+  const closeTimerRef = useRef<number | null>(null);
 
   useEffect(
     () => () => {
       if (closeTimerRef.current !== null) {
-        window.clearTimeout(closeTimerRef.current)
+        window.clearTimeout(closeTimerRef.current);
       }
     },
-    [],
-  )
+    []
+  );
 
   const requestClose = useCallback(
-    (
-      onClosed: CloseCompletion,
-      onAfterClosed?: CloseCompletion,
-    ) => {
-      if (!canRequestAnimatedOverlayClose(phaseRef.current)) return false
+    (onClosed: CloseCompletion, onAfterClosed?: CloseCompletion) => {
+      if (!canRequestAnimatedOverlayClose(phaseRef.current)) return false;
 
-      phaseRef.current = beginAnimatedOverlayClose(phaseRef.current)
-      setPhase(phaseRef.current)
+      phaseRef.current = beginAnimatedOverlayClose(phaseRef.current);
+      setPhase(phaseRef.current);
 
       const closeDelayMs = getAnimatedOverlayCloseDelayMs(
         durationMs,
-        prefersReducedMotion(),
-      )
+        prefersReducedMotion()
+      );
 
       closeTimerRef.current = window.setTimeout(() => {
-        closeTimerRef.current = null
-        onClosed()
+        closeTimerRef.current = null;
+        onClosed();
 
         if (onAfterClosed) {
-          window.requestAnimationFrame(onAfterClosed)
+          window.requestAnimationFrame(onAfterClosed);
         }
-      }, closeDelayMs)
+      }, closeDelayMs);
 
-      return true
+      return true;
     },
-    [durationMs],
-  )
+    [durationMs]
+  );
 
   return {
     isClosing: phase === 'closing',
     phase,
-    requestClose,
-  }
+    requestClose
+  };
 }

@@ -1,23 +1,23 @@
 export type AuthPasswordFieldPresentation = {
-  inputType: 'password' | 'text'
-  toggleIcon: 'eye' | 'eye-off'
-  toggleLabel: string
-}
+  inputType: 'password' | 'text';
+  toggleIcon: 'eye' | 'eye-off';
+  toggleLabel: string;
+};
 
 export function getAuthPasswordFieldPresentation({
   isVisible,
   fieldLabel,
   showLabel,
-  hideLabel,
+  hideLabel
 }: {
-  isVisible: boolean
-  fieldLabel: string
-  showLabel: string
-  hideLabel: string
+  isVisible: boolean;
+  fieldLabel: string;
+  showLabel: string;
+  hideLabel: string;
 }): AuthPasswordFieldPresentation {
   return {
     inputType: isVisible ? 'text' : 'password',
     toggleIcon: isVisible ? 'eye-off' : 'eye',
-    toggleLabel: `${isVisible ? hideLabel : showLabel}: ${fieldLabel}`,
-  }
+    toggleLabel: `${isVisible ? hideLabel : showLabel}: ${fieldLabel}`
+  };
 }

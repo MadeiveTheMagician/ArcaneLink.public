@@ -1,19 +1,20 @@
-import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel'
-import { voiceCopy } from '../../../shared'
-import styles from './HubVoiceParticipantsPanel.module.css'
+import type { VoiceChannelController } from '../../../Server/hooks/voice/useVoiceChannel';
+import { voiceCopy } from '../../../shared';
+
+import styles from './HubVoiceParticipantsPanel.module.css';
 
 type HubVoiceParticipantsPanelProps = {
-  className?: string
-  voice: VoiceChannelController
-}
+  className?: string;
+  voice: VoiceChannelController;
+};
 
 export function HubVoiceParticipantsPanel({
   className,
-  voice,
+  voice
 }: HubVoiceParticipantsPanelProps) {
   const participants = voice.connectedChannel
     ? (voice.participantsBySpaceId[voice.connectedChannel.spaceId] ?? [])
-    : []
+    : [];
 
   return (
     <aside
@@ -43,7 +44,7 @@ export function HubVoiceParticipantsPanel({
                   style={{
                     transform: `translate(${(participant.avatarCropOffsetX ?? 0) * 100}%, ${
                       (participant.avatarCropOffsetY ?? 0) * 100
-                    }%) scale(${participant.avatarCropZoom ?? 1})`,
+                    }%) scale(${participant.avatarCropZoom ?? 1})`
                   }}
                 />
               ) : (
@@ -58,5 +59,5 @@ export function HubVoiceParticipantsPanel({
         ))}
       </div>
     </aside>
-  )
+  );
 }

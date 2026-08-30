@@ -1,26 +1,27 @@
-import { SettingsSection, ToggleField } from './SystemSettingsControls'
-import { useNotificationPreferences } from '../notifications/notificationPreferences'
-import { notificationCopy } from '../../../shared/copy'
-import { SystemSelect } from '../../../shared/ui/SystemSelect'
-import styles from './SystemSettingsNotificationsTab.module.css'
+import { notificationCopy } from '../../../shared/copy';
+import { SystemSelect } from '../../../shared/ui/SystemSelect';
+import { useNotificationPreferences } from '../notifications/notificationPreferences';
+import { SettingsSection, ToggleField } from './SystemSettingsControls';
+
+import styles from './SystemSettingsNotificationsTab.module.css';
 
 const notificationToggles = [
   'privateMessages',
   'mentions',
   'serverInvites',
   'privateSpaceInvites',
-  'system',
-] as const
+  'system'
+] as const;
 
 type SystemSettingsNotificationsTabProps = {
-  currentUserId: string
-}
+  currentUserId: string;
+};
 
 export function SystemSettingsNotificationsTab({
-  currentUserId,
+  currentUserId
 }: SystemSettingsNotificationsTabProps) {
   const { preferences, updatePreferences } =
-    useNotificationPreferences(currentUserId)
+    useNotificationPreferences(currentUserId);
 
   return (
     <>
@@ -39,7 +40,7 @@ export function SystemSettingsNotificationsTab({
       >
         <div className={styles.list}>
           {notificationToggles.map((key) => {
-            const copy = notificationCopy.settings.toggles[key]
+            const copy = notificationCopy.settings.toggles[key];
             return (
               <ToggleField
                 key={key}
@@ -48,7 +49,7 @@ export function SystemSettingsNotificationsTab({
                 checked={preferences[key]}
                 onChange={(checked) => updatePreferences({ [key]: checked })}
               />
-            )
+            );
           })}
         </div>
       </SettingsSection>
@@ -62,7 +63,7 @@ export function SystemSettingsNotificationsTab({
               value={preferences.placement}
               onValueChange={(value) =>
                 updatePreferences({
-                  placement: value as typeof preferences.placement,
+                  placement: value as typeof preferences.placement
                 })
               }
             >
@@ -77,5 +78,5 @@ export function SystemSettingsNotificationsTab({
         </div>
       </SettingsSection>
     </>
-  )
+  );
 }

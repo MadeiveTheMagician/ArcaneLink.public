@@ -1,32 +1,31 @@
-namespace ArcaneLink.Services.Realtime.Abstractions
+namespace ArcaneLink.Services.Realtime.Abstractions;
+
+public interface IRealtimeNotificationService
 {
-    public interface IRealtimeNotificationService
+    Task NotifyConnectionAsync(
+        string connectionId,
+        string eventName,
+        object? payload = null,
+        CancellationToken cancellationToken = default)
     {
-        Task NotifyConnectionAsync(
-            string connectionId,
-            string eventName,
-            object? payload = null,
-            CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
-
-        Task NotifyUserAsync(
-            Guid userId,
-            string eventName,
-            object? payload = null,
-            CancellationToken cancellationToken = default);
-
-        Task NotifyUsersAsync(
-            IEnumerable<Guid> userIds,
-            string eventName,
-            object? payload = null,
-            CancellationToken cancellationToken = default);
-
-        Task NotifyServerAsync(
-            Guid serverId,
-            string eventName,
-            object? payload = null,
-            CancellationToken cancellationToken = default);
+        return Task.CompletedTask;
     }
+
+    Task NotifyUserAsync(
+        Guid userId,
+        string eventName,
+        object? payload = null,
+        CancellationToken cancellationToken = default);
+
+    Task NotifyUsersAsync(
+        IEnumerable<Guid> userIds,
+        string eventName,
+        object? payload = null,
+        CancellationToken cancellationToken = default);
+
+    Task NotifyServerAsync(
+        Guid serverId,
+        string eventName,
+        object? payload = null,
+        CancellationToken cancellationToken = default);
 }

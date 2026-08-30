@@ -1,43 +1,44 @@
-import { useMemo, useState } from 'react'
-import type { ServerMemberResponse } from '../../../../shared/types'
+import { useMemo, useState } from 'react';
+
+import type { ServerMemberResponse } from '../../../../shared/types';
 import {
-  serverCopy,
   SystemButton,
   SystemSearchInput,
   SystemSelect,
   SystemTabPanel,
   SystemTabs,
-  useSystemSkeletonPresence,
-} from '../../../shared'
-import { useServerDirectory } from '../../hooks/workspace/useServerDirectory'
-import { ServerDirectoryCard } from './ServerDirectoryCard'
-import { ServerDirectoryGridSkeleton } from './ServerDirectoryGridSkeleton'
+  serverCopy,
+  useSystemSkeletonPresence
+} from '../../../shared';
+import { useServerDirectory } from '../../hooks/workspace/useServerDirectory';
+import { ServerDirectoryCard } from './ServerDirectoryCard';
+import { ServerDirectoryGridSkeleton } from './ServerDirectoryGridSkeleton';
 import {
-  getServerDirectoryVisibility,
-  toggleExpandedServer,
   type ServerDirectorySort,
   type ServerDirectoryTab,
-} from './serverDirectoryModel'
-import styles from './ServersBrowser.module.css'
+  getServerDirectoryVisibility,
+  toggleExpandedServer
+} from './serverDirectoryModel';
+
+import styles from './ServersBrowser.module.css';
 
 type ServersBrowserProps = {
-  accessToken: string
-  memberships: ServerMemberResponse[]
-  onCreateServer: () => void
-  onServerJoined: (membership: ServerMemberResponse) => void
-  onOpenServer: (membership: ServerMemberResponse) => void
-}
+  accessToken: string;
+  memberships: ServerMemberResponse[];
+  onCreateServer: () => void;
+  onServerJoined: (membership: ServerMemberResponse) => void;
+  onOpenServer: (membership: ServerMemberResponse) => void;
+};
 
 export function ServersBrowser({
   accessToken,
   memberships,
   onCreateServer,
   onServerJoined,
-  onOpenServer,
+  onOpenServer
 }: ServersBrowserProps) {
-  const [activeTab, setActiveTab] =
-    useState<ServerDirectoryTab>('mine')
-  const visibility = getServerDirectoryVisibility(activeTab)
+  const [activeTab, setActiveTab] = useState<ServerDirectoryTab>('mine');
+  const visibility = getServerDirectoryVisibility(activeTab);
   const {
     hasError,
     hasLoaded,
@@ -50,64 +51,56 @@ export function ServersBrowser({
     setSort,
     cancelJoinRequest,
     isServerMutationPending,
-    joinServer,
-  } = useServerDirectory(accessToken, visibility)
-  const [accessErrors, setAccessErrors] = useState<Record<string, string>>({})
+    joinServer
+  } = useServerDirectory(accessToken, visibility);
+  const [accessErrors, setAccessErrors] = useState<Record<string, string>>({});
   const [expandedServerIds, setExpandedServerIds] = useState<Set<string>>(
-    () => new Set(),
-  )
+    () => new Set()
+  );
   const membershipByServerId = useMemo(
     () =>
       new Map(
-        memberships.map((membership) => [
-          membership.serverId,
-          membership,
-        ]),
+        memberships.map((membership) => [membership.serverId, membership])
       ),
-    [memberships],
-  )
+    [memberships]
+  );
 
   function toggleServer(serverId: string) {
-    setExpandedServerIds((current) =>
-      toggleExpandedServer(current, serverId),
-    )
+    setExpandedServerIds((current) => toggleExpandedServer(current, serverId));
   }
 
   function changeTab(tab: ServerDirectoryTab) {
     if (tab === activeTab) {
-      return
+      return;
     }
 
-    setActiveTab(tab)
+    setActiveTab(tab);
   }
 
-  async function submitJoin(
-    serverId: string,
-    errorMessage: string,
-  ) {
-    setServerAccessError(serverId, null)
+  async function submitJoin(serverId: string, errorMessage: string) {
+    setServerAccessError(serverId, null);
 
     try {
-      const response = await joinServer(serverId)
+      const response = await joinServer(serverId);
 
       if (response.status === 'joined' && response.membership) {
-        onServerJoined(response.membership)
+        onServerJoined(response.membership);
       }
     } catch {
-      setServerAccessError(serverId, errorMessage)
+      setServerAccessError(serverId, errorMessage);
     }
   }
 
   async function cancelPendingJoinRequest(serverId: string) {
-    setServerAccessError(serverId, null)
+    setServerAccessError(serverId, null);
 
     try {
-      await cancelJoinRequest(serverId)
+      await cancelJoinRequest(serverId);
     } catch {
       setServerAccessError(
         serverId,
-        serverCopy.browser.joinRequestCancelFailed,
-      )
+        serverCopy.browser.joinRequestCancelFailed
+      );
     }
   }
 
@@ -116,33 +109,32 @@ export function ServersBrowser({
       if (message) {
         return {
           ...current,
-          [serverId]: message,
-        }
+          [serverId]: message
+        };
       }
 
       if (!current[serverId]) {
-        return current
+        return current;
       }
 
-      const next = { ...current }
-      delete next[serverId]
-      return next
-    })
+      const next = { ...current };
+      delete next[serverId];
+      return next;
+    });
   }
 
-  const isInitialLoading = isLoading && !hasLoaded
-  const initialLoadingSkeleton =
-    useSystemSkeletonPresence(isInitialLoading)
+  const isInitialLoading = isLoading && !hasLoaded;
+  const initialLoadingSkeleton = useSystemSkeletonPresence(isInitialLoading);
   const statusMessage =
     hasError && servers.length > 0
       ? serverCopy.browser.loadFailed
       : isLoading && hasLoaded
         ? serverCopy.browser.loading
-        : ''
+        : '';
   const emptyMessage =
     activeTab === 'mine'
       ? serverCopy.browser.myServersEmpty
-      : serverCopy.browser.discoverServersEmpty
+      : serverCopy.browser.discoverServersEmpty;
 
   return (
     <section className={styles.serverBrowser}>
@@ -162,12 +154,12 @@ export function ServersBrowser({
           {
             badge: memberships.length,
             label: serverCopy.browser.myServersTab,
-            value: 'mine',
+            value: 'mine'
           },
           {
             label: serverCopy.browser.discoverServersTab,
-            value: 'discover',
-          },
+            value: 'discover'
+          }
         ]}
         value={activeTab}
       />
@@ -191,9 +183,7 @@ export function ServersBrowser({
               name="serverDirectorySort"
               value={sort}
               aria-label={serverCopy.browser.sortLabel}
-              onValueChange={(value) =>
-                setSort(value as ServerDirectorySort)
-              }
+              onValueChange={(value) => setSort(value as ServerDirectorySort)}
             >
               <option value="active">{serverCopy.browser.sortActive}</option>
               <option value="members">{serverCopy.browser.sortMembers}</option>
@@ -229,13 +219,11 @@ export function ServersBrowser({
           </div>
         ) : (
           <div
-            className={`${styles.grid} ${
-              isLoading ? styles.gridLoading : ''
-            }`}
+            className={`${styles.grid} ${isLoading ? styles.gridLoading : ''}`}
           >
             {servers.map((discovery) => {
-              const serverId = discovery.server.id
-              const isExpanded = expandedServerIds.has(serverId)
+              const serverId = discovery.server.id;
+              const isExpanded = expandedServerIds.has(serverId);
 
               return (
                 <ServerDirectoryCard
@@ -250,9 +238,9 @@ export function ServersBrowser({
                   }
                   onCollapse={() =>
                     setExpandedServerIds((current) => {
-                      const next = new Set(current)
-                      next.delete(serverId)
-                      return next
+                      const next = new Set(current);
+                      next.delete(serverId);
+                      return next;
                     })
                   }
                   onJoin={() =>
@@ -262,16 +250,16 @@ export function ServersBrowser({
                   onRequestJoin={() =>
                     void submitJoin(
                       serverId,
-                      serverCopy.browser.joinRequestFailed,
+                      serverCopy.browser.joinRequestFailed
                     )
                   }
                   onToggle={() => toggleServer(serverId)}
                 />
-              )
+              );
             })}
           </div>
         )}
       </SystemTabPanel>
     </section>
-  )
+  );
 }

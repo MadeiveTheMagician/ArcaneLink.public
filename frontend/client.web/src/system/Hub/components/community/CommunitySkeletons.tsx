@@ -1,23 +1,25 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from 'react';
+
 import {
   SystemSkeleton,
-  SystemSkeletonRegion,
   type SystemSkeletonPresencePhase,
-} from '../../../shared'
-import styles from './CommunitySkeletons.module.css'
+  SystemSkeletonRegion
+} from '../../../shared';
 
-const defaultRevealDelayMs = 120
+import styles from './CommunitySkeletons.module.css';
+
+const defaultRevealDelayMs = 120;
 
 function SkeletonGroup({
   children,
   label,
   className = '',
-  presencePhase,
+  presencePhase
 }: {
-  children: ReactNode
-  label: string
-  className?: string
-  presencePhase?: SystemSkeletonPresencePhase
+  children: ReactNode;
+  label: string;
+  className?: string;
+  presencePhase?: SystemSkeletonPresencePhase;
 }) {
   return (
     <SystemSkeletonRegion
@@ -27,15 +29,15 @@ function SkeletonGroup({
     >
       {children}
     </SystemSkeletonRegion>
-  )
+  );
 }
 
 export function CommunityStatsSkeleton({
   label,
-  presencePhase,
+  presencePhase
 }: {
-  label: string
-  presencePhase?: SystemSkeletonPresencePhase
+  label: string;
+  presencePhase?: SystemSkeletonPresencePhase;
 }) {
   return (
     <SystemSkeletonRegion
@@ -65,19 +67,19 @@ export function CommunityStatsSkeleton({
         </article>
       ))}
     </SystemSkeletonRegion>
-  )
+  );
 }
 
 export function CommunityPersonListSkeleton({
   count = 6,
   label,
   presencePhase,
-  withPrimaryAction = false,
+  withPrimaryAction = false
 }: {
-  count?: number
-  label: string
-  presencePhase?: SystemSkeletonPresencePhase
-  withPrimaryAction?: boolean
+  count?: number;
+  label: string;
+  presencePhase?: SystemSkeletonPresencePhase;
+  withPrimaryAction?: boolean;
 }) {
   return (
     <SkeletonGroup
@@ -89,7 +91,7 @@ export function CommunityPersonListSkeleton({
         <article
           className={[
             styles.personRow,
-            withPrimaryAction ? styles.searchPersonRow : '',
+            withPrimaryAction ? styles.searchPersonRow : ''
           ]
             .filter(Boolean)
             .join(' ')}
@@ -150,19 +152,19 @@ export function CommunityPersonListSkeleton({
         </article>
       ))}
     </SkeletonGroup>
-  )
+  );
 }
 
 export function CommunityRequestListSkeleton({
   count = 5,
   label,
   presencePhase,
-  singleAction = false,
+  singleAction = false
 }: {
-  count?: number
-  label: string
-  presencePhase?: SystemSkeletonPresencePhase
-  singleAction?: boolean
+  count?: number;
+  label: string;
+  presencePhase?: SystemSkeletonPresencePhase;
+  singleAction?: boolean;
 }) {
   return (
     <SkeletonGroup
@@ -171,7 +173,10 @@ export function CommunityRequestListSkeleton({
       presencePhase={presencePhase}
     >
       {Array.from({ length: count }, (_, index) => (
-        <article className={styles.requestRow} key={`community-request-skeleton-${index}`}>
+        <article
+          className={styles.requestRow}
+          key={`community-request-skeleton-${index}`}
+        >
           <SystemSkeleton
             className={styles.requestAvatar}
             delayMs={defaultRevealDelayMs}
@@ -205,5 +210,5 @@ export function CommunityRequestListSkeleton({
         </article>
       ))}
     </SkeletonGroup>
-  )
+  );
 }

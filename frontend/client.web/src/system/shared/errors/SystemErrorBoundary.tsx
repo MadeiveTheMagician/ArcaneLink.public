@@ -1,43 +1,41 @@
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+
+import { SystemButton } from '../ui/SystemButton';
+import { systemErrorCopy } from './systemError.ru';
 import {
-  Component,
-  type ErrorInfo,
-  type ReactNode,
-} from 'react'
-import { SystemButton } from '../ui/SystemButton'
-import {
+  type SystemErrorBoundaryState,
   captureSystemError,
   createSystemErrorBoundaryState,
   formatSystemErrorDetails,
   haveSystemErrorResetKeysChanged,
-  retrySystemErrorBoundary,
-  type SystemErrorBoundaryState,
-} from './systemErrorBoundaryModel'
+  retrySystemErrorBoundary
+} from './systemErrorBoundaryModel';
 import {
-  reportSystemError,
   type SystemErrorTelemetryReporter,
-} from './systemErrorTelemetry'
-import { systemErrorCopy } from './systemError.ru'
-import styles from './SystemErrorBoundary.module.css'
+  reportSystemError
+} from './systemErrorTelemetry';
+
+import styles from './SystemErrorBoundary.module.css';
 
 type SystemErrorBoundaryProps = {
-  boundaryName: string
-  children: ReactNode
-  message?: string
-  onError?: SystemErrorTelemetryReporter
-  onReset?: () => void
-  resetKeys?: readonly unknown[]
-  title?: string
-  variant?: 'root' | 'workspace'
-}
+  boundaryName: string;
+  children: ReactNode;
+  message?: string;
+  onError?: SystemErrorTelemetryReporter;
+  onReset?: () => void;
+  resetKeys?: readonly unknown[];
+  title?: string;
+  variant?: 'root' | 'workspace';
+};
 
 export class SystemErrorBoundary extends Component<
   SystemErrorBoundaryProps,
   SystemErrorBoundaryState
 > {
-  state = createSystemErrorBoundaryState()
+  state = createSystemErrorBoundaryState();
 
   static getDerivedStateFromError(error: unknown) {
-    return captureSystemError(createSystemErrorBoundaryState(), error)
+    return captureSystemError(createSystemErrorBoundaryState(), error);
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -46,10 +44,10 @@ export class SystemErrorBoundary extends Component<
         boundaryName: this.props.boundaryName,
         componentStack: errorInfo.componentStack ?? null,
         error,
-        occurredAt: new Date().toISOString(),
+        occurredAt: new Date().toISOString()
       },
-      this.props.onError,
-    )
+      this.props.onError
+    );
   }
 
   componentDidUpdate(previousProps: SystemErrorBoundaryProps) {
@@ -57,25 +55,25 @@ export class SystemErrorBoundary extends Component<
       this.state.error &&
       haveSystemErrorResetKeysChanged(
         previousProps.resetKeys,
-        this.props.resetKeys,
+        this.props.resetKeys
       )
     ) {
-      this.resetBoundary()
+      this.resetBoundary();
     }
   }
 
   private resetBoundary = () => {
-    this.setState((currentState) => retrySystemErrorBoundary(currentState))
-    this.props.onReset?.()
-  }
+    this.setState((currentState) => retrySystemErrorBoundary(currentState));
+    this.props.onReset?.();
+  };
 
   render() {
-    const { error } = this.state
-    const { children, message, title, variant = 'workspace' } = this.props
+    const { error } = this.state;
+    const { children, message, title, variant = 'workspace' } = this.props;
 
-    if (!error) return children
+    if (!error) return children;
 
-    const fallbackCopy = systemErrorCopy[variant]
+    const fallbackCopy = systemErrorCopy[variant];
 
     return (
       <section
@@ -98,6 +96,6 @@ export class SystemErrorBoundary extends Component<
           )}
         </div>
       </section>
-    )
+    );
   }
 }

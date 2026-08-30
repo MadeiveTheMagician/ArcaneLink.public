@@ -1,29 +1,28 @@
 export type MessageFocusRequest = {
-  messageId: string
-  spaceId: string
-  createdAt: string
-}
+  messageId: string;
+  spaceId: string;
+  createdAt: string;
+};
 
 type MessageFocusSource = {
-  id: string
-  spaceId: string
-  createdAt: string
-}
+  id: string;
+  spaceId: string;
+  createdAt: string;
+};
 
 export type MessageFocusNavigation =
-  | { kind: 'latest' }
-  | { kind: 'search-result'; message: MessageFocusSource }
+  { kind: 'latest' } | { kind: 'search-result'; message: MessageFocusSource };
 
 export function resolveMessageFocus(
-  navigation: MessageFocusNavigation,
+  navigation: MessageFocusNavigation
 ): MessageFocusRequest | null {
   if (navigation.kind === 'latest') {
-    return null
+    return null;
   }
 
   return {
     messageId: navigation.message.id,
     spaceId: navigation.message.spaceId,
-    createdAt: navigation.message.createdAt,
-  }
+    createdAt: navigation.message.createdAt
+  };
 }

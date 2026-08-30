@@ -1,5 +1,5 @@
-import type { SystemTheme } from '../systemThemes'
-import { themeCopy } from '../theme.copy'
+import type { SystemTheme } from '../systemThemes';
+import { themeCopy } from '../theme.copy';
 
 export const ivoryTheme: SystemTheme = {
   code: 'ivory',
@@ -66,10 +66,9 @@ export const ivoryTheme: SystemTheme = {
     '--theme-accent-contrast': '#2d261a',
     '--theme-text-soft': '#554a3a',
     '--theme-text-faint': '#6f624f',
-    '--theme-surface-accent':
-      'linear-gradient(135deg, #c49c5b, #b68d4c)',
+    '--theme-surface-accent': 'linear-gradient(135deg, #c49c5b, #b68d4c)',
     '--theme-surface-accent-strong':
       'linear-gradient(180deg, #c49c5b, #b68d4c)',
-    '--shadow-sapphire': '0 26px 80px rgba(144, 106, 45, 0.2)',
-  },
-}
+    '--shadow-sapphire': '0 26px 80px rgba(144, 106, 45, 0.2)'
+  }
+};

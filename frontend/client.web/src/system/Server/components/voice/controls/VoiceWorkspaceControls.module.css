@@ -1,5 +1,3 @@
-
-
 .voiceWorkspaceControls {
   position: absolute;
   right: 18px;
@@ -26,7 +24,11 @@
   border: 1px solid var(--theme-border-accent);
   border-radius: 10px;
   padding: 10px;
-  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 4%);
+  background: color-mix(
+    in srgb,
+    var(--theme-control-bg-strong),
+    transparent 4%
+  );
   box-shadow:
     0 18px 48px rgba(0, 0, 0, 0.36),
     0 0 22px var(--theme-glow);
@@ -42,7 +44,7 @@
   visibility: hidden;
 }
 
-.voiceWorkspaceViewSettings[data-open="true"] {
+.voiceWorkspaceViewSettings[data-open='true'] {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
@@ -66,7 +68,9 @@
   padding: 6px;
   color: var(--theme-text-soft);
   cursor: pointer;
-  transition: color 130ms ease, background 130ms ease;
+  transition:
+    color 130ms ease,
+    background 130ms ease;
 }
 
 .voiceWorkspaceViewSettings label:hover {
@@ -213,8 +217,7 @@
   display: block;
   width: 16px;
   height: 16px;
-  filter:
-    drop-shadow(0 0 0.3px rgba(255, 255, 255, 0.72))
+  filter: drop-shadow(0 0 0.3px rgba(255, 255, 255, 0.72))
     drop-shadow(0 0 3px var(--theme-glow-strong));
 }
 
@@ -228,7 +231,7 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  content: "";
+  content: '';
   background: currentColor;
   transform: translate(4px, -3px);
 }
@@ -250,7 +253,7 @@
   position: absolute;
   width: 7px;
   height: 7px;
-  content: "";
+  content: '';
 }
 
 .voiceWorkspaceFullscreenIcon::before {
@@ -286,14 +289,17 @@
 }
 
 @media (max-width: 760px) {
-
-  [data-voice-workspace][data-mobile-chrome-visible="false"] .voiceCallPanelShell {
+  [data-voice-workspace][data-mobile-chrome-visible='false']
+    .voiceCallPanelShell {
     opacity: 0;
     pointer-events: none;
     transform: translateY(-14px);
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.voiceChannel [data-voice-workspace][data-mobile-chrome-visible="false"] .voiceCallPanelShell {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.voiceChannel
+    [data-voice-workspace][data-mobile-chrome-visible='false']
+    .voiceCallPanelShell {
     transform: translate(50%, 18px);
   }
 

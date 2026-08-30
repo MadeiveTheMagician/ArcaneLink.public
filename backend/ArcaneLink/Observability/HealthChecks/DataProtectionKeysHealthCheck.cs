@@ -1,57 +1,56 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace ArcaneLink.Observability.HealthChecks
-{
-    public sealed class DataProtectionKeysHealthCheck : IHealthCheck
-    {
-        private readonly IConfiguration _configuration;
-        private readonly IWebHostEnvironment _environment;
+namespace ArcaneLink.Observability.HealthChecks;
 
-        public DataProtectionKeysHealthCheck(
-            IConfiguration configuration,
-            IWebHostEnvironment environment)
+public sealed class DataProtectionKeysHealthCheck : IHealthCheck
+{
+    private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _environment;
+
+    public DataProtectionKeysHealthCheck(
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
+    {
+        this._configuration = configuration;
+        this._environment = environment;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        var configuredPath = this._configuration["DataProtection:KeysPath"];
+        if (string.IsNullOrWhiteSpace(configuredPath))
         {
-            _configuration = configuration;
-            _environment = environment;
+            return this._environment.IsProduction()
+                ? HealthCheckResult.Unhealthy(
+                    "A persistent Data Protection key path is required in production.")
+                : HealthCheckResult.Healthy(
+                    "An ephemeral Data Protection key ring is allowed outside production.");
         }
 
-        public async Task<HealthCheckResult> CheckHealthAsync(
-            HealthCheckContext context,
-            CancellationToken cancellationToken = default)
+        try
         {
-            var configuredPath = _configuration["DataProtection:KeysPath"];
-            if (string.IsNullOrWhiteSpace(configuredPath))
-            {
-                return _environment.IsProduction()
-                    ? HealthCheckResult.Unhealthy(
-                        "A persistent Data Protection key path is required in production.")
-                    : HealthCheckResult.Healthy(
-                        "An ephemeral Data Protection key ring is allowed outside production.");
-            }
+            var keysPath = Path.GetFullPath(configuredPath);
+            Directory.CreateDirectory(keysPath);
 
-            try
-            {
-                var keysPath = Path.GetFullPath(configuredPath);
-                Directory.CreateDirectory(keysPath);
+            var probePath = Path.Combine(
+                keysPath,
+                $".health-{Guid.NewGuid():N}.tmp");
+            await File.WriteAllTextAsync(
+                probePath,
+                "ok",
+                cancellationToken);
+            File.Delete(probePath);
 
-                var probePath = Path.Combine(
-                    keysPath,
-                    $".health-{Guid.NewGuid():N}.tmp");
-                await File.WriteAllTextAsync(
-                    probePath,
-                    "ok",
-                    cancellationToken);
-                File.Delete(probePath);
-
-                return HealthCheckResult.Healthy(
-                    "The persistent Data Protection key directory is writable.");
-            }
-            catch (Exception exception)
-            {
-                return HealthCheckResult.Unhealthy(
-                    "The persistent Data Protection key directory is not writable.",
-                    exception);
-            }
+            return HealthCheckResult.Healthy(
+                "The persistent Data Protection key directory is writable.");
+        }
+        catch (Exception exception)
+        {
+            return HealthCheckResult.Unhealthy(
+                "The persistent Data Protection key directory is not writable.",
+                exception);
         }
     }
 }

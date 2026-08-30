@@ -12,7 +12,7 @@ public sealed class PostgreSqlFactAttribute : FactAttribute
                 "1",
                 StringComparison.Ordinal))
         {
-            Skip = "Set ARCANELINK_RUN_POSTGRES_TESTS=1 to run isolated PostgreSQL tests.";
+            this.Skip = "Set ARCANELINK_RUN_POSTGRES_TESTS=1 to run isolated PostgreSQL tests.";
         }
     }
 }

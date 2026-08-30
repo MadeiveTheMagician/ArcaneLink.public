@@ -1,24 +1,24 @@
-import type { ServerMemberResponse } from '../../../shared/types'
+import type { ServerMemberResponse } from '../../../shared/types';
 
 export async function openServerSettingsForMembership({
   membership,
   selectedServerId,
   selectServer,
-  openSettings,
+  openSettings
 }: {
-  membership: ServerMemberResponse
-  selectedServerId: string | null
-  selectServer: (membership: ServerMemberResponse) => Promise<void>
-  openSettings: () => void
+  membership: ServerMemberResponse;
+  selectedServerId: string | null;
+  selectServer: (membership: ServerMemberResponse) => Promise<void>;
+  openSettings: () => void;
 }) {
   if (selectedServerId !== membership.serverId) {
     try {
-      await selectServer(membership)
+      await selectServer(membership);
     } catch {
-      return false
+      return false;
     }
   }
 
-  openSettings()
-  return true
+  openSettings();
+  return true;
 }

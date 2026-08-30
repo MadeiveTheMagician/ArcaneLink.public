@@ -1,19 +1,25 @@
-import type { MouseEvent, UIEvent } from 'react'
-import type { ServerMemberDetailsResponse, SpaceMessageResponse, SpaceResponse } from '../../../../shared/types'
-import { commonCopy, PresenceName, serverCopy } from '../../../shared/index'
-import { MessageSearchControl } from '../../../shared/components/message-search/MessageSearchControl'
-import { MessageSearchResults } from '../../../shared/components/message-search/MessageSearchResults'
-import { useMessageSearch } from '../../../shared/hooks/useMessageSearch'
-import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton'
-import { shouldLoadMoreServerMembers } from '../../hooks/workspace/serverMemberPaginationModel'
-import styles from './ServerMembersPanel.module.css'
-import { getServerMembersPanelDisclosure } from './serverMembersPanelModel'
-import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel'
+import type { MouseEvent, UIEvent } from 'react';
+
+import type {
+  ServerMemberDetailsResponse,
+  SpaceMessageResponse,
+  SpaceResponse
+} from '../../../../shared/types';
+import { MessageSearchControl } from '../../../shared/components/message-search/MessageSearchControl';
+import { MessageSearchResults } from '../../../shared/components/message-search/MessageSearchResults';
+import { useMessageSearch } from '../../../shared/hooks/useMessageSearch';
+import { PresenceName, commonCopy, serverCopy } from '../../../shared/index';
+import { SystemSkeleton } from '../../../shared/ui/SystemSkeleton';
+import { shouldLoadMoreServerMembers } from '../../hooks/workspace/serverMemberPaginationModel';
+import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel';
+import { getServerMembersPanelDisclosure } from './serverMembersPanelModel';
+
+import styles from './ServerMembersPanel.module.css';
 
 const memberSkeletonKeys = Array.from(
   { length: 20 },
-  (_, index) => `member-${index + 1}`,
-)
+  (_, index) => `member-${index + 1}`
+);
 
 export function ServerMembersPanel({
   accessToken,
@@ -32,74 +38,76 @@ export function ServerMembersPanel({
   onSelectMember,
   onOpenMemberContextMenu,
   onOpenSearchResult,
-  onLoadMore,
+  onLoadMore
 }: {
-  accessToken: string
-  className?: string
-  id: string
-  isCollapsed?: boolean
-  isCompact: boolean
-  isLoading: boolean
-  isLoadingMore: boolean
-  hasMore: boolean
-  members: ServerMemberDetailsResponse[]
-  totalCount: number
-  serverId: string
-  spaces: SpaceResponse[]
-  selectedMemberId: string | null
+  accessToken: string;
+  className?: string;
+  id: string;
+  isCollapsed?: boolean;
+  isCompact: boolean;
+  isLoading: boolean;
+  isLoadingMore: boolean;
+  hasMore: boolean;
+  members: ServerMemberDetailsResponse[];
+  totalCount: number;
+  serverId: string;
+  spaces: SpaceResponse[];
+  selectedMemberId: string | null;
   onSelectMember: (
     member: ServerMemberDetailsResponse,
     anchor: ServerMemberProfileAnchor,
-    focusTarget: HTMLElement,
-  ) => void
+    focusTarget: HTMLElement
+  ) => void;
   onOpenMemberContextMenu: (
     member: ServerMemberDetailsResponse,
-    event: MouseEvent<HTMLElement>,
-  ) => void
-  onOpenSearchResult: (message: SpaceMessageResponse) => void
-  onLoadMore: () => Promise<boolean>
+    event: MouseEvent<HTMLElement>
+  ) => void;
+  onOpenSearchResult: (message: SpaceMessageResponse) => void;
+  onLoadMore: () => Promise<boolean>;
 }) {
-  const disclosure = getServerMembersPanelDisclosure(isCollapsed)
+  const disclosure = getServerMembersPanelDisclosure(isCollapsed);
   const messageSearch = useMessageSearch({
     accessToken,
-    endpoint: `/api/servers/${serverId}/messages/search`,
-  })
+    endpoint: `/api/servers/${serverId}/messages/search`
+  });
   const messageSpaces = spaces.filter(
     (space) =>
       space.typeCode === 'text_room' ||
-      (space.typeCode === 'voice_room' && Boolean(space.voiceChatSpaceId)),
-  )
+      (space.typeCode === 'voice_room' && Boolean(space.voiceChatSpaceId))
+  );
   const spaceById = new Map(
     messageSpaces.flatMap((space) => [
       [space.id, space] as const,
       ...(space.voiceChatSpaceId
         ? [[space.voiceChatSpaceId, space] as const]
-        : []),
-    ]),
-  )
+        : [])
+    ])
+  );
   function getSearchSpaceLabel(message: SpaceMessageResponse) {
-    return spaceById.get(message.spaceId)?.title ?? serverCopy.labels.spaceFallback
+    return (
+      spaceById.get(message.spaceId)?.title ?? serverCopy.labels.spaceFallback
+    );
   }
 
   function getSearchCategoryLabel(message: SpaceMessageResponse) {
-    const space = spaceById.get(message.spaceId)
+    const space = spaceById.get(message.spaceId);
     if (!space?.parentSpaceId) {
-      return null
+      return null;
     }
 
-    const category = spaceById.get(space.parentSpaceId)
-    return category?.typeCode === 'category' ? category.title : null
+    const category = spaceById.get(space.parentSpaceId);
+    return category?.typeCode === 'category' ? category.title : null;
   }
 
   function handleMemberListScroll(event: UIEvent<HTMLDivElement>) {
     if (!hasMore || isLoadingMore) {
-      return
+      return;
     }
 
-    const list = event.currentTarget
+    const list = event.currentTarget;
 
     if (shouldLoadMoreServerMembers(list)) {
-      void onLoadMore()
+      void onLoadMore();
     }
   }
 
@@ -129,12 +137,12 @@ export function ServerMembersPanel({
               avatarAssetId: member.user.avatarAssetId,
               avatarCropOffsetX: member.user.avatarCropOffsetX,
               avatarCropOffsetY: member.user.avatarCropOffsetY,
-              avatarCropZoom: member.user.avatarCropZoom,
+              avatarCropZoom: member.user.avatarCropZoom
             }))}
             spaceOptions={messageSpaces.map((space) => ({
               id: space.voiceChatSpaceId ?? space.id,
               title: space.title,
-              icon: space.typeCode === 'voice_room' ? '◈' : '#',
+              icon: space.typeCode === 'voice_room' ? '◈' : '#'
             }))}
             onQueryChange={messageSearch.setQuery}
             onFiltersChange={messageSearch.setFilters}
@@ -150,7 +158,9 @@ export function ServerMembersPanel({
                 : serverCopy.labels.members}
             </span>
             <strong>
-              {messageSearch.isActive ? messageSearch.results.length : totalCount}
+              {messageSearch.isActive
+                ? messageSearch.results.length
+                : totalCount}
             </strong>
           </div>
         </div>
@@ -198,7 +208,7 @@ export function ServerMembersPanel({
           {members.map((member) => {
             const avatarUrl = member.user.avatarAssetId
               ? `/api/assets/${member.user.avatarAssetId}/content`
-              : null
+              : null;
 
             return (
               <article
@@ -212,17 +222,17 @@ export function ServerMembersPanel({
                   onSelectMember(
                     member,
                     event.currentTarget.getBoundingClientRect(),
-                    event.currentTarget,
+                    event.currentTarget
                   )
                 }
                 onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') return
-                  event.preventDefault()
+                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                  event.preventDefault();
                   onSelectMember(
                     member,
                     event.currentTarget.getBoundingClientRect(),
-                    event.currentTarget,
-                  )
+                    event.currentTarget
+                  );
                 }}
                 onContextMenu={(event) =>
                   onOpenMemberContextMenu(member, event)
@@ -250,7 +260,7 @@ export function ServerMembersPanel({
                   </small>
                 </div>
               </article>
-            )
+            );
           })}
           {isLoadingMore && (
             <div
@@ -265,6 +275,5 @@ export function ServerMembersPanel({
         <p className="ui-empty-state">{serverCopy.labels.noMembers}</p>
       )}
     </aside>
-  )
+  );
 }
-

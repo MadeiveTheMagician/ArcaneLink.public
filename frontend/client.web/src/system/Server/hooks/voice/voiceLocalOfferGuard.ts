@@ -1,120 +1,119 @@
-const defaultPendingOfferTimeoutMs = 10_000
+const defaultPendingOfferTimeoutMs = 10_000;
 
 export type VoiceLocalOfferRunResult<T> =
-  | { status: 'completed'; value: T }
-  | { status: 'superseded' }
+  { status: 'completed'; value: T } | { status: 'superseded' };
 
 type VoiceLocalOfferRequest = {
-  requiresStable: boolean
-  priority: 'normal' | 'ice-restart'
-  pendingTimeoutMs: number
-  operation: () => Promise<unknown>
-  resolve: (result: VoiceLocalOfferRunResult<unknown>) => void
-  reject: (reason?: unknown) => void
-  timeoutId: ReturnType<typeof setTimeout> | null
-}
+  requiresStable: boolean;
+  priority: 'normal' | 'ice-restart';
+  pendingTimeoutMs: number;
+  operation: () => Promise<unknown>;
+  resolve: (result: VoiceLocalOfferRunResult<unknown>) => void;
+  reject: (reason?: unknown) => void;
+  timeoutId: ReturnType<typeof setTimeout> | null;
+};
 
 type VoiceLocalOfferState = {
-  makingOffer: boolean
-  pending: VoiceLocalOfferRequest | null
-}
+  makingOffer: boolean;
+  pending: VoiceLocalOfferRequest | null;
+};
 
 const localOffersByPeer = new WeakMap<
   RTCPeerConnection,
   VoiceLocalOfferState
->()
+>();
 
 function settleAsSuperseded(request: VoiceLocalOfferRequest) {
   if (request.timeoutId !== null) {
-    clearTimeout(request.timeoutId)
-    request.timeoutId = null
+    clearTimeout(request.timeoutId);
+    request.timeoutId = null;
   }
-  request.resolve({ status: 'superseded' })
+  request.resolve({ status: 'superseded' });
 }
 
 function canStartRequest(
   peer: RTCPeerConnection,
-  request: VoiceLocalOfferRequest,
+  request: VoiceLocalOfferRequest
 ) {
-  return !request.requiresStable || peer.signalingState === 'stable'
+  return !request.requiresStable || peer.signalingState === 'stable';
 }
 
 function armPendingTimeout(
   peer: RTCPeerConnection,
   state: VoiceLocalOfferState,
-  request: VoiceLocalOfferRequest,
+  request: VoiceLocalOfferRequest
 ) {
   if (request.timeoutId !== null) {
-    return
+    return;
   }
   request.timeoutId = setTimeout(() => {
     if (state.pending !== request) {
-      return
+      return;
     }
-    state.pending = null
-    settleAsSuperseded(request)
-    localOffersByPeer.delete(peer)
-  }, request.pendingTimeoutMs)
+    state.pending = null;
+    settleAsSuperseded(request);
+    localOffersByPeer.delete(peer);
+  }, request.pendingTimeoutMs);
 }
 
 function flushVoiceLocalOfferState(
   peer: RTCPeerConnection,
-  state: VoiceLocalOfferState,
+  state: VoiceLocalOfferState
 ) {
   if (state.makingOffer || !state.pending) {
-    return
+    return;
   }
   if (peer.signalingState === 'closed') {
-    settleAsSuperseded(state.pending)
-    state.pending = null
-    localOffersByPeer.delete(peer)
-    return
+    settleAsSuperseded(state.pending);
+    state.pending = null;
+    localOffersByPeer.delete(peer);
+    return;
   }
   if (!canStartRequest(peer, state.pending)) {
-    armPendingTimeout(peer, state, state.pending)
-    return
+    armPendingTimeout(peer, state, state.pending);
+    return;
   }
 
-  const request = state.pending
-  state.pending = null
+  const request = state.pending;
+  state.pending = null;
   if (request.timeoutId !== null) {
-    clearTimeout(request.timeoutId)
-    request.timeoutId = null
+    clearTimeout(request.timeoutId);
+    request.timeoutId = null;
   }
-  state.makingOffer = true
+  state.makingOffer = true;
   void request
     .operation()
     .then((value) => request.resolve({ status: 'completed', value }))
     .catch(request.reject)
     .finally(() => {
-      state.makingOffer = false
-      flushVoiceLocalOfferState(peer, state)
+      state.makingOffer = false;
+      flushVoiceLocalOfferState(peer, state);
       if (!state.makingOffer && !state.pending) {
-        localOffersByPeer.delete(peer)
+        localOffersByPeer.delete(peer);
       }
-    })
+    });
 }
 
 export function isVoicePeerMakingLocalOffer(peer: RTCPeerConnection) {
-  return localOffersByPeer.get(peer)?.makingOffer === true
+  return localOffersByPeer.get(peer)?.makingOffer === true;
 }
 
 export function flushVoiceLocalOffer(peer: RTCPeerConnection) {
-  const state = localOffersByPeer.get(peer)
+  const state = localOffersByPeer.get(peer);
   if (state) {
-    flushVoiceLocalOfferState(peer, state)
+    flushVoiceLocalOfferState(peer, state);
   }
 }
 
 export function cancelPendingVoiceLocalOffer(peer: RTCPeerConnection) {
-  const state = localOffersByPeer.get(peer)
+  const state = localOffersByPeer.get(peer);
   if (!state?.pending) {
-    return
+    return;
   }
-  settleAsSuperseded(state.pending)
-  state.pending = null
+  settleAsSuperseded(state.pending);
+  state.pending = null;
   if (!state.makingOffer) {
-    localOffersByPeer.delete(peer)
+    localOffersByPeer.delete(peer);
   }
 }
 
@@ -122,16 +121,16 @@ export function runVoiceLocalOffer<T>(
   peer: RTCPeerConnection,
   operation: () => Promise<T>,
   options: {
-    requiresStable?: boolean
-    pendingTimeoutMs?: number
-    priority?: 'normal' | 'ice-restart'
-  } = {},
+    requiresStable?: boolean;
+    pendingTimeoutMs?: number;
+    priority?: 'normal' | 'ice-restart';
+  } = {}
 ): Promise<VoiceLocalOfferRunResult<T>> {
   const state = localOffersByPeer.get(peer) ?? {
     makingOffer: false,
-    pending: null,
-  }
-  localOffersByPeer.set(peer, state)
+    pending: null
+  };
+  localOffersByPeer.set(peer, state);
 
   return new Promise((resolve, reject) => {
     const request: VoiceLocalOfferRequest = {
@@ -140,27 +139,25 @@ export function runVoiceLocalOffer<T>(
       pendingTimeoutMs:
         options.pendingTimeoutMs ?? defaultPendingOfferTimeoutMs,
       operation,
-      resolve: resolve as (
-        result: VoiceLocalOfferRunResult<unknown>,
-      ) => void,
+      resolve: resolve as (result: VoiceLocalOfferRunResult<unknown>) => void,
       reject,
-      timeoutId: null,
-    }
+      timeoutId: null
+    };
 
     if (state.pending) {
       if (
         state.pending.priority === 'ice-restart' &&
         request.priority === 'normal'
       ) {
-        settleAsSuperseded(request)
-        return
+        settleAsSuperseded(request);
+        return;
       }
-      settleAsSuperseded(state.pending)
+      settleAsSuperseded(state.pending);
     }
-    state.pending = request
+    state.pending = request;
 
     if (!state.makingOffer) {
-      flushVoiceLocalOfferState(peer, state)
+      flushVoiceLocalOfferState(peer, state);
     }
-  })
+  });
 }

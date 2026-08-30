@@ -1,75 +1,72 @@
-export const VOICE_SETTINGS_VERSION = 1 as const
-export const voiceSettingsStorageKey = 'arcanelink:voice-settings:v1'
+export const VOICE_SETTINGS_VERSION = 1 as const;
+export const voiceSettingsStorageKey = 'arcanelink:voice-settings:v1';
 export const voiceSettingsChangedEventName =
-  'arcanelink:voice-settings-changed'
+  'arcanelink:voice-settings-changed';
 
-export type VoiceInputMode = 'voice-activity' | 'push-to-talk'
-export type VoiceThresholdMode = 'automatic' | 'manual'
-export type VoiceSpatialAudioMode = 'off' | 'balanced' | 'immersive'
-export const isVoiceSpatialAudioAvailable = false
+export type VoiceInputMode = 'voice-activity' | 'push-to-talk';
+export type VoiceThresholdMode = 'automatic' | 'manual';
+export type VoiceSpatialAudioMode = 'off' | 'balanced' | 'immersive';
+export const isVoiceSpatialAudioAvailable = false;
 
 export function resolveEffectiveVoiceSpatialAudioMode(
-  mode: VoiceSpatialAudioMode,
+  mode: VoiceSpatialAudioMode
 ): VoiceSpatialAudioMode {
-  return isVoiceSpatialAudioAvailable ? mode : 'off'
+  return isVoiceSpatialAudioAvailable ? mode : 'off';
 }
 
 export type VoiceTransmissionQualityProfile =
-  | 'automatic'
-  | 'data-saver'
-  | 'balanced'
-  | 'high'
+  'automatic' | 'data-saver' | 'balanced' | 'high';
 
 export type VoiceSettings = {
-  inputDeviceId: string
-  outputDeviceId: string
-  microphoneGainPercent: number
-  outputVolumePercent: number
-  echoCancellation: boolean
-  noiseSuppression: boolean
-  mlNoiseSuppression: boolean
-  autoGainControl: boolean
-  spatialAudioMode: VoiceSpatialAudioMode
-  inputMode: VoiceInputMode
-  pushToTalkKeyCode: string | null
-  thresholdMode: VoiceThresholdMode
-  manualThresholdDb: number
-  warnInputUnavailable: boolean
-  warnSpeakingWhileMuted: boolean
-  qualityProfile: VoiceTransmissionQualityProfile
-  adaptiveQuality: boolean
-}
+  inputDeviceId: string;
+  outputDeviceId: string;
+  microphoneGainPercent: number;
+  outputVolumePercent: number;
+  echoCancellation: boolean;
+  noiseSuppression: boolean;
+  mlNoiseSuppression: boolean;
+  autoGainControl: boolean;
+  spatialAudioMode: VoiceSpatialAudioMode;
+  inputMode: VoiceInputMode;
+  pushToTalkKeyCode: string | null;
+  thresholdMode: VoiceThresholdMode;
+  manualThresholdDb: number;
+  warnInputUnavailable: boolean;
+  warnSpeakingWhileMuted: boolean;
+  qualityProfile: VoiceTransmissionQualityProfile;
+  adaptiveQuality: boolean;
+};
 
-export type VoiceSettingsStorage = Pick<Storage, 'getItem' | 'setItem'>
-export type VoiceSettingsListener = (settings: VoiceSettings) => void
+export type VoiceSettingsStorage = Pick<Storage, 'getItem' | 'setItem'>;
+export type VoiceSettingsListener = (settings: VoiceSettings) => void;
 
 type StoredVoiceSettings = {
-  version: typeof VOICE_SETTINGS_VERSION
-  settings: VoiceSettings
-}
+  version: typeof VOICE_SETTINGS_VERSION;
+  settings: VoiceSettings;
+};
 
 const inputModeValues: readonly VoiceInputMode[] = [
   'voice-activity',
-  'push-to-talk',
-]
+  'push-to-talk'
+];
 const thresholdModeValues: readonly VoiceThresholdMode[] = [
   'automatic',
-  'manual',
-]
+  'manual'
+];
 const spatialAudioModeValues: readonly VoiceSpatialAudioMode[] = [
   'off',
   'balanced',
-  'immersive',
-]
+  'immersive'
+];
 const qualityProfileValues: readonly VoiceTransmissionQualityProfile[] = [
   'automatic',
   'data-saver',
   'balanced',
-  'high',
-]
-const listeners = new Set<VoiceSettingsListener>()
-let currentSnapshot: VoiceSettings | null = null
-let isStorageListenerAttached = false
+  'high'
+];
+const listeners = new Set<VoiceSettingsListener>();
+let currentSnapshot: VoiceSettings | null = null;
+let isStorageListenerAttached = false;
 
 export const defaultVoiceSettings: Readonly<VoiceSettings> = Object.freeze({
   inputDeviceId: 'default',
@@ -88,66 +85,64 @@ export const defaultVoiceSettings: Readonly<VoiceSettings> = Object.freeze({
   warnInputUnavailable: true,
   warnSpeakingWhileMuted: false,
   qualityProfile: 'automatic',
-  adaptiveQuality: true,
-})
+  adaptiveQuality: true
+});
 
 export function normalizeVoiceSettings(value: unknown): VoiceSettings {
   if (!value || typeof value !== 'object') {
-    return { ...defaultVoiceSettings }
+    return { ...defaultVoiceSettings };
   }
 
-  const candidate = value as Partial<VoiceSettings>
+  const candidate = value as Partial<VoiceSettings>;
 
   return {
     inputDeviceId: readDeviceId(
       candidate.inputDeviceId,
-      defaultVoiceSettings.inputDeviceId,
+      defaultVoiceSettings.inputDeviceId
     ),
     outputDeviceId: readDeviceId(
       candidate.outputDeviceId,
-      defaultVoiceSettings.outputDeviceId,
+      defaultVoiceSettings.outputDeviceId
     ),
     microphoneGainPercent: readNumberInRange(
       candidate.microphoneGainPercent,
       0,
       200,
-      defaultVoiceSettings.microphoneGainPercent,
+      defaultVoiceSettings.microphoneGainPercent
     ),
     outputVolumePercent: readNumberInRange(
       candidate.outputVolumePercent,
       0,
       100,
-      defaultVoiceSettings.outputVolumePercent,
+      defaultVoiceSettings.outputVolumePercent
     ),
     echoCancellation: readBoolean(
       candidate.echoCancellation,
-      defaultVoiceSettings.echoCancellation,
+      defaultVoiceSettings.echoCancellation
     ),
     noiseSuppression: readBoolean(
       candidate.noiseSuppression,
-      defaultVoiceSettings.noiseSuppression,
+      defaultVoiceSettings.noiseSuppression
     ),
     mlNoiseSuppression: readBoolean(
       candidate.mlNoiseSuppression,
-      defaultVoiceSettings.mlNoiseSuppression,
+      defaultVoiceSettings.mlNoiseSuppression
     ),
     autoGainControl: readBoolean(
       candidate.autoGainControl,
-      defaultVoiceSettings.autoGainControl,
+      defaultVoiceSettings.autoGainControl
     ),
     spatialAudioMode: spatialAudioModeValues.includes(
-      candidate.spatialAudioMode as VoiceSpatialAudioMode,
+      candidate.spatialAudioMode as VoiceSpatialAudioMode
     )
       ? (candidate.spatialAudioMode as VoiceSpatialAudioMode)
       : defaultVoiceSettings.spatialAudioMode,
     inputMode: inputModeValues.includes(candidate.inputMode as VoiceInputMode)
       ? (candidate.inputMode as VoiceInputMode)
       : defaultVoiceSettings.inputMode,
-    pushToTalkKeyCode: readPushToTalkKeyCode(
-      candidate.pushToTalkKeyCode,
-    ),
+    pushToTalkKeyCode: readPushToTalkKeyCode(candidate.pushToTalkKeyCode),
     thresholdMode: thresholdModeValues.includes(
-      candidate.thresholdMode as VoiceThresholdMode,
+      candidate.thresholdMode as VoiceThresholdMode
     )
       ? (candidate.thresholdMode as VoiceThresholdMode)
       : defaultVoiceSettings.thresholdMode,
@@ -155,38 +150,36 @@ export function normalizeVoiceSettings(value: unknown): VoiceSettings {
       candidate.manualThresholdDb,
       -80,
       -20,
-      defaultVoiceSettings.manualThresholdDb,
+      defaultVoiceSettings.manualThresholdDb
     ),
     warnInputUnavailable: readBoolean(
       candidate.warnInputUnavailable,
-      defaultVoiceSettings.warnInputUnavailable,
+      defaultVoiceSettings.warnInputUnavailable
     ),
     warnSpeakingWhileMuted: readBoolean(
       candidate.warnSpeakingWhileMuted,
-      defaultVoiceSettings.warnSpeakingWhileMuted,
+      defaultVoiceSettings.warnSpeakingWhileMuted
     ),
     qualityProfile: qualityProfileValues.includes(
-      candidate.qualityProfile as VoiceTransmissionQualityProfile,
+      candidate.qualityProfile as VoiceTransmissionQualityProfile
     )
       ? (candidate.qualityProfile as VoiceTransmissionQualityProfile)
       : defaultVoiceSettings.qualityProfile,
     adaptiveQuality: readBoolean(
       candidate.adaptiveQuality,
-      defaultVoiceSettings.adaptiveQuality,
-    ),
-  }
+      defaultVoiceSettings.adaptiveQuality
+    )
+  };
 }
 
 export function parseVoiceSettings(raw: string | null): VoiceSettings {
   if (!raw) {
-    return { ...defaultVoiceSettings }
+    return { ...defaultVoiceSettings };
   }
 
   try {
     const parsed = JSON.parse(raw) as
-      | Partial<StoredVoiceSettings>
-      | Partial<VoiceSettings>
-      | null
+      Partial<StoredVoiceSettings> | Partial<VoiceSettings> | null;
 
     if (
       parsed &&
@@ -195,91 +188,91 @@ export function parseVoiceSettings(raw: string | null): VoiceSettings {
       'settings' in parsed
     ) {
       if (parsed.version !== VOICE_SETTINGS_VERSION) {
-        return { ...defaultVoiceSettings }
+        return { ...defaultVoiceSettings };
       }
 
-      return normalizeVoiceSettings(parsed.settings)
+      return normalizeVoiceSettings(parsed.settings);
     }
 
-    return normalizeVoiceSettings(parsed)
+    return normalizeVoiceSettings(parsed);
   } catch {
-    return { ...defaultVoiceSettings }
+    return { ...defaultVoiceSettings };
   }
 }
 
 export function loadVoiceSettings(
-  storage: VoiceSettingsStorage | null = getBrowserStorage(),
+  storage: VoiceSettingsStorage | null = getBrowserStorage()
 ): VoiceSettings {
   if (!storage) {
-    return { ...defaultVoiceSettings }
+    return { ...defaultVoiceSettings };
   }
 
   try {
-    return parseVoiceSettings(storage.getItem(voiceSettingsStorageKey))
+    return parseVoiceSettings(storage.getItem(voiceSettingsStorageKey));
   } catch {
-    return { ...defaultVoiceSettings }
+    return { ...defaultVoiceSettings };
   }
 }
 
 export function getVoiceSettings(): VoiceSettings {
   if (!currentSnapshot) {
-    currentSnapshot = loadVoiceSettings()
+    currentSnapshot = loadVoiceSettings();
   }
 
-  return currentSnapshot
+  return currentSnapshot;
 }
 
 export function saveVoiceSettings(
   settings: VoiceSettings,
-  storage: VoiceSettingsStorage | null = getBrowserStorage(),
+  storage: VoiceSettingsStorage | null = getBrowserStorage()
 ): VoiceSettings {
-  const normalizedSettings = normalizeVoiceSettings(settings)
+  const normalizedSettings = normalizeVoiceSettings(settings);
   const storedValue: StoredVoiceSettings = {
     version: VOICE_SETTINGS_VERSION,
-    settings: normalizedSettings,
-  }
+    settings: normalizedSettings
+  };
 
   if (storage) {
     try {
-      storage.setItem(voiceSettingsStorageKey, JSON.stringify(storedValue))
+      storage.setItem(voiceSettingsStorageKey, JSON.stringify(storedValue));
     } catch {
       // The in-memory settings remain active when browser storage is blocked.
     }
   }
 
-  currentSnapshot = normalizedSettings
-  emitVoiceSettingsChanged(normalizedSettings)
-  return normalizedSettings
+  currentSnapshot = normalizedSettings;
+  emitVoiceSettingsChanged(normalizedSettings);
+  return normalizedSettings;
 }
 
 export function updateVoiceSettings(
-  patch: Partial<VoiceSettings>,
+  patch: Partial<VoiceSettings>
 ): VoiceSettings {
   return saveVoiceSettings({
     ...getVoiceSettings(),
-    ...patch,
-  })
+    ...patch
+  });
 }
 
 export function resetVoiceSettings(): VoiceSettings {
-  return saveVoiceSettings({ ...defaultVoiceSettings })
+  return saveVoiceSettings({ ...defaultVoiceSettings });
 }
 
 export function subscribeVoiceSettings(
-  listener: VoiceSettingsListener,
+  listener: VoiceSettingsListener
 ): () => void {
-  listeners.add(listener)
-  attachStorageListener()
+  listeners.add(listener);
+  attachStorageListener();
 
   return () => {
-    listeners.delete(listener)
-  }
+    listeners.delete(listener);
+  };
 }
 
 export function createVoiceAudioConstraints(
-  settings: VoiceSettings = getVoiceSettings(),
+  settings: VoiceSettings = getVoiceSettings()
 ): MediaTrackConstraints {
-  const normalizedSettings = normalizeVoiceSettings(settings)
+  const normalizedSettings = normalizeVoiceSettings(settings);
 
   return {
     ...(normalizedSettings.inputDeviceId === 'default'
@@ -287,17 +280,17 @@ export function createVoiceAudioConstraints(
       : { deviceId: { exact: normalizedSettings.inputDeviceId } }),
     echoCancellation: normalizedSettings.echoCancellation,
     noiseSuppression: normalizedSettings.noiseSuppression,
-    autoGainControl: normalizedSettings.autoGainControl,
-  }
+    autoGainControl: normalizedSettings.autoGainControl
+  };
 }
 
 export type PushToTalkKeyModifiers = {
-  altKey?: boolean
-  ctrlKey?: boolean
-  metaKey?: boolean
-  shiftKey?: boolean
-  isComposing?: boolean
-}
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  shiftKey?: boolean;
+  isComposing?: boolean;
+};
 
 const allowedPushToTalkCodes = new Set([
   'Backquote',
@@ -319,12 +312,12 @@ const allowedPushToTalkCodes = new Set([
   'Quote',
   'Semicolon',
   'Slash',
-  'Space',
-])
+  'Space'
+]);
 
 export function isPushToTalkKeyCodeAllowed(
   code: string,
-  modifiers: PushToTalkKeyModifiers = {},
+  modifiers: PushToTalkKeyModifiers = {}
 ) {
   if (
     modifiers.altKey ||
@@ -333,7 +326,7 @@ export function isPushToTalkKeyCodeAllowed(
     modifiers.shiftKey ||
     modifiers.isComposing
   ) {
-    return false
+    return false;
   }
 
   return (
@@ -341,11 +334,11 @@ export function isPushToTalkKeyCodeAllowed(
     /^Digit[0-9]$/.test(code) ||
     /^Numpad[0-9]$/.test(code) ||
     allowedPushToTalkCodes.has(code)
-  )
+  );
 }
 
 function emitVoiceSettingsChanged(settings: VoiceSettings) {
-  listeners.forEach((listener) => listener(settings))
+  listeners.forEach((listener) => listener(settings));
 
   if (
     typeof window !== 'undefined' &&
@@ -354,9 +347,9 @@ function emitVoiceSettingsChanged(settings: VoiceSettings) {
   ) {
     window.dispatchEvent(
       new CustomEvent<VoiceSettings>(voiceSettingsChangedEventName, {
-        detail: settings,
-      }),
-    )
+        detail: settings
+      })
+    );
   }
 }
 
@@ -366,65 +359,61 @@ function attachStorageListener() {
     typeof window.addEventListener !== 'function' ||
     isStorageListenerAttached
   ) {
-    return
+    return;
   }
 
-  isStorageListenerAttached = true
+  isStorageListenerAttached = true;
   window.addEventListener('storage', (event) => {
     if (event.key !== voiceSettingsStorageKey) {
-      return
+      return;
     }
 
-    currentSnapshot = parseVoiceSettings(event.newValue)
-    listeners.forEach((listener) => listener(currentSnapshot as VoiceSettings))
-  })
+    currentSnapshot = parseVoiceSettings(event.newValue);
+    listeners.forEach((listener) => listener(currentSnapshot as VoiceSettings));
+  });
 }
 
 function getBrowserStorage(): VoiceSettingsStorage | null {
   if (typeof window === 'undefined') {
-    return null
+    return null;
   }
 
   try {
     return typeof window.localStorage?.getItem === 'function' &&
       typeof window.localStorage?.setItem === 'function'
       ? window.localStorage
-      : null
+      : null;
   } catch {
-    return null
+    return null;
   }
 }
 
 function readBoolean(value: unknown, fallback: boolean) {
-  return typeof value === 'boolean' ? value : fallback
+  return typeof value === 'boolean' ? value : fallback;
 }
 
 function readDeviceId(value: unknown, fallback: string) {
-  return typeof value === 'string' && value.trim()
-    ? value.trim()
-    : fallback
+  return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
 function readNumberInRange(
   value: unknown,
   min: number,
   max: number,
-  fallback: number,
+  fallback: number
 ) {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return fallback
+    return fallback;
   }
 
-  return Math.min(max, Math.max(min, value))
+  return Math.min(max, Math.max(min, value));
 }
 
 function readPushToTalkKeyCode(value: unknown) {
   if (typeof value !== 'string') {
-    return null
+    return null;
   }
 
-  const normalizedValue = value.trim().slice(0, 64)
-  return isPushToTalkKeyCodeAllowed(normalizedValue)
-    ? normalizedValue
-    : null
+  const normalizedValue = value.trim().slice(0, 64);
+  return isPushToTalkKeyCodeAllowed(normalizedValue) ? normalizedValue : null;
 }

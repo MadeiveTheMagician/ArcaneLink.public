@@ -10,11 +10,8 @@
   align-items: center;
   gap: 12px;
   border: 1px solid var(--theme-border-soft);
-  border-left: 2px solid color-mix(
-    in srgb,
-    var(--theme-accent),
-    transparent 38%
-  );
+  border-left: 2px solid
+    color-mix(in srgb, var(--theme-accent), transparent 38%);
   border-radius: 9px;
   padding: 13px 16px 13px 10px;
   background: color-mix(in srgb, var(--theme-frame-bg), #030610 18%);

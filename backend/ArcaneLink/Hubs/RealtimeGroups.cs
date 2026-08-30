@@ -1,9 +1,8 @@
-namespace ArcaneLink.Hubs
-{
-    public static class RealtimeGroups
-    {
-        public static string User(Guid userId) => $"user:{userId}";
+namespace ArcaneLink.Hubs;
 
-        public static string Server(Guid serverId) => $"server:{serverId}";
-    }
+public static class RealtimeGroups
+{
+    public static string User(Guid userId) => $"user:{userId}";
+
+    public static string Server(Guid serverId) => $"server:{serverId}";
 }

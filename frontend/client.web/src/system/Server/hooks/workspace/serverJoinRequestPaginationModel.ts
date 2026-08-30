@@ -1,19 +1,19 @@
-import type { ServerJoinRequestResponse } from '../../../../shared/types'
+import type { ServerJoinRequestResponse } from '../../../../shared/types';
 
-export const serverJoinRequestPageSize = 100
+export const serverJoinRequestPageSize = 100;
 
 export function mergeServerJoinRequestPages(
   current: ServerJoinRequestResponse[],
-  next: ServerJoinRequestResponse[],
+  next: ServerJoinRequestResponse[]
 ) {
-  const seenRequestIds = new Set<string>()
+  const seenRequestIds = new Set<string>();
 
   return [...current, ...next].filter((request) => {
     if (seenRequestIds.has(request.id)) {
-      return false
+      return false;
     }
 
-    seenRequestIds.add(request.id)
-    return true
-  })
+    seenRequestIds.add(request.id);
+    return true;
+  });
 }

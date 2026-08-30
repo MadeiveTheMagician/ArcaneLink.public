@@ -1,27 +1,28 @@
-import { commonCopy, SystemIcon, type SystemIconName } from '../../shared'
-import styles from './MobileHubNav.module.css'
+import { SystemIcon, type SystemIconName, commonCopy } from '../../shared';
 
-export type MobileHubTab = 'servers' | 'messages' | 'profile' | 'menu'
+import styles from './MobileHubNav.module.css';
+
+export type MobileHubTab = 'servers' | 'messages' | 'profile' | 'menu';
 
 type MobileHubNavProps = {
-  activeTab: MobileHubTab
-  messagesBadge?: number
-  onOpenServers: () => void
-  onOpenMessages: () => void
-  onOpenProfile: () => void
-  onOpenMenu: () => void
-}
+  activeTab: MobileHubTab;
+  messagesBadge?: number;
+  onOpenServers: () => void;
+  onOpenMessages: () => void;
+  onOpenProfile: () => void;
+  onOpenMenu: () => void;
+};
 
 const navItems: Array<{
-  id: MobileHubTab
-  label: string
-  icon: SystemIconName
+  id: MobileHubTab;
+  label: string;
+  icon: SystemIconName;
 }> = [
   { id: 'servers', label: commonCopy.navigation.servers, icon: 'globe' },
   { id: 'messages', label: commonCopy.navigation.messages, icon: 'message' },
   { id: 'profile', label: commonCopy.navigation.profile, icon: 'user' },
-  { id: 'menu', label: commonCopy.navigation.menu, icon: 'menu' },
-]
+  { id: 'menu', label: commonCopy.navigation.menu, icon: 'menu' }
+];
 
 export function MobileHubNav({
   activeTab,
@@ -29,14 +30,14 @@ export function MobileHubNav({
   onOpenServers,
   onOpenMessages,
   onOpenProfile,
-  onOpenMenu,
+  onOpenMenu
 }: MobileHubNavProps) {
   const handlers: Record<MobileHubTab, () => void> = {
     servers: onOpenServers,
     messages: onOpenMessages,
     profile: onOpenProfile,
-    menu: onOpenMenu,
-  }
+    menu: onOpenMenu
+  };
 
   return (
     <nav className={styles.nav} aria-label={commonCopy.navigation.mobile}>
@@ -60,5 +61,5 @@ export function MobileHubNav({
         </button>
       ))}
     </nav>
-  )
+  );
 }

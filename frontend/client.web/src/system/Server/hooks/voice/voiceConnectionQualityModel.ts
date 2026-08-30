@@ -5,68 +5,68 @@ export type VoiceConnectionQualityState =
   | 'poor'
   | 'reconnecting'
   | 'disconnected'
-  | 'unknown'
+  | 'unknown';
 
 export type NormalizedVoiceRtcStatsSample = {
-  timestampMs: number
-  inboundBytes: number | null
-  outboundBytes: number | null
-  inboundPacketsReceived: number | null
-  inboundPacketsLost: number | null
-  remoteInboundPacketsReceived: number | null
-  remoteInboundPacketsLost: number | null
-  reportedOutboundPacketLossPercent: number | null
-  roundTripTimeMs: number | null
-  jitterMs: number | null
-}
+  timestampMs: number;
+  inboundBytes: number | null;
+  outboundBytes: number | null;
+  inboundPacketsReceived: number | null;
+  inboundPacketsLost: number | null;
+  remoteInboundPacketsReceived: number | null;
+  remoteInboundPacketsLost: number | null;
+  reportedOutboundPacketLossPercent: number | null;
+  roundTripTimeMs: number | null;
+  jitterMs: number | null;
+};
 
 export type VoiceConnectionMetrics = {
-  sampledAtMs: number
-  intervalMs: number | null
-  inboundBitrateBps: number | null
-  outboundBitrateBps: number | null
-  inboundPacketLossPercent: number | null
-  outboundPacketLossPercent: number | null
-  packetLossPercent: number | null
-  roundTripTimeMs: number | null
-  jitterMs: number | null
-}
+  sampledAtMs: number;
+  intervalMs: number | null;
+  inboundBitrateBps: number | null;
+  outboundBitrateBps: number | null;
+  inboundPacketLossPercent: number | null;
+  outboundPacketLossPercent: number | null;
+  packetLossPercent: number | null;
+  roundTripTimeMs: number | null;
+  jitterMs: number | null;
+};
 
 export type VoiceConnectionLifecycleSnapshot = {
-  lifecycleState?: string | null
-  connectionState?: string | null
-  iceConnectionState?: string | null
-  isReconnecting?: boolean
-}
+  lifecycleState?: string | null;
+  connectionState?: string | null;
+  iceConnectionState?: string | null;
+  isReconnecting?: boolean;
+};
 
 export type VoiceConnectionDiagnostics = VoiceConnectionMetrics & {
-  qualityState: VoiceConnectionQualityState
-}
+  qualityState: VoiceConnectionQualityState;
+};
 
 export const voiceConnectionQualityThresholds = {
   degraded: {
     packetLossPercent: 3,
     roundTripTimeMs: 200,
-    jitterMs: 30,
+    jitterMs: 30
   },
   poor: {
     packetLossPercent: 10,
     roundTripTimeMs: 500,
-    jitterMs: 80,
-  },
-} as const
+    jitterMs: 80
+  }
+} as const;
 
-type StatsRecord = Record<string, unknown>
+type StatsRecord = Record<string, unknown>;
 
 type CounterAccumulator = {
-  value: number
-  hasValue: boolean
-}
+  value: number;
+  hasValue: boolean;
+};
 
 type CandidatePairRoundTripTime = {
-  valueMs: number
-  priority: number
-}
+  valueMs: number;
+  priority: number;
+};
 
 /**
  * Converts an RTCStatsReport-like collection into a small, serializable audio
@@ -75,95 +75,91 @@ type CandidatePairRoundTripTime = {
  */
 export function normalizeVoiceRtcStatsSample(
   statsLike: unknown,
-  capturedAtMs?: number,
+  capturedAtMs?: number
 ): NormalizedVoiceRtcStatsSample {
-  const records = collectStatsRecords(statsLike)
-  const inboundBytes = createCounterAccumulator()
-  const outboundBytes = createCounterAccumulator()
-  const inboundPacketsReceived = createCounterAccumulator()
-  const inboundPacketsLost = createCounterAccumulator()
-  const remoteInboundPacketsReceived = createCounterAccumulator()
-  const remoteInboundPacketsLost = createCounterAccumulator()
-  const selectedCandidatePairIds = new Set<string>()
-  const candidatePairRoundTripTimes: CandidatePairRoundTripTime[] = []
-  const remoteRoundTripTimesMs: number[] = []
-  const jitterValuesMs: number[] = []
-  const reportedOutboundLossValues: number[] = []
+  const records = collectStatsRecords(statsLike);
+  const inboundBytes = createCounterAccumulator();
+  const outboundBytes = createCounterAccumulator();
+  const inboundPacketsReceived = createCounterAccumulator();
+  const inboundPacketsLost = createCounterAccumulator();
+  const remoteInboundPacketsReceived = createCounterAccumulator();
+  const remoteInboundPacketsLost = createCounterAccumulator();
+  const selectedCandidatePairIds = new Set<string>();
+  const candidatePairRoundTripTimes: CandidatePairRoundTripTime[] = [];
+  const remoteRoundTripTimesMs: number[] = [];
+  const jitterValuesMs: number[] = [];
+  const reportedOutboundLossValues: number[] = [];
 
-  let statsTimestampMs: number | null = null
+  let statsTimestampMs: number | null = null;
 
   for (const record of records) {
-    const timestamp = readFiniteNumber(record.timestamp)
+    const timestamp = readFiniteNumber(record.timestamp);
     if (timestamp !== null) {
-      statsTimestampMs = Math.max(statsTimestampMs ?? timestamp, timestamp)
+      statsTimestampMs = Math.max(statsTimestampMs ?? timestamp, timestamp);
     }
 
     if (record.type === 'transport') {
       const selectedCandidatePairId = readNonEmptyString(
-        record.selectedCandidatePairId,
-      )
+        record.selectedCandidatePairId
+      );
       if (selectedCandidatePairId !== null) {
-        selectedCandidatePairIds.add(selectedCandidatePairId)
+        selectedCandidatePairIds.add(selectedCandidatePairId);
       }
     }
   }
 
   for (const record of records) {
     if (record.type === 'inbound-rtp' && isAudioRtpRecord(record)) {
-      addCounter(inboundBytes, record.bytesReceived)
-      addCounter(inboundPacketsReceived, record.packetsReceived)
-      addCounter(inboundPacketsLost, record.packetsLost)
+      addCounter(inboundBytes, record.bytesReceived);
+      addCounter(inboundPacketsReceived, record.packetsReceived);
+      addCounter(inboundPacketsLost, record.packetsLost);
 
-      const jitterSeconds = readNonNegativeNumber(record.jitter)
+      const jitterSeconds = readNonNegativeNumber(record.jitter);
       if (jitterSeconds !== null) {
-        jitterValuesMs.push(jitterSeconds * 1_000)
+        jitterValuesMs.push(jitterSeconds * 1_000);
       }
-      continue
+      continue;
     }
 
     if (record.type === 'outbound-rtp' && isAudioRtpRecord(record)) {
-      addCounter(outboundBytes, record.bytesSent)
-      continue
+      addCounter(outboundBytes, record.bytesSent);
+      continue;
     }
 
     if (record.type === 'remote-inbound-rtp' && isAudioRtpRecord(record)) {
-      addCounter(remoteInboundPacketsReceived, record.packetsReceived)
-      addCounter(remoteInboundPacketsLost, record.packetsLost)
+      addCounter(remoteInboundPacketsReceived, record.packetsReceived);
+      addCounter(remoteInboundPacketsLost, record.packetsLost);
 
-      const fractionLost = readFiniteNumber(record.fractionLost)
+      const fractionLost = readFiniteNumber(record.fractionLost);
       if (fractionLost !== null) {
-        reportedOutboundLossValues.push(
-          clamp(fractionLost * 100, 0, 100),
-        )
+        reportedOutboundLossValues.push(clamp(fractionLost * 100, 0, 100));
       }
 
-      const roundTripTimeSeconds = readNonNegativeNumber(
-        record.roundTripTime,
-      )
+      const roundTripTimeSeconds = readNonNegativeNumber(record.roundTripTime);
       if (roundTripTimeSeconds !== null) {
-        remoteRoundTripTimesMs.push(roundTripTimeSeconds * 1_000)
+        remoteRoundTripTimesMs.push(roundTripTimeSeconds * 1_000);
       }
-      continue
+      continue;
     }
 
     if (record.type === 'candidate-pair') {
-      const roundTripTimeSeconds = resolveCandidatePairRoundTripTime(record)
+      const roundTripTimeSeconds = resolveCandidatePairRoundTripTime(record);
       if (roundTripTimeSeconds === null) {
-        continue
+        continue;
       }
 
-      const id = readNonEmptyString(record.id)
+      const id = readNonEmptyString(record.id);
       candidatePairRoundTripTimes.push({
         valueMs: roundTripTimeSeconds * 1_000,
         priority: candidatePairPriority(
           record,
-          id !== null && selectedCandidatePairIds.has(id),
-        ),
-      })
+          id !== null && selectedCandidatePairIds.has(id)
+        )
+      });
     }
   }
 
-  const explicitTimestampMs = readNonNegativeNumber(capturedAtMs)
+  const explicitTimestampMs = readNonNegativeNumber(capturedAtMs);
 
   return {
     timestampMs: explicitTimestampMs ?? statsTimestampMs ?? 0,
@@ -171,18 +167,16 @@ export function normalizeVoiceRtcStatsSample(
     outboundBytes: counterValue(outboundBytes),
     inboundPacketsReceived: counterValue(inboundPacketsReceived),
     inboundPacketsLost: counterValue(inboundPacketsLost),
-    remoteInboundPacketsReceived: counterValue(
-      remoteInboundPacketsReceived,
-    ),
+    remoteInboundPacketsReceived: counterValue(remoteInboundPacketsReceived),
     remoteInboundPacketsLost: counterValue(remoteInboundPacketsLost),
     reportedOutboundPacketLossPercent: maximumOrNull(
-      reportedOutboundLossValues,
+      reportedOutboundLossValues
     ),
     roundTripTimeMs:
       bestCandidatePairRoundTripTime(candidatePairRoundTripTimes) ??
       maximumOrNull(remoteRoundTripTimesMs),
-    jitterMs: maximumOrNull(jitterValuesMs),
-  }
+    jitterMs: maximumOrNull(jitterValuesMs)
+  };
 }
 
 /**
@@ -192,24 +186,24 @@ export function normalizeVoiceRtcStatsSample(
  */
 export function calculateVoiceConnectionMetrics(
   current: NormalizedVoiceRtcStatsSample,
-  previous?: NormalizedVoiceRtcStatsSample | null,
+  previous?: NormalizedVoiceRtcStatsSample | null
 ): VoiceConnectionMetrics {
-  const intervalMs = resolveIntervalMs(current, previous)
+  const intervalMs = resolveIntervalMs(current, previous);
   const inboundPacketLossPercent = calculatePacketLossPercent(
     current.inboundPacketsReceived,
     current.inboundPacketsLost,
     previous?.inboundPacketsReceived ?? null,
     previous?.inboundPacketsLost ?? null,
-    intervalMs,
-  )
+    intervalMs
+  );
   const outboundPacketLossPercent =
     calculatePacketLossPercent(
       current.remoteInboundPacketsReceived,
       current.remoteInboundPacketsLost,
       previous?.remoteInboundPacketsReceived ?? null,
       previous?.remoteInboundPacketsLost ?? null,
-      intervalMs,
-    ) ?? current.reportedOutboundPacketLossPercent
+      intervalMs
+    ) ?? current.reportedOutboundPacketLossPercent;
 
   return {
     sampledAtMs: current.timestampMs,
@@ -217,31 +211,31 @@ export function calculateVoiceConnectionMetrics(
     inboundBitrateBps: calculateBitrate(
       current.inboundBytes,
       previous?.inboundBytes ?? null,
-      intervalMs,
+      intervalMs
     ),
     outboundBitrateBps: calculateBitrate(
       current.outboundBytes,
       previous?.outboundBytes ?? null,
-      intervalMs,
+      intervalMs
     ),
     inboundPacketLossPercent,
     outboundPacketLossPercent,
     packetLossPercent: maximumNullable(
       inboundPacketLossPercent,
-      outboundPacketLossPercent,
+      outboundPacketLossPercent
     ),
     roundTripTimeMs: roundMetric(current.roundTripTimeMs),
-    jitterMs: roundMetric(current.jitterMs),
-  }
+    jitterMs: roundMetric(current.jitterMs)
+  };
 }
 
 export function resolveVoiceConnectionQualityState(
   lifecycle: VoiceConnectionLifecycleSnapshot,
-  metrics?: VoiceConnectionMetrics | null,
+  metrics?: VoiceConnectionMetrics | null
 ): VoiceConnectionQualityState {
-  const lifecycleState = normalizeState(lifecycle.lifecycleState)
-  const connectionState = normalizeState(lifecycle.connectionState)
-  const iceConnectionState = normalizeState(lifecycle.iceConnectionState)
+  const lifecycleState = normalizeState(lifecycle.lifecycleState);
+  const connectionState = normalizeState(lifecycle.connectionState);
+  const iceConnectionState = normalizeState(lifecycle.iceConnectionState);
 
   if (
     lifecycleState === 'error' ||
@@ -252,7 +246,7 @@ export function resolveVoiceConnectionQualityState(
     iceConnectionState === 'failed' ||
     iceConnectionState === 'closed'
   ) {
-    return 'disconnected'
+    return 'disconnected';
   }
 
   if (
@@ -261,7 +255,7 @@ export function resolveVoiceConnectionQualityState(
     connectionState === 'disconnected' ||
     iceConnectionState === 'disconnected'
   ) {
-    return 'reconnecting'
+    return 'reconnecting';
   }
 
   if (
@@ -272,15 +266,21 @@ export function resolveVoiceConnectionQualityState(
     iceConnectionState === 'new' ||
     iceConnectionState === 'checking'
   ) {
-    return 'connecting'
+    return 'connecting';
   }
 
-  if (!isConnectedLifecycle(lifecycleState, connectionState, iceConnectionState)) {
-    return 'unknown'
+  if (
+    !isConnectedLifecycle(lifecycleState, connectionState, iceConnectionState)
+  ) {
+    return 'unknown';
   }
 
-  if (metrics === null || metrics === undefined || !hasQualityMetrics(metrics)) {
-    return 'unknown'
+  if (
+    metrics === null ||
+    metrics === undefined ||
+    !hasQualityMetrics(metrics)
+  ) {
+    return 'unknown';
   }
 
   if (
@@ -288,73 +288,73 @@ export function resolveVoiceConnectionQualityState(
     reachesThreshold(metrics.roundTripTimeMs, 'roundTripTimeMs', 'poor') ||
     reachesThreshold(metrics.jitterMs, 'jitterMs', 'poor')
   ) {
-    return 'poor'
+    return 'poor';
   }
 
   if (
     reachesThreshold(
       metrics.packetLossPercent,
       'packetLossPercent',
-      'degraded',
+      'degraded'
     ) ||
     reachesThreshold(metrics.roundTripTimeMs, 'roundTripTimeMs', 'degraded') ||
     reachesThreshold(metrics.jitterMs, 'jitterMs', 'degraded')
   ) {
-    return 'degraded'
+    return 'degraded';
   }
 
-  return 'good'
+  return 'good';
 }
 
 export function createVoiceConnectionDiagnostics(
   current: NormalizedVoiceRtcStatsSample,
   previous: NormalizedVoiceRtcStatsSample | null | undefined,
-  lifecycle: VoiceConnectionLifecycleSnapshot,
+  lifecycle: VoiceConnectionLifecycleSnapshot
 ): VoiceConnectionDiagnostics {
-  const metrics = calculateVoiceConnectionMetrics(current, previous)
+  const metrics = calculateVoiceConnectionMetrics(current, previous);
 
   return {
     ...metrics,
-    qualityState: resolveVoiceConnectionQualityState(lifecycle, metrics),
-  }
+    qualityState: resolveVoiceConnectionQualityState(lifecycle, metrics)
+  };
 }
 
 function collectStatsRecords(statsLike: unknown): StatsRecord[] {
   if (statsLike === null || statsLike === undefined) {
-    return []
+    return [];
   }
 
   if (isStatsRecord(statsLike) && typeof statsLike.type === 'string') {
-    return [statsLike]
+    return [statsLike];
   }
 
-  const values: unknown[] = []
+  const values: unknown[] = [];
 
   if (isIterable(statsLike)) {
     for (const value of statsLike) {
-      values.push(value)
+      values.push(value);
     }
   } else if (hasForEach(statsLike)) {
-    statsLike.forEach((value) => values.push(value))
+    statsLike.forEach((value) => values.push(value));
   } else if (isStatsRecord(statsLike)) {
-    values.push(...Object.values(statsLike))
+    values.push(...Object.values(statsLike));
   }
 
   return values
     .map(unwrapStatsRecord)
-    .filter((record): record is StatsRecord => record !== null)
+    .filter((record): record is StatsRecord => record !== null);
 }
 
 function unwrapStatsRecord(value: unknown): StatsRecord | null {
   if (Array.isArray(value) && value.length >= 2 && isStatsRecord(value[1])) {
-    return value[1]
+    return value[1];
   }
 
-  return isStatsRecord(value) ? value : null
+  return isStatsRecord(value) ? value : null;
 }
 
 function isStatsRecord(value: unknown): value is StatsRecord {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null;
 }
 
 function isIterable(value: unknown): value is Iterable<unknown> {
@@ -363,114 +363,116 @@ function isIterable(value: unknown): value is Iterable<unknown> {
     value !== null &&
     Symbol.iterator in value &&
     typeof value[Symbol.iterator] === 'function'
-  )
+  );
 }
 
 function hasForEach(
-  value: unknown,
+  value: unknown
 ): value is { forEach(callback: (item: unknown) => void): void } {
   return (
     typeof value === 'object' &&
     value !== null &&
     'forEach' in value &&
     typeof value.forEach === 'function'
-  )
+  );
 }
 
 function isAudioRtpRecord(record: StatsRecord) {
-  const kind = readNonEmptyString(record.kind)?.toLowerCase() ?? null
-  const mediaType =
-    readNonEmptyString(record.mediaType)?.toLowerCase() ?? null
+  const kind = readNonEmptyString(record.kind)?.toLowerCase() ?? null;
+  const mediaType = readNonEmptyString(record.mediaType)?.toLowerCase() ?? null;
 
   return (
     (kind === null || kind === 'audio') &&
     (mediaType === null || mediaType === 'audio')
-  )
+  );
 }
 
 function createCounterAccumulator(): CounterAccumulator {
-  return { value: 0, hasValue: false }
+  return { value: 0, hasValue: false };
 }
 
 function addCounter(accumulator: CounterAccumulator, value: unknown) {
-  const numericValue = readNonNegativeNumber(value)
+  const numericValue = readNonNegativeNumber(value);
   if (numericValue === null) {
-    return
+    return;
   }
 
-  accumulator.value += numericValue
-  accumulator.hasValue = true
+  accumulator.value += numericValue;
+  accumulator.hasValue = true;
 }
 
 function counterValue(accumulator: CounterAccumulator) {
-  return accumulator.hasValue ? accumulator.value : null
+  return accumulator.hasValue ? accumulator.value : null;
 }
 
 function resolveCandidatePairRoundTripTime(record: StatsRecord) {
   const currentRoundTripTime = readNonNegativeNumber(
-    record.currentRoundTripTime,
-  )
+    record.currentRoundTripTime
+  );
   if (currentRoundTripTime !== null) {
-    return currentRoundTripTime
+    return currentRoundTripTime;
   }
 
-  const totalRoundTripTime = readNonNegativeNumber(record.totalRoundTripTime)
-  const responsesReceived = readNonNegativeNumber(record.responsesReceived)
+  const totalRoundTripTime = readNonNegativeNumber(record.totalRoundTripTime);
+  const responsesReceived = readNonNegativeNumber(record.responsesReceived);
   if (
     totalRoundTripTime === null ||
     responsesReceived === null ||
     responsesReceived <= 0
   ) {
-    return null
+    return null;
   }
 
-  return totalRoundTripTime / responsesReceived
+  return totalRoundTripTime / responsesReceived;
 }
 
-function candidatePairPriority(record: StatsRecord, isTransportSelected: boolean) {
-  let priority = isTransportSelected ? 100 : 0
+function candidatePairPriority(
+  record: StatsRecord,
+  isTransportSelected: boolean
+) {
+  let priority = isTransportSelected ? 100 : 0;
   if (record.selected === true) {
-    priority += 50
+    priority += 50;
   }
   if (record.nominated === true) {
-    priority += 20
+    priority += 20;
   }
   if (record.state === 'succeeded') {
-    priority += 10
+    priority += 10;
   }
 
-  return priority
+  return priority;
 }
 
-function bestCandidatePairRoundTripTime(
-  values: CandidatePairRoundTripTime[],
-) {
+function bestCandidatePairRoundTripTime(values: CandidatePairRoundTripTime[]) {
   if (values.length === 0) {
-    return null
+    return null;
   }
 
-  return [...values].sort(
-    (left, right) =>
-      right.priority - left.priority || right.valueMs - left.valueMs,
-  )[0]?.valueMs ?? null
+  return (
+    [...values].sort(
+      (left, right) =>
+        right.priority - left.priority || right.valueMs - left.valueMs
+    )[0]?.valueMs ?? null
+  );
 }
 
 function resolveIntervalMs(
   current: NormalizedVoiceRtcStatsSample,
-  previous?: NormalizedVoiceRtcStatsSample | null,
+  previous?: NormalizedVoiceRtcStatsSample | null
 ) {
   if (previous === null || previous === undefined) {
-    return null
+    return null;
   }
 
-  const intervalMs = current.timestampMs - previous.timestampMs
-  return Number.isFinite(intervalMs) && intervalMs > 0 ? intervalMs : null
+  const intervalMs = current.timestampMs - previous.timestampMs;
+  return Number.isFinite(intervalMs) && intervalMs > 0 ? intervalMs : null;
 }
 
 function calculateBitrate(
   currentBytes: number | null,
   previousBytes: number | null,
-  intervalMs: number | null,
+  intervalMs: number | null
 ) {
   if (
     currentBytes === null ||
@@ -478,10 +480,10 @@ function calculateBitrate(
     intervalMs === null ||
     currentBytes < previousBytes
   ) {
-    return null
+    return null;
   }
 
-  return Math.round(((currentBytes - previousBytes) * 8 * 1_000) / intervalMs)
+  return Math.round(((currentBytes - previousBytes) * 8 * 1_000) / intervalMs);
 }
 
 function calculatePacketLossPercent(
@@ -489,7 +491,7 @@ function calculatePacketLossPercent(
   currentLost: number | null,
   previousReceived: number | null,
   previousLost: number | null,
-  intervalMs: number | null,
+  intervalMs: number | null
 ) {
   if (
     intervalMs === null ||
@@ -500,31 +502,31 @@ function calculatePacketLossPercent(
     currentReceived < previousReceived ||
     currentLost < previousLost
   ) {
-    return null
+    return null;
   }
 
-  const receivedDelta = currentReceived - previousReceived
-  const lostDelta = currentLost - previousLost
-  const expectedPacketCount = receivedDelta + lostDelta
+  const receivedDelta = currentReceived - previousReceived;
+  const lostDelta = currentLost - previousLost;
+  const expectedPacketCount = receivedDelta + lostDelta;
 
   if (expectedPacketCount <= 0) {
-    return null
+    return null;
   }
 
-  return roundMetric(clamp((lostDelta / expectedPacketCount) * 100, 0, 100))
+  return roundMetric(clamp((lostDelta / expectedPacketCount) * 100, 0, 100));
 }
 
 function isConnectedLifecycle(
   lifecycleState: string,
   connectionState: string,
-  iceConnectionState: string,
+  iceConnectionState: string
 ) {
   return (
     lifecycleState === 'connected' ||
     connectionState === 'connected' ||
     iceConnectionState === 'connected' ||
     iceConnectionState === 'completed'
-  )
+  );
 }
 
 function hasQualityMetrics(metrics: VoiceConnectionMetrics) {
@@ -533,47 +535,47 @@ function hasQualityMetrics(metrics: VoiceConnectionMetrics) {
     metrics.outboundBitrateBps,
     metrics.packetLossPercent,
     metrics.roundTripTimeMs,
-    metrics.jitterMs,
-  ].some((value) => value !== null)
+    metrics.jitterMs
+  ].some((value) => value !== null);
 }
 
 function reachesThreshold(
   value: number | null,
   metric: keyof (typeof voiceConnectionQualityThresholds)['degraded'],
-  quality: keyof typeof voiceConnectionQualityThresholds,
+  quality: keyof typeof voiceConnectionQualityThresholds
 ) {
   return (
     value !== null && value >= voiceConnectionQualityThresholds[quality][metric]
-  )
+  );
 }
 
 function maximumNullable(left: number | null, right: number | null) {
   if (left === null) {
-    return right
+    return right;
   }
   if (right === null) {
-    return left
+    return left;
   }
 
-  return Math.max(left, right)
+  return Math.max(left, right);
 }
 
 function maximumOrNull(values: number[]) {
-  return values.length > 0 ? Math.max(...values) : null
+  return values.length > 0 ? Math.max(...values) : null;
 }
 
 function roundMetric(value: number | null) {
-  return value === null ? null : Math.round(value * 10) / 10
+  return value === null ? null : Math.round(value * 10) / 10;
 }
 
 function normalizeState(value: string | null | undefined) {
-  return value?.trim().toLowerCase() ?? ''
+  return value?.trim().toLowerCase() ?? '';
 }
 
 function readNonEmptyString(value: unknown) {
   return typeof value === 'string' && value.trim().length > 0
     ? value.trim()
-    : null
+    : null;
 }
 
 function readFiniteNumber(value: unknown) {
@@ -582,16 +584,16 @@ function readFiniteNumber(value: unknown) {
       ? value
       : typeof value === 'string' && value.trim().length > 0
         ? Number(value)
-        : Number.NaN
+        : Number.NaN;
 
-  return Number.isFinite(numericValue) ? numericValue : null
+  return Number.isFinite(numericValue) ? numericValue : null;
 }
 
 function readNonNegativeNumber(value: unknown) {
-  const numericValue = readFiniteNumber(value)
-  return numericValue !== null && numericValue >= 0 ? numericValue : null
+  const numericValue = readFiniteNumber(value);
+  return numericValue !== null && numericValue >= 0 ? numericValue : null;
 }
 
 function clamp(value: number, minimum: number, maximum: number) {
-  return Math.min(maximum, Math.max(minimum, value))
+  return Math.min(maximum, Math.max(minimum, value));
 }

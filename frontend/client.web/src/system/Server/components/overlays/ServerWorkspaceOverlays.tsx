@@ -11,114 +11,117 @@ import type {
   ServerRoleResponse,
   SpacePermissionOverrideResponse,
   SpaceResponse,
-  UpsertSpacePermissionOverrideRequest,
   UpdateServerRequest,
-  UserFriendResponse,
-} from '../../../../shared/types'
-import { ContextMenu, type ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu'
+  UpsertSpacePermissionOverrideRequest,
+  UserFriendResponse
+} from '../../../../shared/types';
+import {
+  ContextMenu,
+  type ContextMenuItem
+} from '../../../shared/components/context-menu/ContextMenu';
+import type {
+  CreateSpaceDialogState,
+  EditSpaceDialogState
+} from '../../hooks/workspace/useServerSpaceDialogs';
 import type {
   MemberContextMenuState,
   SpaceContextMenuState,
-  VoiceParticipantContextMenuState,
-} from '../../hooks/workspace/useServerWorkspaceContextMenus'
-import type { ServerCoreTab } from '../../utils/serverWorkspaceModel'
-import { ServerWorkspaceDialogs } from '../dialogs/ServerWorkspaceDialogs'
-import type {
-  CreateSpaceDialogState,
-  EditSpaceDialogState,
-} from '../../hooks/workspace/useServerSpaceDialogs'
-import { ServerSettingsDialog } from '../settings/ServerSettingsDialog'
+  VoiceParticipantContextMenuState
+} from '../../hooks/workspace/useServerWorkspaceContextMenus';
+import type { ServerCoreTab } from '../../utils/serverWorkspaceModel';
+import { ServerWorkspaceDialogs } from '../dialogs/ServerWorkspaceDialogs';
+import { ServerSettingsDialog } from '../settings/ServerSettingsDialog';
 
 type ServerWorkspaceOverlaysProps = {
-  accessToken: string
-  server: ServerMemberResponse['server']
-  serverMembers: ServerMemberDetailsResponse[]
-  serverSpaces: SpaceResponse[]
-  spacePermissions: PermissionResponse[]
-  serverInvites: ServerInviteResponse[]
-  serverJoinRequests: ServerJoinRequestResponse[]
-  serverJoinRequestTotalCount: number
-  serverJoinRequestError: string | null
-  hasMoreServerJoinRequests: boolean
-  friends: UserFriendResponse[]
-  canInviteMembers: boolean
-  canViewInviteLog: boolean
-  canViewInvites: boolean
-  canManageJoinRequests: boolean
-  canManageBans: boolean
-  canManageInvites: boolean
-  canManageRoles: boolean
-  canManageServerProfile: boolean
-  canManageServerSettings: boolean
-  canDeleteServer: boolean
-  canManageReports: boolean
-  canViewAuditLog: boolean
-  currentUserPermissionCodes: string[]
-  isInviteDialogOpen: boolean
-  isLoadingInviteDialog: boolean
-  inviteDialogLoadError: string | null
-  isLoadingGovernance: boolean
-  isLoadingMoreServerJoinRequests: boolean
-  isMutatingGovernance: boolean
-  isMutatingSpaces: boolean
-  pendingOwnershipTransfer: ServerMemberDetailsResponse | null
-  createSpaceDialog: CreateSpaceDialogState | null
-  editSpaceDialog: EditSpaceDialogState | null
-  pendingDeleteSpace: SpaceResponse | null
-  spaceTitleDraft: string
-  spaceDescriptionDraft: string
-  memberContextMenu: MemberContextMenuState | null
-  spaceContextMenu: SpaceContextMenuState | null
-  voiceParticipantContextMenu: VoiceParticipantContextMenuState | null
-  memberContextItems: ContextMenuItem[]
-  spaceContextItems: ContextMenuItem[]
-  voiceParticipantContextItems: ContextMenuItem[]
-  isSettingsOpen: boolean
-  serverCoreTab: ServerCoreTab
-  serverRoles: ServerRoleResponse[]
-  serverPermissions: PermissionResponse[]
-  serverAuditLogs: ServerAuditLogResponse[]
-  serverBans: ServerBanResponse[]
+  accessToken: string;
+  server: ServerMemberResponse['server'];
+  serverMembers: ServerMemberDetailsResponse[];
+  serverSpaces: SpaceResponse[];
+  spacePermissions: PermissionResponse[];
+  serverInvites: ServerInviteResponse[];
+  serverJoinRequests: ServerJoinRequestResponse[];
+  serverJoinRequestTotalCount: number;
+  serverJoinRequestError: string | null;
+  hasMoreServerJoinRequests: boolean;
+  friends: UserFriendResponse[];
+  canInviteMembers: boolean;
+  canViewInviteLog: boolean;
+  canViewInvites: boolean;
+  canManageJoinRequests: boolean;
+  canManageBans: boolean;
+  canManageInvites: boolean;
+  canManageRoles: boolean;
+  canManageServerProfile: boolean;
+  canManageServerSettings: boolean;
+  canDeleteServer: boolean;
+  canManageReports: boolean;
+  canViewAuditLog: boolean;
+  currentUserPermissionCodes: string[];
+  isInviteDialogOpen: boolean;
+  isLoadingInviteDialog: boolean;
+  inviteDialogLoadError: string | null;
+  isLoadingGovernance: boolean;
+  isLoadingMoreServerJoinRequests: boolean;
+  isMutatingGovernance: boolean;
+  isMutatingSpaces: boolean;
+  pendingOwnershipTransfer: ServerMemberDetailsResponse | null;
+  createSpaceDialog: CreateSpaceDialogState | null;
+  editSpaceDialog: EditSpaceDialogState | null;
+  pendingDeleteSpace: SpaceResponse | null;
+  spaceTitleDraft: string;
+  spaceDescriptionDraft: string;
+  memberContextMenu: MemberContextMenuState | null;
+  spaceContextMenu: SpaceContextMenuState | null;
+  voiceParticipantContextMenu: VoiceParticipantContextMenuState | null;
+  memberContextItems: ContextMenuItem[];
+  spaceContextItems: ContextMenuItem[];
+  voiceParticipantContextItems: ContextMenuItem[];
+  isSettingsOpen: boolean;
+  serverCoreTab: ServerCoreTab;
+  serverRoles: ServerRoleResponse[];
+  serverPermissions: PermissionResponse[];
+  serverAuditLogs: ServerAuditLogResponse[];
+  serverBans: ServerBanResponse[];
   onCreateServerInvite: (
-    request?: CreateServerInviteRequest,
-  ) => Promise<ServerInviteResponse | null>
+    request?: CreateServerInviteRequest
+  ) => Promise<ServerInviteResponse | null>;
   onUpdateServer: (
-    request: UpdateServerRequest,
-  ) => Promise<ServerResponse | null>
-  onDeleteServer: () => Promise<void>
-  onRevokeServerInvite: (inviteId: string) => void
-  onLoadMoreServerJoinRequests: () => void
-  onApproveServerJoinRequest: (requestId: string) => void
-  onDeclineServerJoinRequest: (requestId: string) => void
-  onUnbanServerMember: (memberId: string) => void
-  onReloadServerRoles: () => Promise<readonly ServerRoleResponse[]>
-  onReloadServerMembers: () => Promise<void>
-  onOpenServerCoreTab: (tab: ServerCoreTab) => void
-  onCloseSettings: () => void
-  onRoleDraftDirtyChange: (isDirty: boolean) => void
-  onCloseInviteDialog: () => void
-  onCloseOwnershipTransfer: () => void
-  onConfirmOwnershipTransfer: (member: ServerMemberDetailsResponse) => void
-  onCloseCreateSpaceDialog: () => void
-  onCloseEditSpaceDialog: () => void
-  onCloseDeleteSpaceDialog: () => void
-  onSetSpaceTitleDraft: (title: string) => void
-  onSetSpaceDescriptionDraft: (description: string) => void
-  onSubmitCreateSpace: () => void
-  onSubmitEditSpace: () => void
-  onDeleteSpace: (space: SpaceResponse, action: 'delete' | 'promote') => void
+    request: UpdateServerRequest
+  ) => Promise<ServerResponse | null>;
+  onDeleteServer: () => Promise<void>;
+  onRevokeServerInvite: (inviteId: string) => void;
+  onLoadMoreServerJoinRequests: () => void;
+  onApproveServerJoinRequest: (requestId: string) => void;
+  onDeclineServerJoinRequest: (requestId: string) => void;
+  onUnbanServerMember: (memberId: string) => void;
+  onReloadServerRoles: () => Promise<readonly ServerRoleResponse[]>;
+  onReloadServerMembers: () => Promise<void>;
+  onOpenServerCoreTab: (tab: ServerCoreTab) => void;
+  onCloseSettings: () => void;
+  onRoleDraftDirtyChange: (isDirty: boolean) => void;
+  onCloseInviteDialog: () => void;
+  onCloseOwnershipTransfer: () => void;
+  onConfirmOwnershipTransfer: (member: ServerMemberDetailsResponse) => void;
+  onCloseCreateSpaceDialog: () => void;
+  onCloseEditSpaceDialog: () => void;
+  onCloseDeleteSpaceDialog: () => void;
+  onSetSpaceTitleDraft: (title: string) => void;
+  onSetSpaceDescriptionDraft: (description: string) => void;
+  onSubmitCreateSpace: () => void;
+  onSubmitEditSpace: () => void;
+  onDeleteSpace: (space: SpaceResponse, action: 'delete' | 'promote') => void;
   onUpsertSpacePermissionOverride: (
     spaceId: string,
-    request: UpsertSpacePermissionOverrideRequest,
-  ) => Promise<SpacePermissionOverrideResponse | null>
+    request: UpsertSpacePermissionOverrideRequest
+  ) => Promise<SpacePermissionOverrideResponse | null>;
   onDeleteSpacePermissionOverride: (
     spaceId: string,
-    overrideId: string,
-  ) => Promise<boolean>
-  onCloseMemberContextMenu: () => void
-  onCloseSpaceContextMenu: () => void
-  onCloseVoiceParticipantContextMenu: () => void
-}
+    overrideId: string
+  ) => Promise<boolean>;
+  onCloseMemberContextMenu: () => void;
+  onCloseSpaceContextMenu: () => void;
+  onCloseVoiceParticipantContextMenu: () => void;
+};
 
 export function ServerWorkspaceOverlays({
   accessToken,
@@ -198,7 +201,7 @@ export function ServerWorkspaceOverlays({
   onDeleteSpacePermissionOverride,
   onCloseMemberContextMenu,
   onCloseSpaceContextMenu,
-  onCloseVoiceParticipantContextMenu,
+  onCloseVoiceParticipantContextMenu
 }: ServerWorkspaceOverlaysProps) {
   return (
     <>
@@ -260,9 +263,7 @@ export function ServerWorkspaceOverlays({
           canManageReports={canManageReports}
           canViewAuditLog={canViewAuditLog}
           isLoadingGovernance={isLoadingGovernance}
-          isLoadingMoreServerJoinRequests={
-            isLoadingMoreServerJoinRequests
-          }
+          isLoadingMoreServerJoinRequests={isLoadingMoreServerJoinRequests}
           isMutatingGovernance={isMutatingGovernance}
           onOpenServerCoreTab={onOpenServerCoreTab}
           onCreateServerInvite={onCreateServerInvite}
@@ -316,5 +317,5 @@ export function ServerWorkspaceOverlays({
         onDeleteSpacePermissionOverride={onDeleteSpacePermissionOverride}
       />
     </>
-  )
+  );
 }

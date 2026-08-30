@@ -1,28 +1,30 @@
-import { useEffect, useRef, useState } from 'react'
-import { voiceCopy } from '../../../../shared/copy/voice.ru.ts'
-import { VoiceCallControlPanel } from './VoiceCallControlPanel'
-import styles from './VoiceWorkspaceControls.module.css'
+import { useEffect, useRef, useState } from 'react';
+
+import { voiceCopy } from '../../../../shared/copy/voice.ru.ts';
+import { VoiceCallControlPanel } from './VoiceCallControlPanel';
+
+import styles from './VoiceWorkspaceControls.module.css';
 
 type VoiceWorkspaceControlsProps = {
-  isConnected: boolean
-  hasParticipantCards: boolean
-  isMuted: boolean
-  isDeafened: boolean
-  isCameraEnabled: boolean
-  isScreenSharing: boolean
-  isWorkspaceFullscreen: boolean
-  showParticipantsWithoutVideo: boolean
-  showSelfCamera: boolean
-  onToggleMuted: () => void
-  onToggleDeafened: () => void
-  onToggleCamera: () => void
-  onToggleScreenShare: () => void
-  onLeaveVoiceChannel: () => void
-  onOpenDetachedWorkspace: () => void
-  onToggleParticipantsWithoutVideo: () => void
-  onToggleSelfCamera: () => void
-  onToggleWorkspaceFullscreen: () => void
-}
+  isConnected: boolean;
+  hasParticipantCards: boolean;
+  isMuted: boolean;
+  isDeafened: boolean;
+  isCameraEnabled: boolean;
+  isScreenSharing: boolean;
+  isWorkspaceFullscreen: boolean;
+  showParticipantsWithoutVideo: boolean;
+  showSelfCamera: boolean;
+  onToggleMuted: () => void;
+  onToggleDeafened: () => void;
+  onToggleCamera: () => void;
+  onToggleScreenShare: () => void;
+  onLeaveVoiceChannel: () => void;
+  onOpenDetachedWorkspace: () => void;
+  onToggleParticipantsWithoutVideo: () => void;
+  onToggleSelfCamera: () => void;
+  onToggleWorkspaceFullscreen: () => void;
+};
 
 export function VoiceWorkspaceControls({
   isConnected,
@@ -42,38 +44,38 @@ export function VoiceWorkspaceControls({
   onOpenDetachedWorkspace,
   onToggleParticipantsWithoutVideo,
   onToggleSelfCamera,
-  onToggleWorkspaceFullscreen,
+  onToggleWorkspaceFullscreen
 }: VoiceWorkspaceControlsProps) {
-  const [isMobilePanelCollapsed, setIsMobilePanelCollapsed] = useState(false)
-  const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false)
-  const viewSettingsRootRef = useRef<HTMLDivElement | null>(null)
+  const [isMobilePanelCollapsed, setIsMobilePanelCollapsed] = useState(false);
+  const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
+  const viewSettingsRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!isViewSettingsOpen) return
+    if (!isViewSettingsOpen) return;
 
     const closeOnOutsidePointer = (event: PointerEvent) => {
       if (
         event.target instanceof Node &&
         viewSettingsRootRef.current?.contains(event.target)
       ) {
-        return
+        return;
       }
 
-      setIsViewSettingsOpen(false)
-    }
+      setIsViewSettingsOpen(false);
+    };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsViewSettingsOpen(false)
-    }
+      if (event.key === 'Escape') setIsViewSettingsOpen(false);
+    };
 
-    document.addEventListener('pointerdown', closeOnOutsidePointer)
-    document.addEventListener('keydown', closeOnEscape)
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
     return () => {
-      document.removeEventListener('pointerdown', closeOnOutsidePointer)
-      document.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [isViewSettingsOpen])
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isViewSettingsOpen]);
 
-  if (!isConnected) return null
+  if (!isConnected) return null;
 
   return (
     <>
@@ -111,9 +113,7 @@ export function VoiceWorkspaceControls({
           onToggleCamera={onToggleCamera}
           onToggleScreenShare={onToggleScreenShare}
           onLeaveVoiceChannel={onLeaveVoiceChannel}
-          onOpenSettings={() =>
-            setIsViewSettingsOpen((current) => !current)
-          }
+          onOpenSettings={() => setIsViewSettingsOpen((current) => !current)}
         />
         <div
           className={styles.voiceWorkspaceViewSettings}
@@ -143,8 +143,8 @@ export function VoiceWorkspaceControls({
               type="button"
               disabled={!hasParticipantCards}
               onClick={() => {
-                setIsViewSettingsOpen(false)
-                onOpenDetachedWorkspace()
+                setIsViewSettingsOpen(false);
+                onOpenDetachedWorkspace();
               }}
             >
               {voiceCopy.channel.detachWorkspaceTitle}
@@ -153,8 +153,8 @@ export function VoiceWorkspaceControls({
               className={styles.voiceWorkspaceSettingsAction}
               type="button"
               onClick={() => {
-                setIsViewSettingsOpen(false)
-                onToggleWorkspaceFullscreen()
+                setIsViewSettingsOpen(false);
+                onToggleWorkspaceFullscreen();
               }}
             >
               {isWorkspaceFullscreen
@@ -165,5 +165,5 @@ export function VoiceWorkspaceControls({
         </div>
       </div>
     </>
-  )
+  );
 }

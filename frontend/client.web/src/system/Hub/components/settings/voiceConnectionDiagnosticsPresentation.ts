@@ -1,58 +1,58 @@
-import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes'
-import type { VoiceConnectionQualityState } from '../../../Server/hooks/voice/voiceConnectionQualityModel'
-import { resolveVoiceTransmissionQualityPlan } from '../../../Server/hooks/voice/voiceTransmissionQualityModel'
-import { settingsCopy } from '../../../shared/copy'
-import type { VoiceTransmissionQualityProfile } from '../../../shared/voice/voiceSettings'
+import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes';
+import type { VoiceConnectionQualityState } from '../../../Server/hooks/voice/voiceConnectionQualityModel';
+import { resolveVoiceTransmissionQualityPlan } from '../../../Server/hooks/voice/voiceTransmissionQualityModel';
+import { settingsCopy } from '../../../shared/copy';
+import type { VoiceTransmissionQualityProfile } from '../../../shared/voice/voiceSettings';
 
 const compactNumberFormatter = new Intl.NumberFormat('ru-RU', {
-  maximumFractionDigits: 1,
-})
+  maximumFractionDigits: 1
+});
 
 const diagnosticDateFormatter = new Intl.DateTimeFormat('ru-RU', {
   dateStyle: 'short',
-  timeStyle: 'medium',
-})
+  timeStyle: 'medium'
+});
 
-const earliestPlausibleSampleTimestamp = Date.UTC(2020, 0, 1)
+const earliestPlausibleSampleTimestamp = Date.UTC(2020, 0, 1);
 
 export function getVoiceDiagnosticsQualityLabel(
-  qualityState: VoiceConnectionQualityState,
+  qualityState: VoiceConnectionQualityState
 ) {
   switch (qualityState) {
     case 'connecting':
-      return settingsCopy.voice.diagnosticsQualityConnecting
+      return settingsCopy.voice.diagnosticsQualityConnecting;
     case 'good':
-      return settingsCopy.voice.diagnosticsQualityGood
+      return settingsCopy.voice.diagnosticsQualityGood;
     case 'degraded':
-      return settingsCopy.voice.diagnosticsQualityDegraded
+      return settingsCopy.voice.diagnosticsQualityDegraded;
     case 'poor':
-      return settingsCopy.voice.diagnosticsQualityPoor
+      return settingsCopy.voice.diagnosticsQualityPoor;
     case 'reconnecting':
-      return settingsCopy.voice.diagnosticsQualityReconnecting
+      return settingsCopy.voice.diagnosticsQualityReconnecting;
     case 'disconnected':
-      return settingsCopy.voice.diagnosticsQualityDisconnected
+      return settingsCopy.voice.diagnosticsQualityDisconnected;
     case 'unknown':
-      return settingsCopy.voice.diagnosticsQualityMeasuring
+      return settingsCopy.voice.diagnosticsQualityMeasuring;
   }
 }
 
 export function getVoiceDiagnosticsQualityDescription(
-  qualityState: VoiceConnectionQualityState,
+  qualityState: VoiceConnectionQualityState
 ) {
   switch (qualityState) {
     case 'connecting':
     case 'unknown':
-      return settingsCopy.voice.diagnosticsQualityMeasuringDescription
+      return settingsCopy.voice.diagnosticsQualityMeasuringDescription;
     case 'good':
-      return settingsCopy.voice.diagnosticsQualityGoodDescription
+      return settingsCopy.voice.diagnosticsQualityGoodDescription;
     case 'degraded':
-      return settingsCopy.voice.diagnosticsQualityDegradedDescription
+      return settingsCopy.voice.diagnosticsQualityDegradedDescription;
     case 'poor':
-      return settingsCopy.voice.diagnosticsQualityPoorDescription
+      return settingsCopy.voice.diagnosticsQualityPoorDescription;
     case 'reconnecting':
-      return settingsCopy.voice.diagnosticsQualityReconnectingDescription
+      return settingsCopy.voice.diagnosticsQualityReconnectingDescription;
     case 'disconnected':
-      return settingsCopy.voice.diagnosticsQualityDisconnectedDescription
+      return settingsCopy.voice.diagnosticsQualityDisconnectedDescription;
   }
 }
 
@@ -61,40 +61,36 @@ export function getVoiceDiagnosticsQualityDescription(
  * candidate strings never leave this function, so IP addresses, ports and
  * candidate identifiers cannot appear in the UI or copied report.
  */
-export function formatPrivacySafeVoiceRoute(
-  route: string | null | undefined,
-) {
-  const normalized = route?.trim().toLowerCase() ?? ''
+export function formatPrivacySafeVoiceRoute(route: string | null | undefined) {
+  const normalized = route?.trim().toLowerCase() ?? '';
   if (!normalized) {
-    return null
+    return null;
   }
 
   const routeLabel = normalized.includes('relay')
     ? settingsCopy.voice.diagnosticsRouteRelay
     : ['host', 'srflx', 'prflx', 'direct'].some((token) =>
-          normalized.includes(token),
+          normalized.includes(token)
         )
       ? settingsCopy.voice.diagnosticsRouteDirect
-      : null
+      : null;
 
   const protocol = ['udp', 'tcp', 'tls'].find((token) =>
-    new RegExp(`(^|[^a-z])${token}([^a-z]|$)`, 'i').test(normalized),
-  )
+    new RegExp(`(^|[^a-z])${token}([^a-z]|$)`, 'i').test(normalized)
+  );
 
   if (!routeLabel) {
-    return protocol?.toUpperCase() ?? null
+    return protocol?.toUpperCase() ?? null;
   }
 
-  return protocol ? `${routeLabel} · ${protocol.toUpperCase()}` : routeLabel
+  return protocol ? `${routeLabel} · ${protocol.toUpperCase()}` : routeLabel;
 }
 
 /** Only known audio codec names are shown; untrusted stats labels are dropped. */
-export function formatPrivacySafeVoiceCodec(
-  codec: string | null | undefined,
-) {
-  const normalized = codec?.trim().toLowerCase() ?? ''
+export function formatPrivacySafeVoiceCodec(codec: string | null | undefined) {
+  const normalized = codec?.trim().toLowerCase() ?? '';
   if (!normalized) {
-    return null
+    return null;
   }
 
   const knownCodecs: ReadonlyArray<readonly [RegExp, string]> = [
@@ -102,78 +98,78 @@ export function formatPrivacySafeVoiceCodec(
     [/(^|[^a-z])g722([^a-z]|$)/i, 'G.722'],
     [/(^|[^a-z])pcmu([^a-z]|$)/i, 'PCMU'],
     [/(^|[^a-z])pcma([^a-z]|$)/i, 'PCMA'],
-    [/(^|[^a-z])red([^a-z]|$)/i, 'RED'],
-  ]
+    [/(^|[^a-z])red([^a-z]|$)/i, 'RED']
+  ];
 
-  return knownCodecs.find(([pattern]) => pattern.test(normalized))?.[1] ?? null
+  return knownCodecs.find(([pattern]) => pattern.test(normalized))?.[1] ?? null;
 }
 
 export function formatVoiceDiagnosticsSampleTime(
-  sampledAtMs: number | null | undefined,
+  sampledAtMs: number | null | undefined
 ) {
   if (
     typeof sampledAtMs !== 'number' ||
     !Number.isFinite(sampledAtMs) ||
     sampledAtMs < earliestPlausibleSampleTimestamp
   ) {
-    return null
+    return null;
   }
 
-  const sampledAt = new Date(sampledAtMs)
+  const sampledAt = new Date(sampledAtMs);
   return Number.isNaN(sampledAt.getTime())
     ? null
-    : diagnosticDateFormatter.format(sampledAt)
+    : diagnosticDateFormatter.format(sampledAt);
 }
 
 export function formatVoiceDiagnosticsBitrate(
-  bitrateBps: number | null | undefined,
+  bitrateBps: number | null | undefined
 ) {
   if (!isDiagnosticNumber(bitrateBps)) {
-    return settingsCopy.voice.diagnosticsMetricUnavailable
+    return settingsCopy.voice.diagnosticsMetricUnavailable;
   }
 
   return settingsCopy.voice.diagnosticsKilobitsPerSecond(
-    compactNumberFormatter.format(bitrateBps / 1_000),
-  )
+    compactNumberFormatter.format(bitrateBps / 1_000)
+  );
 }
 
 export type VoiceTransmissionLimitSummary = {
-  minBitrateBps: number
-  maxBitrateBps: number
-  value: string
-  modeLabel: string
-  isIndividual: boolean
-}
+  minBitrateBps: number;
+  maxBitrateBps: number;
+  value: string;
+  modeLabel: string;
+  isIndividual: boolean;
+};
 
 export function createVoiceTransmissionLimitSummary({
   diagnostics,
   qualityProfile,
-  adaptiveQuality,
+  adaptiveQuality
 }: {
-  diagnostics: VoiceConnectionDiagnostics | null
-  qualityProfile: VoiceTransmissionQualityProfile
-  adaptiveQuality: boolean
+  diagnostics: VoiceConnectionDiagnostics | null;
+  qualityProfile: VoiceTransmissionQualityProfile;
+  adaptiveQuality: boolean;
 }): VoiceTransmissionLimitSummary {
   const fallbackPlan = resolveVoiceTransmissionQualityPlan({
     qualityProfile,
     adaptiveQuality,
-    diagnosticsQualityState: diagnostics?.qualityState ?? 'unknown',
-  })
+    diagnosticsQualityState: diagnostics?.qualityState ?? 'unknown'
+  });
   const usesPerPeerLimits =
-    qualityProfile === 'automatic' && adaptiveQuality && diagnostics !== null
+    qualityProfile === 'automatic' && adaptiveQuality && diagnostics !== null;
   const peerQualityStates = usesPerPeerLimits
     ? Object.values(diagnostics.peersByParticipantId)
         .filter((peer) => peer.connectionState !== 'closed')
         .map((peer) => peer.qualityState)
-    : []
+    : [];
   const bitrateLimits = peerQualityStates.map(
     (diagnosticsQualityState) =>
       resolveVoiceTransmissionQualityPlan({
         qualityProfile,
         adaptiveQuality,
-        diagnosticsQualityState,
-      }).maxBitrateBps,
-  )
+        diagnosticsQualityState
+      }).maxBitrateBps
+  );
 
   if (bitrateLimits.length === 0) {
     return {
@@ -183,12 +179,12 @@ export function createVoiceTransmissionLimitSummary({
       modeLabel: fallbackPlan.isAdaptive
         ? settingsCopy.voice.diagnosticsTransmissionAdaptive
         : settingsCopy.voice.diagnosticsTransmissionFixed,
-      isIndividual: false,
-    }
+      isIndividual: false
+    };
   }
 
-  const minBitrateBps = Math.min(...bitrateLimits)
-  const maxBitrateBps = Math.max(...bitrateLimits)
+  const minBitrateBps = Math.min(...bitrateLimits);
+  const maxBitrateBps = Math.max(...bitrateLimits);
 
   return {
     minBitrateBps,
@@ -196,41 +192,36 @@ export function createVoiceTransmissionLimitSummary({
     value:
       minBitrateBps === maxBitrateBps
         ? formatVoiceDiagnosticsBitrate(minBitrateBps)
-        : formatVoiceDiagnosticsBitrateRange(
-            minBitrateBps,
-            maxBitrateBps,
-          ),
+        : formatVoiceDiagnosticsBitrateRange(minBitrateBps, maxBitrateBps),
     modeLabel: settingsCopy.voice.diagnosticsTransmissionIndividual,
-    isIndividual: true,
-  }
+    isIndividual: true
+  };
 }
 
 export function createPrivacySafeVoiceDiagnosticsReport({
   diagnostics,
   qualityProfile,
-  adaptiveQuality,
+  adaptiveQuality
 }: {
-  diagnostics: VoiceConnectionDiagnostics | null
-  qualityProfile: VoiceTransmissionQualityProfile
-  adaptiveQuality: boolean
+  diagnostics: VoiceConnectionDiagnostics | null;
+  qualityProfile: VoiceTransmissionQualityProfile;
+  adaptiveQuality: boolean;
 }) {
-  const qualityState = diagnostics?.qualityState ?? 'disconnected'
+  const qualityState = diagnostics?.qualityState ?? 'disconnected';
   const transmissionSummary = createVoiceTransmissionLimitSummary({
     diagnostics,
     qualityProfile,
-    adaptiveQuality,
-  })
-  const sampleTime = formatVoiceDiagnosticsSampleTime(
-    diagnostics?.sampledAtMs,
-  )
-  const codec = formatPrivacySafeVoiceCodec(diagnostics?.codec)
-  const route = formatPrivacySafeVoiceRoute(diagnostics?.route)
+    adaptiveQuality
+  });
+  const sampleTime = formatVoiceDiagnosticsSampleTime(diagnostics?.sampledAtMs);
+  const codec = formatPrivacySafeVoiceCodec(diagnostics?.codec);
+  const route = formatPrivacySafeVoiceRoute(diagnostics?.route);
   const peers = diagnostics
     ? settingsCopy.voice.diagnosticsConnectedPeersValue(
         diagnostics.connectedPeerCount,
-        diagnostics.peerCount,
+        diagnostics.peerCount
       )
-    : settingsCopy.voice.diagnosticsMetricUnavailable
+    : settingsCopy.voice.diagnosticsMetricUnavailable;
 
   return [
     settingsCopy.voice.diagnosticsReportTitle,
@@ -246,33 +237,33 @@ export function createPrivacySafeVoiceDiagnosticsReport({
     `${settingsCopy.voice.diagnosticsTransmissionTarget}: ${transmissionSummary.value}`,
     `${settingsCopy.voice.diagnosticsTransmissionMode}: ${transmissionSummary.modeLabel}`,
     `${settingsCopy.voice.diagnosticsLastSample}: ${sampleTime ?? settingsCopy.voice.diagnosticsMetricUnavailable}`,
-    settingsCopy.voice.diagnosticsReportPrivacyNote,
-  ].join('\n')
+    settingsCopy.voice.diagnosticsReportPrivacyNote
+  ].join('\n');
 }
 
 function formatVoiceDiagnosticsBitrateRange(
   minBitrateBps: number,
-  maxBitrateBps: number,
+  maxBitrateBps: number
 ) {
   return settingsCopy.voice.diagnosticsKilobitsPerSecond(
-    `${compactNumberFormatter.format(minBitrateBps / 1_000)}–${compactNumberFormatter.format(maxBitrateBps / 1_000)}`,
-  )
+    `${compactNumberFormatter.format(minBitrateBps / 1_000)}–${compactNumberFormatter.format(maxBitrateBps / 1_000)}`
+  );
 }
 
 function formatMilliseconds(value: number | null | undefined) {
   return isDiagnosticNumber(value)
     ? settingsCopy.voice.diagnosticsMilliseconds(
-        compactNumberFormatter.format(value),
+        compactNumberFormatter.format(value)
       )
-    : settingsCopy.voice.diagnosticsMetricUnavailable
+    : settingsCopy.voice.diagnosticsMetricUnavailable;
 }
 
 function formatPercent(value: number | null | undefined) {
   return isDiagnosticNumber(value)
     ? `${compactNumberFormatter.format(value)}%`
-    : settingsCopy.voice.diagnosticsMetricUnavailable
+    : settingsCopy.voice.diagnosticsMetricUnavailable;
 }
 
 function isDiagnosticNumber(value: number | null | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }

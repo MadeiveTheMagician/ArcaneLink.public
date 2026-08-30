@@ -1,62 +1,64 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { SystemCloseIcon } from '../../icons/components/SystemCloseIcon'
-import { assetPreviewCopy } from './assetPreview.copy.ts'
-import styles from './AssetPreviewOverlay.module.css'
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+
+import { SystemCloseIcon } from '../../icons/components/SystemCloseIcon';
+import { assetPreviewCopy } from './assetPreview.copy.ts';
+
+import styles from './AssetPreviewOverlay.module.css';
 
 export type AssetPreviewAuthor = {
-  displayName: string
-  avatarUrl: string | null
-  avatarCropOffsetX?: number
-  avatarCropOffsetY?: number
-  avatarCropZoom?: number
-}
+  displayName: string;
+  avatarUrl: string | null;
+  avatarCropOffsetX?: number;
+  avatarCropOffsetY?: number;
+  avatarCropZoom?: number;
+};
 
 export type AssetPreviewItem = {
-  url: string
-  title: string
-  createdAt: string
-  sizeBytes?: number
-  mediaType?: 'image' | 'video'
-}
+  url: string;
+  title: string;
+  createdAt: string;
+  sizeBytes?: number;
+  mediaType?: 'image' | 'video';
+};
 
 type AssetPreviewOverlayProps = {
-  asset: AssetPreviewItem
-  author: AssetPreviewAuthor
-  onClose: () => void
-  onNavigate?: (direction: 'previous' | 'next') => void
-}
+  asset: AssetPreviewItem;
+  author: AssetPreviewAuthor;
+  onClose: () => void;
+  onNavigate?: (direction: 'previous' | 'next') => void;
+};
 
 export function AssetPreviewOverlay({
   asset,
   author,
   onClose,
-  onNavigate,
+  onNavigate
 }: AssetPreviewOverlayProps) {
-  const [isChromeVisible, setIsChromeVisible] = useState(true)
-  const [isClosing, setIsClosing] = useState(false)
-  const closeTimeoutRef = useRef<number | null>(null)
-  const isClosingRef = useRef(false)
+  const [isChromeVisible, setIsChromeVisible] = useState(true);
+  const [isClosing, setIsClosing] = useState(false);
+  const closeTimeoutRef = useRef<number | null>(null);
+  const isClosingRef = useRef(false);
 
   const requestClose = useCallback(() => {
     if (isClosingRef.current) {
-      return
+      return;
     }
 
-    isClosingRef.current = true
-    setIsChromeVisible(false)
-    setIsClosing(true)
+    isClosingRef.current = true;
+    setIsChromeVisible(false);
+    setIsClosing(true);
     closeTimeoutRef.current = window.setTimeout(() => {
-      closeTimeoutRef.current = null
-      onClose()
-    }, 240)
-  }, [onClose])
+      closeTimeoutRef.current = null;
+      onClose();
+    }, 240);
+  }, [onClose]);
 
   useEffect(() => {
     function handleKeyboardNavigation(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        requestClose()
-        return
+        requestClose();
+        return;
       }
 
       if (
@@ -70,38 +72,39 @@ export function AssetPreviewOverlay({
         event.shiftKey ||
         isNativeArrowKeyTarget(event.target)
       ) {
-        return
+        return;
       }
 
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-        event.preventDefault()
-        onNavigate(event.key === 'ArrowLeft' ? 'previous' : 'next')
+        event.preventDefault();
+        onNavigate(event.key === 'ArrowLeft' ? 'previous' : 'next');
       }
     }
 
-    window.addEventListener('keydown', handleKeyboardNavigation)
+    window.addEventListener('keydown', handleKeyboardNavigation);
 
-    return () => window.removeEventListener('keydown', handleKeyboardNavigation)
-  }, [onNavigate, requestClose])
+    return () =>
+      window.removeEventListener('keydown', handleKeyboardNavigation);
+  }, [onNavigate, requestClose]);
 
   useEffect(() => {
     return () => {
       if (closeTimeoutRef.current != null) {
-        window.clearTimeout(closeTimeoutRef.current)
+        window.clearTimeout(closeTimeoutRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   function toggleMobileChrome() {
     if (isClosingRef.current) {
-      return
+      return;
     }
 
     if (!window.matchMedia('(max-width: 760px)').matches) {
-      return
+      return;
     }
 
-    setIsChromeVisible((current) => !current)
+    setIsChromeVisible((current) => !current);
   }
 
   return createPortal(
@@ -117,11 +120,13 @@ export function AssetPreviewOverlay({
         role="dialog"
         aria-modal="true"
         aria-label={asset.title}
-        aria-keyshortcuts={onNavigate ? 'ArrowLeft ArrowRight Escape' : 'Escape'}
+        aria-keyshortcuts={
+          onNavigate ? 'ArrowLeft ArrowRight Escape' : 'Escape'
+        }
         onMouseDown={(event) => {
-          event.stopPropagation()
+          event.stopPropagation();
           if (event.target === event.currentTarget) {
-            requestClose()
+            requestClose();
           }
         }}
         onClick={toggleMobileChrome}
@@ -141,7 +146,7 @@ export function AssetPreviewOverlay({
                     (author.avatarCropOffsetX ?? 0) * 100
                   }%, ${(author.avatarCropOffsetY ?? 0) * 100}%) scale(${
                     author.avatarCropZoom ?? 1
-                  })`,
+                  })`
                 }}
               />
             ) : (
@@ -161,8 +166,8 @@ export function AssetPreviewOverlay({
           type="button"
           aria-label={assetPreviewCopy.aria.close}
           onClick={(event) => {
-            event.stopPropagation()
-            requestClose()
+            event.stopPropagation();
+            requestClose();
           }}
         >
           <SystemCloseIcon size="medium" />
@@ -188,16 +193,16 @@ export function AssetPreviewOverlay({
         </div>
       </section>
     </div>,
-    document.body,
-  )
+    document.body
+  );
 }
 
 function isNativeArrowKeyTarget(target: EventTarget | null) {
-  if (!(target instanceof Element)) return false
+  if (!(target instanceof Element)) return false;
 
   return Boolean(
-    target.closest('video, input, textarea, select, [contenteditable="true"]'),
-  )
+    target.closest('video, input, textarea, select, [contenteditable="true"]')
+  );
 }
 
 function formatAssetPreviewDate(value: string) {
@@ -206,6 +211,6 @@ function formatAssetPreviewDate(value: string) {
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
+    minute: '2-digit'
+  }).format(new Date(value));
 }

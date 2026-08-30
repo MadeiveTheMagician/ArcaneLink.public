@@ -1,42 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
-import * as signalR from '@microsoft/signalr'
-import { voiceDebug } from './voiceChannelDebug'
-import { resolveVoicePeerConfiguration } from './voiceChannelConfig'
-import {
-  VoiceIceCredentialsError,
-  voiceIceCredentialsClient,
-} from './voiceIceCredentialsClient'
-import { configureVoiceConnectionTimeout } from './voiceHubConnection'
-import { useLocalVoiceMedia } from './useLocalVoiceMedia'
-import { usePendingVoiceIceCandidates } from './usePendingVoiceIceCandidates'
-import { useRemoteVoiceStreams } from './useRemoteVoiceStreams'
-import { useVoiceActivityMonitor } from './useVoiceActivityMonitor'
-import { useVoiceHubConnectionLifecycle } from './useVoiceHubConnectionLifecycle'
-import { useVoiceIceCandidates } from './useVoiceIceCandidates'
-import { useVoiceLifecycle } from './useVoiceLifecycle'
-import { useVoicePeerConnections } from './useVoicePeerConnections'
-import { useVoiceConnectionDiagnostics } from './useVoiceConnectionDiagnostics'
-import { useVoicePeerOrchestrator } from './useVoicePeerOrchestrator'
-import { useVoicePeerStatuses } from './useVoicePeerStatuses'
-import { useVoiceParticipantMembership } from './useVoiceParticipantMembership'
-import { useVoiceSignalingController } from './useVoiceSignalingController'
-import { useVoiceVideoSenders } from './useVoiceVideoSenders'
-import {
-  invokeAcceptPrivateCall,
-  invokeCancelPrivateCall,
-  invokeDeclinePrivateCall,
-  invokeDisconnectVoiceParticipant,
-  invokeGetVoiceChannelState,
-  invokeGetPrivateCallState,
-  invokeJoinVoiceChannel,
-  invokeStartPrivateCall,
-  invokeUpdateVoiceParticipantModeration,
-  leaveStaleVoiceJoin,
-  leavePreviousVoiceChannelAfterFailedSwitch,
-  prepareVoiceJoinMedia,
-  waitForConnected,
-} from './voiceHubCommands'
-import { scheduleMissingRemoteVideoRecovery } from './voiceRemoteVideoRecovery'
+import { useEffect, useRef, useState } from 'react';
+
+import * as signalR from '@microsoft/signalr';
+
+import { voiceCopy } from '../../../shared/index';
+import { useVoiceSettings } from '../../../shared/voice/useVoiceSettings';
+import { createVoiceConnectionCuePlayer } from '../../../shared/voice/voiceConnectionCue';
+import { requestVoicePlaybackUnlock } from '../../../shared/voice/voicePlaybackUnlock';
+import { shouldDisconnectForPrivateCallState } from './privateCallModel';
+import { useLocalVoiceMedia } from './useLocalVoiceMedia';
+import { usePendingVoiceIceCandidates } from './usePendingVoiceIceCandidates';
+import { usePrivateCallLifecycle } from './usePrivateCallLifecycle';
+import { useRemoteVoiceStreams } from './useRemoteVoiceStreams';
+import { useVoiceActivityMonitor } from './useVoiceActivityMonitor';
+import { useVoiceConnectionDiagnostics } from './useVoiceConnectionDiagnostics';
+import { useVoiceHubConnectionLifecycle } from './useVoiceHubConnectionLifecycle';
+import { useVoiceIceCandidates } from './useVoiceIceCandidates';
+import { useVoiceLifecycle } from './useVoiceLifecycle';
+import { useVoiceParticipantMembership } from './useVoiceParticipantMembership';
+import { useVoicePeerConnections } from './useVoicePeerConnections';
+import { useVoicePeerOrchestrator } from './useVoicePeerOrchestrator';
+import { useVoicePeerStatuses } from './useVoicePeerStatuses';
+import { useVoiceSignalingController } from './useVoiceSignalingController';
+import { useVoiceVideoSenders } from './useVoiceVideoSenders';
+import { resolveVoicePeerConfiguration } from './voiceChannelConfig';
+import { voiceDebug } from './voiceChannelDebug';
 import type {
   ConnectedVoiceChannel,
   PrivateCallJoinResult,
@@ -44,91 +31,101 @@ import type {
   VoiceAccessRevokedPayload,
   VoiceConnectionReplacedPayload,
   VoiceLifecycleState,
-  VoiceParticipant,
-} from './voiceChannelTypes'
-import { normalizeUserId } from './voiceChannelUtils'
-import { voiceCopy } from '../../../shared/index'
-import { useVoiceSettings } from '../../../shared/voice/useVoiceSettings'
-import { createVoiceConnectionCuePlayer } from '../../../shared/voice/voiceConnectionCue'
-import { usePrivateCallLifecycle } from './usePrivateCallLifecycle'
-import { shouldDisconnectForPrivateCallState } from './privateCallModel'
-import { requestVoicePlaybackUnlock } from '../../../shared/voice/voicePlaybackUnlock'
+  VoiceParticipant
+} from './voiceChannelTypes';
+import { normalizeUserId } from './voiceChannelUtils';
 import {
   resolvePendingVoiceAccessRevocations,
-  resolvePendingVoiceConnectionReplacements,
-} from './voiceConnectionReplacementModel'
+  resolvePendingVoiceConnectionReplacements
+} from './voiceConnectionReplacementModel';
+import {
+  invokeAcceptPrivateCall,
+  invokeCancelPrivateCall,
+  invokeDeclinePrivateCall,
+  invokeDisconnectVoiceParticipant,
+  invokeGetPrivateCallState,
+  invokeGetVoiceChannelState,
+  invokeJoinVoiceChannel,
+  invokeStartPrivateCall,
+  invokeUpdateVoiceParticipantModeration,
+  leavePreviousVoiceChannelAfterFailedSwitch,
+  leaveStaleVoiceJoin,
+  prepareVoiceJoinMedia,
+  waitForConnected
+} from './voiceHubCommands';
+import { configureVoiceConnectionTimeout } from './voiceHubConnection';
+import {
+  VoiceIceCredentialsError,
+  voiceIceCredentialsClient
+} from './voiceIceCredentialsClient';
+import { scheduleMissingRemoteVideoRecovery } from './voiceRemoteVideoRecovery';
 import {
   createVoiceStateUpdateSynchronizer,
-  enqueueAcceptedVoiceGenerationState,
-} from './voiceStateUpdateSynchronizer'
+  enqueueAcceptedVoiceGenerationState
+} from './voiceStateUpdateSynchronizer';
+
 export type {
   ConnectedVoiceChannel,
   VoiceConnectionDiagnostics,
   VoiceLifecycleState,
   VoiceParticipant,
   VoicePeerConnectionDiagnostics,
-  VoicePeerStatus,
-} from './voiceChannelTypes'
-export type { VoiceNoiseSuppressionTelemetry } from './voiceNoiseSuppressionModel'
+  VoicePeerStatus
+} from './voiceChannelTypes';
+export type { VoiceNoiseSuppressionTelemetry } from './voiceNoiseSuppressionModel';
 
-export function useVoiceChannel(
-  accessToken: string,
-  currentUserId: string,
-) {
-  const normalizedCurrentUserId = normalizeUserId(currentUserId)
+export function useVoiceChannel(accessToken: string, currentUserId: string) {
+  const normalizedCurrentUserId = normalizeUserId(currentUserId);
   const getPeerConfiguration = () =>
     resolveVoicePeerConfiguration({
       accessToken,
-      cacheScope: normalizedCurrentUserId,
-    })
+      cacheScope: normalizedCurrentUserId
+    });
   useEffect(
     () => () => voiceIceCredentialsClient.clear(),
-    [normalizedCurrentUserId],
-  )
-  const connectionRef = useRef<signalR.HubConnection | null>(null)
-  const connectedChannelRef = useRef<ConnectedVoiceChannel | null>(null)
+    [normalizedCurrentUserId]
+  );
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const connectedChannelRef = useRef<ConnectedVoiceChannel | null>(null);
   const connectionCuePlayerRef = useRef<ReturnType<
     typeof createVoiceConnectionCuePlayer
-  > | null>(null)
-  const privateCallConnectedCueIdsRef = useRef(new Set<string>())
-  const localParticipantIdRef = useRef<string | null>(null)
-  const localPrivateCallIdRef = useRef<string | null>(null)
+  > | null>(null);
+  const privateCallConnectedCueIdsRef = useRef(new Set<string>());
+  const localParticipantIdRef = useRef<string | null>(null);
+  const localPrivateCallIdRef = useRef<string | null>(null);
   const pendingConnectionReplacementsRef = useRef<
     VoiceConnectionReplacedPayload[]
-  >([])
-  const pendingVoiceAccessRevocationsRef = useRef<
-    VoiceAccessRevokedPayload[]
-  >([])
+  >([]);
+  const pendingVoiceAccessRevocationsRef = useRef<VoiceAccessRevokedPayload[]>(
+    []
+  );
   const voiceStateUpdateSynchronizerRef = useRef<ReturnType<
     typeof createVoiceStateUpdateSynchronizer
-  > | null>(null)
-  const remoteVideoRecoveryLastAttemptRef = useRef<Record<string, number>>({})
+  > | null>(null);
+  const remoteVideoRecoveryLastAttemptRef = useRef<Record<string, number>>({});
   const [connectedChannel, setConnectedChannel] =
-    useState<ConnectedVoiceChannel | null>(null)
+    useState<ConnectedVoiceChannel | null>(null);
   const [connectionTargetChannel, setConnectionTargetChannel] =
-    useState<ConnectedVoiceChannel | null>(null)
-  const { settings: voiceSettings } = useVoiceSettings()
-  const voiceSettingsRef = useRef(voiceSettings)
-  const {
-    peerStatusesByParticipantId,
-    setPeerStatus,
-    removePeerStatus,
-  } = useVoicePeerStatuses()
+    useState<ConnectedVoiceChannel | null>(null);
+  const { settings: voiceSettings } = useVoiceSettings();
+  const voiceSettingsRef = useRef(voiceSettings);
+  const { peerStatusesByParticipantId, setPeerStatus, removePeerStatus } =
+    useVoicePeerStatuses();
   const {
     remoteStreamsByParticipantId,
     getRemoteStream,
     hasRemoteStream,
     setRemoteStream,
     removeRemoteStream,
-    clearRemoteStreams,
-  } = useRemoteVoiceStreams()
+    clearRemoteStreams
+  } = useRemoteVoiceStreams();
   const {
     speakingParticipantIds,
     resumeVoiceActivityAudioContext,
     startVoiceActivityMonitor,
     stopVoiceActivityMonitor,
-    clearSpeakingParticipants,
-  } = useVoiceActivityMonitor()
+    clearSpeakingParticipants
+  } = useVoiceActivityMonitor();
   const {
     voiceLifecycleState,
     isVoiceConnecting,
@@ -136,23 +133,17 @@ export function useVoiceChannel(
     invalidateVoiceOperations,
     isCurrentVoiceOperation,
     setVoiceLifecycle,
-    getCurrentVoiceOperationId,
-  } = useVoiceLifecycle()
-  const {
-    rememberCandidateType,
-    getCandidateTypes,
-    forgetCandidateTypes,
-  } = useVoiceIceCandidates()
+    getCurrentVoiceOperationId
+  } = useVoiceLifecycle();
+  const { rememberCandidateType, getCandidateTypes, forgetCandidateTypes } =
+    useVoiceIceCandidates();
   const {
     queuePendingIceCandidate,
     getPendingIceCandidates,
-    forgetPendingIceCandidates,
-  } = usePendingVoiceIceCandidates()
-  const {
-    setVideoSender,
-    getVideoSender,
-    removeVideoSender,
-  } = useVoiceVideoSenders()
+    forgetPendingIceCandidates
+  } = usePendingVoiceIceCandidates();
+  const { setVideoSender, getVideoSender, removeVideoSender } =
+    useVoiceVideoSenders();
   const {
     getPeerConnection,
     hasPeerConnection,
@@ -160,21 +151,21 @@ export function useVoiceChannel(
     getPeerConnectionIds,
     getPeerConnectionsSnapshot,
     isCurrentPeerConnection,
-    closePeerConnection,
-  } = useVoicePeerConnections()
+    closePeerConnection
+  } = useVoicePeerConnections();
   const connectionDiagnostics = useVoiceConnectionDiagnostics({
     connectedChannel,
     connectionTargetChannel,
     lifecycleState: voiceLifecycleState,
     voiceSettings,
     getPeerConnection,
-    getPeerConnectionsSnapshot,
-  })
-  const [voiceError, setVoiceError] = useState<string | null>(null)
+    getPeerConnectionsSnapshot
+  });
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   function getConnectionCuePlayer() {
-    connectionCuePlayerRef.current ??= createVoiceConnectionCuePlayer()
-    return connectionCuePlayerRef.current
+    connectionCuePlayerRef.current ??= createVoiceConnectionCuePlayer();
+    return connectionCuePlayerRef.current;
   }
 
   function getVoiceStateUpdateSynchronizer() {
@@ -186,9 +177,9 @@ export function useVoiceChannel(
           normalizeUserId(connectedChannelRef.current?.spaceId ?? '') ===
             normalizeUserId(spaceId),
         send: async (request) => {
-          const connection = connectionRef.current
+          const connection = connectionRef.current;
           if (connection?.state !== signalR.HubConnectionState.Connected) {
-            throw new Error('Voice transport is not connected.')
+            throw new Error('Voice transport is not connected.');
           }
           await connection.invoke<boolean>(
             'UpdateVoiceState',
@@ -197,29 +188,29 @@ export function useVoiceChannel(
             request.isDeafened,
             request.isCameraEnabled,
             request.isScreenSharing,
-            request.participantId,
-          )
-        },
-      })
-    return voiceStateUpdateSynchronizerRef.current
+            request.participantId
+          );
+        }
+      });
+    return voiceStateUpdateSynchronizerRef.current;
   }
 
   function playPrivateCallConnectedCue(call: PrivateCallState) {
-    const channel = connectedChannelRef.current
+    const channel = connectedChannelRef.current;
     if (
       channel?.channelScope !== 'private' ||
       channel.spaceId.toLowerCase() !== call.spaceId.toLowerCase() ||
       !localParticipantIdRef.current ||
       !call.participantUserIds.some(
-        (userId) => normalizeUserId(userId) === normalizedCurrentUserId,
+        (userId) => normalizeUserId(userId) === normalizedCurrentUserId
       ) ||
       privateCallConnectedCueIdsRef.current.has(call.callId.toLowerCase())
     ) {
-      return
+      return;
     }
 
-    privateCallConnectedCueIdsRef.current.add(call.callId.toLowerCase())
-    void getConnectionCuePlayer().play('connected', voiceSettingsRef.current)
+    privateCallConnectedCueIdsRef.current.add(call.callId.toLowerCase());
+    void getConnectionCuePlayer().play('connected', voiceSettingsRef.current);
   }
 
   const privateCallLifecycle = usePrivateCallLifecycle({
@@ -229,13 +220,13 @@ export function useVoiceChannel(
       connectedChannel?.channelScope === 'private'
         ? connectedChannel.spaceId
         : null,
-    onCallBecameActive: playPrivateCallConnectedCue,
-  })
+    onCallBecameActive: playPrivateCallConnectedCue
+  });
 
   function handlePrivateCallState(call: PrivateCallState) {
-    privateCallLifecycle.applyPrivateCallState(call)
+    privateCallLifecycle.applyPrivateCallState(call);
     if (call.phase === 'ended') {
-      privateCallConnectedCueIdsRef.current.delete(call.callId.toLowerCase())
+      privateCallConnectedCueIdsRef.current.delete(call.callId.toLowerCase());
     }
     if (
       localPrivateCallIdRef.current?.toLowerCase() ===
@@ -244,27 +235,27 @@ export function useVoiceChannel(
         call,
         connectedChannelRef.current?.channelScope === 'private'
           ? connectedChannelRef.current.spaceId
-          : null,
+          : null
       )
     ) {
-      const operationId = beginVoiceOperation('leaving')
-      void disconnectLocalVoiceSession(operationId, 'idle')
+      const operationId = beginVoiceOperation('leaving');
+      void disconnectLocalVoiceSession(operationId, 'idle');
     }
   }
 
   useEffect(() => {
-    voiceSettingsRef.current = voiceSettings
-  }, [voiceSettings])
+    voiceSettingsRef.current = voiceSettings;
+  }, [voiceSettings]);
 
   useEffect(() => {
     return () => {
-      const cuePlayer = connectionCuePlayerRef.current
-      connectionCuePlayerRef.current = null
-      void cuePlayer?.dispose()
-      voiceStateUpdateSynchronizerRef.current?.dispose()
-      voiceStateUpdateSynchronizerRef.current = null
-    }
-  }, [])
+      const cuePlayer = connectionCuePlayerRef.current;
+      connectionCuePlayerRef.current = null;
+      void cuePlayer?.dispose();
+      voiceStateUpdateSynchronizerRef.current?.dispose();
+      voiceStateUpdateSynchronizerRef.current = null;
+    };
+  }, []);
   const {
     localCameraPreviewStream,
     localScreenPreviewStream,
@@ -289,7 +280,7 @@ export function useVoiceChannel(
     enableScreenShare,
     disableScreenShare,
     toggleScreenShare,
-    replaceVideoTrackForPeer,
+    replaceVideoTrackForPeer
   } = useLocalVoiceMedia({
     currentUserId: normalizedCurrentUserId,
     getLocalParticipantId: () => localParticipantIdRef.current,
@@ -302,10 +293,10 @@ export function useVoiceChannel(
       isMuted,
       isDeafened,
       isCameraEnabled,
-      isScreenSharing,
+      isScreenSharing
     }) => {
-      const channel = connectedChannelRef.current
-      const participantId = localParticipantIdRef.current
+      const channel = connectedChannelRef.current;
+      const participantId = localParticipantIdRef.current;
       if (channel && participantId) {
         getVoiceStateUpdateSynchronizer().enqueue({
           participantId,
@@ -313,16 +304,16 @@ export function useVoiceChannel(
           isMuted,
           isDeafened,
           isCameraEnabled,
-          isScreenSharing,
-        })
+          isScreenSharing
+        });
       }
     },
     startVoiceActivityMonitor,
     resumeVoiceActivityAudioContext,
     stopVoiceActivityMonitor,
     clearRemoteStreams,
-    clearSpeakingParticipants,
-  })
+    clearSpeakingParticipants
+  });
   const {
     localParticipantId,
     participantsBySpaceId,
@@ -332,15 +323,15 @@ export function useVoiceChannel(
     markSpaceStale,
     markSpaceFresh,
     removeCurrentUserFromSpace,
-    sanitizeVoiceParticipants,
+    sanitizeVoiceParticipants
   } = useVoiceParticipantMembership({
     currentUserId: normalizedCurrentUserId,
     localParticipantIdRef,
     getConnectedChannel: () => connectedChannelRef.current,
     getLocalActivityStream,
     startVoiceActivityMonitor: startLocalVoiceActivityMonitor,
-    stopVoiceActivityMonitor,
-  })
+    stopVoiceActivityMonitor
+  });
   const {
     syncPeers,
     ensurePeerConnection,
@@ -348,7 +339,7 @@ export function useVoiceChannel(
     recoverPeer,
     closePeerIfCurrent,
     closeAllPeers,
-    updatePeerStatus,
+    updatePeerStatus
   } = useVoicePeerOrchestrator({
     getChannel: () => connectedChannelRef.current,
     getLocalParticipantId: () => localParticipantIdRef.current,
@@ -380,12 +371,9 @@ export function useVoiceChannel(
     removeVideoSender,
     setPeerStatus,
     removePeerStatus,
-    setVoiceError,
-  })
-  const {
-    handleVoiceSignal,
-    sendVoiceSignal,
-  } = useVoiceSignalingController({
+    setVoiceError
+  });
+  const { handleVoiceSignal, sendVoiceSignal } = useVoiceSignalingController({
     getChannel: () => connectedChannelRef.current,
     getConnection: () => connectionRef.current,
     getLocalParticipantId: () => localParticipantIdRef.current,
@@ -399,12 +387,12 @@ export function useVoiceChannel(
     forgetPendingIceCandidates,
     rememberCandidateType,
     updatePeerStatus,
-    setVoiceError,
-  })
+    setVoiceError
+  });
 
   function recoverMissingRemoteVideo(
     spaceId: string,
-    participants: VoiceParticipant[],
+    participants: VoiceParticipant[]
   ) {
     scheduleMissingRemoteVideoRecovery({
       spaceId,
@@ -417,87 +405,87 @@ export function useVoiceChannel(
       getRemoteStream,
       hasPeerConnection,
       renegotiatePeer,
-      debug: voiceDebug,
-    })
+      debug: voiceDebug
+    });
   }
 
   async function disconnectLocalVoiceSession(
     operationId = getCurrentVoiceOperationId(),
-    nextState: VoiceLifecycleState = 'idle',
+    nextState: VoiceLifecycleState = 'idle'
   ) {
     if (!isCurrentVoiceOperation(operationId)) {
-      return
+      return;
     }
 
-    const channel = connectedChannelRef.current
-    const localPrivateCallId = localPrivateCallIdRef.current
-    const hadActiveSession = Boolean(channel && localParticipantIdRef.current)
-    pendingConnectionReplacementsRef.current = []
-    pendingVoiceAccessRevocationsRef.current = []
-    voiceStateUpdateSynchronizerRef.current?.invalidate()
+    const channel = connectedChannelRef.current;
+    const localPrivateCallId = localPrivateCallIdRef.current;
+    const hadActiveSession = Boolean(channel && localParticipantIdRef.current);
+    pendingConnectionReplacementsRef.current = [];
+    pendingVoiceAccessRevocationsRef.current = [];
+    voiceStateUpdateSynchronizerRef.current?.invalidate();
     if (channel) {
-      markSpaceStale(channel.spaceId)
-      removeCurrentUserFromSpace(channel.spaceId)
+      markSpaceStale(channel.spaceId);
+      removeCurrentUserFromSpace(channel.spaceId);
     }
-    connectedChannelRef.current = null
-    localPrivateCallIdRef.current = null
+    connectedChannelRef.current = null;
+    localPrivateCallIdRef.current = null;
     if (localPrivateCallId) {
       privateCallConnectedCueIdsRef.current.delete(
-        localPrivateCallId.toLowerCase(),
-      )
+        localPrivateCallId.toLowerCase()
+      );
     }
-    setConnectionTargetChannel(null)
-    setLocalVoiceParticipantId(null)
-    setConnectedChannel(null)
-    remoteVideoRecoveryLastAttemptRef.current = {}
-    closeAllPeers()
-    await disableCamera()
-    await disableScreenShare()
-    stopLocalStream()
-    setVoiceLifecycle(nextState)
+    setConnectionTargetChannel(null);
+    setLocalVoiceParticipantId(null);
+    setConnectedChannel(null);
+    remoteVideoRecoveryLastAttemptRef.current = {};
+    closeAllPeers();
+    await disableCamera();
+    await disableScreenShare();
+    stopLocalStream();
+    setVoiceLifecycle(nextState);
     if (hadActiveSession) {
       void getConnectionCuePlayer().play(
         'disconnected',
-        voiceSettingsRef.current,
-      )
+        voiceSettingsRef.current
+      );
     }
   }
 
   async function acceptLocalVoiceParticipantId(participantId: string) {
-    setLocalVoiceParticipantId(participantId)
+    setLocalVoiceParticipantId(participantId);
     const wasReplaced = resolvePendingVoiceConnectionReplacements(
       pendingConnectionReplacementsRef.current,
-      participantId,
-    )
-    pendingConnectionReplacementsRef.current = []
+      participantId
+    );
+    pendingConnectionReplacementsRef.current = [];
     const wasRevoked = resolvePendingVoiceAccessRevocations(
       pendingVoiceAccessRevocationsRef.current,
       connectedChannelRef.current,
-      participantId,
-    )
-    pendingVoiceAccessRevocationsRef.current = []
+      participantId
+    );
+    pendingVoiceAccessRevocationsRef.current = [];
     if (!wasReplaced && !wasRevoked) {
-      const channel = connectedChannelRef.current
+      const channel = connectedChannelRef.current;
       if (channel) {
         enqueueAcceptedVoiceGenerationState(
           getVoiceStateUpdateSynchronizer(),
           participantId,
           channel.spaceId,
-          getLocalVoiceState,
-        )
+          getLocalVoiceState
+        );
       }
-      return false
+      return false;
     }
 
     voiceDebug(
       wasRevoked
         ? 'channel:pending-access-revocation-matched'
         : 'channel:pending-replacement-matched',
-      { participantId },
-    )
-    const replacementOperationId = beginVoiceOperation('leaving')
-    await disconnectLocalVoiceSession(replacementOperationId, 'idle')
-    return true
+      { participantId }
+    );
+    const replacementOperationId = beginVoiceOperation('leaving');
+    await disconnectLocalVoiceSession(replacementOperationId, 'idle');
+    return true;
   }
 
   useVoiceHubConnectionLifecycle({
@@ -534,57 +522,58 @@ export function useVoiceChannel(
     onIncomingPrivateCallsSnapshot:
       privateCallLifecycle.replaceIncomingPrivateCalls,
     onLocalPrivateCallRestored: (call) => {
-      localPrivateCallIdRef.current = call.callId
-    },
-  })
+      localPrivateCallIdRef.current = call.callId;
+    }
+  });
 
   async function ensureConnection() {
-    const connection = connectionRef.current
+    const connection = connectionRef.current;
     if (!connection) {
-      return null
+      return null;
     }
 
     if (connection.state === signalR.HubConnectionState.Connected) {
-      return connection
+      return connection;
     }
 
     if (connection.state === signalR.HubConnectionState.Disconnected) {
-      await connection.start()
+      await connection.start();
     }
 
     if (
       connection.state === signalR.HubConnectionState.Connecting ||
       connection.state === signalR.HubConnectionState.Reconnecting
     ) {
-      await waitForConnected(connection)
+      await waitForConnected(connection);
     }
 
-    const state = connection.state as signalR.HubConnectionState
+    const state = connection.state as signalR.HubConnectionState;
 
-    return state === signalR.HubConnectionState.Connected
-      ? connection
-      : null
+    return state === signalR.HubConnectionState.Connected ? connection : null;
   }
 
-  async function refreshServerVoiceStates(serverId: string, spaceIds: string[]) {
-    const uniqueSpaceIds = Array.from(new Set(spaceIds.filter(Boolean)))
+  async function refreshServerVoiceStates(
+    serverId: string,
+    spaceIds: string[]
+  ) {
+    const uniqueSpaceIds = Array.from(new Set(spaceIds.filter(Boolean)));
     if (uniqueSpaceIds.length === 0) {
-      return
+      return;
     }
 
-    let connection: signalR.HubConnection | null
+    let connection: signalR.HubConnection | null;
     try {
-      connection = await ensureConnection()
+      connection = await ensureConnection();
     } catch (error) {
       voiceDebug('state:refresh-connection-failed', {
         serverId,
-        message: error instanceof Error ? error.message : String(error),
-      })
-      return
+        message: error instanceof Error ? error.message : String(error)
+      });
+      return;
     }
 
     if (!connection) {
-      return
+      return;
     }
 
     await Promise.all(
@@ -593,54 +582,52 @@ export function useVoiceChannel(
           serverId,
           spaceId,
           title: '',
-          channelScope: 'server',
+          channelScope: 'server'
         }).catch((error) => {
           voiceDebug('state:refresh-failed', {
             serverId,
             spaceId,
-            message: error instanceof Error ? error.message : String(error),
-          })
-        }),
-      ),
-    )
+            message: error instanceof Error ? error.message : String(error)
+          });
+        })
+      )
+    );
   }
 
   async function connectVoiceChannel(
     channel: ConnectedVoiceChannel,
-    explicitPrivateCallId?: string,
+    explicitPrivateCallId?: string
   ) {
-    let operationConnection: signalR.HubConnection | null = null
-    let joinedParticipant = false
-    requestVoicePlaybackUnlock()
-    const cuePlayer = getConnectionCuePlayer()
-    const previousChannel = connectedChannelRef.current
+    let operationConnection: signalR.HubConnection | null = null;
+    let joinedParticipant = false;
+    requestVoicePlaybackUnlock();
+    const cuePlayer = getConnectionCuePlayer();
+    const previousChannel = connectedChannelRef.current;
     const isSwitchingVoiceChannel = Boolean(
-      previousChannel && previousChannel.spaceId !== channel.spaceId,
-    )
+      previousChannel && previousChannel.spaceId !== channel.spaceId
+    );
     if (isSwitchingVoiceChannel) {
       // A direct channel switch has no leave cue. Stop any remaining entrance
       // tail before the next join so two cues can never overlap.
-      cuePlayer.stop()
+      cuePlayer.stop();
     }
-    cuePlayer.prime(voiceSettingsRef.current)
+    cuePlayer.prime(voiceSettingsRef.current);
     if (channel.channelScope === 'private') {
-      privateCallLifecycle.primePrivateCallAudio()
+      privateCallLifecycle.primePrivateCallAudio();
     }
-    setConnectionTargetChannel(channel)
+    setConnectionTargetChannel(channel);
     const operationId = beginVoiceOperation(
-      isSwitchingVoiceChannel
-        ? 'switching'
-        : 'joining',
-    )
+      isSwitchingVoiceChannel ? 'switching' : 'joining'
+    );
     if (isSwitchingVoiceChannel) {
       // Enter queue mode until the server returns this generation's id. An old
       // replacement event must not compare against the previous channel's id.
-      pendingConnectionReplacementsRef.current = []
-      pendingVoiceAccessRevocationsRef.current = []
-      voiceStateUpdateSynchronizerRef.current?.invalidate()
-      setLocalVoiceParticipantId(null)
+      pendingConnectionReplacementsRef.current = [];
+      pendingVoiceAccessRevocationsRef.current = [];
+      voiceStateUpdateSynchronizerRef.current?.invalidate();
+      setLocalVoiceParticipantId(null);
     }
-    setVoiceError(null)
+    setVoiceError(null);
 
     try {
       // Start media capture while the join/accept click still owns browser user
@@ -650,100 +637,102 @@ export function useVoiceChannel(
       // before any participant joins without delaying browser media activation.
       const [preparedJoin] = await Promise.all([
         prepareVoiceJoinMedia(ensureConnection, ensureLocalStream),
-        getPeerConfiguration(),
-      ])
-      const connection = preparedJoin.connection
-      operationConnection = connection
+        getPeerConfiguration()
+      ]);
+      const connection = preparedJoin.connection;
+      operationConnection = connection;
       if (preparedJoin.error) {
-        throw preparedJoin.error
+        throw preparedJoin.error;
       }
       if (!isCurrentVoiceOperation(operationId)) {
-        return
+        return;
       }
       if (!connection) {
-        throw new Error(voiceCopy.errors.microphoneConnectFailed)
+        throw new Error(voiceCopy.errors.microphoneConnectFailed);
       }
 
       if (previousChannel && previousChannel.spaceId !== channel.spaceId) {
-        markSpaceStale(previousChannel.spaceId)
-        removeCurrentUserFromSpace(previousChannel.spaceId)
-        closeAllPeers()
+        markSpaceStale(previousChannel.spaceId);
+        removeCurrentUserFromSpace(previousChannel.spaceId);
+        closeAllPeers();
       }
-      connectedChannelRef.current = channel
-      setConnectedChannel(channel)
-      voiceDebug('channel:join', channel)
-      configureVoiceConnectionTimeout(connection, channel.channelScope)
-      const localVoiceState = getLocalVoiceState()
-      const incomingCall = channel.channelScope === 'private'
-        ? privateCallLifecycle.incomingPrivateCalls.find(
-            (call) =>
-              call.spaceId.toLowerCase() === channel.spaceId.toLowerCase(),
-          )
-        : null
+      connectedChannelRef.current = channel;
+      setConnectedChannel(channel);
+      voiceDebug('channel:join', channel);
+      configureVoiceConnectionTimeout(connection, channel.channelScope);
+      const localVoiceState = getLocalVoiceState();
+      const incomingCall =
+        channel.channelScope === 'private'
+          ? privateCallLifecycle.incomingPrivateCalls.find(
+              (call) =>
+                call.spaceId.toLowerCase() === channel.spaceId.toLowerCase()
+            )
+          : null;
       const serverCall =
         channel.channelScope === 'private' &&
         !explicitPrivateCallId &&
         !incomingCall
           ? await invokeGetPrivateCallState(connection, channel.spaceId)
-          : null
+          : null;
       if (serverCall) {
-        privateCallLifecycle.applyPrivateCallState(serverCall)
+        privateCallLifecycle.applyPrivateCallState(serverCall);
       }
       const serverIncomingCallId = serverCall?.ringingUserIds.some(
-        (userId) => normalizeUserId(userId) === normalizedCurrentUserId,
+        (userId) => normalizeUserId(userId) === normalizedCurrentUserId
       )
         ? serverCall.callId
-        : null
+        : null;
       const privateCallId =
-        explicitPrivateCallId ?? incomingCall?.callId ?? serverIncomingCallId
+        explicitPrivateCallId ?? incomingCall?.callId ?? serverIncomingCallId;
       const privateCallResult: PrivateCallJoinResult | null =
         channel.channelScope === 'private'
           ? await (privateCallId
-            ? invokeAcceptPrivateCall(
-                connection,
-                channel.spaceId,
-                privateCallId,
-                localVoiceState,
-              )
-            : invokeStartPrivateCall(
-                connection,
-                channel.spaceId,
-                localVoiceState,
-              ))
-          : null
-      const participantId = privateCallResult?.participantId ??
+              ? invokeAcceptPrivateCall(
+                  connection,
+                  channel.spaceId,
+                  privateCallId,
+                  localVoiceState
+                )
+              : invokeStartPrivateCall(
+                  connection,
+                  channel.spaceId,
+                  localVoiceState
+                ))
+          : null;
+      const participantId =
+        privateCallResult?.participantId ??
         (channel.channelScope === 'server'
           ? await invokeJoinVoiceChannel(connection, channel, localVoiceState)
-          : null)
-      joinedParticipant = Boolean(participantId)
+          : null);
+      joinedParticipant = Boolean(participantId);
       if (!isCurrentVoiceOperation(operationId)) {
         if (
           participantId &&
           connection.state === signalR.HubConnectionState.Connected
         ) {
-          await leaveStaleVoiceJoin(connection, channel)
+          await leaveStaleVoiceJoin(connection, channel);
         }
-        return
+        return;
       }
 
       if (!participantId) {
-        await disconnectLocalVoiceSession(operationId, 'error')
-        setVoiceError(voiceCopy.errors.joinFailed)
-        throw new Error(voiceCopy.errors.joinFailed)
+        await disconnectLocalVoiceSession(operationId, 'error');
+        setVoiceError(voiceCopy.errors.joinFailed);
+        throw new Error(voiceCopy.errors.joinFailed);
       }
 
       if (await acceptLocalVoiceParticipantId(participantId)) {
-        return false
+        return false;
       }
       if (channel.channelScope === 'server') {
-        localPrivateCallIdRef.current = null
+        localPrivateCallIdRef.current = null;
       }
       if (privateCallResult) {
-        localPrivateCallIdRef.current = privateCallResult.callId
+        localPrivateCallIdRef.current = privateCallResult.callId;
         const authoritativeCall = await invokeGetPrivateCallState(
           connection,
-          channel.spaceId,
-        )
+          channel.spaceId
+        );
         if (
           !authoritativeCall ||
           authoritativeCall.callId.toLowerCase() !==
@@ -753,149 +742,156 @@ export function useVoiceChannel(
           if (connection.state === signalR.HubConnectionState.Connected) {
             await connection
               .invoke('LeaveVoiceChannel', channel.spaceId)
-              .catch(() => undefined)
+              .catch(() => undefined);
             await leavePreviousVoiceChannelAfterFailedSwitch(
               connection,
               previousChannel,
-              channel,
-            )
+              channel
+            );
           }
-          joinedParticipant = false
-          await disconnectLocalVoiceSession(operationId, 'idle')
-          setVoiceError(voiceCopy.errors.joinFailed)
-          return false
+          joinedParticipant = false;
+          await disconnectLocalVoiceSession(operationId, 'idle');
+          setVoiceError(voiceCopy.errors.joinFailed);
+          return false;
         }
-        privateCallLifecycle.applyPrivateCallState(authoritativeCall)
+        privateCallLifecycle.applyPrivateCallState(authoritativeCall);
         if (authoritativeCall.phase === 'active') {
-          playPrivateCallConnectedCue(authoritativeCall)
+          playPrivateCallConnectedCue(authoritativeCall);
         }
       }
-      await invokeGetVoiceChannelState(connection, channel)
+      await invokeGetVoiceChannelState(connection, channel);
       if (isCurrentVoiceOperation(operationId)) {
-        markSpaceFresh(channel.spaceId)
-        setVoiceLifecycle('connected')
-        setConnectionTargetChannel(null)
+        markSpaceFresh(channel.spaceId);
+        setVoiceLifecycle('connected');
+        setConnectionTargetChannel(null);
         if (privateCallResult?.phase === 'active') {
-          playPrivateCallConnectedCue(privateCallResult.call)
+          playPrivateCallConnectedCue(privateCallResult.call);
         } else if (channel.channelScope === 'server') {
-          void cuePlayer.play('connected', voiceSettingsRef.current)
+          void cuePlayer.play('connected', voiceSettingsRef.current);
         }
-        return true
+        return true;
       }
-      return false
+      return false;
     } catch (error) {
       if (!isCurrentVoiceOperation(operationId)) {
-        return
+        return;
       }
 
-      const cleanupConnection = operationConnection ?? connectionRef.current
+      const cleanupConnection = operationConnection ?? connectionRef.current;
       if (cleanupConnection?.state === signalR.HubConnectionState.Connected) {
         if (joinedParticipant) {
           await cleanupConnection
             .invoke('LeaveVoiceChannel', channel.spaceId)
-            .catch(() => undefined)
+            .catch(() => undefined);
         }
         await leavePreviousVoiceChannelAfterFailedSwitch(
           cleanupConnection,
           previousChannel,
-          channel,
-        )
+          channel
+        );
       }
 
-      await disconnectLocalVoiceSession(operationId, 'error')
+      await disconnectLocalVoiceSession(operationId, 'error');
       setVoiceError(
         error instanceof VoiceIceCredentialsError
           ? voiceCopy.errors.turnCredentialsUnavailable
           : error instanceof Error
-          ? error.message
-          : voiceCopy.errors.microphoneConnectFailed,
-      )
-      return false
+            ? error.message
+            : voiceCopy.errors.microphoneConnectFailed
+      );
+      return false;
     }
   }
 
   async function leaveVoiceChannel() {
-    const operationId = beginVoiceOperation('leaving')
-    setConnectionTargetChannel(null)
-    const channel = connectedChannelRef.current
-    const connection = connectionRef.current
+    const operationId = beginVoiceOperation('leaving');
+    setConnectionTargetChannel(null);
+    const channel = connectedChannelRef.current;
+    const connection = connectionRef.current;
 
     if (channel) {
-      markSpaceStale(channel.spaceId)
-      removeCurrentUserFromSpace(channel.spaceId)
+      markSpaceStale(channel.spaceId);
+      removeCurrentUserFromSpace(channel.spaceId);
     }
 
     try {
-      if (channel && connection?.state === signalR.HubConnectionState.Connected) {
-        voiceDebug('channel:leave', channel)
+      if (
+        channel &&
+        connection?.state === signalR.HubConnectionState.Connected
+      ) {
+        voiceDebug('channel:leave', channel);
         if (channel.channelScope === 'private') {
           const outgoingCall = privateCallLifecycle.privateCalls.find(
             (call) =>
               call.spaceId.toLowerCase() === channel.spaceId.toLowerCase() &&
               call.phase === 'ringing' &&
               normalizeUserId(call.caller.userId) === normalizedCurrentUserId &&
-              call.ringingUserIds.length > 0,
-          )
+              call.ringingUserIds.length > 0
+          );
           if (outgoingCall) {
             const cancelled = await invokeCancelPrivateCall(
               connection,
               channel.spaceId,
-              outgoingCall.callId,
-            ).catch(() => false)
+              outgoingCall.callId
+            ).catch(() => false);
             if (cancelled) {
-              privateCallLifecycle.dismissPrivateCall(outgoingCall.callId)
+              privateCallLifecycle.dismissPrivateCall(outgoingCall.callId);
             }
           }
         }
-        await connection.invoke('LeaveVoiceChannel', channel.spaceId)
+        await connection.invoke('LeaveVoiceChannel', channel.spaceId);
       }
     } finally {
-      await disconnectLocalVoiceSession(operationId, 'idle')
+      await disconnectLocalVoiceSession(operationId, 'idle');
     }
   }
 
   async function joinVoiceChannel(channel: ConnectedVoiceChannel) {
-    await connectVoiceChannel(channel)
+    await connectVoiceChannel(channel);
   }
 
   async function acceptPrivateCall({
     callId,
     spaceId,
-    title,
+    title
   }: {
-    callId: string
-    spaceId: string
-    title: string
+    callId: string;
+    spaceId: string;
+    title: string;
   }) {
     const accepted = await connectVoiceChannel(
       { serverId: null, spaceId, title, channelScope: 'private' },
-      callId,
-    )
-    if (!accepted) throw new Error(voiceCopy.errors.joinFailed)
+      callId
+    );
+    if (!accepted) throw new Error(voiceCopy.errors.joinFailed);
   }
 
   async function declinePrivateCall(callId: string, spaceId: string) {
-    privateCallLifecycle.primePrivateCallAudio()
-    const connection = await ensureConnection()
-    if (!connection) return false
-    const declined = await invokeDeclinePrivateCall(connection, spaceId, callId)
-    if (declined) privateCallLifecycle.dismissPrivateCall(callId)
-    return declined
+    privateCallLifecycle.primePrivateCallAudio();
+    const connection = await ensureConnection();
+    if (!connection) return false;
+    const declined = await invokeDeclinePrivateCall(
+      connection,
+      spaceId,
+      callId
+    );
+    if (declined) privateCallLifecycle.dismissPrivateCall(callId);
+    return declined;
   }
 
   async function moveVoiceParticipant(
     serverId: string,
     sourceSpaceId: string,
     targetSpaceId: string,
-    participantId: string,
+    participantId: string
   ) {
     if (sourceSpaceId === targetSpaceId) {
-      return
+      return;
     }
 
-    const connection = await ensureConnection()
+    const connection = await ensureConnection();
     if (!connection) {
-      return
+      return;
     }
 
     await connection.invoke(
@@ -903,8 +899,8 @@ export function useVoiceChannel(
       serverId,
       sourceSpaceId,
       targetSpaceId,
-      participantId,
-    )
+      participantId
+    );
   }
 
   async function updateVoiceParticipantModeration({
@@ -912,17 +908,17 @@ export function useVoiceChannel(
     spaceId,
     participantId,
     isServerMuted,
-    isServerDeafened,
+    isServerDeafened
   }: {
-    serverId: string
-    spaceId: string
-    participantId: string
-    isServerMuted?: boolean
-    isServerDeafened?: boolean
+    serverId: string;
+    spaceId: string;
+    participantId: string;
+    isServerMuted?: boolean;
+    isServerDeafened?: boolean;
   }) {
-    const connection = await ensureConnection()
+    const connection = await ensureConnection();
     if (!connection) {
-      return false
+      return false;
     }
 
     return invokeUpdateVoiceParticipantModeration(connection, {
@@ -930,29 +926,29 @@ export function useVoiceChannel(
       spaceId,
       participantId,
       isServerMuted,
-      isServerDeafened,
-    })
+      isServerDeafened
+    });
   }
 
   async function disconnectVoiceParticipant({
     serverId,
     spaceId,
-    participantId,
+    participantId
   }: {
-    serverId: string
-    spaceId: string
-    participantId: string
+    serverId: string;
+    spaceId: string;
+    participantId: string;
   }) {
-    const connection = await ensureConnection()
+    const connection = await ensureConnection();
     if (!connection) {
-      return false
+      return false;
     }
 
     return invokeDisconnectVoiceParticipant(connection, {
       serverId,
       spaceId,
-      participantId,
-    })
+      participantId
+    });
   }
 
   return {
@@ -992,8 +988,8 @@ export function useVoiceChannel(
     toggleCamera,
     enableScreenShare,
     disableScreenShare,
-    toggleScreenShare,
-  }
+    toggleScreenShare
+  };
 }
 
-export type VoiceChannelController = ReturnType<typeof useVoiceChannel>
+export type VoiceChannelController = ReturnType<typeof useVoiceChannel>;

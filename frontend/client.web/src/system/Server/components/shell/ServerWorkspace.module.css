@@ -62,19 +62,20 @@
 .spacesOnly {
 }
 
-.workspace[data-members-panel-collapsed=true] {
+.workspace[data-members-panel-collapsed='true'] {
   grid-template-columns:
     calc(var(--profile-space-panel-width) * var(--profile-server-scale))
     minmax(320px, 1fr)
     0;
 }
 
-.workspace[data-members-panel-collapsed=true] > [data-members-resizer=true] {
+.workspace[data-members-panel-collapsed='true']
+  > [data-members-resizer='true'] {
   pointer-events: none;
   opacity: 0;
 }
 
-.workspace[data-pane-resizing=true] {
+.workspace[data-pane-resizing='true'] {
   transition: none;
 }
 
@@ -86,14 +87,14 @@
       54px;
   }
 
-  .workspace[data-members-panel-collapsed=true] {
+  .workspace[data-members-panel-collapsed='true'] {
     grid-template-columns:
       calc(var(--profile-space-panel-width) * var(--profile-server-scale))
       minmax(320px, 1fr)
       0;
   }
 
-  .workspace > [data-members-resizer=true] {
+  .workspace > [data-members-resizer='true'] {
     display: none;
   }
 }
@@ -124,8 +125,7 @@
 }
 
 .spaceGroup button:not(:disabled):hover {
-  filter:
-    drop-shadow(0 0 6px var(--theme-border-accent))
+  filter: drop-shadow(0 0 6px var(--theme-border-accent))
     drop-shadow(0 0 12px var(--theme-glow-strong));
 }
 
@@ -140,7 +140,11 @@
   top: 0;
   z-index: 2;
   background:
-    radial-gradient(circle at 82% 8%, var(--theme-backdrop-glow), transparent 30%),
+    radial-gradient(
+      circle at 82% 8%,
+      var(--theme-backdrop-glow),
+      transparent 30%
+    ),
     var(--theme-surface-raised);
   backdrop-filter: blur(12px);
 }
@@ -170,7 +174,9 @@
   margin: 0 24px 12px auto;
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel > .textSurface {
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  > .textSurface {
   position: relative;
   display: flex;
   height: 100%;
@@ -179,7 +185,10 @@
   overflow: hidden;
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel .textMain > header,
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  .textMain
+  > header,
 :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textComposer {
   position: static;
 }
@@ -195,47 +204,60 @@
   scrollbar-gutter: stable;
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel .textFeed::-webkit-scrollbar {
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  .textFeed::-webkit-scrollbar {
   width: 18px;
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel .textFeed::-webkit-scrollbar-button {
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  .textFeed::-webkit-scrollbar-button {
   display: none;
   width: 0;
   height: 0;
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel .textFeed::-webkit-scrollbar-track {
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  .textFeed::-webkit-scrollbar-track {
   border-radius: 999px;
   margin: 14px 4px;
-  background:
-    linear-gradient(180deg, var(--theme-scrollbar-track), color-mix(in srgb, var(--theme-scrollbar-track), #000 16%));
+  background: linear-gradient(
+    180deg,
+    var(--theme-scrollbar-track),
+    color-mix(in srgb, var(--theme-scrollbar-track), #000 16%)
+  );
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel .textFeed::-webkit-scrollbar-thumb {
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  .textFeed::-webkit-scrollbar-thumb {
   min-height: 72px;
   border: 5px solid transparent;
   border-radius: 999px;
-  background:
-    var(--theme-surface-accent-strong)
-      padding-box;
+  background: var(--theme-surface-accent-strong) padding-box;
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 80%),
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent-light), transparent 80%),
     0 0 22px var(--theme-glow-strong),
     0 0 64px var(--theme-glow);
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel .textFeed::-webkit-scrollbar-thumb:hover {
-  background:
-    var(--theme-surface-accent)
-      padding-box;
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  .textFeed::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-surface-accent) padding-box;
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-light), transparent 66%),
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--theme-accent-light), transparent 66%),
     0 0 28px var(--theme-glow-strong),
     0 0 84px var(--theme-glow);
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel .textScrollBottom {
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  .textScrollBottom {
   position: absolute;
   right: 24px;
   bottom: 82px;
@@ -243,7 +265,10 @@
   margin: 0;
 }
 
-:global(.profile-page.is-server-mode) .spaceViewport.textChannel .textMain[data-scroll-bottom-placement="above-attachment-drafts"] .textScrollBottom {
+:global(.profile-page.is-server-mode)
+  .spaceViewport.textChannel
+  .textMain[data-scroll-bottom-placement='above-attachment-drafts']
+  .textScrollBottom {
   bottom: 272px;
 }
 
@@ -363,11 +388,16 @@
     font-size: 18px;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textMain > header {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textMain
+    > header {
     display: none;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel > .textSurface {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    > .textSurface {
     display: flex;
     height: 100%;
     min-height: 0;
@@ -380,10 +410,14 @@
     overflow-y: auto;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textComposer {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textComposer {
     position: static;
     z-index: 3;
-    min-height: calc(var(--server-composer-height) + env(safe-area-inset-bottom));
+    min-height: calc(
+      var(--server-composer-height) + env(safe-area-inset-bottom)
+    );
     margin: 0 12px calc(10px + env(safe-area-inset-bottom));
     padding: var(--server-composer-padding-start) 10px
       var(--server-composer-padding-end);
@@ -393,18 +427,25 @@
     backdrop-filter: none;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .mobileSpaceToolbar {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .mobileSpaceToolbar {
     display: none;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel :global([class*="chatSurface"]) {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    :global([class*='chatSurface']) {
     width: 100%;
     min-width: 0;
     max-width: 100%;
     overflow-x: hidden;
     border: 0;
-    background:
-      linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-frame-bg),
+      var(--theme-control-bg-strong)
+    );
   }
 
   :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textSurface,
@@ -416,7 +457,10 @@
     background: var(--theme-control-bg-strong);
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textMain > header {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textMain
+    > header {
     position: relative;
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr) auto;
@@ -431,11 +475,17 @@
     overflow: visible;
     border: 0;
     padding: 8px 14px 6px 8px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-frame-bg));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-frame-bg)
+    );
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textMain > header::after {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textMain
+    > header::after {
     position: absolute;
     right: 0;
     bottom: -26px;
@@ -443,17 +493,20 @@
     z-index: 1;
     height: 26px;
     pointer-events: none;
-    content: "";
-    background:
-      linear-gradient(
-        180deg,
-        var(--theme-frame-bg) 0%,
-        color-mix(in srgb, var(--theme-frame-bg), transparent 18%) 48%,
-        transparent 100%
-      );
+    content: '';
+    background: linear-gradient(
+      180deg,
+      var(--theme-frame-bg) 0%,
+      color-mix(in srgb, var(--theme-frame-bg), transparent 18%) 48%,
+      transparent 100%
+    );
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textMain > header > div:not([class*="messageHeaderActions"]) {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textMain
+    > header
+    > div:not([class*='messageHeaderActions']) {
     display: flex;
     align-items: center;
     flex: 1 1 auto;
@@ -462,21 +515,30 @@
     margin-right: 6px;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textMain > header > div:not([class*="messageHeaderActions"]) strong {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textMain
+    > header
+    > div:not([class*='messageHeaderActions'])
+    strong {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .messageHeaderActions {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .messageHeaderActions {
     display: inline-flex;
     flex: 0 0 auto;
     justify-self: end;
     margin-left: 0;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .serverTextBack {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .serverTextBack {
     display: grid;
     width: 38px;
     min-height: 38px;
@@ -489,7 +551,10 @@
     box-shadow: none;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .serverTextBack svg {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .serverTextBack
+    svg {
     width: 24px;
     height: 24px;
     fill: none;
@@ -497,16 +562,21 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 2.15;
-    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--theme-accent), transparent 62%));
+    filter: drop-shadow(
+      0 0 8px color-mix(in srgb, var(--theme-accent), transparent 62%)
+    );
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .serverTextChannelMark {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .serverTextChannelMark {
     flex: 0 0 34px;
     width: 34px;
     height: 34px;
     min-width: 34px;
     max-width: 34px;
-    border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 44%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-border-control), transparent 44%);
     border-radius: 10px;
     background: var(--theme-avatar-bg);
     box-shadow: none;
@@ -524,13 +594,14 @@
     background: var(--theme-control-bg-strong);
     padding-bottom: calc(
       var(--mobile-nav-panel-height, 54px) +
-      var(--mobile-voice-dock-reserve, 0px) +
-      28px +
-      env(safe-area-inset-bottom)
+        var(--mobile-voice-dock-reserve, 0px) + 28px +
+        env(safe-area-inset-bottom)
     );
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textComposer {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textComposer {
     position: fixed;
     right: 18px;
     bottom: calc(8px + env(safe-area-inset-bottom));
@@ -542,11 +613,15 @@
     min-height: var(--mobile-nav-panel-height, 54px);
     height: auto;
     margin: 0;
-    border: 1px solid color-mix(in srgb, var(--theme-border-control), transparent 54%);
+    border: 1px solid
+      color-mix(in srgb, var(--theme-border-control), transparent 54%);
     border-radius: 14px;
     padding: 5px;
-    background:
-      linear-gradient(180deg, var(--theme-control-bg), var(--theme-control-bg-strong));
+    background: linear-gradient(
+      180deg,
+      var(--theme-control-bg),
+      var(--theme-control-bg-strong)
+    );
     box-shadow:
       0 12px 28px rgba(0, 0, 0, 0.34),
       0 0 14px var(--theme-glow),
@@ -555,12 +630,21 @@
     backdrop-filter: none;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textComposer textarea,
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textComposer button {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textComposer
+    textarea,
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textComposer
+    button {
     min-height: 42px;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.textChannel .textComposer textarea {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.textChannel
+    .textComposer
+    textarea {
     box-sizing: border-box;
     height: 42px;
     min-height: 42px;
@@ -573,11 +657,15 @@
     align-self: center;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.voiceChannel .mobileSpaceToolbar {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.voiceChannel
+    .mobileSpaceToolbar {
     display: none;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.voiceChannel .serverTextBack {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.voiceChannel
+    .serverTextBack {
     display: grid;
     width: 38px;
     min-height: 38px;
@@ -590,7 +678,10 @@
     box-shadow: none;
   }
 
-  :global(.profile-page.is-server-mode) .spaceViewport.voiceChannel .serverTextBack svg {
+  :global(.profile-page.is-server-mode)
+    .spaceViewport.voiceChannel
+    .serverTextBack
+    svg {
     width: 24px;
     height: 24px;
     fill: none;
@@ -598,7 +689,9 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 2.15;
-    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--theme-accent), transparent 62%));
+    filter: drop-shadow(
+      0 0 8px color-mix(in srgb, var(--theme-accent), transparent 62%)
+    );
   }
 }
 
@@ -613,6 +706,3 @@
     transform: translateY(0);
   }
 }
-
-
-

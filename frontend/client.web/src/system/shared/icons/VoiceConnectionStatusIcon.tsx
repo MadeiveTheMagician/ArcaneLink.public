@@ -1,4 +1,4 @@
-import styles from './VoiceConnectionStatusIcon.module.css'
+import styles from './VoiceConnectionStatusIcon.module.css';
 
 export type VoiceConnectionStatusIconState =
   | 'connecting'
@@ -7,16 +7,16 @@ export type VoiceConnectionStatusIconState =
   | 'poor'
   | 'reconnecting'
   | 'disconnected'
-  | 'unknown'
+  | 'unknown';
 
 type VoiceConnectionStatusIconProps = {
-  className?: string
-  state: VoiceConnectionStatusIconState
-}
+  className?: string;
+  state: VoiceConnectionStatusIconState;
+};
 
 export function VoiceConnectionStatusIcon({
   className = '',
-  state,
+  state
 }: VoiceConnectionStatusIconProps) {
   return (
     <span
@@ -44,5 +44,5 @@ export function VoiceConnectionStatusIcon({
         <path className={styles.slash} d="M5.4 5.4 26.6 26.6" />
       </svg>
     </span>
-  )
+  );
 }

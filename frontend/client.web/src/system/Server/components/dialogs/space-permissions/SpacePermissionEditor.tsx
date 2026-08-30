@@ -1,34 +1,36 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react';
+
 import type {
   PermissionResponse,
   ServerMemberDetailsResponse,
   ServerRoleResponse,
   SpacePermissionOverrideResponse,
   SpaceResponse,
-  UpsertSpacePermissionOverrideRequest,
-} from '../../../../../shared/types'
-import { serverCopy } from '../../../../shared/copy'
-import buttonStyles from '../../../../shared/styles/Button.module.css'
-import { SystemSelect } from '../../../../shared/ui/SystemSelect'
+  UpsertSpacePermissionOverrideRequest
+} from '../../../../../shared/types';
+import { serverCopy } from '../../../../shared/copy';
+import { SystemSelect } from '../../../../shared/ui/SystemSelect';
 import {
-  buildSpacePermissionOverrideRequest,
   type SpacePermissionEffect,
   type SpacePermissionTargetKind,
-} from './spacePermissionEditorModel'
-import styles from './SpacePermissionEditor.module.css'
+  buildSpacePermissionOverrideRequest
+} from './spacePermissionEditorModel';
+
+import buttonStyles from '../../../../shared/styles/Button.module.css';
+import styles from './SpacePermissionEditor.module.css';
 
 type SpacePermissionEditorProps = {
-  space: SpaceResponse
-  permissions: PermissionResponse[]
-  roles: ServerRoleResponse[]
-  members: ServerMemberDetailsResponse[]
-  isMutating: boolean
+  space: SpaceResponse;
+  permissions: PermissionResponse[];
+  roles: ServerRoleResponse[];
+  members: ServerMemberDetailsResponse[];
+  isMutating: boolean;
   onUpsert: (
     spaceId: string,
-    request: UpsertSpacePermissionOverrideRequest,
-  ) => Promise<SpacePermissionOverrideResponse | null>
-  onDelete: (spaceId: string, overrideId: string) => Promise<boolean>
-}
+    request: UpsertSpacePermissionOverrideRequest
+  ) => Promise<SpacePermissionOverrideResponse | null>;
+  onDelete: (spaceId: string, overrideId: string) => Promise<boolean>;
+};
 
 export function SpacePermissionEditor({
   space,
@@ -37,29 +39,29 @@ export function SpacePermissionEditor({
   members,
   isMutating,
   onUpsert,
-  onDelete,
+  onDelete
 }: SpacePermissionEditorProps) {
   const administratorRoleIds = useMemo(
     () =>
       new Set(
         roles
           .filter((role) =>
-            [...role.permissionCodes, ...role.permissions.map((item) => item.code)]
-              .some(isAdministratorPermissionCode),
+            [
+              ...role.permissionCodes,
+              ...role.permissions.map((item) => item.code)
+            ].some(isAdministratorPermissionCode)
           )
-          .map((role) => role.id),
+          .map((role) => role.id)
       ),
-    [roles],
-  )
+    [roles]
+  );
   const editableRoles = useMemo(
     () =>
       roles.filter(
-        (role) =>
-          role.code !== 'owner' &&
-          !administratorRoleIds.has(role.id),
+        (role) => role.code !== 'owner' && !administratorRoleIds.has(role.id)
       ),
-    [administratorRoleIds, roles],
-  )
+    [administratorRoleIds, roles]
+  );
   const editableMembers = useMemo(
     () =>
       members.filter(
@@ -69,94 +71,100 @@ export function SpacePermissionEditor({
           !member.roleAssignments.some(
             (assignment) =>
               !assignment.revokedAt &&
-              administratorRoleIds.has(assignment.roleId),
-          ),
+              administratorRoleIds.has(assignment.roleId)
+          )
       ),
-    [administratorRoleIds, members],
-  )
+    [administratorRoleIds, members]
+  );
   const [targetKind, setTargetKind] =
-    useState<SpacePermissionTargetKind>('role')
-  const [targetId, setTargetId] = useState('')
-  const [permissionId, setPermissionId] = useState('')
-  const [effect, setEffect] = useState<SpacePermissionEffect>('allow')
-  const [error, setError] = useState<string | null>(null)
+    useState<SpacePermissionTargetKind>('role');
+  const [targetId, setTargetId] = useState('');
+  const [permissionId, setPermissionId] = useState('');
+  const [effect, setEffect] = useState<SpacePermissionEffect>('allow');
+  const [error, setError] = useState<string | null>(null);
 
   const availableTargets =
     targetKind === 'role'
       ? editableRoles.map((role) => ({ id: role.id, title: role.title }))
       : editableMembers.map((member) => ({
           id: member.id,
-          title: `${member.user.displayName} (@${member.user.login})`,
-        }))
+          title: `${member.user.displayName} (@${member.user.login})`
+        }));
 
   useEffect(() => {
     if (!availableTargets.some((target) => target.id === targetId)) {
-      setTargetId(availableTargets[0]?.id ?? '')
+      setTargetId(availableTargets[0]?.id ?? '');
     }
-  }, [availableTargets, targetId])
+  }, [availableTargets, targetId]);
 
   useEffect(() => {
     if (!permissions.some((permission) => permission.id === permissionId)) {
-      setPermissionId(permissions[0]?.id ?? '')
+      setPermissionId(permissions[0]?.id ?? '');
     }
-  }, [permissionId, permissions])
+  }, [permissionId, permissions]);
 
   const permissionTitleById = useMemo(
-    () => new Map(permissions.map((permission) => [permission.id, permission.title])),
-    [permissions],
-  )
+    () =>
+      new Map(
+        permissions.map((permission) => [permission.id, permission.title])
+      ),
+    [permissions]
+  );
   const roleTitleById = useMemo(
     () => new Map(roles.map((role) => [role.id, role.title])),
-    [roles],
-  )
+    [roles]
+  );
   const memberTitleById = useMemo(
     () =>
       new Map(
         members.map((member) => [
           member.id,
-          `${member.user.displayName} (@${member.user.login})`,
-        ]),
+          `${member.user.displayName} (@${member.user.login})`
+        ])
       ),
-    [members],
-  )
+    [members]
+  );
   const sortedOverrides = useMemo(
     () =>
       [...space.permissionOverrides].sort((left, right) =>
-        left.permissionCode.localeCompare(right.permissionCode),
+        left.permissionCode.localeCompare(right.permissionCode)
       ),
-    [space.permissionOverrides],
-  )
+    [space.permissionOverrides]
+  );
 
   async function saveOverride() {
     const request = buildSpacePermissionOverrideRequest(
       targetKind,
       targetId,
       permissionId,
-      effect,
-    )
+      effect
+    );
     if (!request) {
-      return
+      return;
     }
 
-    setError(null)
+    setError(null);
     try {
-      await onUpsert(space.id, request)
+      await onUpsert(space.id, request);
     } catch {
-      setError(serverCopy.workspaceDialogs.permissionSaveFailed)
+      setError(serverCopy.workspaceDialogs.permissionSaveFailed);
     }
   }
 
   async function deleteOverride(overrideId: string) {
-    setError(null)
+    setError(null);
     try {
-      await onDelete(space.id, overrideId)
+      await onDelete(space.id, overrideId);
     } catch {
-      setError(serverCopy.workspaceDialogs.permissionDeleteFailed)
+      setError(serverCopy.workspaceDialogs.permissionDeleteFailed);
     }
   }
 
   return (
-    <section className={styles.editor} aria-labelledby="space-permissions-title">
+    <section
+      className={styles.editor}
+      aria-labelledby="space-permissions-title"
+    >
       <header className={styles.header}>
         <div>
           <h3 id="space-permissions-title">
@@ -229,9 +237,7 @@ export function SpacePermissionEditor({
             aria-label={serverCopy.workspaceDialogs.permissionEffect}
             value={effect}
             disabled={isMutating}
-            onValueChange={(value) =>
-              setEffect(value as SpacePermissionEffect)
-            }
+            onValueChange={(value) => setEffect(value as SpacePermissionEffect)}
           >
             <option value="allow">
               {serverCopy.workspaceDialogs.permissionAllow}
@@ -246,10 +252,7 @@ export function SpacePermissionEditor({
           className={`${buttonStyles.button} ${buttonStyles.primary} ${styles.saveButton}`}
           type="button"
           disabled={
-            isMutating ||
-            !targetId ||
-            !permissionId ||
-            permissions.length === 0
+            isMutating || !targetId || !permissionId || permissions.length === 0
           }
           onClick={() => void saveOverride()}
         >
@@ -272,10 +275,13 @@ export function SpacePermissionEditor({
               ? roleTitleById.get(permissionOverride.roleId)
               : permissionOverride.memberId
                 ? memberTitleById.get(permissionOverride.memberId)
-                : null
+                : null;
 
             return (
-              <article className={styles.overrideRow} key={permissionOverride.id}>
+              <article
+                className={styles.overrideRow}
+                key={permissionOverride.id}
+              >
                 <div>
                   <strong>
                     {permissionTitleById.get(permissionOverride.permissionId) ??
@@ -304,17 +310,17 @@ export function SpacePermissionEditor({
                   {serverCopy.workspaceDialogs.permissionDelete}
                 </button>
               </article>
-            )
+            );
           })
         )}
       </div>
     </section>
-  )
+  );
 }
 
 function isAdministratorPermissionCode(code: string) {
-  const normalizedCode = code.trim().toUpperCase()
+  const normalizedCode = code.trim().toUpperCase();
   return (
     normalizedCode === 'ADMINISTRATOR' || normalizedCode === 'MANAGE_SERVER'
-  )
+  );
 }

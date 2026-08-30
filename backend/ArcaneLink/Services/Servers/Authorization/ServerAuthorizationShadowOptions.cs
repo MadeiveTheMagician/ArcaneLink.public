@@ -1,25 +1,24 @@
-namespace ArcaneLink.Services.Servers.Authorization
+namespace ArcaneLink.Services.Servers.Authorization;
+
+public sealed class ServerAuthorizationShadowOptions
 {
-    public sealed class ServerAuthorizationShadowOptions
+    public const string SectionName = "AuthorizationShadow";
+
+    public bool Enabled { get; set; }
+    public string[] EnforcedPermissionCodes { get; set; } = [];
+
+    public bool IsEnforced(string permissionCode)
     {
-        public const string SectionName = "AuthorizationShadow";
+        return this.EnforcedPermissionCodes?.Contains(
+                   permissionCode,
+                   StringComparer.OrdinalIgnoreCase) == true;
+    }
 
-        public bool Enabled { get; set; }
-        public string[] EnforcedPermissionCodes { get; set; } = [];
-
-        public bool IsEnforced(string permissionCode)
-        {
-            return EnforcedPermissionCodes?.Contains(
-                       permissionCode,
-                       StringComparer.OrdinalIgnoreCase) == true;
-        }
-
-        public bool HasValidEnforcementConfiguration()
-        {
-            return EnforcedPermissionCodes != null &&
-                   EnforcedPermissionCodes.All(
-                       LegacyServerPermissionMaskAdapter
-                           .IsRepresentativePermissionCode);
-        }
+    public bool HasValidEnforcementConfiguration()
+    {
+        return this.EnforcedPermissionCodes != null &&
+               this.EnforcedPermissionCodes.All(
+                   LegacyServerPermissionMaskAdapter
+                       .IsRepresentativePermissionCode);
     }
 }

@@ -1,45 +1,76 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react';
+
 import type {
   PrivateSpaceFolderResponse,
   PrivateSpaceResponse,
-  UpsertPrivateSpaceFolderRequest,
-} from '../../../../../shared/types'
-import { SelectedFrame } from '../../../../shared/components/selected-frame/SelectedFrame'
-import { SystemCloseIcon } from '../../../../shared/icons/components/SystemCloseIcon'
-import { SystemIcon } from '../../../../shared/icons/SystemIcon'
-import { SystemButton } from '../../../../shared/ui/SystemButton'
-import { PresenceName } from '../../../../shared'
+  UpsertPrivateSpaceFolderRequest
+} from '../../../../../shared/types';
+import { PresenceName } from '../../../../shared';
+import { SelectedFrame } from '../../../../shared/components/selected-frame/SelectedFrame';
+import { SystemIcon } from '../../../../shared/icons/SystemIcon';
+import { SystemCloseIcon } from '../../../../shared/icons/components/SystemCloseIcon';
+import { SystemButton } from '../../../../shared/ui/SystemButton';
+import { PrivateSpaceAvatar } from '../../direct-messages/DirectMessageAvatar';
 import {
   getPrivateSpacePresenceStatus,
-  getPrivateSpaceTitle,
-} from '../../direct-messages/directMessageModel'
-import { PrivateSpaceAvatar } from '../../direct-messages/DirectMessageAvatar'
-import { privateSpaceFolderCopy } from './privateSpaceFolderCopy.ru'
-import { privateSpaceFolderNameMaxLength } from './privateSpaceFolderModel'
-import styles from './PrivateSpaceFolders.module.css'
+  getPrivateSpaceTitle
+} from '../../direct-messages/directMessageModel';
+import { privateSpaceFolderCopy } from './privateSpaceFolderCopy.ru';
+import { privateSpaceFolderNameMaxLength } from './privateSpaceFolderModel';
+
+import styles from './PrivateSpaceFolders.module.css';
 
 const emojiOptions = [
-  '💬', '⭐', '🎮', '💼', '🎨', '📚',
-  '🎵', '🗃️', '❤️', '🧭', '📷', '🎬',
-  '🛠️', '💡', '🏠', '🌐', '🏆', '🔒',
-  '📌', '🚀', '☕', '🧪', '🎯', '✨',
-] as const
+  '💬',
+  '⭐',
+  '🎮',
+  '💼',
+  '🎨',
+  '📚',
+  '🎵',
+  '🗃️',
+  '❤️',
+  '🧭',
+  '📷',
+  '🎬',
+  '🛠️',
+  '💡',
+  '🏠',
+  '🌐',
+  '🏆',
+  '🔒',
+  '📌',
+  '🚀',
+  '☕',
+  '🧪',
+  '🎯',
+  '✨'
+] as const;
 
 const colorOptions = [
-  '#8f6bff', '#5b75f2', '#3d8fe8', '#31a9d8',
-  '#2ebf91', '#66b86b', '#f0b34f', '#ed8b4a',
-  '#ec6f91', '#df5d62', '#b878e8', '#8d9ab8',
-] as const
+  '#8f6bff',
+  '#5b75f2',
+  '#3d8fe8',
+  '#31a9d8',
+  '#2ebf91',
+  '#66b86b',
+  '#f0b34f',
+  '#ed8b4a',
+  '#ec6f91',
+  '#df5d62',
+  '#b878e8',
+  '#8d9ab8'
+] as const;
 
 type Props = {
-  currentUserId: string
-  folder: PrivateSpaceFolderResponse | null
-  privateSpaces: PrivateSpaceResponse[]
-  isSaving: boolean
-  error: string | null
-  onClose: () => void
-  onSave: (request: UpsertPrivateSpaceFolderRequest) => Promise<unknown>
-}
+  currentUserId: string;
+  folder: PrivateSpaceFolderResponse | null;
+  privateSpaces: PrivateSpaceResponse[];
+  isSaving: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSave: (request: UpsertPrivateSpaceFolderRequest) => Promise<unknown>;
+};
 
 export function PrivateSpaceFolderDialog({
   currentUserId,
@@ -48,43 +79,56 @@ export function PrivateSpaceFolderDialog({
   isSaving,
   error,
   onClose,
-  onSave,
+  onSave
 }: Props) {
   const [name, setName] = useState(
-    (folder?.name ?? '').slice(0, privateSpaceFolderNameMaxLength),
-  )
-  const [icon, setIcon] = useState(folder?.icon ?? emojiOptions[0])
-  const [color, setColor] = useState<string | null>(folder?.color ?? null)
-  const [spaceIds, setSpaceIds] = useState<string[]>(folder?.spaceIds ?? [])
-  const [conversationQuery, setConversationQuery] = useState('')
+    (folder?.name ?? '').slice(0, privateSpaceFolderNameMaxLength)
+  );
+  const [icon, setIcon] = useState(folder?.icon ?? emojiOptions[0]);
+  const [color, setColor] = useState<string | null>(folder?.color ?? null);
+  const [spaceIds, setSpaceIds] = useState<string[]>(folder?.spaceIds ?? []);
+  const [conversationQuery, setConversationQuery] = useState('');
   const visiblePrivateSpaces = useMemo(() => {
-    const normalizedQuery = conversationQuery.trim().toLocaleLowerCase('ru-RU')
-    if (!normalizedQuery) return privateSpaces
+    const normalizedQuery = conversationQuery.trim().toLocaleLowerCase('ru-RU');
+    if (!normalizedQuery) return privateSpaces;
 
     return privateSpaces.filter((space) =>
       getPrivateSpaceTitle(space, currentUserId)
         .toLocaleLowerCase('ru-RU')
-        .includes(normalizedQuery),
-    )
-  }, [conversationQuery, currentUserId, privateSpaces])
+        .includes(normalizedQuery)
+    );
+  }, [conversationQuery, currentUserId, privateSpaces]);
 
   useEffect(() => {
-    const closeByEscape = (event: KeyboardEvent) => event.key === 'Escape' && onClose()
-    window.addEventListener('keydown', closeByEscape)
-    return () => window.removeEventListener('keydown', closeByEscape)
-  }, [onClose])
+    const closeByEscape = (event: KeyboardEvent) =>
+      event.key === 'Escape' && onClose();
+    window.addEventListener('keydown', closeByEscape);
+    return () => window.removeEventListener('keydown', closeByEscape);
+  }, [onClose]);
 
   async function submit(event: React.FormEvent) {
-    event.preventDefault()
-    if (!name.trim()) return
-    await onSave({ name: name.trim(), icon, color, spaceIds })
+    event.preventDefault();
+    if (!name.trim()) return;
+    await onSave({ name: name.trim(), icon, color, spaceIds });
   }
 
   return (
-    <div className={styles.dialogOverlay} role="presentation" onMouseDown={onClose}>
-      <form className={styles.dialog} onSubmit={submit} onMouseDown={(event) => event.stopPropagation()}>
+    <div
+      className={styles.dialogOverlay}
+      role="presentation"
+      onMouseDown={onClose}
+    >
+      <form
+        className={styles.dialog}
+        onSubmit={submit}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <header>
-          <h2>{folder ? privateSpaceFolderCopy.edit : privateSpaceFolderCopy.create}</h2>
+          <h2>
+            {folder
+              ? privateSpaceFolderCopy.edit
+              : privateSpaceFolderCopy.create}
+          </h2>
           <SystemButton
             variant="asset"
             size="small"
@@ -160,50 +204,65 @@ export function PrivateSpaceFolderDialog({
               <p>{privateSpaceFolderCopy.emptyConversations}</p>
             ) : visiblePrivateSpaces.length === 0 ? (
               <p>{privateSpaceFolderCopy.noSearchResults}</p>
-            ) : visiblePrivateSpaces.map((space) => {
-              const title = getPrivateSpaceTitle(space, currentUserId)
-              const presenceStatus = getPrivateSpacePresenceStatus(
-                space,
-                currentUserId,
-              )
-              const checked = spaceIds.includes(space.spaceId)
-              return (
-                <SelectedFrame
-                  key={space.spaceId}
-                  checked={checked}
-                  onChange={(nextChecked) => setSpaceIds((current) =>
-                    nextChecked
-                      ? [...current, space.spaceId]
-                      : current.filter((id) => id !== space.spaceId),
-                  )}
-                >
-                  <span className={styles.conversationOption}>
-                    <PrivateSpaceAvatar
-                      className={styles.dialogAvatar}
-                      space={space}
-                      currentUserId={currentUserId}
-                      title={title}
-                    />
-                    <PresenceName status={presenceStatus}>
-                      <span className="ui-ellipsis">{title}</span>
-                    </PresenceName>
-                  </span>
-                </SelectedFrame>
-              )
-            })}
+            ) : (
+              visiblePrivateSpaces.map((space) => {
+                const title = getPrivateSpaceTitle(space, currentUserId);
+                const presenceStatus = getPrivateSpacePresenceStatus(
+                  space,
+                  currentUserId
+                );
+                const checked = spaceIds.includes(space.spaceId);
+                return (
+                  <SelectedFrame
+                    key={space.spaceId}
+                    checked={checked}
+                    onChange={(nextChecked) =>
+                      setSpaceIds((current) =>
+                        nextChecked
+                          ? [...current, space.spaceId]
+                          : current.filter((id) => id !== space.spaceId)
+                      )
+                    }
+                  >
+                    <span className={styles.conversationOption}>
+                      <PrivateSpaceAvatar
+                        className={styles.dialogAvatar}
+                        space={space}
+                        currentUserId={currentUserId}
+                        title={title}
+                      />
+                      <PresenceName status={presenceStatus}>
+                        <span className="ui-ellipsis">{title}</span>
+                      </PresenceName>
+                    </span>
+                  </SelectedFrame>
+                );
+              })
+            )}
           </div>
         </fieldset>
 
-        {error && <p className={styles.error}>{privateSpaceFolderCopy.invalidFolder}</p>}
+        {error && (
+          <p className={styles.error}>{privateSpaceFolderCopy.invalidFolder}</p>
+        )}
         <footer>
-          <SystemButton variant="ghost" size="small" type="button" onClick={onClose}>
+          <SystemButton
+            variant="ghost"
+            size="small"
+            type="button"
+            onClick={onClose}
+          >
             {privateSpaceFolderCopy.cancel}
           </SystemButton>
-          <SystemButton size="small" type="submit" disabled={isSaving || !name.trim()}>
+          <SystemButton
+            size="small"
+            type="submit"
+            disabled={isSaving || !name.trim()}
+          >
             {privateSpaceFolderCopy.save}
           </SystemButton>
         </footer>
       </form>
     </div>
-  )
+  );
 }

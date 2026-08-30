@@ -1,4 +1,4 @@
-import type { UserNotificationResponse } from '../../../../shared/types'
+import type { UserNotificationResponse } from '../../../../shared/types';
 
 export type WebNotificationKind =
   | 'private-message'
@@ -6,58 +6,58 @@ export type WebNotificationKind =
   | 'server-invite'
   | 'private-space-invite'
   | 'friend-request'
-  | 'system'
+  | 'system';
 
 export type WebNotificationItem = {
-  id: string
-  storedNotificationId?: string
-  kind: WebNotificationKind
-  title: string
-  body: string
-  detail?: string | null
-  createdAt: string
-  spaceId?: string
-  serverId?: string
-  messageId?: string
-  messageCreatedAt?: string
-  inviteId?: string
-  persistent?: boolean
-  senderAvatarAssetId?: string | null
-  senderAvatarCropOffsetX?: number
-  senderAvatarCropOffsetY?: number
-  senderAvatarCropZoom?: number
-  serverIconAssetId?: string | null
-  serverIconCropOffsetX?: number
-  serverIconCropOffsetY?: number
-  serverIconCropZoom?: number
-  serverDescription?: string | null
-  memberCount?: number
-  onlineCount?: number
-}
+  id: string;
+  storedNotificationId?: string;
+  kind: WebNotificationKind;
+  title: string;
+  body: string;
+  detail?: string | null;
+  createdAt: string;
+  spaceId?: string;
+  serverId?: string;
+  messageId?: string;
+  messageCreatedAt?: string;
+  inviteId?: string;
+  persistent?: boolean;
+  senderAvatarAssetId?: string | null;
+  senderAvatarCropOffsetX?: number;
+  senderAvatarCropOffsetY?: number;
+  senderAvatarCropZoom?: number;
+  serverIconAssetId?: string | null;
+  serverIconCropOffsetX?: number;
+  serverIconCropOffsetY?: number;
+  serverIconCropZoom?: number;
+  serverDescription?: string | null;
+  memberCount?: number;
+  onlineCount?: number;
+};
 
 export type RealtimePrivateMessagePayload = {
-  spaceId?: string | null
-  messageId?: string | null
-  senderUserId?: string | null
-}
+  spaceId?: string | null;
+  messageId?: string | null;
+  senderUserId?: string | null;
+};
 
 export type RealtimeServerInvitePayload = {
-  serverId?: string | null
-  inviteId?: string | null
-}
+  serverId?: string | null;
+  inviteId?: string | null;
+};
 
 export type RealtimeSystemNotificationPayload = {
-  id: string
-  title: string
-  body: string
-  force?: boolean
-}
+  id: string;
+  title: string;
+  body: string;
+  force?: boolean;
+};
 
 export function mapStoredWebNotification(
-  notification: UserNotificationResponse,
+  notification: UserNotificationResponse
 ): WebNotificationItem | null {
   if (notification.readAt) {
-    return null
+    return null;
   }
 
   if (notification.kind === 'mention') {
@@ -78,14 +78,11 @@ export function mapStoredWebNotification(
       senderAvatarAssetId: notification.actorAvatarAssetId,
       senderAvatarCropOffsetX: notification.actorAvatarCropOffsetX,
       senderAvatarCropOffsetY: notification.actorAvatarCropOffsetY,
-      senderAvatarCropZoom: notification.actorAvatarCropZoom,
-    }
+      senderAvatarCropZoom: notification.actorAvatarCropZoom
+    };
   }
 
-  if (
-    notification.kind === 'private-space-invite' &&
-    notification.spaceId
-  ) {
+  if (notification.kind === 'private-space-invite' && notification.spaceId) {
     return {
       id: `private-space-invite:${notification.id}`,
       storedNotificationId: notification.id,
@@ -101,8 +98,8 @@ export function mapStoredWebNotification(
       senderAvatarAssetId: notification.actorAvatarAssetId,
       senderAvatarCropOffsetX: notification.actorAvatarCropOffsetX,
       senderAvatarCropOffsetY: notification.actorAvatarCropOffsetY,
-      senderAvatarCropZoom: notification.actorAvatarCropZoom,
-    }
+      senderAvatarCropZoom: notification.actorAvatarCropZoom
+    };
   }
 
   if (notification.kind === 'friend-request') {
@@ -116,42 +113,42 @@ export function mapStoredWebNotification(
       senderAvatarAssetId: notification.actorAvatarAssetId,
       senderAvatarCropOffsetX: notification.actorAvatarCropOffsetX,
       senderAvatarCropOffsetY: notification.actorAvatarCropOffsetY,
-      senderAvatarCropZoom: notification.actorAvatarCropZoom,
-    }
+      senderAvatarCropZoom: notification.actorAvatarCropZoom
+    };
   }
 
-  return null
+  return null;
 }
 
 export function webNotificationPriority(kind: WebNotificationKind) {
-  return kind === 'mention' ? 2 : kind === 'private-message' ? 1 : 0
+  return kind === 'mention' ? 2 : kind === 'private-message' ? 1 : 0;
 }
 
 export function trimWebNotificationQueue(
   notifications: WebNotificationItem[],
   incomingId: string,
-  maxVisible: number,
+  maxVisible: number
 ) {
   if (notifications.length <= maxVisible) {
-    return { items: notifications, evicted: null }
+    return { items: notifications, evicted: null };
   }
 
   const transientIndex = notifications.findIndex(
-    (item) => item.id !== incomingId && !item.persistent,
-  )
+    (item) => item.id !== incomingId && !item.persistent
+  );
   const evictedIndex =
     transientIndex >= 0
       ? transientIndex
-      : notifications.findIndex((item) => item.id !== incomingId)
+      : notifications.findIndex((item) => item.id !== incomingId);
   if (evictedIndex < 0) {
     return {
       items: notifications.slice(-maxVisible),
-      evicted: null,
-    }
+      evicted: null
+    };
   }
 
   return {
     items: notifications.filter((_, index) => index !== evictedIndex),
-    evicted: notifications[evictedIndex],
-  }
+    evicted: notifications[evictedIndex]
+  };
 }

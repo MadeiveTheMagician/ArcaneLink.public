@@ -1,47 +1,49 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { apiJson } from '../../../shared/api/api'
-import { SettingsSection } from '../../Hub/components/settings/SystemSettingsControls'
-import { createRealtimeRefreshCoalescer } from '../../shared/hooks/realtimeRefreshCoalescer'
-import { myModerationReportsChangedWindowEvent } from '../../shared/moderation/moderationRealtime'
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { apiJson } from '../../../shared/api/api';
+import { SettingsSection } from '../../Hub/components/settings/SystemSettingsControls';
+import { createRealtimeRefreshCoalescer } from '../../shared/hooks/realtimeRefreshCoalescer';
+import { myModerationReportsChangedWindowEvent } from '../../shared/moderation/moderationRealtime';
 import {
   getModerationReasonLabel,
   getUserReportStatusLabel,
-  moderationCopy,
-} from '../moderationCopy.ru'
-import type { ModerationReportResponse } from '../moderationTypes'
-import styles from './MyModerationReportsTab.module.css'
+  moderationCopy
+} from '../moderationCopy.ru';
+import type { ModerationReportResponse } from '../moderationTypes';
+
+import styles from './MyModerationReportsTab.module.css';
 
 export function MyModerationReportsTab({
-  accessToken,
+  accessToken
 }: {
-  accessToken: string
+  accessToken: string;
 }) {
-  const [reports, setReports] = useState<ModerationReportResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const requestIdRef = useRef(0)
-  const reportsRef = useRef<ModerationReportResponse[]>([])
+  const [reports, setReports] = useState<ModerationReportResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
+  const reportsRef = useRef<ModerationReportResponse[]>([]);
 
   const loadReports = useCallback(
     async (silent = false) => {
-      const requestId = ++requestIdRef.current
+      const requestId = ++requestIdRef.current;
       if (!silent) {
-        setIsLoading(true)
+        setIsLoading(true);
       }
       if (!silent) {
-        setError(null)
+        setError(null);
       }
 
       try {
         const nextReports = await apiJson<ModerationReportResponse[]>(
           '/api/users/me/moderation-reports',
-          { accessToken },
-        )
+          { accessToken }
+        );
 
         if (requestId === requestIdRef.current) {
-          reportsRef.current = nextReports
-          setReports(nextReports)
-          setError(null)
+          reportsRef.current = nextReports;
+          setReports(nextReports);
+          setError(null);
         }
       } catch (requestError) {
         if (
@@ -51,41 +53,41 @@ export function MyModerationReportsTab({
           setError(
             requestError instanceof Error && requestError.message
               ? requestError.message
-              : moderationCopy.myReports.failed,
-          )
+              : moderationCopy.myReports.failed
+          );
         }
       } finally {
         if (requestId === requestIdRef.current) {
-          setIsLoading(false)
+          setIsLoading(false);
         }
       }
     },
-    [accessToken],
-  )
+    [accessToken]
+  );
 
   useEffect(() => {
-    void loadReports()
+    void loadReports();
 
     const refresh = createRealtimeRefreshCoalescer(
       () => loadReports(true),
-      120,
-    )
-    const refreshFromRealtime = () => refresh.request()
+      120
+    );
+    const refreshFromRealtime = () => refresh.request();
 
     window.addEventListener(
       myModerationReportsChangedWindowEvent,
-      refreshFromRealtime,
-    )
+      refreshFromRealtime
+    );
 
     return () => {
-      requestIdRef.current += 1
-      refresh.dispose()
+      requestIdRef.current += 1;
+      refresh.dispose();
       window.removeEventListener(
         myModerationReportsChangedWindowEvent,
-        refreshFromRealtime,
-      )
-    }
-  }, [loadReports])
+        refreshFromRealtime
+      );
+    };
+  }, [loadReports]);
 
   return (
     <SettingsSection
@@ -116,7 +118,7 @@ export function MyModerationReportsTab({
                 <div>
                   <strong>
                     {moderationCopy.myReports.reportForMessage(
-                      report.messageId,
+                      report.messageId
                     )}
                   </strong>
                   <span>{getModerationReasonLabel(report.reasonCode)}</span>
@@ -141,12 +143,12 @@ export function MyModerationReportsTab({
         </div>
       )}
     </SettingsSection>
-  )
+  );
 }
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
     dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
+    timeStyle: 'short'
+  }).format(new Date(value));
 }

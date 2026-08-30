@@ -1,43 +1,44 @@
-import { useRef } from 'react'
-import { normalizeUserId } from './voiceChannelUtils'
+import { useRef } from 'react';
+
+import { normalizeUserId } from './voiceChannelUtils';
 
 export function useVoicePeerConnections() {
-  const peerConnectionsRef = useRef<Record<string, RTCPeerConnection>>({})
+  const peerConnectionsRef = useRef<Record<string, RTCPeerConnection>>({});
 
   function getPeerConnection(participantId: string) {
-    return peerConnectionsRef.current[normalizeUserId(participantId)] ?? null
+    return peerConnectionsRef.current[normalizeUserId(participantId)] ?? null;
   }
 
   function hasPeerConnection(participantId: string) {
-    return Boolean(getPeerConnection(participantId))
+    return Boolean(getPeerConnection(participantId));
   }
 
   function setPeerConnection(
     participantId: string,
-    peerConnection: RTCPeerConnection,
+    peerConnection: RTCPeerConnection
   ) {
-    peerConnectionsRef.current[normalizeUserId(participantId)] = peerConnection
+    peerConnectionsRef.current[normalizeUserId(participantId)] = peerConnection;
   }
 
   function getPeerConnectionIds() {
-    return Object.keys(peerConnectionsRef.current)
+    return Object.keys(peerConnectionsRef.current);
   }
 
   function getPeerConnectionsSnapshot() {
-    return Object.entries(peerConnectionsRef.current)
+    return Object.entries(peerConnectionsRef.current);
   }
 
   function isCurrentPeerConnection(
     participantId: string,
-    peerConnection: RTCPeerConnection,
+    peerConnection: RTCPeerConnection
   ) {
-    return getPeerConnection(participantId) === peerConnection
+    return getPeerConnection(participantId) === peerConnection;
   }
 
   function closePeerConnection(participantId: string) {
-    const normalizedParticipantId = normalizeUserId(participantId)
-    peerConnectionsRef.current[normalizedParticipantId]?.close()
-    delete peerConnectionsRef.current[normalizedParticipantId]
+    const normalizedParticipantId = normalizeUserId(participantId);
+    peerConnectionsRef.current[normalizedParticipantId]?.close();
+    delete peerConnectionsRef.current[normalizedParticipantId];
   }
 
   return {
@@ -47,6 +48,6 @@ export function useVoicePeerConnections() {
     getPeerConnectionIds,
     getPeerConnectionsSnapshot,
     isCurrentPeerConnection,
-    closePeerConnection,
-  }
+    closePeerConnection
+  };
 }

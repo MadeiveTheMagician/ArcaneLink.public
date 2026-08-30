@@ -1,108 +1,106 @@
 import type {
   DetachedVoiceLayoutPreset,
   DetachedVoiceLayoutSlot,
-  DetachedVoiceLayoutSlotAspectRatio,
-} from './detachedVoiceLayoutTypes'
+  DetachedVoiceLayoutSlotAspectRatio
+} from './detachedVoiceLayoutTypes';
 
-export const detachedVoiceLayoutDefaultColumns = 90
-export const detachedVoiceLayoutDefaultRows = 44
-export const detachedVoiceLayoutMaxColumns = 120
-export const detachedVoiceLayoutMaxRows = 54
-export const detachedVoiceLayoutMinSlotSize = 1
-export const detachedVoiceLayoutDefaultCellSizePx = 17
-export const detachedVoiceLayoutMinCellSizePx = 6
-export const detachedVoiceLayoutMaxCellSizePx = 32
-const detachedVoiceSlotDefaultScale = 0.75
+export const detachedVoiceLayoutDefaultColumns = 90;
+export const detachedVoiceLayoutDefaultRows = 44;
+export const detachedVoiceLayoutMaxColumns = 120;
+export const detachedVoiceLayoutMaxRows = 54;
+export const detachedVoiceLayoutMinSlotSize = 1;
+export const detachedVoiceLayoutDefaultCellSizePx = 17;
+export const detachedVoiceLayoutMinCellSizePx = 6;
+export const detachedVoiceLayoutMaxCellSizePx = 32;
+const detachedVoiceSlotDefaultScale = 0.75;
 const detachedVoiceSlotAspectRatios: Record<
   Exclude<DetachedVoiceLayoutSlotAspectRatio, 'free'>,
   number
 > = {
   '16:9': 16 / 9,
   '21:9': 21 / 9,
-  '4:3': 4 / 3,
-}
+  '4:3': 4 / 3
+};
 const detachedVoiceSlotDefaultAspectRatio: Exclude<
   DetachedVoiceLayoutSlotAspectRatio,
   'free'
-> = '16:9'
-export const detachedVoiceSlotDefaultBorderRadius = 8
-export const detachedVoiceSlotMaxBorderRadius = 360
+> = '16:9';
+export const detachedVoiceSlotDefaultBorderRadius = 8;
+export const detachedVoiceSlotMaxBorderRadius = 360;
 
 export function clampNumber(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value))
+  return Math.max(min, Math.min(max, value));
 }
 
 export function syncDetachedSlotAssignments(
   assignments: Record<number, string>,
   cardKeys: string[],
-  slots: DetachedVoiceLayoutSlot[],
+  slots: DetachedVoiceLayoutSlot[]
 ) {
-  const visibleKeys = new Set(cardKeys)
-  const slotIndexes = new Set(slots.map((slot) => slot.index))
-  const assignedKeys = new Set<string>()
+  const visibleKeys = new Set(cardKeys);
+  const slotIndexes = new Set(slots.map((slot) => slot.index));
+  const assignedKeys = new Set<string>();
 
   Object.entries(assignments).forEach(([slotIndex, cardKey]) => {
-    const numericSlotIndex = Number(slotIndex)
+    const numericSlotIndex = Number(slotIndex);
 
     if (!slotIndexes.has(numericSlotIndex) || !visibleKeys.has(cardKey)) {
-      delete assignments[numericSlotIndex]
-      return
+      delete assignments[numericSlotIndex];
+      return;
     }
 
-    assignedKeys.add(cardKey)
-  })
+    assignedKeys.add(cardKey);
+  });
 
   cardKeys.forEach((cardKey) => {
     if (assignedKeys.has(cardKey)) {
-      return
+      return;
     }
 
-    const freeSlot = slots.find(
-      (slot) => !assignments[slot.index],
-    )
+    const freeSlot = slots.find((slot) => !assignments[slot.index]);
     if (!freeSlot) {
-      return
+      return;
     }
 
-    assignments[freeSlot.index] = cardKey
-    assignedKeys.add(cardKey)
-  })
+    assignments[freeSlot.index] = cardKey;
+    assignedKeys.add(cardKey);
+  });
 }
 
 function getDetachedSlotQuadrant(
   slot: DetachedVoiceLayoutSlot,
   gridColumns: number,
-  gridRows: number,
+  gridRows: number
 ) {
-  const centerX = slot.x + slot.width / 2
-  const centerY = slot.y + slot.height / 2
-  const isLeft = centerX < gridColumns / 2
-  const isTop = centerY < gridRows / 2
+  const centerX = slot.x + slot.width / 2;
+  const centerY = slot.y + slot.height / 2;
+  const isLeft = centerX < gridColumns / 2;
+  const isTop = centerY < gridRows / 2;
 
   if (isTop && isLeft) {
-    return 1
+    return 1;
   }
 
   if (isTop) {
-    return 2
+    return 2;
   }
 
-  return isLeft ? 4 : 3
+  return isLeft ? 4 : 3;
 }
 
 export function getDetachedSlotMenuPlacementStyle(
   slot: DetachedVoiceLayoutSlot,
   gridColumns: number,
-  gridRows: number,
+  gridRows: number
 ) {
-  const quadrant = getDetachedSlotQuadrant(slot, gridColumns, gridRows)
+  const quadrant = getDetachedSlotQuadrant(slot, gridColumns, gridRows);
 
   if (quadrant === 1) {
     return `
       top: 18px;
       right: clamp(12px, 2vw, 18px);
       transform-origin: 100% 0;
-    `
+    `;
   }
 
   if (quadrant === 2) {
@@ -110,7 +108,7 @@ export function getDetachedSlotMenuPlacementStyle(
       top: 18px;
       left: clamp(12px, 2vw, 18px);
       transform-origin: 0 0;
-    `
+    `;
   }
 
   if (quadrant === 3) {
@@ -118,19 +116,19 @@ export function getDetachedSlotMenuPlacementStyle(
       bottom: 88px;
       left: clamp(12px, 2vw, 18px);
       transform-origin: 0 100%;
-    `
+    `;
   }
 
   return `
     right: clamp(12px, 2vw, 18px);
     bottom: 88px;
     transform-origin: 100% 100%;
-  `
+  `;
 }
 
 export function normalizeDetachedVoiceSlotAspectRatio(
   value: unknown,
-  preserveAspectRatio: boolean,
+  preserveAspectRatio: boolean
 ): DetachedVoiceLayoutSlotAspectRatio {
   if (
     value === '16:9' ||
@@ -138,60 +136,60 @@ export function normalizeDetachedVoiceSlotAspectRatio(
     value === '4:3' ||
     value === 'free'
   ) {
-    return value
+    return value;
   }
 
-  return preserveAspectRatio ? detachedVoiceSlotDefaultAspectRatio : 'free'
+  return preserveAspectRatio ? detachedVoiceSlotDefaultAspectRatio : 'free';
 }
 
 function getDetachedVoiceSlotAspectRatioValue(
-  aspectRatio: DetachedVoiceLayoutSlotAspectRatio | undefined,
+  aspectRatio: DetachedVoiceLayoutSlotAspectRatio | undefined
 ) {
   if (!aspectRatio || aspectRatio === 'free') {
-    return null
+    return null;
   }
 
-  return detachedVoiceSlotAspectRatios[aspectRatio]
+  return detachedVoiceSlotAspectRatios[aspectRatio];
 }
 
 export function normalizeDetachedVoiceSlot(
   slot: DetachedVoiceLayoutSlot,
   gridColumns: number,
-  gridRows: number,
+  gridRows: number
 ): DetachedVoiceLayoutSlot {
   const aspectRatio = normalizeDetachedVoiceSlotAspectRatio(
     slot.aspectRatio,
-    slot.preserveAspectRatio,
-  )
-  const aspectRatioValue = getDetachedVoiceSlotAspectRatioValue(aspectRatio)
+    slot.preserveAspectRatio
+  );
+  const aspectRatioValue = getDetachedVoiceSlotAspectRatioValue(aspectRatio);
   let width = clampNumber(
     Number.isFinite(slot.width) ? slot.width : detachedVoiceLayoutMinSlotSize,
     detachedVoiceLayoutMinSlotSize,
-    gridColumns,
-  )
+    gridColumns
+  );
   let height = clampNumber(
     Number.isFinite(slot.height) ? slot.height : detachedVoiceLayoutMinSlotSize,
     detachedVoiceLayoutMinSlotSize,
-    gridRows,
-  )
+    gridRows
+  );
 
   if (aspectRatioValue) {
     const widthDrivenHeight = Math.max(
       detachedVoiceLayoutMinSlotSize,
-      width / aspectRatioValue,
-    )
+      width / aspectRatioValue
+    );
     const heightDrivenWidth = Math.max(
       detachedVoiceLayoutMinSlotSize,
-      height * aspectRatioValue,
-    )
+      height * aspectRatioValue
+    );
 
     if (heightDrivenWidth <= gridColumns && heightDrivenWidth <= width) {
-      width = heightDrivenWidth
+      width = heightDrivenWidth;
     } else if (widthDrivenHeight <= gridRows) {
-      height = widthDrivenHeight
+      height = widthDrivenHeight;
     } else {
-      width = Math.min(width, gridColumns)
-      height = Math.min(gridRows, width / aspectRatioValue)
+      width = Math.min(width, gridColumns);
+      height = Math.min(gridRows, width / aspectRatioValue);
     }
   }
 
@@ -199,7 +197,11 @@ export function normalizeDetachedVoiceSlot(
     ...slot,
     preserveAspectRatio: aspectRatio !== 'free',
     aspectRatio,
-    x: clampNumber(Number.isFinite(slot.x) ? slot.x : 0, 0, gridColumns - width),
+    x: clampNumber(
+      Number.isFinite(slot.x) ? slot.x : 0,
+      0,
+      gridColumns - width
+    ),
     y: clampNumber(Number.isFinite(slot.y) ? slot.y : 0, 0, gridRows - height),
     width,
     height,
@@ -208,14 +210,14 @@ export function normalizeDetachedVoiceSlot(
         ? slot.borderRadius
         : detachedVoiceSlotDefaultBorderRadius,
       0,
-      detachedVoiceSlotMaxBorderRadius,
+      detachedVoiceSlotMaxBorderRadius
     ),
     zIndex: clampNumber(
       Number.isFinite(slot.zIndex) ? Math.round(slot.zIndex) : slot.index,
       0,
-      999,
-    ),
-  }
+      999
+    )
+  };
 }
 
 export function normalizeDetachedVoiceSlotChange(
@@ -223,48 +225,48 @@ export function normalizeDetachedVoiceSlotChange(
   field: 'x' | 'y' | 'width' | 'height',
   value: number,
   gridColumns: number,
-  gridRows: number,
+  gridRows: number
 ) {
   const nextSlot = {
     ...slot,
-    [field]: value,
-  }
+    [field]: value
+  };
   const aspectRatioValue = getDetachedVoiceSlotAspectRatioValue(
     normalizeDetachedVoiceSlotAspectRatio(
       slot.aspectRatio,
-      slot.preserveAspectRatio,
-    ),
-  )
+      slot.preserveAspectRatio
+    )
+  );
 
   if (aspectRatioValue && field === 'width') {
-    nextSlot.height = value / aspectRatioValue
+    nextSlot.height = value / aspectRatioValue;
   }
 
   if (aspectRatioValue && field === 'height') {
-    nextSlot.width = value * aspectRatioValue
+    nextSlot.width = value * aspectRatioValue;
   }
 
-  return normalizeDetachedVoiceSlot(nextSlot, gridColumns, gridRows)
+  return normalizeDetachedVoiceSlot(nextSlot, gridColumns, gridRows);
 }
 
 export function normalizeDetachedVoicePreset(
-  preset: DetachedVoiceLayoutPreset,
+  preset: DetachedVoiceLayoutPreset
 ): DetachedVoiceLayoutPreset {
   const cellSizePx = clampNumber(
     Math.round(preset.cellSizePx || detachedVoiceLayoutDefaultCellSizePx),
     detachedVoiceLayoutMinCellSizePx,
-    detachedVoiceLayoutMaxCellSizePx,
-  )
+    detachedVoiceLayoutMaxCellSizePx
+  );
   const gridColumns = clampNumber(
     Math.round(preset.gridColumns || detachedVoiceLayoutDefaultColumns),
     2,
-    detachedVoiceLayoutMaxColumns,
-  )
+    detachedVoiceLayoutMaxColumns
+  );
   const gridRows = clampNumber(
     Math.round(preset.gridRows || detachedVoiceLayoutDefaultRows),
     2,
-    detachedVoiceLayoutMaxRows,
-  )
+    detachedVoiceLayoutMaxRows
+  );
 
   return {
     ...preset,
@@ -275,29 +277,29 @@ export function normalizeDetachedVoicePreset(
     isPersisted: Boolean(preset.isPersisted),
     hideServiceInfo: Boolean(preset.hideServiceInfo),
     slots: preset.slots.map((slot) =>
-      normalizeDetachedVoiceSlot(slot, gridColumns, gridRows),
-    ),
-  }
+      normalizeDetachedVoiceSlot(slot, gridColumns, gridRows)
+    )
+  };
 }
 
 function createDetachedVoiceSlotAtIndex(
   index: number,
   slotCount: number,
   gridColumns: number,
-  gridRows: number,
+  gridRows: number
 ): DetachedVoiceLayoutSlot {
-  const columns = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(slotCount))))
-  const rows = Math.max(1, Math.ceil(slotCount / columns))
+  const columns = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(slotCount))));
+  const rows = Math.max(1, Math.ceil(slotCount / columns));
   const slotWidth = Math.max(
     detachedVoiceLayoutMinSlotSize,
-    Math.floor((gridColumns / columns) * detachedVoiceSlotDefaultScale),
-  )
+    Math.floor((gridColumns / columns) * detachedVoiceSlotDefaultScale)
+  );
   const slotHeight = Math.max(
     detachedVoiceLayoutMinSlotSize,
-    Math.floor((gridRows / rows) * detachedVoiceSlotDefaultScale),
-  )
-  const column = (index - 1) % columns
-  const row = Math.floor((index - 1) / columns)
+    Math.floor((gridRows / rows) * detachedVoiceSlotDefaultScale)
+  );
+  const column = (index - 1) % columns;
+  const row = Math.floor((index - 1) / columns);
 
   return normalizeDetachedVoiceSlot(
     {
@@ -307,64 +309,66 @@ function createDetachedVoiceSlotAtIndex(
       x: column * slotWidth,
       y: row * slotHeight,
       width: slotWidth,
-      height: slotWidth / detachedVoiceSlotAspectRatios[detachedVoiceSlotDefaultAspectRatio],
+      height:
+        slotWidth /
+        detachedVoiceSlotAspectRatios[detachedVoiceSlotDefaultAspectRatio],
       borderRadius: detachedVoiceSlotDefaultBorderRadius,
       zIndex: index,
-      mode: 'grid',
+      mode: 'grid'
     },
     gridColumns,
-    gridRows,
-  )
+    gridRows
+  );
 }
 
 export function resizeDetachedVoicePresetSlots(
   preset: DetachedVoiceLayoutPreset,
-  slotCount: number,
+  slotCount: number
 ): DetachedVoiceLayoutPreset {
-  const normalizedPreset = normalizeDetachedVoicePreset(preset)
-  const nextSlotCount = clampNumber(Math.round(slotCount), 1, 64)
+  const normalizedPreset = normalizeDetachedVoicePreset(preset);
+  const nextSlotCount = clampNumber(Math.round(slotCount), 1, 64);
   const slots = Array.from({ length: nextSlotCount }, (_, index) => {
-    const slotIndex = index + 1
+    const slotIndex = index + 1;
     const existingSlot = normalizedPreset.slots.find(
-      (slot) => slot.index === slotIndex,
-    )
+      (slot) => slot.index === slotIndex
+    );
 
     return existingSlot
       ? normalizeDetachedVoiceSlot(
           existingSlot,
           normalizedPreset.gridColumns,
-          normalizedPreset.gridRows,
+          normalizedPreset.gridRows
         )
       : createDetachedVoiceSlotAtIndex(
           slotIndex,
           nextSlotCount,
           normalizedPreset.gridColumns,
-          normalizedPreset.gridRows,
-        )
-  })
+          normalizedPreset.gridRows
+        );
+  });
 
   return {
     ...normalizedPreset,
-    slots,
-  }
+    slots
+  };
 }
 
 function createDetachedVoicePresetId() {
   if ('crypto' in globalThis && 'randomUUID' in globalThis.crypto) {
-    return globalThis.crypto.randomUUID()
+    return globalThis.crypto.randomUUID();
   }
 
-  return `preset-${Date.now()}-${Math.round(Math.random() * 100000)}`
+  return `preset-${Date.now()}-${Math.round(Math.random() * 100000)}`;
 }
 
 export function createDefaultDetachedVoicePreset(
   name: string,
   _cardCount: number,
-  showParticipantsWithoutVideo: boolean,
+  showParticipantsWithoutVideo: boolean
 ): DetachedVoiceLayoutPreset {
-  const slotCount = 4
-  const gridColumns = detachedVoiceLayoutDefaultColumns
-  const gridRows = detachedVoiceLayoutDefaultRows
+  const slotCount = 4;
+  const gridColumns = detachedVoiceLayoutDefaultColumns;
+  const gridRows = detachedVoiceLayoutDefaultRows;
 
   return {
     id: createDetachedVoicePresetId(),
@@ -381,9 +385,8 @@ export function createDefaultDetachedVoicePreset(
         slotIndex + 1,
         slotCount,
         gridColumns,
-        gridRows,
-      ),
-    ),
-  }
+        gridRows
+      )
+    )
+  };
 }
-

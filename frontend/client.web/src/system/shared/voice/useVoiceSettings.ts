@@ -1,31 +1,32 @@
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useSyncExternalStore } from 'react';
+
 import {
   defaultVoiceSettings,
   getVoiceSettings,
   resetVoiceSettings,
   subscribeVoiceSettings,
-  updateVoiceSettings,
-} from './voiceSettings'
-import type { VoiceSettings } from './voiceSettings'
+  updateVoiceSettings
+} from './voiceSettings';
+import type { VoiceSettings } from './voiceSettings';
 
-const getServerVoiceSettings = () => defaultVoiceSettings as VoiceSettings
+const getServerVoiceSettings = () => defaultVoiceSettings as VoiceSettings;
 
 export function useVoiceSettings() {
   const settings = useSyncExternalStore(
     (onStoreChange) => subscribeVoiceSettings(() => onStoreChange()),
     getVoiceSettings,
-    getServerVoiceSettings,
-  )
+    getServerVoiceSettings
+  );
 
   const updateSettings = useCallback((patch: Partial<VoiceSettings>) => {
-    return updateVoiceSettings(patch)
-  }, [])
+    return updateVoiceSettings(patch);
+  }, []);
 
-  const resetSettings = useCallback(() => resetVoiceSettings(), [])
+  const resetSettings = useCallback(() => resetVoiceSettings(), []);
 
   return {
     settings,
     updateSettings,
-    resetSettings,
-  }
+    resetSettings
+  };
 }

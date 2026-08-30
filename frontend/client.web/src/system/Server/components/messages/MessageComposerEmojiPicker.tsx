@@ -1,146 +1,147 @@
 import {
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   useCallback,
   useId,
   useLayoutEffect,
   useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from 'react'
-import { createPortal } from 'react-dom'
-import { serverCopy, SystemIcon, useDismissableLayer } from '../../../shared'
-import { curatedMessageReactions } from './messageReactionModel'
-import styles from './MessageComposerEmojiPicker.module.css'
+  useState
+} from 'react';
+import { createPortal } from 'react-dom';
+
+import { SystemIcon, serverCopy, useDismissableLayer } from '../../../shared';
+import { curatedMessageReactions } from './messageReactionModel';
+
+import styles from './MessageComposerEmojiPicker.module.css';
 
 type MessageComposerEmojiPickerProps = {
-  disabled: boolean
-  isOpen: boolean
-  onOpenChange: (isOpen: boolean) => void
-  onSelect: (emoji: string) => void
-}
+  disabled: boolean;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onSelect: (emoji: string) => void;
+};
 
-const pickerColumns = 6
+const pickerColumns = 6;
 
 export function MessageComposerEmojiPicker({
   disabled,
   isOpen,
   onOpenChange,
-  onSelect,
+  onSelect
 }: MessageComposerEmojiPickerProps) {
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-  const pickerRef = useRef<HTMLDivElement | null>(null)
-  const emojiButtonRefs = useRef<Array<HTMLButtonElement | null>>([])
-  const pickerId = `message-emoji-picker-${useId().replace(/:/g, '')}`
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [position, setPosition] = useState({ left: 8, top: 8 })
-  const closePicker = useCallback(() => onOpenChange(false), [onOpenChange])
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const pickerRef = useRef<HTMLDivElement | null>(null);
+  const emojiButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const pickerId = `message-emoji-picker-${useId().replace(/:/g, '')}`;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [position, setPosition] = useState({ left: 8, top: 8 });
+  const closePicker = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   useDismissableLayer({
     isOpen,
     layerRef: pickerRef,
     triggerRef: buttonRef,
-    onDismiss: closePicker,
-  })
+    onDismiss: closePicker
+  });
 
   useLayoutEffect(() => {
-    if (!isOpen) return undefined
+    if (!isOpen) return undefined;
 
     function updatePosition() {
-      const button = buttonRef.current
-      const picker = pickerRef.current
-      if (!button || !picker) return
+      const button = buttonRef.current;
+      const picker = pickerRef.current;
+      if (!button || !picker) return;
 
-      const gutter = 8
-      const buttonBounds = button.getBoundingClientRect()
-      const pickerBounds = picker.getBoundingClientRect()
-      const width = pickerBounds.width || 280
-      const height = pickerBounds.height || 320
+      const gutter = 8;
+      const buttonBounds = button.getBoundingClientRect();
+      const pickerBounds = picker.getBoundingClientRect();
+      const width = pickerBounds.width || 280;
+      const height = pickerBounds.height || 320;
       const left = Math.min(
         Math.max(buttonBounds.right - width, gutter),
-        Math.max(gutter, window.innerWidth - width - gutter),
-      )
+        Math.max(gutter, window.innerWidth - width - gutter)
+      );
       const top =
         buttonBounds.top - height - gutter >= gutter
           ? buttonBounds.top - height - gutter
           : Math.min(
               buttonBounds.bottom + gutter,
-              Math.max(gutter, window.innerHeight - height - gutter),
-            )
+              Math.max(gutter, window.innerHeight - height - gutter)
+            );
 
       setPosition((current) =>
-        Math.abs(current.left - left) < 0.5 &&
-        Math.abs(current.top - top) < 0.5
+        Math.abs(current.left - left) < 0.5 && Math.abs(current.top - top) < 0.5
           ? current
-          : { left, top },
-      )
+          : { left, top }
+      );
     }
 
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
-    window.requestAnimationFrame(() => emojiButtonRefs.current[0]?.focus())
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    window.requestAnimationFrame(() => emojiButtonRefs.current[0]?.focus());
 
     return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
-    }
-  }, [isOpen])
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen]);
 
   function focusEmoji(index: number) {
     const nextIndex = Math.min(
       Math.max(index, 0),
-      curatedMessageReactions.length - 1,
-    )
-    setActiveIndex(nextIndex)
-    emojiButtonRefs.current[nextIndex]?.focus()
-    emojiButtonRefs.current[nextIndex]?.scrollIntoView({ block: 'nearest' })
+      curatedMessageReactions.length - 1
+    );
+    setActiveIndex(nextIndex);
+    emojiButtonRefs.current[nextIndex]?.focus();
+    emojiButtonRefs.current[nextIndex]?.scrollIntoView({ block: 'nearest' });
   }
 
   function handleEmojiKeyDown(
     event: ReactKeyboardEvent<HTMLButtonElement>,
-    index: number,
+    index: number
   ) {
-    let nextIndex: number
+    let nextIndex: number;
 
     switch (event.key) {
       case 'ArrowRight':
-        nextIndex = Math.min(index + 1, curatedMessageReactions.length - 1)
-        break
+        nextIndex = Math.min(index + 1, curatedMessageReactions.length - 1);
+        break;
       case 'ArrowLeft':
-        nextIndex = Math.max(index - 1, 0)
-        break
+        nextIndex = Math.max(index - 1, 0);
+        break;
       case 'ArrowDown':
         nextIndex = Math.min(
           index + pickerColumns,
-          curatedMessageReactions.length - 1,
-        )
-        break
+          curatedMessageReactions.length - 1
+        );
+        break;
       case 'ArrowUp':
-        nextIndex = Math.max(index - pickerColumns, 0)
-        break
+        nextIndex = Math.max(index - pickerColumns, 0);
+        break;
       case 'Home':
-        nextIndex = 0
-        break
+        nextIndex = 0;
+        break;
       case 'End':
-        nextIndex = curatedMessageReactions.length - 1
-        break
+        nextIndex = curatedMessageReactions.length - 1;
+        break;
       default:
-        return
+        return;
     }
 
-    event.preventDefault()
-    focusEmoji(nextIndex)
+    event.preventDefault();
+    focusEmoji(nextIndex);
   }
 
   function selectEmoji(emoji: string) {
-    onSelect(emoji)
-    onOpenChange(false)
+    onSelect(emoji);
+    onOpenChange(false);
   }
 
   const pickerStyle = {
     left: position.left,
-    top: position.top,
-  } as CSSProperties
+    top: position.top
+  } as CSSProperties;
 
   return (
     <>
@@ -179,7 +180,7 @@ export function MessageComposerEmojiPicker({
                 <button
                   key={reaction.emojiCode}
                   ref={(button) => {
-                    emojiButtonRefs.current[index] = button
+                    emojiButtonRefs.current[index] = button;
                   }}
                   className={styles.emoji}
                   type="button"
@@ -195,8 +196,8 @@ export function MessageComposerEmojiPicker({
               ))}
             </div>
           </div>,
-          document.body,
+          document.body
         )}
     </>
-  )
+  );
 }

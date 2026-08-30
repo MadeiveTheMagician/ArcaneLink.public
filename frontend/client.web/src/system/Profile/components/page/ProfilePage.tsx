@@ -1,37 +1,39 @@
-import { useEffect, useRef, useState } from 'react'
-import type { CSSProperties, RefObject, SyntheticEvent } from 'react'
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties, RefObject, SyntheticEvent } from 'react';
+
 import type {
   OwnUserProfileResponse,
-  UserResponse,
-} from '../../../../shared/types'
+  UserResponse
+} from '../../../../shared/types';
+import { AssetPreviewOverlay } from '../../../shared/components/asset-preview/AssetPreviewOverlay';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
+import { profileCopy } from '../../../shared/index';
+import { SystemPopover } from '../../../shared/ui/SystemPopover';
 import {
   fallbackAvatarAccent,
-  toAvatarAccent,
-} from '../../../shared/utils/avatarAccent'
-import { profileCopy } from '../../../shared/index'
-import { AssetPreviewOverlay } from '../../../shared/components/asset-preview/AssetPreviewOverlay'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
-import { SystemPopover } from '../../../shared/ui/SystemPopover'
-import styles from './ProfilePage.module.css'
+  toAvatarAccent
+} from '../../../shared/utils/avatarAccent';
 
-const showcaseRunes = ['A', 'R', 'C', 'A', 'N', 'E', 'L', 'I', 'N', 'K']
+import styles from './ProfilePage.module.css';
+
+const showcaseRunes = ['A', 'R', 'C', 'A', 'N', 'E', 'L', 'I', 'N', 'K'];
 
 type ProfilePageProps = {
-  user: UserResponse
-  publicProfile: OwnUserProfileResponse
-  avatarSrc: string
-  avatarStyle: CSSProperties
-  isAvatarDraftActive: boolean
-  isAvatarMenuOpen: boolean
-  fileInputRef: RefObject<HTMLInputElement | null>
-  onToggleAvatarMenu: () => void
-  onCloseAvatarMenu: () => void
-  onOpenAvatarPicker: () => void
-  onShowAvatarLibrary: () => void
-  onSelectAvatarFile: (file: File | undefined) => void
-  onMarkBrokenAvatar: (url: string) => void
-  formatDate: (value: string) => string
-}
+  user: UserResponse;
+  publicProfile: OwnUserProfileResponse;
+  avatarSrc: string;
+  avatarStyle: CSSProperties;
+  isAvatarDraftActive: boolean;
+  isAvatarMenuOpen: boolean;
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  onToggleAvatarMenu: () => void;
+  onCloseAvatarMenu: () => void;
+  onOpenAvatarPicker: () => void;
+  onShowAvatarLibrary: () => void;
+  onSelectAvatarFile: (file: File | undefined) => void;
+  onMarkBrokenAvatar: (url: string) => void;
+  formatDate: (value: string) => string;
+};
 
 export function ProfilePage({
   user,
@@ -46,50 +48,50 @@ export function ProfilePage({
   onOpenAvatarPicker,
   onShowAvatarLibrary,
   onSelectAvatarFile,
-  onMarkBrokenAvatar,
+  onMarkBrokenAvatar
 }: ProfilePageProps) {
-  const bio = publicProfile.bio || profileCopy.bio.default
+  const bio = publicProfile.bio || profileCopy.bio.default;
   const subscriptionType =
-    publicProfile.subscriptionType ?? user.subscriptionType
-  const [avatarAccent, setAvatarAccent] = useState(fallbackAvatarAccent)
-  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false)
-  const avatarMenuRef = useRef<HTMLDivElement | null>(null)
+    publicProfile.subscriptionType ?? user.subscriptionType;
+  const [avatarAccent, setAvatarAccent] = useState(fallbackAvatarAccent);
+  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false);
+  const avatarMenuRef = useRef<HTMLDivElement | null>(null);
   const avatarOriginalSrc = publicProfile.avatarSourceAssetId
     ? `/api/assets/${publicProfile.avatarSourceAssetId}/content`
-    : avatarSrc
+    : avatarSrc;
 
   useEffect(() => {
-    if (!isAvatarMenuOpen) return undefined
+    if (!isAvatarMenuOpen) return undefined;
 
     function closeFromOutside(event: PointerEvent) {
       if (
         event.target instanceof Node &&
         avatarMenuRef.current?.contains(event.target)
       ) {
-        return
+        return;
       }
 
-      onCloseAvatarMenu()
+      onCloseAvatarMenu();
     }
 
     function closeFromKeyboard(event: KeyboardEvent) {
-      if (event.key === 'Escape') onCloseAvatarMenu()
+      if (event.key === 'Escape') onCloseAvatarMenu();
     }
 
-    document.addEventListener('pointerdown', closeFromOutside, true)
-    window.addEventListener('keydown', closeFromKeyboard)
+    document.addEventListener('pointerdown', closeFromOutside, true);
+    window.addEventListener('keydown', closeFromKeyboard);
 
     return () => {
-      document.removeEventListener('pointerdown', closeFromOutside, true)
-      window.removeEventListener('keydown', closeFromKeyboard)
-    }
-  }, [isAvatarMenuOpen, onCloseAvatarMenu])
+      document.removeEventListener('pointerdown', closeFromOutside, true);
+      window.removeEventListener('keydown', closeFromKeyboard);
+    };
+  }, [isAvatarMenuOpen, onCloseAvatarMenu]);
 
   function handleAvatarLoad(event: SyntheticEvent<HTMLImageElement>) {
     try {
-      setAvatarAccent(toAvatarAccent(event.currentTarget))
+      setAvatarAccent(toAvatarAccent(event.currentTarget));
     } catch {
-      setAvatarAccent(fallbackAvatarAccent)
+      setAvatarAccent(fallbackAvatarAccent);
     }
   }
 
@@ -105,7 +107,7 @@ export function ProfilePage({
             style={
               {
                 '--profile-avatar-accent': avatarAccent,
-                '--profile-avatar-glow-image': `url("${avatarSrc}")`,
+                '--profile-avatar-glow-image': `url("${avatarSrc}")`
               } as CSSProperties
             }
           >
@@ -126,8 +128,8 @@ export function ProfilePage({
                 className={styles.avatarContextRow}
                 type="button"
                 onClick={() => {
-                  onCloseAvatarMenu()
-                  setIsAvatarPreviewOpen(true)
+                  onCloseAvatarMenu();
+                  setIsAvatarPreviewOpen(true);
                 }}
               >
                 <SystemIcon name="eye" size={18} />
@@ -176,7 +178,7 @@ export function ProfilePage({
         style={
           publicProfile.bannerAssetId
             ? {
-                backgroundImage: `url(/api/assets/${publicProfile.bannerAssetId}/content)`,
+                backgroundImage: `url(/api/assets/${publicProfile.bannerAssetId}/content)`
               }
             : undefined
         }
@@ -213,7 +215,9 @@ export function ProfilePage({
             </div>
             <div>
               <dt>{profileCopy.labels.site}</dt>
-              <dd>{publicProfile.websiteUrl || profileCopy.state.siteMissing}</dd>
+              <dd>
+                {publicProfile.websiteUrl || profileCopy.state.siteMissing}
+              </dd>
             </div>
           </dl>
         </section>
@@ -233,18 +237,18 @@ export function ProfilePage({
           asset={{
             url: avatarOriginalSrc,
             title: publicProfile.displayName || user.displayName,
-            createdAt: publicProfile.createdAt,
+            createdAt: publicProfile.createdAt
           }}
           author={{
             displayName: publicProfile.displayName || user.displayName,
             avatarUrl: avatarSrc,
             avatarCropOffsetX: publicProfile.avatarCropOffsetX,
             avatarCropOffsetY: publicProfile.avatarCropOffsetY,
-            avatarCropZoom: publicProfile.avatarCropZoom,
+            avatarCropZoom: publicProfile.avatarCropZoom
           }}
           onClose={() => setIsAvatarPreviewOpen(false)}
         />
       )}
     </section>
-  )
+  );
 }

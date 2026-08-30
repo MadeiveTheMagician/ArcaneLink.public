@@ -1,38 +1,38 @@
-import type { PrivateSpaceResponse } from '../../../../shared/types'
+import type { PrivateSpaceResponse } from '../../../../shared/types';
 
 type UserBlockStateChange = {
-  userId: string
-  isBlocked: boolean
-}
+  userId: string;
+  isBlocked: boolean;
+};
 
 export function patchPrivateSpacesPeerBlockState(
   spaces: PrivateSpaceResponse[],
   currentUserId: string,
-  change: UserBlockStateChange,
+  change: UserBlockStateChange
 ) {
-  let hasChanged = false
+  let hasChanged = false;
   const nextSpaces = spaces.map((space) => {
     const containsChangedPeer =
       space.kind === 'direct' &&
       change.userId !== currentUserId &&
-      space.members.some((member) => member.userId === change.userId)
+      space.members.some((member) => member.userId === change.userId);
 
     if (
       !containsChangedPeer ||
       space.viewerSettings.isPeerBlocked === change.isBlocked
     ) {
-      return space
+      return space;
     }
 
-    hasChanged = true
+    hasChanged = true;
     return {
       ...space,
       viewerSettings: {
         ...space.viewerSettings,
-        isPeerBlocked: change.isBlocked,
-      },
-    }
-  })
+        isPeerBlocked: change.isBlocked
+      }
+    };
+  });
 
-  return hasChanged ? nextSpaces : spaces
+  return hasChanged ? nextSpaces : spaces;
 }

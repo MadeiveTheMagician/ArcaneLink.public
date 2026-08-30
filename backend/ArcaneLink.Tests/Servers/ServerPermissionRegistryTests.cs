@@ -1,5 +1,5 @@
-using ArcaneLink.Services.Servers.Authorization;
 using System.Text.Json;
+using ArcaneLink.Services.Servers.Authorization;
 
 namespace ArcaneLink.Tests.Servers;
 

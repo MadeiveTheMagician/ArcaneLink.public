@@ -8,6 +8,6 @@ export const themeCopy = {
     pink: 'Розовая',
     sapphire: 'Сапфировая',
     sky: 'Голубая',
-    snow: 'Снежная',
-  },
-} as const
+    snow: 'Снежная'
+  }
+} as const;

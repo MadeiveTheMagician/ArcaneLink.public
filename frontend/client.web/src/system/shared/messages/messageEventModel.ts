@@ -1,19 +1,19 @@
-import type { SpaceMessageResponse } from '../../../shared/types'
+import type { SpaceMessageResponse } from '../../../shared/types';
 
 export type MessagePinnedEvent = {
-  kind: 'message_pinned'
-  messageId: string
-}
+  kind: 'message_pinned';
+  messageId: string;
+};
 
 export function getMessagePinnedEvent(
-  message: Pick<SpaceMessageResponse, 'messageTypeCode' | 'payload'>,
+  message: Pick<SpaceMessageResponse, 'messageTypeCode' | 'payload'>
 ): MessagePinnedEvent | null {
   if (message.messageTypeCode !== 'event' || !message.payload) {
-    return null
+    return null;
   }
 
   try {
-    const payload: unknown = JSON.parse(message.payload)
+    const payload: unknown = JSON.parse(message.payload);
 
     if (
       typeof payload !== 'object' ||
@@ -24,14 +24,14 @@ export function getMessagePinnedEvent(
       typeof payload.messageId !== 'string' ||
       payload.messageId.length === 0
     ) {
-      return null
+      return null;
     }
 
     return {
       kind: 'message_pinned',
-      messageId: payload.messageId,
-    }
+      messageId: payload.messageId
+    };
   } catch {
-    return null
+    return null;
   }
 }

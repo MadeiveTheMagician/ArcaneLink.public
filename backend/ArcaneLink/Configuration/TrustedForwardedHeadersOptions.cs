@@ -92,20 +92,20 @@ public sealed class TrustedForwardedHeadersOptions
             throw new InvalidOperationException(error);
         }
 
-        target.ForwardedHeaders = Enabled
+        target.ForwardedHeaders = this.Enabled
             ? ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             : ForwardedHeaders.None;
-        target.ForwardLimit = ForwardLimit;
-        target.RequireHeaderSymmetry = RequireHeaderSymmetry;
+        target.ForwardLimit = this.ForwardLimit;
+        target.RequireHeaderSymmetry = this.RequireHeaderSymmetry;
         target.KnownProxies.Clear();
         target.KnownIPNetworks.Clear();
 
-        foreach (var value in KnownProxies)
+        foreach (var value in this.KnownProxies)
         {
             target.KnownProxies.Add(IPAddress.Parse(value));
         }
 
-        foreach (var value in KnownNetworks)
+        foreach (var value in this.KnownNetworks)
         {
             target.KnownIPNetworks.Add(BclIPNetwork.Parse(value));
         }

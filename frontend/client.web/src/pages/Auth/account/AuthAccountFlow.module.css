@@ -104,7 +104,9 @@
 }
 
 @keyframes account-status-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 620px) {

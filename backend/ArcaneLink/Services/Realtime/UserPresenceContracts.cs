@@ -58,11 +58,11 @@ public sealed class UserPresenceAudienceSnapshot
         IReadOnlySet<Guid> sharedServerRecipients,
         IReadOnlySet<Guid> everyoneRecipients)
     {
-        SelfRecipients = selfRecipients;
-        FriendRecipients = friendRecipients;
-        FriendsOfFriendsRecipients = friendsOfFriendsRecipients;
-        SharedServerRecipients = sharedServerRecipients;
-        EveryoneRecipients = everyoneRecipients;
+        this.SelfRecipients = selfRecipients;
+        this.FriendRecipients = friendRecipients;
+        this.FriendsOfFriendsRecipients = friendsOfFriendsRecipients;
+        this.SharedServerRecipients = sharedServerRecipients;
+        this.EveryoneRecipients = everyoneRecipients;
     }
 
     public IReadOnlySet<Guid> SelfRecipients { get; }
@@ -76,21 +76,21 @@ public sealed class UserPresenceAudienceSnapshot
         var policy = PresenceVisibilityCodes.ParseOrNobody(visibility);
         if (policy.AllowsEveryone)
         {
-            return EveryoneRecipients;
+            return this.EveryoneRecipients;
         }
 
-        var recipients = new HashSet<Guid>(SelfRecipients);
+        var recipients = new HashSet<Guid>(this.SelfRecipients);
         if (policy.AllowsFriends)
         {
-            recipients.UnionWith(FriendRecipients);
+            recipients.UnionWith(this.FriendRecipients);
         }
         if (policy.AllowsFriendsOfFriends)
         {
-            recipients.UnionWith(FriendsOfFriendsRecipients);
+            recipients.UnionWith(this.FriendsOfFriendsRecipients);
         }
         if (policy.AllowsSharedServers)
         {
-            recipients.UnionWith(SharedServerRecipients);
+            recipients.UnionWith(this.SharedServerRecipients);
         }
 
         return recipients;

@@ -16,23 +16,23 @@ public sealed class EmailOutboxQueue : IEmailOutboxQueue
 
     public EmailOutboxQueue(AppDbContext db, IDataProtectionProvider dataProtection)
     {
-        _db = db;
-        _protector = dataProtection.CreateProtector(ProtectorPurpose);
+        this._db = db;
+        this._protector = dataProtection.CreateProtector(ProtectorPurpose);
     }
 
-    public void EnqueueEmail(OutboxEmail email) => Add("send", email);
+    public void EnqueueEmail(OutboxEmail email) => this.Add("send", email);
 
     public void EnqueueLookup(string kind, string lookup) =>
-        Add(kind, new EmailLookupPayload(lookup));
+        this.Add(kind, new EmailLookupPayload(lookup));
 
     private void Add<T>(string kind, T payload)
     {
         var now = DateTime.UtcNow;
-        _db.EmailOutboxMessages.Add(new EmailOutboxMessage
+        this._db.EmailOutboxMessages.Add(new EmailOutboxMessage
         {
             Id = Guid.NewGuid(),
             Kind = kind,
-            ProtectedPayload = _protector.Protect(
+            ProtectedPayload = this._protector.Protect(
                 JsonSerializer.Serialize(payload, JsonOptions)),
             CreatedAt = now,
             AvailableAt = now

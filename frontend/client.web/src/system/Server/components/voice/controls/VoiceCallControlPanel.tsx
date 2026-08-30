@@ -1,25 +1,26 @@
 import {
   SystemIcon,
   type SystemIconName,
-  voiceCopy,
-} from '../../../../shared/index'
-import styles from './VoiceCallControlPanel.module.css'
-import { resolveVoiceCallControlPresentation } from './voiceCallControlPresentation'
+  voiceCopy
+} from '../../../../shared/index';
+import { resolveVoiceCallControlPresentation } from './voiceCallControlPresentation';
+
+import styles from './VoiceCallControlPanel.module.css';
 
 type VoiceCallControlPanelProps = {
-  isMuted: boolean
-  isDeafened: boolean
-  isCameraEnabled: boolean
-  isScreenSharing: boolean
-  isSettingsOpen?: boolean
-  className?: string
-  onToggleMuted: () => void
-  onToggleDeafened: () => void
-  onToggleCamera: () => void
-  onToggleScreenShare: () => void
-  onLeaveVoiceChannel: () => void
-  onOpenSettings?: () => void
-}
+  isMuted: boolean;
+  isDeafened: boolean;
+  isCameraEnabled: boolean;
+  isScreenSharing: boolean;
+  isSettingsOpen?: boolean;
+  className?: string;
+  onToggleMuted: () => void;
+  onToggleDeafened: () => void;
+  onToggleCamera: () => void;
+  onToggleScreenShare: () => void;
+  onLeaveVoiceChannel: () => void;
+  onOpenSettings?: () => void;
+};
 
 export function VoiceCallControlPanel({
   isMuted,
@@ -33,30 +34,30 @@ export function VoiceCallControlPanel({
   onToggleCamera,
   onToggleScreenShare,
   onLeaveVoiceChannel,
-  onOpenSettings,
+  onOpenSettings
 }: VoiceCallControlPanelProps) {
   const controlState = {
     isMuted,
     isDeafened,
     isCameraEnabled,
-    isScreenSharing,
-  }
+    isScreenSharing
+  };
   const microphone = resolveVoiceCallControlPresentation(
     'isMuted',
-    controlState,
-  )
+    controlState
+  );
   const headphones = resolveVoiceCallControlPresentation(
     'isDeafened',
-    controlState,
-  )
+    controlState
+  );
   const camera = resolveVoiceCallControlPresentation(
     'isCameraEnabled',
-    controlState,
-  )
+    controlState
+  );
   const screenShare = resolveVoiceCallControlPresentation(
     'isScreenSharing',
-    controlState,
-  )
+    controlState
+  );
 
   return (
     <div className={`${styles.panel} ${className ?? ''}`}>
@@ -96,7 +97,7 @@ export function VoiceCallControlPanel({
         onClick={onLeaveVoiceChannel}
       />
     </div>
-  )
+  );
 }
 
 function VoiceCallControlButton({
@@ -107,16 +108,16 @@ function VoiceCallControlButton({
   danger,
   ariaPressed,
   ariaExpanded,
-  onClick,
+  onClick
 }: {
-  label: string
-  icon: SystemIconName
-  active?: boolean
-  tone?: 'default' | 'danger'
-  danger?: boolean
-  ariaPressed?: boolean
-  ariaExpanded?: boolean
-  onClick: () => void
+  label: string;
+  icon: SystemIconName;
+  active?: boolean;
+  tone?: 'default' | 'danger';
+  danger?: boolean;
+  ariaPressed?: boolean;
+  ariaExpanded?: boolean;
+  onClick: () => void;
 }) {
   return (
     <button
@@ -138,5 +139,5 @@ function VoiceCallControlButton({
         tone={danger ? 'danger' : tone}
       />
     </button>
-  )
+  );
 }

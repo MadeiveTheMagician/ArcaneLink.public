@@ -100,7 +100,11 @@
 }
 
 .primary {
-  border-color: color-mix(in srgb, var(--theme-accent-light), transparent 45%) !important;
+  border-color: color-mix(
+    in srgb,
+    var(--theme-accent-light),
+    transparent 45%
+  ) !important;
   color: var(--theme-accent-contrast) !important;
   background: var(--theme-surface-accent) !important;
 }
@@ -108,12 +112,11 @@
 .danger {
   border-color: color-mix(in srgb, #ff5d75, transparent 40%) !important;
   color: #ffe9ed !important;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, #8d2340, var(--theme-control-bg) 28%),
-      color-mix(in srgb, #ff5d75, var(--theme-control-bg) 72%)
-    ) !important;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #8d2340, var(--theme-control-bg) 28%),
+    color-mix(in srgb, #ff5d75, var(--theme-control-bg) 72%)
+  ) !important;
 }
 
 .secondary {
@@ -181,8 +184,11 @@
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   padding-right: 3px;
-  scrollbar-color:
-    color-mix(in srgb, var(--theme-accent-light), transparent 18%)
+  scrollbar-color: color-mix(
+      in srgb,
+      var(--theme-accent-light),
+      transparent 18%
+    )
     color-mix(in srgb, var(--theme-control-bg), transparent 22%);
   scrollbar-width: thin;
 }
@@ -199,8 +205,7 @@
 .peopleList::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background:
-    linear-gradient(
+  background: linear-gradient(
       180deg,
       var(--theme-accent-light),
       var(--theme-accent)
@@ -209,8 +214,7 @@
 }
 
 .peopleList::-webkit-scrollbar-thumb:hover {
-  background:
-    linear-gradient(
+  background: linear-gradient(
       180deg,
       color-mix(in srgb, var(--theme-accent-light), white 22%),
       color-mix(in srgb, var(--theme-accent), white 12%)
@@ -363,12 +367,11 @@
   border: 1px solid var(--theme-section-border);
   border-radius: 12px;
   padding: 18px;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-accent), transparent 84%),
-      transparent
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-accent), transparent 84%),
+    transparent
+  );
 }
 
 .profileAvatar {
@@ -491,8 +494,12 @@
 }
 
 @keyframes privateDialogBackdropIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes privateDialogIn {

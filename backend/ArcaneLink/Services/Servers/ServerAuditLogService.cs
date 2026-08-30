@@ -4,56 +4,55 @@ using ArcaneLink.DataBase.DTOs.Servers;
 using ArcaneLink.Services.Servers.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
-namespace ArcaneLink.Services.Servers
+namespace ArcaneLink.Services.Servers;
+
+public class ServerAuditLogService : IServerAuditLogService
 {
-    public class ServerAuditLogService : IServerAuditLogService
+    private readonly AppDbContext _db;
+    private readonly IServerGovernanceAccessService _access;
+
+    public ServerAuditLogService(
+        AppDbContext db,
+        IServerGovernanceAccessService access)
     {
-        private readonly AppDbContext _db;
-        private readonly IServerGovernanceAccessService _access;
+        this._db = db;
+        this._access = access;
+    }
 
-        public ServerAuditLogService(
-            AppDbContext db,
-            IServerGovernanceAccessService access)
+    public async Task<IReadOnlyList<ServerAuditLogResponse>?> GetAuditLogsAsync(
+        Guid currentUserId,
+        Guid serverId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await this._access.HasGranularPermissionAsync(
+                currentUserId,
+                serverId,
+                "VIEW_AUDIT_LOG",
+                cancellationToken))
         {
-            _db = db;
-            _access = access;
+            return null;
         }
 
-        public async Task<IReadOnlyList<ServerAuditLogResponse>?> GetAuditLogsAsync(
-            Guid currentUserId,
-            Guid serverId,
-            CancellationToken cancellationToken = default)
-        {
-            if (!await _access.HasGranularPermissionAsync(
-                    currentUserId,
-                    serverId,
-                    "VIEW_AUDIT_LOG",
-                    cancellationToken))
+        return await this._db.ServerAuditLogs
+            .AsNoTracking()
+            .Include(x => x.EventType)
+            .Where(x => x.ServerId == serverId)
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(100)
+            .Select(x => new ServerAuditLogResponse
             {
-                return null;
-            }
-
-            return await _db.ServerAuditLogs
-                .AsNoTracking()
-                .Include(x => x.EventType)
-                .Where(x => x.ServerId == serverId)
-                .OrderByDescending(x => x.CreatedAt)
-                .Take(100)
-                .Select(x => new ServerAuditLogResponse
-                {
-                    Id = x.Id,
-                    ServerId = x.ServerId,
-                    EventTypeCode = x.EventType.Code,
-                    EventTitle = x.EventType.Title,
-                    ActorUserId = x.ActorUserId,
-                    TargetUserId = x.TargetUserId,
-                    RelatedRoleId = x.RelatedRoleId,
-                    RelatedInviteId = x.RelatedInviteId,
-                    RelatedSpaceId = x.RelatedSpaceId,
-                    Payload = x.Payload,
-                    CreatedAt = x.CreatedAt
-                })
-                .ToListAsync(cancellationToken);
-        }
+                Id = x.Id,
+                ServerId = x.ServerId,
+                EventTypeCode = x.EventType.Code,
+                EventTitle = x.EventType.Title,
+                ActorUserId = x.ActorUserId,
+                TargetUserId = x.TargetUserId,
+                RelatedRoleId = x.RelatedRoleId,
+                RelatedInviteId = x.RelatedInviteId,
+                RelatedSpaceId = x.RelatedSpaceId,
+                Payload = x.Payload,
+                CreatedAt = x.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
     }
 }

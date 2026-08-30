@@ -1,6 +1,11 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { configureApiAuthSession, apiJson, apiRequest } from './shared/api/api'
-import { appCopy } from './shared/app.copy'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+
+import {
+  clearAccountActionFromLocation,
+  resolveAuthAccountAction
+} from './pages/Auth/account/accountActionModel';
+import { apiJson, apiRequest, configureApiAuthSession } from './shared/api/api';
+import { appCopy } from './shared/app.copy';
 import {
   clearAuthSession,
   getCurrentAccessToken,
@@ -9,70 +14,66 @@ import {
   persistAuthSession,
   refreshManagedAccessToken,
   restoreAuthSession,
-  subscribeAuthSession,
-} from './shared/auth/authSession'
+  subscribeAuthSession
+} from './shared/auth/authSession';
 import type {
   LoginResponse,
-  ProfileSession,
   OwnUserProfileResponse,
+  ProfileSession,
   UserProfileSettingsResponse,
-  UserResponse,
-} from './shared/types'
-import {
-  clearAccountActionFromLocation,
-  resolveAuthAccountAction,
-} from './pages/Auth/account/accountActionModel'
+  UserResponse
+} from './shared/types';
 
 function captureAccountActionFromLocation() {
   const action = resolveAuthAccountAction(
     window.location.search,
-    window.location.hash,
-  )
+    window.location.hash
+  );
 
   if (action) {
     window.history.replaceState(
       {},
       '',
-      clearAccountActionFromLocation(window.location),
-    )
+      clearAccountActionFromLocation(window.location)
+    );
   }
 
-  return action
+  return action;
 }
 
-const initialAccountAction = captureAccountActionFromLocation()
+const initialAccountAction = captureAccountActionFromLocation();
 
 const AuthPage = lazy(() =>
   import('./pages/Auth/AuthPage').then((module) => ({
-    default: module.AuthPage,
-  })),
-)
+    default: module.AuthPage
+  }))
+);
 const InvitePage = lazy(() =>
   import('./pages/Invite/InvitePage').then((module) => ({
-    default: module.InvitePage,
-  })),
-)
+    default: module.InvitePage
+  }))
+);
 const HubPage = lazy(() =>
   import('./system/Hub/components/shell/HubPage').then((module) => ({
-    default: module.HubPage,
-  })),
-)
+    default: module.HubPage
+  }))
+);
 
 async function loadProfileSession(
-  accessToken: string,
+  accessToken: string
 ): Promise<ProfileSession> {
   const user = await apiJson<UserResponse>('/api/users/me', {
-    accessToken,
-  })
+    accessToken
+  });
 
   const publicProfile = await apiJson<OwnUserProfileResponse>(
     '/api/users/me/profile',
-    { accessToken: getCurrentAccessToken() ?? accessToken },
-  )
+    { accessToken: getCurrentAccessToken() ?? accessToken }
+  );
   const profileSettings = await apiJson<UserProfileSettingsResponse>(
     '/api/users/me/profile/settings',
-    { accessToken: getCurrentAccessToken() ?? accessToken },
-  )
+    { accessToken: getCurrentAccessToken() ?? accessToken }
+  );
 
   return {
     accessToken: getCurrentAccessToken() ?? accessToken,
@@ -80,8 +81,8 @@ async function loadProfileSession(
     deviceSessionId: getCurrentDeviceSessionId(),
     user,
     publicProfile,
-    profileSettings,
-  }
+    profileSettings
+  };
 }
 
 function AppLoading({ label = appCopy.loading.default }: { label?: string }) {
@@ -90,113 +91,111 @@ function AppLoading({ label = appCopy.loading.default }: { label?: string }) {
       <img src="/brand/logo-mark.svg" alt="" />
       <span>{label}</span>
     </main>
-  )
+  );
 }
 
 function App() {
-  const [session, setSession] = useState<ProfileSession | null>(null)
-  const [currentPath, setCurrentPath] = useState(window.location.pathname)
-  const [accountAction, setAccountAction] = useState(initialAccountAction)
-  const initialAccountActionRef = useRef(accountAction)
-  const [isRestoringSession, setIsRestoringSession] = useState(true)
-  const inviteCode = currentPath.match(/^\/invite\/([^/]+)$/)?.[1] ?? null
+  const [session, setSession] = useState<ProfileSession | null>(null);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [accountAction, setAccountAction] = useState(initialAccountAction);
+  const initialAccountActionRef = useRef(accountAction);
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
+  const inviteCode = currentPath.match(/^\/invite\/([^/]+)$/)?.[1] ?? null;
 
   useEffect(() => {
     configureApiAuthSession({
       getAccessToken: getManagedAccessToken,
       refreshAccessToken: refreshManagedAccessToken,
       onUnauthorized: () => {
-        clearAuthSession()
-        setSession(null)
-      },
-    })
+        clearAuthSession();
+        setSession(null);
+      }
+    });
 
     return subscribeAuthSession((nextAccessToken) => {
       setSession((currentSession) =>
         currentSession && nextAccessToken
           ? { ...currentSession, accessToken: nextAccessToken }
-          : currentSession,
-      )
-    })
-  }, [])
+          : currentSession
+      );
+    });
+  }, []);
 
   useEffect(() => {
     function syncPath() {
-      setCurrentPath(window.location.pathname)
-      setAccountAction(captureAccountActionFromLocation())
+      setCurrentPath(window.location.pathname);
+      setAccountAction(captureAccountActionFromLocation());
     }
 
-    window.addEventListener('popstate', syncPath)
-    window.addEventListener('hashchange', syncPath)
+    window.addEventListener('popstate', syncPath);
+    window.addEventListener('hashchange', syncPath);
 
     return () => {
-      window.removeEventListener('popstate', syncPath)
-      window.removeEventListener('hashchange', syncPath)
-    }
-  }, [])
+      window.removeEventListener('popstate', syncPath);
+      window.removeEventListener('hashchange', syncPath);
+    };
+  }, []);
 
   useEffect(() => {
     if (initialAccountActionRef.current) {
-      setIsRestoringSession(false)
-      return
+      setIsRestoringSession(false);
+      return;
     }
 
     void restoreAuthSession()
       .then((tokenPair) => loadProfileSession(tokenPair.accessToken))
       .then(setSession)
       .catch(() => {
-        clearAuthSession()
-        setSession(null)
+        clearAuthSession();
+        setSession(null);
       })
-      .finally(() => setIsRestoringSession(false))
-  }, [])
+      .finally(() => setIsRestoringSession(false));
+  }, []);
 
   async function handleAuthenticated(loginResponse: LoginResponse) {
-    persistAuthSession(loginResponse)
-    const nextSession = await loadProfileSession(
-      loginResponse.accessToken,
-    )
+    persistAuthSession(loginResponse);
+    const nextSession = await loadProfileSession(loginResponse.accessToken);
 
-    setSession(nextSession)
+    setSession(nextSession);
   }
 
   async function handleLogout() {
     await apiRequest('/api/auth/logout', {
       method: 'POST',
-      body: {},
-    }).catch(() => undefined)
+      body: {}
+    }).catch(() => undefined);
 
-    clearAuthSession()
-    setSession(null)
+    clearAuthSession();
+    setSession(null);
   }
 
   function navigateHome() {
-    window.history.pushState({}, '', '/')
-    setCurrentPath('/')
-    setAccountAction(null)
+    window.history.pushState({}, '', '/');
+    setCurrentPath('/');
+    setAccountAction(null);
   }
 
   function handleInviteAccepted() {
-    navigateHome()
+    navigateHome();
   }
 
   function clearAccountActionUrl() {
     window.history.replaceState(
       {},
       '',
-      clearAccountActionFromLocation(window.location),
-    )
+      clearAccountActionFromLocation(window.location)
+    );
   }
 
   function exitAccountAction() {
-    clearAccountActionUrl()
-    setAccountAction(null)
+    clearAccountActionUrl();
+    setAccountAction(null);
   }
 
   function requireAccountReauthentication() {
-    clearAccountActionUrl()
-    clearAuthSession()
-    setSession(null)
+    clearAccountActionUrl();
+    clearAuthSession();
+    setSession(null);
   }
 
   if (isRestoringSession) {
@@ -205,7 +204,7 @@ function App() {
         <img src="/brand/logo-mark.svg" alt="" />
         <span>{appCopy.loading.restoringSession}</span>
       </main>
-    )
+    );
   }
 
   if (inviteCode && session) {
@@ -218,7 +217,7 @@ function App() {
           onDeclined={navigateHome}
         />
       </Suspense>
-    )
+    );
   }
 
   return (
@@ -235,8 +234,7 @@ function App() {
         />
       )}
     </Suspense>
-  )
+  );
 }
 
-export default App
-
+export default App;

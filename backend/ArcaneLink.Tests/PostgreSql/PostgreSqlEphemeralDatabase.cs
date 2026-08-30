@@ -18,9 +18,9 @@ internal sealed class PostgreSqlEphemeralDatabase : IAsyncDisposable
         string adminConnectionString,
         string connectionString)
     {
-        DatabaseName = databaseName;
-        _adminConnectionString = adminConnectionString;
-        ConnectionString = connectionString;
+        this.DatabaseName = databaseName;
+        this._adminConnectionString = adminConnectionString;
+        this.ConnectionString = connectionString;
     }
 
     public string DatabaseName { get; }
@@ -82,19 +82,19 @@ internal sealed class PostgreSqlEphemeralDatabase : IAsyncDisposable
     public AppDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(this.ConnectionString)
             .Options;
         return new AppDbContext(options);
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        if (Interlocked.Exchange(ref this._disposed, 1) != 0)
         {
             return;
         }
 
-        await DropDatabaseAsync(_adminConnectionString, DatabaseName);
+        await DropDatabaseAsync(this._adminConnectionString, this.DatabaseName);
     }
 
     private static void EnsureSafeConfiguredDatabase(string? databaseName)

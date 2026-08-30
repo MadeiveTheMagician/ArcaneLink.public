@@ -1,61 +1,62 @@
-import { useEffect, useState } from 'react'
-import type { MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
+
 import type {
-  PrivateSpaceMemberResponse,
   PrivateSpaceFolderResponse,
+  PrivateSpaceMemberResponse,
   PrivateSpaceResponse,
-  ServerMemberResponse,
-} from '../../../../shared/types'
-import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu'
-import { communityCopy } from '../../../shared/copy/community.ru'
-import { profileCopy } from '../../../shared/copy/profile.ru'
-import { useContextMenuDismiss } from '../../../shared/hooks/useContextMenuDismiss'
+  ServerMemberResponse
+} from '../../../../shared/types';
+import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu';
+import { communityCopy } from '../../../shared/copy/community.ru';
+import { profileCopy } from '../../../shared/copy/profile.ru';
+import { useContextMenuDismiss } from '../../../shared/hooks/useContextMenuDismiss';
+import { privateSpaceFolderCopy } from '../private-space/folders/privateSpaceFolderCopy.ru';
+import { getPrivateSpaceFolderContext } from '../private-space/folders/privateSpaceFolderModel';
 import {
   formatPrivateSpaceMuteRemaining,
   getPrivateSpaceOtherMember,
-  resolvePrivateSpaceMuteState,
-} from './directMessageModel'
-import { privateSpaceFolderCopy } from '../private-space/folders/privateSpaceFolderCopy.ru'
-import { getPrivateSpaceFolderContext } from '../private-space/folders/privateSpaceFolderModel'
+  resolvePrivateSpaceMuteState
+} from './directMessageModel';
 
 type DirectMessageContextMenuState = {
-  space: PrivateSpaceResponse
-  folderId: string
-  x: number
-  y: number
-}
+  space: PrivateSpaceResponse;
+  folderId: string;
+  x: number;
+  y: number;
+};
 
-type MuteMode = 'off' | '1h' | '4h' | '8h' | 'indefinite'
+type MuteMode = 'off' | '1h' | '4h' | '8h' | 'indefinite';
 
 type DirectMessageContextMenuOptions = {
-  currentUserId: string
-  friendUserIds: Set<string>
-  isMutatingPrivateSpaces: boolean
-  pinnedSpaceIds: Set<string>
-  folders: PrivateSpaceFolderResponse[]
-  onOpenUserProfile: (space: PrivateSpaceResponse) => void
-  onOpenNote: (space: PrivateSpaceResponse) => void
-  onOpenNickname: (space: PrivateSpaceResponse) => void
-  onChooseCustomAvatar: (space: PrivateSpaceResponse) => void
-  onClearCustomAvatar: (spaceId: string) => void
-  onOpenGroupSettings: (space: PrivateSpaceResponse) => void
-  onTogglePin: (spaceId: string, isPinned: boolean) => void
-  onAddToFolder: (folderId: string, spaceId: string) => void
-  onRemoveFromFolder: (folderId: string, spaceId: string) => void
-  onSetMute: (spaceId: string, mode: MuteMode) => void
-  onMarkRead: (spaceId: string) => void
-  onBlockUser: (member: PrivateSpaceMemberResponse) => void
-  onUnblockUser: (member: PrivateSpaceMemberResponse) => void
-  onSendFriendRequest: (userId: string) => void
+  currentUserId: string;
+  friendUserIds: Set<string>;
+  isMutatingPrivateSpaces: boolean;
+  pinnedSpaceIds: Set<string>;
+  folders: PrivateSpaceFolderResponse[];
+  onOpenUserProfile: (space: PrivateSpaceResponse) => void;
+  onOpenNote: (space: PrivateSpaceResponse) => void;
+  onOpenNickname: (space: PrivateSpaceResponse) => void;
+  onChooseCustomAvatar: (space: PrivateSpaceResponse) => void;
+  onClearCustomAvatar: (spaceId: string) => void;
+  onOpenGroupSettings: (space: PrivateSpaceResponse) => void;
+  onTogglePin: (spaceId: string, isPinned: boolean) => void;
+  onAddToFolder: (folderId: string, spaceId: string) => void;
+  onRemoveFromFolder: (folderId: string, spaceId: string) => void;
+  onSetMute: (spaceId: string, mode: MuteMode) => void;
+  onMarkRead: (spaceId: string) => void;
+  onBlockUser: (member: PrivateSpaceMemberResponse) => void;
+  onUnblockUser: (member: PrivateSpaceMemberResponse) => void;
+  onSendFriendRequest: (userId: string) => void;
   onLoadInviteTargetServers: (
-    targetUserId: string,
-  ) => Promise<ServerMemberResponse[]>
-  onRequestClearHistory: (space: PrivateSpaceResponse) => void
-  onRequestLeaveGroup: (space: PrivateSpaceResponse) => void
-  onRequestDeleteDirect: (space: PrivateSpaceResponse) => void
-  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void
-  onRemoveFriend: (userId: string) => void
-}
+    targetUserId: string
+  ) => Promise<ServerMemberResponse[]>;
+  onRequestClearHistory: (space: PrivateSpaceResponse) => void;
+  onRequestLeaveGroup: (space: PrivateSpaceResponse) => void;
+  onRequestDeleteDirect: (space: PrivateSpaceResponse) => void;
+  onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void;
+  onRemoveFriend: (userId: string) => void;
+};
 
 export function useDirectMessageContextMenu({
   currentUserId,
@@ -82,134 +83,134 @@ export function useDirectMessageContextMenu({
   onRequestLeaveGroup,
   onRequestDeleteDirect,
   onCreateDirectServerInvite,
-  onRemoveFriend,
+  onRemoveFriend
 }: DirectMessageContextMenuOptions) {
   const [contextMenu, setContextMenu] =
-    useState<DirectMessageContextMenuState | null>(null)
+    useState<DirectMessageContextMenuState | null>(null);
   const [inviteTargetsByUserId, setInviteTargetsByUserId] = useState<
     Record<string, ServerMemberResponse[]>
-  >({})
+  >({});
   const [loadingInviteTargetUserId, setLoadingInviteTargetUserId] = useState<
     string | null
-  >(null)
-  const [muteClockMs, setMuteClockMs] = useState(() => Date.now())
+  >(null);
+  const [muteClockMs, setMuteClockMs] = useState(() => Date.now());
 
   function closeContextMenu() {
-    setContextMenu(null)
+    setContextMenu(null);
   }
 
-  useContextMenuDismiss(Boolean(contextMenu), closeContextMenu)
+  useContextMenuDismiss(Boolean(contextMenu), closeContextMenu);
 
   function openContextMenu(
     event: ReactMouseEvent<HTMLButtonElement>,
     space: PrivateSpaceResponse,
-    folderId: string,
+    folderId: string
   ) {
-    event.preventDefault()
-    event.stopPropagation()
-    const openedAt = Date.now()
-    setMuteClockMs(openedAt)
+    event.preventDefault();
+    event.stopPropagation();
+    const openedAt = Date.now();
+    setMuteClockMs(openedAt);
     setContextMenu({
       space,
       folderId,
       x: event.clientX,
-      y: event.clientY,
-    })
+      y: event.clientY
+    });
 
-    if (space.kind !== 'direct') return
-    const otherMember = getPrivateSpaceOtherMember(space, currentUserId)
+    if (space.kind !== 'direct') return;
+    const otherMember = getPrivateSpaceOtherMember(space, currentUserId);
     if (otherMember && !inviteTargetsByUserId[otherMember.userId]) {
-      setLoadingInviteTargetUserId(otherMember.userId)
+      setLoadingInviteTargetUserId(otherMember.userId);
       void onLoadInviteTargetServers(otherMember.userId)
         .then((memberships) => {
           setInviteTargetsByUserId((current) => ({
             ...current,
-            [otherMember.userId]: memberships,
-          }))
+            [otherMember.userId]: memberships
+          }));
         })
         .finally(() => {
           setLoadingInviteTargetUserId((current) =>
-            current === otherMember.userId ? null : current,
-          )
-        })
+            current === otherMember.userId ? null : current
+          );
+        });
     }
   }
 
   useEffect(() => {
     if (!contextMenu) {
-      return undefined
+      return undefined;
     }
 
     const muteState = resolvePrivateSpaceMuteState(
       contextMenu.space.viewerSettings,
-      muteClockMs,
-    )
+      muteClockMs
+    );
     if (
       !muteState.isMuted ||
       muteState.isIndefinite ||
       muteState.remainingMs == null
     ) {
-      return undefined
+      return undefined;
     }
 
     const timer = window.setTimeout(
       () => setMuteClockMs(Date.now()),
-      Math.max(250, Math.min(1_000, muteState.remainingMs)),
-    )
-    return () => window.clearTimeout(timer)
-  }, [contextMenu, muteClockMs])
+      Math.max(250, Math.min(1_000, muteState.remainingMs))
+    );
+    return () => window.clearTimeout(timer);
+  }, [contextMenu, muteClockMs]);
 
   const getMuteItems = (
     space: PrivateSpaceResponse,
-    nowMs: number,
+    nowMs: number
   ): ContextMenuItem[] => {
-    const muteState = resolvePrivateSpaceMuteState(space.viewerSettings, nowMs)
+    const muteState = resolvePrivateSpaceMuteState(space.viewerSettings, nowMs);
     return [
       {
         type: 'item',
         label: communityCopy.direct.unmute,
         selected: !muteState.isMuted,
-        onSelect: () => onSetMute(space.spaceId, 'off'),
+        onSelect: () => onSetMute(space.spaceId, 'off')
       },
       {
         type: 'item',
         label: communityCopy.direct.muteOneHour,
-        onSelect: () => onSetMute(space.spaceId, '1h'),
+        onSelect: () => onSetMute(space.spaceId, '1h')
       },
       {
         type: 'item',
         label: communityCopy.direct.muteFourHours,
-        onSelect: () => onSetMute(space.spaceId, '4h'),
+        onSelect: () => onSetMute(space.spaceId, '4h')
       },
       {
         type: 'item',
         label: communityCopy.direct.muteEightHours,
-        onSelect: () => onSetMute(space.spaceId, '8h'),
+        onSelect: () => onSetMute(space.spaceId, '8h')
       },
       {
         type: 'item',
         label: communityCopy.direct.muteIndefinitely,
         selected: muteState.isIndefinite,
-        onSelect: () => onSetMute(space.spaceId, 'indefinite'),
-      },
-    ]
-  }
+        onSelect: () => onSetMute(space.spaceId, 'indefinite')
+      }
+    ];
+  };
 
   function getContextMenuItems(): ContextMenuItem[] {
-    if (!contextMenu) return []
+    if (!contextMenu) return [];
 
-    const space = contextMenu.space
+    const space = contextMenu.space;
     const folderContext = getPrivateSpaceFolderContext(
       folders,
       contextMenu.folderId,
-      space.spaceId,
-    )
-    const isPinned = pinnedSpaceIds.has(space.spaceId)
+      space.spaceId
+    );
+    const isPinned = pinnedSpaceIds.has(space.spaceId);
     const muteState = resolvePrivateSpaceMuteState(
       space.viewerSettings,
-      muteClockMs,
-    )
-    const muteRemaining = formatPrivateSpaceMuteRemaining(muteState)
+      muteClockMs
+    );
+    const muteRemaining = formatPrivateSpaceMuteRemaining(muteState);
     const sharedItems: ContextMenuItem[] = [
       ...(folderContext.activeFolder?.isSystem
         ? [
@@ -219,15 +220,16 @@ export function useDirectMessageContextMenu({
               label: privateSpaceFolderCopy.addToFolder,
               icon: 'folder' as const,
               disabled:
-                isMutatingPrivateSpaces || folderContext.addTargets.length === 0,
+                isMutatingPrivateSpaces ||
+                folderContext.addTargets.length === 0,
               submenu: folderContext.addTargets.map((folder) => ({
                 id: `private-space-add-to-folder:${folder.id}`,
                 type: 'item' as const,
                 label: privateSpaceFolderCopy.addToFolderLabel(folder.name),
                 visualLabel: `${folder.icon} ${folder.name}`,
-                onSelect: () => onAddToFolder(folder.id, space.spaceId),
-              })),
-            },
+                onSelect: () => onAddToFolder(folder.id, space.spaceId)
+              }))
+            }
           ]
         : folderContext.activeFolder
           ? [
@@ -235,26 +237,24 @@ export function useDirectMessageContextMenu({
                 id: 'private-space-remove-from-folder',
                 type: 'item' as const,
                 label: privateSpaceFolderCopy.removeFromFolder(
-                  folderContext.activeFolder.name,
+                  folderContext.activeFolder.name
                 ),
                 icon: 'folder' as const,
                 disabled: isMutatingPrivateSpaces,
                 onSelect: () =>
                   onRemoveFromFolder(
                     folderContext.activeFolder!.id,
-                    space.spaceId,
-                  ),
-              },
+                    space.spaceId
+                  )
+              }
             ]
           : []),
       {
         type: 'item',
-        label: isPinned
-          ? communityCopy.direct.unpin
-          : communityCopy.direct.pin,
+        label: isPinned ? communityCopy.direct.unpin : communityCopy.direct.pin,
         icon: 'space',
         disabled: isMutatingPrivateSpaces,
-        onSelect: () => onTogglePin(space.spaceId, !isPinned),
+        onSelect: () => onTogglePin(space.spaceId, !isPinned)
       },
       {
         id: 'private-space-mute',
@@ -263,9 +263,9 @@ export function useDirectMessageContextMenu({
           ? `${communityCopy.direct.mute} · ${muteRemaining}`
           : communityCopy.direct.mute,
         icon: 'settings',
-        submenu: getMuteItems(space, muteClockMs),
-      },
-    ]
+        submenu: getMuteItems(space, muteClockMs)
+      }
+    ];
     const personalAvatarItems: ContextMenuItem[] = [
       {
         type: 'item',
@@ -274,7 +274,7 @@ export function useDirectMessageContextMenu({
           : communityCopy.direct.addPersonalAvatar,
         icon: 'profile',
         disabled: isMutatingPrivateSpaces,
-        onSelect: () => onChooseCustomAvatar(space),
+        onSelect: () => onChooseCustomAvatar(space)
       },
       ...(space.viewerSettings.customAvatarAssetId
         ? [
@@ -283,11 +283,11 @@ export function useDirectMessageContextMenu({
               label: communityCopy.direct.resetPersonalAvatar,
               icon: 'trash' as const,
               disabled: isMutatingPrivateSpaces,
-              onSelect: () => onClearCustomAvatar(space.spaceId),
-            },
+              onSelect: () => onClearCustomAvatar(space.spaceId)
+            }
           ]
-        : []),
-    ]
+        : [])
+    ];
 
     if (space.kind === 'group') {
       return [
@@ -296,7 +296,7 @@ export function useDirectMessageContextMenu({
           label: communityCopy.direct.groupSettings,
           icon: 'settings',
           disabled: space.ownerUserId !== currentUserId,
-          onSelect: () => onOpenGroupSettings(space),
+          onSelect: () => onOpenGroupSettings(space)
         },
         { type: 'separator' },
         ...sharedItems,
@@ -308,14 +308,14 @@ export function useDirectMessageContextMenu({
           label: communityCopy.direct.markAllRead,
           icon: 'message',
           disabled: space.unreadCount === 0,
-          onSelect: () => onMarkRead(space.spaceId),
+          onSelect: () => onMarkRead(space.spaceId)
         },
         {
           type: 'item',
           label: communityCopy.direct.clearHistory,
           icon: 'trash',
           disabled: isMutatingPrivateSpaces,
-          onSelect: () => onRequestClearHistory(space),
+          onSelect: () => onRequestClearHistory(space)
         },
         { type: 'separator' },
         {
@@ -324,20 +324,20 @@ export function useDirectMessageContextMenu({
           icon: 'leave',
           danger: true,
           disabled: isMutatingPrivateSpaces,
-          onSelect: () => onRequestLeaveGroup(space),
-        },
-      ]
+          onSelect: () => onRequestLeaveGroup(space)
+        }
+      ];
     }
 
-    const otherMember = getPrivateSpaceOtherMember(space, currentUserId)
+    const otherMember = getPrivateSpaceOtherMember(space, currentUserId);
     const inviteServers = otherMember
       ? (inviteTargetsByUserId[otherMember.userId] ?? [])
-      : []
+      : [];
     const isLoadingInviteTargets =
-      otherMember?.userId === loadingInviteTargetUserId
+      otherMember?.userId === loadingInviteTargetUserId;
     const isFriend = otherMember
       ? friendUserIds.has(otherMember.userId)
-      : false
+      : false;
 
     return [
       {
@@ -345,7 +345,7 @@ export function useDirectMessageContextMenu({
         label: profileCopy.labels.profile,
         icon: 'profile',
         disabled: !otherMember,
-        onSelect: () => onOpenUserProfile(space),
+        onSelect: () => onOpenUserProfile(space)
       },
       {
         type: 'item',
@@ -362,10 +362,10 @@ export function useDirectMessageContextMenu({
                 onSelect: () =>
                   onCreateDirectServerInvite(
                     membership.serverId,
-                    otherMember.userId,
-                  ),
+                    otherMember.userId
+                  )
               }))
-            : undefined,
+            : undefined
       },
       { type: 'separator' },
       ...sharedItems,
@@ -374,7 +374,7 @@ export function useDirectMessageContextMenu({
         label: communityCopy.direct.markAllRead,
         icon: 'message',
         disabled: space.unreadCount === 0,
-        onSelect: () => onMarkRead(space.spaceId),
+        onSelect: () => onMarkRead(space.spaceId)
       },
       { type: 'separator' },
       {
@@ -383,7 +383,7 @@ export function useDirectMessageContextMenu({
           ? communityCopy.direct.changeNote
           : communityCopy.direct.addNote,
         icon: 'edit',
-        onSelect: () => onOpenNote(space),
+        onSelect: () => onOpenNote(space)
       },
       {
         type: 'item',
@@ -391,7 +391,7 @@ export function useDirectMessageContextMenu({
           ? communityCopy.direct.changeNickname
           : communityCopy.direct.addNickname,
         icon: 'edit',
-        onSelect: () => onOpenNickname(space),
+        onSelect: () => onOpenNickname(space)
       },
       ...personalAvatarItems,
       { type: 'separator' },
@@ -403,10 +403,10 @@ export function useDirectMessageContextMenu({
         icon: 'friend',
         disabled: !otherMember,
         onSelect: () => {
-          if (!otherMember) return
-          if (isFriend) onRemoveFriend(otherMember.userId)
-          else onSendFriendRequest(otherMember.userId)
-        },
+          if (!otherMember) return;
+          if (isFriend) onRemoveFriend(otherMember.userId);
+          else onSendFriendRequest(otherMember.userId);
+        }
       },
       {
         type: 'item',
@@ -417,10 +417,10 @@ export function useDirectMessageContextMenu({
         danger: !space.viewerSettings.isPeerBlocked,
         disabled: !otherMember,
         onSelect: () => {
-          if (!otherMember) return
-          if (space.viewerSettings.isPeerBlocked) onUnblockUser(otherMember)
-          else onBlockUser(otherMember)
-        },
+          if (!otherMember) return;
+          if (space.viewerSettings.isPeerBlocked) onUnblockUser(otherMember);
+          else onBlockUser(otherMember);
+        }
       },
       { type: 'separator' },
       {
@@ -428,7 +428,7 @@ export function useDirectMessageContextMenu({
         label: communityCopy.direct.clearHistory,
         icon: 'trash',
         disabled: isMutatingPrivateSpaces,
-        onSelect: () => onRequestClearHistory(space),
+        onSelect: () => onRequestClearHistory(space)
       },
       {
         type: 'item',
@@ -436,15 +436,15 @@ export function useDirectMessageContextMenu({
         icon: 'leave',
         danger: true,
         disabled: isMutatingPrivateSpaces,
-        onSelect: () => onRequestDeleteDirect(space),
-      },
-    ]
+        onSelect: () => onRequestDeleteDirect(space)
+      }
+    ];
   }
 
   return {
     contextMenu,
     contextMenuItems: getContextMenuItems(),
     openContextMenu,
-    closeContextMenu,
-  }
+    closeContextMenu
+  };
 }

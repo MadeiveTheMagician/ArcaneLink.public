@@ -21,7 +21,7 @@ public sealed class FileEmailTemplateRenderer : IEmailTemplateRenderer
 
     public FileEmailTemplateRenderer()
     {
-        _templates = LoadTemplates(
+        this._templates = LoadTemplates(
             Path.Combine(
                 AppContext.BaseDirectory,
                 TemplateResourcePath.Replace('/', Path.DirectorySeparatorChar)));
@@ -31,7 +31,7 @@ public sealed class FileEmailTemplateRenderer : IEmailTemplateRenderer
         string templateName,
         IReadOnlyDictionary<string, string>? variables = null)
     {
-        if (!_templates.TryGetValue(templateName, out var template))
+        if (!this._templates.TryGetValue(templateName, out var template))
         {
             throw new InvalidOperationException(
                 $"Email template '{templateName}' is unavailable.");

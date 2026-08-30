@@ -1,4 +1,4 @@
 export {
   defaultMessageDisplayFormat,
-  normalizeMessageDisplayFormat,
-} from '../../shared/messages/messagePresentationModel'
+  normalizeMessageDisplayFormat
+} from '../../shared/messages/messagePresentationModel';

@@ -1,18 +1,19 @@
 import {
   SystemSkeleton,
-  SystemSkeletonRegion,
   type SystemSkeletonPresencePhase,
-} from '../../../shared'
-import styles from './ServerDirectoryGridSkeleton.module.css'
+  SystemSkeletonRegion
+} from '../../../shared';
+
+import styles from './ServerDirectoryGridSkeleton.module.css';
 
 export function ServerDirectoryGridSkeleton({
   count = 6,
   label,
-  presencePhase,
+  presencePhase
 }: {
-  count?: number
-  label: string
-  presencePhase?: SystemSkeletonPresencePhase
+  count?: number;
+  label: string;
+  presencePhase?: SystemSkeletonPresencePhase;
 }) {
   return (
     <SystemSkeletonRegion
@@ -21,7 +22,7 @@ export function ServerDirectoryGridSkeleton({
       presencePhase={presencePhase}
     >
       {Array.from({ length: count }, (_, index) => {
-        const delayMs = 80 + index * 38
+        const delayMs = 80 + index * 38;
 
         return (
           <article
@@ -59,8 +60,8 @@ export function ServerDirectoryGridSkeleton({
               </div>
             </div>
           </article>
-        )
+        );
       })}
     </SystemSkeletonRegion>
-  )
+  );
 }

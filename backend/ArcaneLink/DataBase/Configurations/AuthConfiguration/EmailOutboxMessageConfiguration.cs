@@ -27,12 +27,12 @@ public sealed class EmailOutboxMessageConfiguration
         entity.Property(x => x.DeadLetteredAt).HasColumnName("dead_lettered_at");
         entity.Property(x => x.LastError).HasColumnName("last_error").HasMaxLength(512);
         entity.HasIndex(x => new
-            {
-                x.ProcessedAt,
-                x.DeadLetteredAt,
-                x.AvailableAt,
-                x.LeaseExpiresAt
-            })
+        {
+            x.ProcessedAt,
+            x.DeadLetteredAt,
+            x.AvailableAt,
+            x.LeaseExpiresAt
+        })
             .HasDatabaseName("IX_EmailOutboxMessages_Dispatch");
     }
 }

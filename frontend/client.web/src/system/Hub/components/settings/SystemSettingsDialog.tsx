@@ -1,78 +1,83 @@
 import {
+  type CSSProperties,
   useCallback,
   useEffect,
   useRef,
-  useState,
-  type CSSProperties,
-} from 'react'
+  useState
+} from 'react';
+
+import {
+  type AttachmentSecuritySettings,
+  loadAttachmentSecuritySettings,
+  saveAttachmentSecuritySettings
+} from '../../../../shared/security/attachmentSecuritySettings';
 import {
   defaultStreamingSettings,
   loadStreamingSettings,
-  saveStreamingSettings,
-} from '../../../../shared/streaming/streamingSettings'
-import type { StreamingSettings } from '../../../../shared/streaming/streamingSettings'
-import type { ServerMemberResponse, UserResponse } from '../../../../shared/types'
-import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes'
-import type { VoiceNoiseSuppressionTelemetry } from '../../../Server/hooks/voice/useVoiceChannel'
-import {
-  loadAttachmentSecuritySettings,
-  saveAttachmentSecuritySettings,
-  type AttachmentSecuritySettings,
-} from '../../../../shared/security/attachmentSecuritySettings'
-import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings'
-import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon'
+  saveStreamingSettings
+} from '../../../../shared/streaming/streamingSettings';
+import type { StreamingSettings } from '../../../../shared/streaming/streamingSettings';
+import type {
+  ServerMemberResponse,
+  UserResponse
+} from '../../../../shared/types';
+import { MyModerationReportsTab } from '../../../Moderation/components/MyModerationReportsTab';
+import { moderationCopy } from '../../../Moderation/moderationCopy.ru';
+import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings';
+import type { VoiceNoiseSuppressionTelemetry } from '../../../Server/hooks/voice/useVoiceChannel';
+import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes';
 import {
   commonCopy,
   notificationCopy,
-  settingsCopy,
-} from '../../../shared/copy'
-import dialogStyles from '../../../shared/styles/Dialog.module.css'
-import { SystemSettingsAccountTab } from './SystemSettingsAccountTab'
-import { SystemSettingsInterfaceTab } from './SystemSettingsInterfaceTab'
-import { SystemSettingsNotificationsTab } from './SystemSettingsNotificationsTab'
-import { SystemSettingsPrivacyTab } from './SystemSettingsPrivacyTab'
+  settingsCopy
+} from '../../../shared/copy';
+import { useAnimatedOverlayClose } from '../../../shared/hooks/useAnimatedOverlayClose';
+import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer';
+import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon';
 import {
-  StreamingSettingsTab,
-  VoiceSettingsTab,
-} from './SystemSettingsMediaTabs'
-import { SystemSettingsProfileTab } from './SystemSettingsProfileTab'
-import { SystemSettingsSecurityTab } from './SystemSettingsSecurityTab'
-import styles from './SystemSettingsDialog.module.css'
-import sharedStyles from './SystemSettingsControls.module.css'
-import { MyModerationReportsTab } from '../../../Moderation/components/MyModerationReportsTab'
-import { moderationCopy } from '../../../Moderation/moderationCopy.ru'
-import { useAnimatedOverlayClose } from '../../../shared/hooks/useAnimatedOverlayClose'
-import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer'
-import {
-  resolveSystemSettingsInitialTab,
   type SystemSettingsNavigationRequest,
   type SystemSettingsTabId,
-} from '../../../shared/navigation/systemSettingsNavigation'
-import { systemSettingsCloseDurationMs } from '../../../shared/overlays/animatedOverlayPhaseModel'
-import { isVoiceSpatialAudioAvailable } from '../../../shared/voice/voiceSettings'
+  resolveSystemSettingsInitialTab
+} from '../../../shared/navigation/systemSettingsNavigation';
+import { systemSettingsCloseDurationMs } from '../../../shared/overlays/animatedOverlayPhaseModel';
+import { isVoiceSpatialAudioAvailable } from '../../../shared/voice/voiceSettings';
+import { SystemSettingsAccountTab } from './SystemSettingsAccountTab';
+import { SystemSettingsInterfaceTab } from './SystemSettingsInterfaceTab';
+import {
+  StreamingSettingsTab,
+  VoiceSettingsTab
+} from './SystemSettingsMediaTabs';
+import { SystemSettingsNotificationsTab } from './SystemSettingsNotificationsTab';
+import { SystemSettingsPrivacyTab } from './SystemSettingsPrivacyTab';
+import { SystemSettingsProfileTab } from './SystemSettingsProfileTab';
+import { SystemSettingsSecurityTab } from './SystemSettingsSecurityTab';
+
+import dialogStyles from '../../../shared/styles/Dialog.module.css';
+import sharedStyles from './SystemSettingsControls.module.css';
+import styles from './SystemSettingsDialog.module.css';
 
 type SystemSettingsDialogProps = {
-  accessToken: string
-  user: UserResponse
-  serverMemberships: ServerMemberResponse[]
-  currentDeviceSessionId?: string | null
-  settingsDraft: ProfileSettingsDraft
-  navigationRequest?: SystemSettingsNavigationRequest | null
-  voiceDiagnostics?: VoiceConnectionDiagnostics | null
-  voiceNoiseSuppressionTelemetry?: VoiceNoiseSuppressionTelemetry | null
-  defaultSettings: ProfileSettingsDraft
-  isSaving: boolean
-  onChange: (settings: ProfileSettingsDraft) => void
-  onCommit: (settings: ProfileSettingsDraft) => Promise<void> | void
-  onProfileIdentityChanged: () => Promise<void> | void
-  onClose: () => void
-  onLogout: () => void
-}
+  accessToken: string;
+  user: UserResponse;
+  serverMemberships: ServerMemberResponse[];
+  currentDeviceSessionId?: string | null;
+  settingsDraft: ProfileSettingsDraft;
+  navigationRequest?: SystemSettingsNavigationRequest | null;
+  voiceDiagnostics?: VoiceConnectionDiagnostics | null;
+  voiceNoiseSuppressionTelemetry?: VoiceNoiseSuppressionTelemetry | null;
+  defaultSettings: ProfileSettingsDraft;
+  isSaving: boolean;
+  onChange: (settings: ProfileSettingsDraft) => void;
+  onCommit: (settings: ProfileSettingsDraft) => Promise<void> | void;
+  onProfileIdentityChanged: () => Promise<void> | void;
+  onClose: () => void;
+  onLogout: () => void;
+};
 
 const settingsTabs: {
-  id: SystemSettingsTabId
-  label: string
-  sections: string[]
+  id: SystemSettingsTabId;
+  label: string;
+  sections: string[];
 }[] = [
   {
     id: 'account',
@@ -81,8 +86,8 @@ const settingsTabs: {
       settingsCopy.account.accountInfoTitle,
       settingsCopy.account.passwordSecurityTitle,
       settingsCopy.account.logout,
-      settingsCopy.account.deleteAccount,
-    ],
+      settingsCopy.account.deleteAccount
+    ]
   },
   {
     id: 'profile',
@@ -92,8 +97,8 @@ const settingsTabs: {
       settingsCopy.profile.profileTagsTitle,
       settingsCopy.profile.bannerTitle,
       settingsCopy.profile.backgroundTitle,
-      settingsCopy.profile.serverProfilesTitle,
-    ],
+      settingsCopy.profile.serverProfilesTitle
+    ]
   },
   {
     id: 'interface',
@@ -102,8 +107,8 @@ const settingsTabs: {
       settingsCopy.interface.themeTitle,
       settingsCopy.interface.interfaceScaleTitle,
       settingsCopy.interface.messagesTitle,
-      settingsCopy.interface.advancedFeatures,
-    ],
+      settingsCopy.interface.advancedFeatures
+    ]
   },
   {
     id: 'privacy',
@@ -111,8 +116,8 @@ const settingsTabs: {
     sections: [
       settingsCopy.privacy.directMessagesTitle,
       settingsCopy.privacy.visibilityTitle,
-      settingsCopy.privacy.modeTitle,
-    ],
+      settingsCopy.privacy.modeTitle
+    ]
   },
   {
     id: 'notifications',
@@ -120,23 +125,23 @@ const settingsTabs: {
     sections: [
       notificationCopy.title,
       notificationCopy.settings.eventsTitle,
-      notificationCopy.settings.additionalTitle,
-    ],
+      notificationCopy.settings.additionalTitle
+    ]
   },
   {
     id: 'reports',
     label: moderationCopy.myReports.tab,
-    sections: [moderationCopy.myReports.tab],
+    sections: [moderationCopy.myReports.tab]
   },
   {
     id: 'security',
     label: settingsCopy.tabs.security,
-    sections: [settingsCopy.security.systemWarningsTitle],
+    sections: [settingsCopy.security.systemWarningsTitle]
   },
   {
     id: 'streaming',
     label: settingsCopy.tabs.streaming,
-    sections: [settingsCopy.streaming.qualityTitle],
+    sections: [settingsCopy.streaming.qualityTitle]
   },
   {
     id: 'voice',
@@ -149,10 +154,10 @@ const settingsTabs: {
       settingsCopy.voice.qualityTitle,
       settingsCopy.voice.connectionBehaviorTitle,
       settingsCopy.voice.connectionDiagnosticsTitle,
-      settingsCopy.voice.warningTitle,
-    ],
-  },
-]
+      settingsCopy.voice.warningTitle
+    ]
+  }
+];
 
 export function SystemSettingsDialog({
   accessToken,
@@ -169,130 +174,127 @@ export function SystemSettingsDialog({
   onCommit,
   onProfileIdentityChanged,
   onClose,
-  onLogout,
+  onLogout
 }: SystemSettingsDialogProps) {
-  const [activeTab, setActiveTab] = useState<SystemSettingsTabId>(
-    () => resolveSystemSettingsInitialTab(navigationRequest),
-  )
+  const [activeTab, setActiveTab] = useState<SystemSettingsTabId>(() =>
+    resolveSystemSettingsInitialTab(navigationRequest)
+  );
   const [expandedTab, setExpandedTab] = useState<SystemSettingsTabId | null>(
-    () => resolveSystemSettingsInitialTab(navigationRequest),
-  )
+    () => resolveSystemSettingsInitialTab(navigationRequest)
+  );
   const [activeSection, setActiveSection] = useState<{
-    tabId: SystemSettingsTabId
-    label: string
-  } | null>(null)
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
-  const settingsDialogRef = useRef<HTMLElement | null>(null)
-  const settingsContentRef = useRef<HTMLDivElement | null>(null)
-  const [streamingSettings, setStreamingSettings] =
-    useState<StreamingSettings>(() => loadStreamingSettings())
+    tabId: SystemSettingsTabId;
+    label: string;
+  } | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const settingsDialogRef = useRef<HTMLElement | null>(null);
+  const settingsContentRef = useRef<HTMLDivElement | null>(null);
+  const [streamingSettings, setStreamingSettings] = useState<StreamingSettings>(
+    () => loadStreamingSettings()
+  );
   const [securitySettings, setSecuritySettings] =
-    useState<AttachmentSecuritySettings>(() => loadAttachmentSecuritySettings())
+    useState<AttachmentSecuritySettings>(() =>
+      loadAttachmentSecuritySettings()
+    );
   const { isClosing, requestClose } = useAnimatedOverlayClose(
-    systemSettingsCloseDurationMs,
-  )
+    systemSettingsCloseDurationMs
+  );
   const closeSettings = useCallback(() => {
-    requestClose(onClose)
-  }, [onClose, requestClose])
+    requestClose(onClose);
+  }, [onClose, requestClose]);
 
   useDismissableLayer({
     isOpen: !isDeleteConfirmOpen && !isClosing,
     layerRef: settingsDialogRef,
-    onDismiss: closeSettings,
-  })
+    onDismiss: closeSettings
+  });
 
   useEffect(() => {
-    if (
-      !navigationRequest?.targetId ||
-      activeTab !== navigationRequest.tab
-    ) {
-      return undefined
+    if (!navigationRequest?.targetId || activeTab !== navigationRequest.tab) {
+      return undefined;
     }
 
     const focusFrame = window.requestAnimationFrame(() => {
-      const target = document.getElementById(navigationRequest.targetId!)
-      if (!target || !settingsDialogRef.current?.contains(target)) return
+      const target = document.getElementById(navigationRequest.targetId!);
+      if (!target || !settingsDialogRef.current?.contains(target)) return;
 
-      target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
       const focusTarget = target.querySelector<HTMLElement>(
-        'input:not(:disabled), button:not(:disabled), [tabindex]:not([tabindex="-1"])',
-      )
-      focusTarget?.focus({ preventScroll: true })
-    })
+        'input:not(:disabled), button:not(:disabled), [tabindex]:not([tabindex="-1"])'
+      );
+      focusTarget?.focus({ preventScroll: true });
+    });
 
-    return () => window.cancelAnimationFrame(focusFrame)
-  }, [activeTab, navigationRequest])
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [activeTab, navigationRequest]);
 
   useEffect(() => {
     if (!activeSection || activeSection.tabId !== activeTab) {
-      return undefined
+      return undefined;
     }
 
     const navigationFrame = window.requestAnimationFrame(() => {
-      const content = settingsContentRef.current
-      if (!content) return
+      const content = settingsContentRef.current;
+      if (!content) return;
 
-      const target = [...content.querySelectorAll<HTMLElement>('section')]
-        .find((section) =>
+      const target = [...content.querySelectorAll<HTMLElement>('section')].find(
+        (section) =>
           section.querySelector('h3')?.textContent?.trim() ===
-          activeSection.label,
-        )
+          activeSection.label
+      );
       if (!target) {
-        content.scrollTo({ top: 0, behavior: 'smooth' })
-        return
+        content.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
       }
 
       const sectionToggle = target.querySelector<HTMLButtonElement>(
-        '[data-settings-section-toggle]',
-      )
+        '[data-settings-section-toggle]'
+      );
       if (sectionToggle?.getAttribute('aria-expanded') === 'false') {
-        sectionToggle.click()
+        sectionToggle.click();
       }
 
-      target.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
       target
         .querySelector<HTMLElement>(
-          'input:not(:disabled), button:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])',
+          'input:not(:disabled), button:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])'
         )
-        ?.focus({ preventScroll: true })
-    })
+        ?.focus({ preventScroll: true });
+    });
 
-    return () => window.cancelAnimationFrame(navigationFrame)
-  }, [activeSection, activeTab])
+    return () => window.cancelAnimationFrame(navigationFrame);
+  }, [activeSection, activeTab]);
 
   function toggleSettingsCategory(tabId: SystemSettingsTabId) {
-    setActiveTab(tabId)
-    setActiveSection(null)
-    setExpandedTab((current) => (current === tabId ? null : tabId))
+    setActiveTab(tabId);
+    setActiveSection(null);
+    setExpandedTab((current) => (current === tabId ? null : tabId));
   }
 
-  function openSettingsSection(
-    tabId: SystemSettingsTabId,
-    label: string,
-  ) {
-    setActiveTab(tabId)
-    setExpandedTab(tabId)
-    setActiveSection({ tabId, label })
+  function openSettingsSection(tabId: SystemSettingsTabId, label: string) {
+    setActiveTab(tabId);
+    setExpandedTab(tabId);
+    setActiveSection({ tabId, label });
   }
 
   function updateStreamingSettings(patch: Partial<StreamingSettings>) {
     const nextSettings = {
       ...streamingSettings,
-      ...patch,
-    }
+      ...patch
+    };
 
-    setStreamingSettings(nextSettings)
-    saveStreamingSettings(nextSettings)
+    setStreamingSettings(nextSettings);
+    saveStreamingSettings(nextSettings);
   }
 
   function resetStreamingSettings() {
-    setStreamingSettings(defaultStreamingSettings)
-    saveStreamingSettings(defaultStreamingSettings)
+    setStreamingSettings(defaultStreamingSettings);
+    saveStreamingSettings(defaultStreamingSettings);
   }
 
   function updateSecuritySettings(settings: AttachmentSecuritySettings) {
-    setSecuritySettings(settings)
-    saveAttachmentSecuritySettings(settings)
+    setSecuritySettings(settings);
+    saveAttachmentSecuritySettings(settings);
   }
 
   return (
@@ -303,7 +305,7 @@ export function SystemSettingsDialog({
       role="presentation"
       style={
         {
-          '--settings-close-duration': `${systemSettingsCloseDurationMs}ms`,
+          '--settings-close-duration': `${systemSettingsCloseDurationMs}ms`
         } as CSSProperties
       }
     >
@@ -337,7 +339,7 @@ export function SystemSettingsDialog({
         <div className={styles.shell}>
           <nav className={styles.tabs} aria-label={settingsCopy.root.tabs}>
             {settingsTabs.map((tab) => {
-              const isExpanded = expandedTab === tab.id
+              const isExpanded = expandedTab === tab.id;
 
               return (
                 <div className={styles.tabGroup} key={tab.id}>
@@ -361,9 +363,7 @@ export function SystemSettingsDialog({
 
                   <div
                     className={`${styles.sectionListDisclosure} ${
-                      isExpanded
-                        ? styles.sectionListDisclosureExpanded
-                        : ''
+                      isExpanded ? styles.sectionListDisclosureExpanded : ''
                     }`}
                     data-settings-category-sections={tab.id}
                     aria-hidden={!isExpanded}
@@ -378,40 +378,33 @@ export function SystemSettingsDialog({
                           tab.id === 'voice' &&
                           sectionLabel ===
                             settingsCopy.voice.spatialAudioTitle &&
-                          !isVoiceSpatialAudioAvailable
+                          !isVoiceSpatialAudioAvailable;
                         const isCurrent =
                           activeSection?.tabId === tab.id &&
-                          activeSection.label === sectionLabel
+                          activeSection.label === sectionLabel;
 
                         return (
                           <li key={sectionLabel}>
                             <button
                               className={`${styles.sectionLink} ${
-                                isCurrent
-                                  ? styles.activeSectionLink
-                                  : ''
+                                isCurrent ? styles.activeSectionLink : ''
                               }`}
                               type="button"
                               disabled={isDisabled}
-                              aria-current={
-                                isCurrent ? 'location' : undefined
-                              }
+                              aria-current={isCurrent ? 'location' : undefined}
                               onClick={() =>
-                                openSettingsSection(
-                                  tab.id,
-                                  sectionLabel,
-                                )
+                                openSettingsSection(tab.id, sectionLabel)
                               }
                             >
                               {sectionLabel}
                             </button>
                           </li>
-                        )
+                        );
                       })}
                     </ol>
                   </div>
                 </div>
-              )
+              );
             })}
           </nav>
 
@@ -501,7 +494,11 @@ export function SystemSettingsDialog({
               >
                 {commonCopy.actions.cancel}
               </button>
-              <button className={sharedStyles.dangerButton} type="button" disabled>
+              <button
+                className={sharedStyles.dangerButton}
+                type="button"
+                disabled
+              >
                 {settingsCopy.account.yesDelete}
               </button>
             </div>
@@ -509,5 +506,5 @@ export function SystemSettingsDialog({
         </div>
       )}
     </div>
-  )
+  );
 }

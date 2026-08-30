@@ -28,7 +28,8 @@
 }
 
 .anchor:focus-within .panel {
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--diagnostics-tone), transparent 42%);
+  box-shadow: inset 3px 0 0
+    color-mix(in srgb, var(--diagnostics-tone), transparent 42%);
 }
 
 .panel[data-quality='good'] {
@@ -65,7 +66,8 @@
   border-radius: 9px;
   color: var(--diagnostics-tone);
   background: color-mix(in srgb, var(--diagnostics-tone), transparent 86%);
-  box-shadow: inset 0 0 16px color-mix(in srgb, var(--diagnostics-tone), transparent 88%);
+  box-shadow: inset 0 0 16px
+    color-mix(in srgb, var(--diagnostics-tone), transparent 88%);
   place-items: center;
   --voice-connection-icon-size: 28px;
 }
@@ -101,7 +103,11 @@
   border: 0;
   border-radius: 7px;
   padding: 10px;
-  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 18%);
+  background: color-mix(
+    in srgb,
+    var(--theme-control-bg-strong),
+    transparent 18%
+  );
 }
 
 .summaryValue dt,
@@ -158,7 +164,11 @@
   border-radius: 7px;
   padding: 8px 10px;
   color: var(--color-success, #6ee7a7);
-  background: color-mix(in srgb, var(--color-success, #6ee7a7), transparent 90%);
+  background: color-mix(
+    in srgb,
+    var(--color-success, #6ee7a7),
+    transparent 90%
+  );
 }
 
 .copyStatusError {

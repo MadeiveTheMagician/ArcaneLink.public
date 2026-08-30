@@ -1,89 +1,81 @@
 export type SystemSkeletonPresencePhase =
-  | 'hidden'
-  | 'waiting'
-  | 'entering'
-  | 'visible'
-  | 'exiting'
+  'hidden' | 'waiting' | 'entering' | 'visible' | 'exiting';
 
 export type SystemSkeletonPresenceEvent =
-  | 'show'
-  | 'hide'
-  | 'reveal'
-  | 'entered'
-  | 'exited'
+  'show' | 'hide' | 'reveal' | 'entered' | 'exited';
 
 export type SystemSkeletonPresenceTiming = {
-  revealDelayMs: number
-  enterDurationMs: number
-  exitDurationMs: number
-}
+  revealDelayMs: number;
+  enterDurationMs: number;
+  exitDurationMs: number;
+};
 
 export const defaultSystemSkeletonPresenceTiming: SystemSkeletonPresenceTiming =
   {
     revealDelayMs: 140,
     enterDurationMs: 160,
-    exitDurationMs: 160,
-  }
+    exitDurationMs: 160
+  };
 
 export function createSystemSkeletonPresencePhase(
-  isLoading: boolean,
+  isLoading: boolean
 ): SystemSkeletonPresencePhase {
-  return isLoading ? 'waiting' : 'hidden'
+  return isLoading ? 'waiting' : 'hidden';
 }
 
 export function reduceSystemSkeletonPresence(
   phase: SystemSkeletonPresencePhase,
-  event: SystemSkeletonPresenceEvent,
+  event: SystemSkeletonPresenceEvent
 ): SystemSkeletonPresencePhase {
   if (event === 'show') {
-    if (phase === 'hidden') return 'waiting'
-    if (phase === 'exiting') return 'entering'
-    return phase
+    if (phase === 'hidden') return 'waiting';
+    if (phase === 'exiting') return 'entering';
+    return phase;
   }
 
   if (event === 'hide') {
-    if (phase === 'waiting') return 'hidden'
-    if (phase === 'entering' || phase === 'visible') return 'exiting'
-    return phase
+    if (phase === 'waiting') return 'hidden';
+    if (phase === 'entering' || phase === 'visible') return 'exiting';
+    return phase;
   }
 
   if (event === 'reveal' && phase === 'waiting') {
-    return 'entering'
+    return 'entering';
   }
 
   if (event === 'entered' && phase === 'entering') {
-    return 'visible'
+    return 'visible';
   }
 
   if (event === 'exited' && phase === 'exiting') {
-    return 'hidden'
+    return 'hidden';
   }
 
-  return phase
+  return phase;
 }
 
 export function isSystemSkeletonPresenceMounted(
-  phase: SystemSkeletonPresencePhase,
+  phase: SystemSkeletonPresencePhase
 ) {
-  return phase !== 'hidden'
+  return phase !== 'hidden';
 }
 
 export function getSystemSkeletonPresenceDelayMs(
   phase: SystemSkeletonPresencePhase,
   timing: SystemSkeletonPresenceTiming,
-  prefersReducedMotion: boolean,
+  prefersReducedMotion: boolean
 ): number | null {
   if (phase === 'waiting') {
-    return timing.revealDelayMs
+    return timing.revealDelayMs;
   }
 
   if (phase === 'entering') {
-    return prefersReducedMotion ? 0 : timing.enterDurationMs
+    return prefersReducedMotion ? 0 : timing.enterDurationMs;
   }
 
   if (phase === 'exiting') {
-    return prefersReducedMotion ? 0 : timing.exitDurationMs
+    return prefersReducedMotion ? 0 : timing.exitDurationMs;
   }
 
-  return null
+  return null;
 }

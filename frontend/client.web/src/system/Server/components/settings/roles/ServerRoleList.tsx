@@ -1,63 +1,66 @@
+import { type CSSProperties, useCallback, useState } from 'react';
+
 import {
   DndContext,
+  type DragEndEvent,
   PointerSensor,
   closestCenter,
-  useSensor,
-  useSensors,
   useDraggable,
   useDroppable,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import { useCallback, useState, type CSSProperties } from 'react'
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
+
 import type {
   ServerEffectivePermissionsResponse,
-  ServerRoleResponse,
-} from '../../../../../shared/types'
+  ServerRoleResponse
+} from '../../../../../shared/types';
 import {
   ContextMenu,
   SystemButton,
   SystemIcon,
-  SystemSearchInput,
-} from '../../../../shared'
-import type { ContextMenuItem } from '../../../../shared/components/context-menu/ContextMenu'
+  SystemSearchInput
+} from '../../../../shared';
+import type { ContextMenuItem } from '../../../../shared/components/context-menu/ContextMenu';
 import {
   filterServerRoles,
   partitionServerRoles,
   reorderServerRolesWithinTier,
-  resolveServerRoleManagement,
-} from './serverRoleSettingsModel'
-import styles from './ServerRolesSettings.module.css'
+  resolveServerRoleManagement
+} from './serverRoleSettingsModel';
+
+import styles from './ServerRolesSettings.module.css';
 
 type ServerRoleListProps = {
-  roles: readonly ServerRoleResponse[]
-  selectedRoleId: string | null
-  query: string
-  actorLegacyPermissionCodes: readonly string[]
-  effectivePermissions: ServerEffectivePermissionsResponse | null
-  canManageRoles: boolean
-  canCreate: boolean
-  canReorder: boolean
-  isMutating: boolean
-  onQueryChange: (value: string) => void
-  onCreate: () => void
-  onSelect: (roleId: string) => void
-  onDuplicate: (role: ServerRoleResponse) => void
-  onDelete: (role: ServerRoleResponse) => void
-  onReorder: (roles: readonly ServerRoleResponse[]) => void
-}
+  roles: readonly ServerRoleResponse[];
+  selectedRoleId: string | null;
+  query: string;
+  actorLegacyPermissionCodes: readonly string[];
+  effectivePermissions: ServerEffectivePermissionsResponse | null;
+  canManageRoles: boolean;
+  canCreate: boolean;
+  canReorder: boolean;
+  isMutating: boolean;
+  onQueryChange: (value: string) => void;
+  onCreate: () => void;
+  onSelect: (roleId: string) => void;
+  onDuplicate: (role: ServerRoleResponse) => void;
+  onDelete: (role: ServerRoleResponse) => void;
+  onReorder: (roles: readonly ServerRoleResponse[]) => void;
+};
 
 type RoleMenuState = {
-  role: ServerRoleResponse
-  x: number
-  y: number
-}
+  role: ServerRoleResponse;
+  x: number;
+  y: number;
+};
 
 const roleDndAccessibility = {
   screenReaderInstructions: {
     draggable:
-      'Используйте стрелки вверх и вниз на кнопке перемещения. Указатель можно использовать для перетаскивания роли.',
-  },
-}
+      'Используйте стрелки вверх и вниз на кнопке перемещения. Указатель можно использовать для перетаскивания роли.'
+  }
+};
 
 export function ServerRoleList({
   roles,
@@ -74,101 +77,91 @@ export function ServerRoleList({
   onSelect,
   onDuplicate,
   onDelete,
-  onReorder,
+  onReorder
 }: ServerRoleListProps) {
-  const [menu, setMenu] = useState<RoleMenuState | null>(null)
-  const [reorderAnnouncement, setReorderAnnouncement] = useState('')
+  const [menu, setMenu] = useState<RoleMenuState | null>(null);
+  const [reorderAnnouncement, setReorderAnnouncement] = useState('');
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    }),
-  )
-  const visibleRoles = filterServerRoles(roles, query)
-  const partition = partitionServerRoles(visibleRoles)
-  const fullPartition = partitionServerRoles(roles)
-  const hasSearch = Boolean(query.trim())
+      activationConstraint: { distance: 6 }
+    })
+  );
+  const visibleRoles = filterServerRoles(roles, query);
+  const partition = partitionServerRoles(visibleRoles);
+  const fullPartition = partitionServerRoles(roles);
+  const hasSearch = Boolean(query.trim());
 
   function handleDragEnd(event: DragEndEvent) {
     if (!canReorder || !event.over || event.active.id === event.over.id) {
-      return
+      return;
     }
 
-    const activeId = String(event.active.id)
-    const overId = String(event.over.id)
+    const activeId = String(event.active.id);
+    const overId = String(event.over.id);
     const activeIsAdministrator = fullPartition.administratorRoles.some(
-      (role) => role.id === activeId,
-    )
+      (role) => role.id === activeId
+    );
     const overIsAdministrator = fullPartition.administratorRoles.some(
-      (role) => role.id === overId,
-    )
+      (role) => role.id === overId
+    );
     if (activeIsAdministrator !== overIsAdministrator) {
-      return
+      return;
     }
 
     const administratorRoles = activeIsAdministrator
       ? reorderServerRolesWithinTier(
           fullPartition.administratorRoles,
           activeId,
-          overId,
+          overId
         )
-      : fullPartition.administratorRoles
+      : fullPartition.administratorRoles;
     const standardRoles = activeIsAdministrator
       ? fullPartition.standardRoles
       : reorderServerRolesWithinTier(
           fullPartition.standardRoles,
           activeId,
-          overId,
-        )
+          overId
+        );
 
-    onReorder([...administratorRoles, ...standardRoles])
+    onReorder([...administratorRoles, ...standardRoles]);
   }
 
-  function moveRoleByKeyboard(
-    roleId: string,
-    direction: -1 | 1,
-  ) {
+  function moveRoleByKeyboard(roleId: string, direction: -1 | 1) {
     if (!canReorder) {
-      return
+      return;
     }
 
     const isAdministrator = fullPartition.administratorRoles.some(
-      (role) => role.id === roleId,
-    )
+      (role) => role.id === roleId
+    );
     const tier = isAdministrator
       ? fullPartition.administratorRoles
-      : fullPartition.standardRoles
-    const currentIndex = tier.findIndex((role) => role.id === roleId)
-    const targetRole = tier[currentIndex + direction]
-    const currentRole = tier[currentIndex]
+      : fullPartition.standardRoles;
+    const currentIndex = tier.findIndex((role) => role.id === roleId);
+    const targetRole = tier[currentIndex + direction];
+    const currentRole = tier[currentIndex];
     if (currentIndex < 0 || !currentRole || !targetRole) {
-      return
+      return;
     }
 
-    const nextTier = reorderServerRolesWithinTier(
-      tier,
-      roleId,
-      targetRole.id,
-    )
+    const nextTier = reorderServerRolesWithinTier(tier, roleId, targetRole.id);
     onReorder(
       isAdministrator
         ? [...nextTier, ...fullPartition.standardRoles]
-        : [...fullPartition.administratorRoles, ...nextTier],
-    )
+        : [...fullPartition.administratorRoles, ...nextTier]
+    );
     setReorderAnnouncement(
-      `Роль ${currentRole.title} перемещена на позицию ${currentIndex + direction + 1} из ${tier.length}.`,
-    )
+      `Роль ${currentRole.title} перемещена на позицию ${currentIndex + direction + 1} из ${tier.length}.`
+    );
   }
 
-  function openRoleMenu(
-    role: ServerRoleResponse,
-    trigger: HTMLButtonElement,
-  ) {
-    const bounds = trigger.getBoundingClientRect()
+  function openRoleMenu(role: ServerRoleResponse, trigger: HTMLButtonElement) {
+    const bounds = trigger.getBoundingClientRect();
     setMenu({
       role,
       x: Math.min(bounds.right, window.innerWidth - 12),
-      y: Math.min(bounds.bottom + 4, window.innerHeight - 12),
-    })
+      y: Math.min(bounds.bottom + 4, window.innerHeight - 12)
+    });
   }
 
   function getRoleMenuItems(role: ServerRoleResponse): ContextMenuItem[] {
@@ -176,16 +169,16 @@ export function ServerRoleList({
       role,
       effectivePermissions,
       actorLegacyPermissionCodes,
-      canManageRoles,
-    )
-    const lockedHint = getRoleManagementReason(decision.reason)
+      canManageRoles
+    );
+    const lockedHint = getRoleManagementReason(decision.reason);
 
     return [
       {
         type: 'item',
         icon: 'edit',
         label: 'Открыть редактор',
-        onSelect: () => onSelect(role.id),
+        onSelect: () => onSelect(role.id)
       },
       {
         type: 'item',
@@ -193,13 +186,13 @@ export function ServerRoleList({
         label: 'Дублировать',
         disabled: !decision.allowed || isMutating,
         hint: decision.allowed ? undefined : lockedHint,
-        onSelect: () => onDuplicate(role),
+        onSelect: () => onDuplicate(role)
       },
       {
         type: 'item',
         icon: 'copy',
         label: 'Копировать ID роли',
-        onSelect: () => void navigator.clipboard.writeText(role.id),
+        onSelect: () => void navigator.clipboard.writeText(role.id)
       },
       { type: 'separator' },
       {
@@ -209,9 +202,9 @@ export function ServerRoleList({
         danger: true,
         disabled: !decision.allowed || isMutating,
         hint: decision.allowed ? undefined : lockedHint,
-        onSelect: () => onDelete(role),
-      },
-    ]
+        onSelect: () => onDelete(role)
+      }
+    ];
   }
 
   return (
@@ -254,7 +247,9 @@ export function ServerRoleList({
               <SystemIcon name="lock" size={17} />
               <div>
                 <strong>Все участники</strong>
-                <small>Будет доступно после включения v1 permission storage</small>
+                <small>
+                  Будет доступно после включения v1 permission storage
+                </small>
               </div>
             </div>
           )}
@@ -329,7 +324,7 @@ export function ServerRoleList({
         />
       ) : null}
     </aside>
-  )
+  );
 }
 
 function RoleTierSection({
@@ -340,19 +335,19 @@ function RoleTierSection({
   isMutating,
   onSelect,
   onOpenMenu,
-  onMove,
+  onMove
 }: {
-  title: string
-  roles: readonly ServerRoleResponse[]
-  selectedRoleId: string | null
-  canReorder: boolean
-  isMutating: boolean
-  onSelect: (roleId: string) => void
-  onOpenMenu: (role: ServerRoleResponse, trigger: HTMLButtonElement) => void
-  onMove: (roleId: string, direction: -1 | 1) => void
+  title: string;
+  roles: readonly ServerRoleResponse[];
+  selectedRoleId: string | null;
+  canReorder: boolean;
+  isMutating: boolean;
+  onSelect: (roleId: string) => void;
+  onOpenMenu: (role: ServerRoleResponse, trigger: HTMLButtonElement) => void;
+  onMove: (roleId: string, direction: -1 | 1) => void;
 }) {
   if (roles.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -372,7 +367,7 @@ function RoleTierSection({
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 function DraggableRoleRow({
@@ -381,39 +376,39 @@ function DraggableRoleRow({
   canReorder,
   onSelect,
   onOpenMenu,
-  onMove,
+  onMove
 }: {
-  role: ServerRoleResponse
-  isSelected: boolean
-  canReorder: boolean
-  onSelect: (roleId: string) => void
-  onOpenMenu: (role: ServerRoleResponse, trigger: HTMLButtonElement) => void
-  onMove: (roleId: string, direction: -1 | 1) => void
+  role: ServerRoleResponse;
+  isSelected: boolean;
+  canReorder: boolean;
+  onSelect: (roleId: string) => void;
+  onOpenMenu: (role: ServerRoleResponse, trigger: HTMLButtonElement) => void;
+  onMove: (roleId: string, direction: -1 | 1) => void;
 }) {
   const {
     attributes,
     listeners,
     setNodeRef: setDraggableNodeRef,
     transform,
-    isDragging,
-  } = useDraggable({ id: role.id, disabled: !canReorder })
-  const {
-    isOver,
-    setNodeRef: setDroppableNodeRef,
-  } = useDroppable({ id: role.id, disabled: !canReorder })
+    isDragging
+  } = useDraggable({ id: role.id, disabled: !canReorder });
+  const { isOver, setNodeRef: setDroppableNodeRef } = useDroppable({
+    id: role.id,
+    disabled: !canReorder
+  });
   const style: CSSProperties | undefined = transform
     ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scaleX(${transform.scaleX}) scaleY(${transform.scaleY})`,
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0) scaleX(${transform.scaleX}) scaleY(${transform.scaleY})`
       }
-    : undefined
+    : undefined;
 
   const setNodeRef = useCallback(
     (node: HTMLElement | null) => {
-      setDraggableNodeRef(node)
-      setDroppableNodeRef(node)
+      setDraggableNodeRef(node);
+      setDroppableNodeRef(node);
     },
-    [setDraggableNodeRef, setDroppableNodeRef],
-  )
+    [setDraggableNodeRef, setDroppableNodeRef]
+  );
 
   return (
     <article
@@ -428,14 +423,18 @@ function DraggableRoleRow({
         type="button"
         disabled={!canReorder}
         aria-label={`Переместить роль ${role.title}`}
-        title={canReorder ? 'Перетащить роль' : 'Сортировка доступна владельцу без активного поиска'}
+        title={
+          canReorder
+            ? 'Перетащить роль'
+            : 'Сортировка доступна владельцу без активного поиска'
+        }
         onKeyDown={(event) => {
           if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
-            return
+            return;
           }
 
-          event.preventDefault()
-          onMove(role.id, event.key === 'ArrowUp' ? -1 : 1)
+          event.preventDefault();
+          onMove(role.id, event.key === 'ArrowUp' ? -1 : 1);
         }}
         {...attributes}
         {...listeners}
@@ -461,19 +460,19 @@ function DraggableRoleRow({
         <SystemIcon name="more" size={17} />
       </button>
     </article>
-  )
+  );
 }
 
 function StaticRoleRow({
   role,
   isSelected,
   onSelect,
-  onOpenMenu,
+  onOpenMenu
 }: {
-  role: ServerRoleResponse
-  isSelected: boolean
-  onSelect: (roleId: string) => void
-  onOpenMenu: (role: ServerRoleResponse, trigger: HTMLButtonElement) => void
+  role: ServerRoleResponse;
+  isSelected: boolean;
+  onSelect: (roleId: string) => void;
+  onOpenMenu: (role: ServerRoleResponse, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <article
@@ -503,15 +502,15 @@ function StaticRoleRow({
         <SystemIcon name="more" size={17} />
       </button>
     </article>
-  )
+  );
 }
 
 function RoleIdentityButton({
   role,
-  onSelect,
+  onSelect
 }: {
-  role: ServerRoleResponse
-  onSelect: (roleId: string) => void
+  role: ServerRoleResponse;
+  onSelect: (roleId: string) => void;
 }) {
   return (
     <button
@@ -529,7 +528,8 @@ function RoleIdentityButton({
       <span className={styles.roleText}>
         <strong>{role.title}</strong>
         <small>
-          {role.directAssignmentCount} назначений · {role.permissions.length} прав
+          {role.directAssignmentCount} назначений · {role.permissions.length}{' '}
+          прав
         </small>
       </span>
       <span className={styles.roleBadges} aria-hidden="true">
@@ -537,24 +537,24 @@ function RoleIdentityButton({
         {role.mentionable ? <em>@</em> : null}
       </span>
     </button>
-  )
+  );
 }
 
 function getRoleManagementReason(
-  reason: ReturnType<typeof resolveServerRoleManagement>['reason'],
+  reason: ReturnType<typeof resolveServerRoleManagement>['reason']
 ) {
   switch (reason) {
     case 'system':
-      return 'Системная роль недоступна для изменения.'
+      return 'Системная роль недоступна для изменения.';
     case 'administrator':
-      return 'Административными ролями распоряжается только владелец.'
+      return 'Административными ролями распоряжается только владелец.';
     case 'hierarchy':
-      return 'Эта роль находится не ниже вашей роли.'
+      return 'Эта роль находится не ниже вашей роли.';
     case 'permission-subset':
-      return 'Роль содержит права, которых нет у вас.'
+      return 'Роль содержит права, которых нет у вас.';
     case 'missing-permission':
-      return 'Нет права управлять ролями.'
+      return 'Нет права управлять ролями.';
     default:
-      return undefined
+      return undefined;
   }
 }

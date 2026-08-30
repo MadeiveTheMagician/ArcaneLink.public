@@ -1,63 +1,68 @@
-import type { SyntheticEvent } from 'react'
-import type { ServerMemberDetailsResponse } from '../../../../../shared/types'
+import type { SyntheticEvent } from 'react';
+
+import type { ServerMemberDetailsResponse } from '../../../../../shared/types';
 import {
   fallbackAvatarAccent,
-  toAvatarAccent,
-} from '../../../../shared/utils/avatarAccent'
-import type { VoiceParticipant } from '../../../hooks/voice/useVoiceChannel'
+  toAvatarAccent
+} from '../../../../shared/utils/avatarAccent';
+import type { VoiceParticipant } from '../../../hooks/voice/useVoiceChannel';
 
 export function normalizeVoiceParticipantUserId(userId: string) {
-  return userId.trim().toLowerCase()
+  return userId.trim().toLowerCase();
 }
 
 export function getVoiceParticipantMember(
   participant: VoiceParticipant,
-  serverMembers: ServerMemberDetailsResponse[],
+  serverMembers: ServerMemberDetailsResponse[]
 ) {
-  const participantUserId = normalizeVoiceParticipantUserId(participant.userId)
+  const participantUserId = normalizeVoiceParticipantUserId(participant.userId);
 
   return serverMembers.find(
     (member) =>
-      normalizeVoiceParticipantUserId(member.userId) === participantUserId,
-  )
+      normalizeVoiceParticipantUserId(member.userId) === participantUserId
+  );
 }
 
 export function VoiceParticipantAvatar({
   participant,
   member,
   className,
-  onAccentChange,
+  onAccentChange
 }: {
-  participant: VoiceParticipant
-  member: ServerMemberDetailsResponse | undefined
-  className: string
-  onAccentChange?: (accent: string) => void
+  participant: VoiceParticipant;
+  member: ServerMemberDetailsResponse | undefined;
+  className: string;
+  onAccentChange?: (accent: string) => void;
 }) {
-  const avatarAssetId = member?.user.avatarAssetId ?? participant.avatarAssetId
+  const avatarAssetId = member?.user.avatarAssetId ?? participant.avatarAssetId;
   const avatarUrl = avatarAssetId
     ? `/api/assets/${avatarAssetId}/content`
-    : null
+    : null;
   const avatarCropOffsetX =
-    member?.user.avatarCropOffsetX ?? participant.avatarCropOffsetX ?? 0
+    member?.user.avatarCropOffsetX ?? participant.avatarCropOffsetX ?? 0;
   const avatarCropOffsetY =
-    member?.user.avatarCropOffsetY ?? participant.avatarCropOffsetY ?? 0
+    member?.user.avatarCropOffsetY ?? participant.avatarCropOffsetY ?? 0;
   const avatarCropZoom =
-    member?.user.avatarCropZoom ?? participant.avatarCropZoom ?? 1
+    member?.user.avatarCropZoom ?? participant.avatarCropZoom ?? 1;
 
   function handleAvatarLoad(event: SyntheticEvent<HTMLImageElement>) {
     if (!onAccentChange) {
-      return
+      return;
     }
 
     try {
-      onAccentChange(toAvatarAccent(event.currentTarget))
+      onAccentChange(toAvatarAccent(event.currentTarget));
     } catch {
-      onAccentChange(fallbackAvatarAccent)
+      onAccentChange(fallbackAvatarAccent);
     }
   }
 
   return (
-    <span className={`${className} ui-frame`} draggable={false} aria-hidden="true">
+    <span
+      className={`${className} ui-frame`}
+      draggable={false}
+      aria-hidden="true"
+    >
       {avatarUrl ? (
         <img
           className="ui-media-fit"
@@ -67,7 +72,7 @@ export function VoiceParticipantAvatar({
           style={{
             transform: `translate(${avatarCropOffsetX * 100}%, ${
               avatarCropOffsetY * 100
-            }%) scale(${avatarCropZoom})`,
+            }%) scale(${avatarCropZoom})`
           }}
           onLoad={onAccentChange ? handleAvatarLoad : undefined}
           onError={
@@ -80,5 +85,5 @@ export function VoiceParticipantAvatar({
         participant.displayName.slice(0, 1).toUpperCase()
       )}
     </span>
-  )
+  );
 }

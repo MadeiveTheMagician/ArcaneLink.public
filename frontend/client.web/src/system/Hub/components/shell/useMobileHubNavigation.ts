@@ -1,127 +1,128 @@
-import { useEffect, useRef, useState } from 'react'
-import type { MobileHubTab } from '../../../Mobile/components/MobileHubNav'
-import type { HubWorkspace } from './useHubWorkspace'
+import { useEffect, useRef, useState } from 'react';
 
-type MobilePageTransitionDirection = 'left' | 'right' | null
+import type { MobileHubTab } from '../../../Mobile/components/MobileHubNav';
+import type { HubWorkspace } from './useHubWorkspace';
+
+type MobilePageTransitionDirection = 'left' | 'right' | null;
 
 const mobileTabOrder: MobileHubTab[] = [
   'servers',
   'messages',
   'profile',
-  'menu',
-]
+  'menu'
+];
 
-export const MOBILE_PAGE_TRANSITION_DURATION_MS = 350
+export const MOBILE_PAGE_TRANSITION_DURATION_MS = 350;
 
 type UseMobileHubNavigationOptions = {
-  activeWorkspace: HubWorkspace
-  initialTab?: MobileHubTab
-  showProfileWorkspace: () => void
-  showServersWorkspace: () => void
-}
+  activeWorkspace: HubWorkspace;
+  initialTab?: MobileHubTab;
+  showProfileWorkspace: () => void;
+  showServersWorkspace: () => void;
+};
 
 export function useMobileHubNavigation({
   activeWorkspace,
   initialTab = 'profile',
   showProfileWorkspace,
-  showServersWorkspace,
+  showServersWorkspace
 }: UseMobileHubNavigationOptions) {
-  const [mobileTab, setMobileTab] = useState<MobileHubTab>(initialTab)
+  const [mobileTab, setMobileTab] = useState<MobileHubTab>(initialTab);
   const [isMobilePageTransitioning, setIsMobilePageTransitioning] =
-    useState(false)
+    useState(false);
   const [mobilePageTransitionDirection, setMobilePageTransitionDirection] =
-    useState<MobilePageTransitionDirection>(null)
+    useState<MobilePageTransitionDirection>(null);
   const [isMobilePrivateChatClosing, setIsMobilePrivateChatClosing] =
-    useState(false)
-  const mobileTransitionTimeoutRef = useRef<number | null>(null)
-  const mobilePrivateChatCloseTimeoutRef = useRef<number | null>(null)
+    useState(false);
+  const mobileTransitionTimeoutRef = useRef<number | null>(null);
+  const mobilePrivateChatCloseTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (activeWorkspace === 'servers') {
-      setMobileTab('servers')
-      return
+      setMobileTab('servers');
+      return;
     }
 
     if (activeWorkspace === 'profile') {
-      setMobileTab((current) => (current === 'messages' ? current : 'profile'))
-      return
+      setMobileTab((current) => (current === 'messages' ? current : 'profile'));
+      return;
     }
 
     if (activeWorkspace === 'private-space') {
-      setMobileTab('messages')
+      setMobileTab('messages');
     }
-  }, [activeWorkspace])
+  }, [activeWorkspace]);
 
   useEffect(() => {
     return () => {
       if (mobileTransitionTimeoutRef.current !== null) {
-        window.clearTimeout(mobileTransitionTimeoutRef.current)
+        window.clearTimeout(mobileTransitionTimeoutRef.current);
       }
 
       if (mobilePrivateChatCloseTimeoutRef.current !== null) {
-        window.clearTimeout(mobilePrivateChatCloseTimeoutRef.current)
+        window.clearTimeout(mobilePrivateChatCloseTimeoutRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   function switchMobileTab(nextTab: MobileHubTab, action?: () => void) {
     if (mobilePrivateChatCloseTimeoutRef.current !== null) {
-      window.clearTimeout(mobilePrivateChatCloseTimeoutRef.current)
-      mobilePrivateChatCloseTimeoutRef.current = null
-      setIsMobilePrivateChatClosing(false)
+      window.clearTimeout(mobilePrivateChatCloseTimeoutRef.current);
+      mobilePrivateChatCloseTimeoutRef.current = null;
+      setIsMobilePrivateChatClosing(false);
     }
 
     if (nextTab !== mobileTab) {
       if (mobileTransitionTimeoutRef.current !== null) {
-        window.clearTimeout(mobileTransitionTimeoutRef.current)
+        window.clearTimeout(mobileTransitionTimeoutRef.current);
       }
 
-      const currentIndex = mobileTabOrder.indexOf(mobileTab)
-      const nextIndex = mobileTabOrder.indexOf(nextTab)
+      const currentIndex = mobileTabOrder.indexOf(mobileTab);
+      const nextIndex = mobileTabOrder.indexOf(nextTab);
 
-      setIsMobilePageTransitioning(true)
+      setIsMobilePageTransitioning(true);
       setMobilePageTransitionDirection(
-        nextIndex < currentIndex ? 'left' : 'right',
-      )
+        nextIndex < currentIndex ? 'left' : 'right'
+      );
       mobileTransitionTimeoutRef.current = window.setTimeout(() => {
-        setIsMobilePageTransitioning(false)
-        setMobilePageTransitionDirection(null)
-        mobileTransitionTimeoutRef.current = null
-      }, MOBILE_PAGE_TRANSITION_DURATION_MS)
+        setIsMobilePageTransitioning(false);
+        setMobilePageTransitionDirection(null);
+        mobileTransitionTimeoutRef.current = null;
+      }, MOBILE_PAGE_TRANSITION_DURATION_MS);
     }
 
-    setMobileTab(nextTab)
-    action?.()
+    setMobileTab(nextTab);
+    action?.();
   }
 
   function closeMobilePrivateChat() {
     if (mobileTab !== 'messages' || activeWorkspace !== 'private-space') {
-      switchMobileTab('messages', showProfileWorkspace)
-      return
+      switchMobileTab('messages', showProfileWorkspace);
+      return;
     }
 
     if (isMobilePrivateChatClosing) {
-      return
+      return;
     }
 
     if (mobilePrivateChatCloseTimeoutRef.current !== null) {
-      window.clearTimeout(mobilePrivateChatCloseTimeoutRef.current)
+      window.clearTimeout(mobilePrivateChatCloseTimeoutRef.current);
     }
 
-    setIsMobilePrivateChatClosing(true)
+    setIsMobilePrivateChatClosing(true);
     mobilePrivateChatCloseTimeoutRef.current = window.setTimeout(() => {
-      showProfileWorkspace()
-      setIsMobilePrivateChatClosing(false)
-      mobilePrivateChatCloseTimeoutRef.current = null
-    }, MOBILE_PAGE_TRANSITION_DURATION_MS)
+      showProfileWorkspace();
+      setIsMobilePrivateChatClosing(false);
+      mobilePrivateChatCloseTimeoutRef.current = null;
+    }, MOBILE_PAGE_TRANSITION_DURATION_MS);
   }
 
   function openMobilePrivateWorkspace(action: () => void) {
-    switchMobileTab('messages', action)
+    switchMobileTab('messages', action);
   }
 
   function openMobileProfileWorkspace(action: () => void) {
-    switchMobileTab('profile', action)
+    switchMobileTab('profile', action);
   }
 
   return {
@@ -135,6 +136,6 @@ export function useMobileHubNavigation({
     openMobilePrivateWorkspace,
     openMobileProfileWorkspace,
     openMobileMenu: () => switchMobileTab('menu'),
-    closeMobilePrivateChat,
-  }
+    closeMobilePrivateChat
+  };
 }

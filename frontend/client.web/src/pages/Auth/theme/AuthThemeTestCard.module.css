@@ -42,13 +42,13 @@
 }
 
 .themeTester summary::after {
-  content: "Свернуть";
+  content: 'Свернуть';
   color: rgba(199, 189, 255, 0.78);
   font-size: 10px;
 }
 
 .themeTester:not([open]) summary::after {
-  content: "Открыть";
+  content: 'Открыть';
 }
 
 .themeTesterBody {
@@ -59,8 +59,17 @@
   padding: 12px;
   color: var(--color-text);
   background:
-    radial-gradient(circle at 82% 8%, var(--theme-backdrop-glow), transparent 34%),
-    linear-gradient(145deg, var(--theme-bg-start), var(--theme-bg-mid), var(--theme-bg-end));
+    radial-gradient(
+      circle at 82% 8%,
+      var(--theme-backdrop-glow),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      var(--theme-bg-start),
+      var(--theme-bg-mid),
+      var(--theme-bg-end)
+    );
 }
 
 .themeTesterBody::-webkit-scrollbar {
@@ -283,7 +292,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  content: "";
+  content: '';
   background: var(--theme-accent-contrast);
 }
 

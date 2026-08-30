@@ -1,14 +1,14 @@
-import type { AttachmentSecuritySettings } from '../../../../shared/security/attachmentSecuritySettings'
-import { settingsCopy } from '../../../shared/copy'
-import { dangerousFilesWarningSettingsTargetId } from '../../../shared/navigation/systemSettingsNavigation'
-import { SettingsSection, ToggleField } from './SystemSettingsControls'
+import type { AttachmentSecuritySettings } from '../../../../shared/security/attachmentSecuritySettings';
+import { settingsCopy } from '../../../shared/copy';
+import { dangerousFilesWarningSettingsTargetId } from '../../../shared/navigation/systemSettingsNavigation';
+import { SettingsSection, ToggleField } from './SystemSettingsControls';
 
 export function SystemSettingsSecurityTab({
   settings,
-  onChange,
+  onChange
 }: {
-  settings: AttachmentSecuritySettings
-  onChange: (settings: AttachmentSecuritySettings) => void
+  settings: AttachmentSecuritySettings;
+  onChange: (settings: AttachmentSecuritySettings) => void;
 }) {
   return (
     <SettingsSection
@@ -25,5 +25,5 @@ export function SystemSettingsSecurityTab({
         }
       />
     </SettingsSection>
-  )
+  );
 }

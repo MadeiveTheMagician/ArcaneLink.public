@@ -3,18 +3,18 @@ export {
   findActiveMentionQuery,
   hasPotentialMentionToken,
   insertMentionOption,
-  normalizeMentionSearchValue,
-} from './mentionAutocompleteModel'
+  normalizeMentionSearchValue
+} from './mentionAutocompleteModel';
 export {
   buildMentionCandidateRequestPath,
   mentionCandidateDebounceMs,
   mergeMentionCandidateResponses,
-  scheduleMentionCandidateQuery,
-} from './mentionCandidateQueryModel'
+  scheduleMentionCandidateQuery
+} from './mentionCandidateQueryModel';
 export type {
   MentionInsertion,
-  MentionSuggestions,
-} from './mentionAutocompleteModel'
+  MentionSuggestions
+} from './mentionAutocompleteModel';
 export {
   discoverDraftMentions,
   findUnresolvedMentionCandidateQueries,
@@ -22,9 +22,9 @@ export {
   isActiveMentionQueryResolved,
   isDraftMentionValid,
   prepareMessageWithMentions,
-  reconcileDraftMentions,
-} from './draftMentionModel'
-export type { PreparedMessageWithMentions } from './draftMentionModel'
+  reconcileDraftMentions
+} from './draftMentionModel';
+export type { PreparedMessageWithMentions } from './draftMentionModel';
 export type {
   ActiveMentionQuery,
   DraftMention,
@@ -32,5 +32,5 @@ export type {
   MentionRoleCandidate,
   MentionUserCandidate,
   MessageMentionKind,
-  MessageMentionRequest,
-} from './messageMentionTypes'
+  MessageMentionRequest
+} from './messageMentionTypes';

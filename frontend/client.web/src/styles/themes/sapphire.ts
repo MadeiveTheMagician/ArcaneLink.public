@@ -1,6 +1,6 @@
-import type { SystemTheme } from '../systemThemes'
-import { getSystemIconImageCss } from '../../system/shared/icons/systemIconCss'
-import { themeCopy } from '../theme.copy'
+import { getSystemIconImageCss } from '../../system/shared/icons/systemIconCss';
+import type { SystemTheme } from '../systemThemes';
+import { themeCopy } from '../theme.copy';
 
 export const sapphireTheme: SystemTheme = {
   code: 'sapphire',
@@ -97,6 +97,6 @@ export const sapphireTheme: SystemTheme = {
     '--theme-settings-icon-image': getSystemIconImageCss('settings'),
     '--theme-pin-icon-image': getSystemIconImageCss('pin'),
     '--theme-plane-icon-image': getSystemIconImageCss('send'),
-    '--shadow-sapphire': '0 26px 90px rgba(123, 97, 255, 0.24)',
-  },
-}
+    '--shadow-sapphire': '0 26px 90px rgba(123, 97, 255, 0.24)'
+  }
+};

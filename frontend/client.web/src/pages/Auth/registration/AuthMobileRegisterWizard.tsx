@@ -1,14 +1,15 @@
-import { authCopy, SystemIcon } from '../../../system/shared/index'
-import type { RegisterForm } from '../model/AuthPageModel'
-import { registerSteps } from '../model/AuthPageModel'
+import { SystemIcon, authCopy } from '../../../system/shared/index';
+import type { RegisterForm } from '../model/AuthPageModel';
+import { registerSteps } from '../model/AuthPageModel';
 import {
-  getRegisterStepRequirements,
-  registerStepRequirementTitles,
   RegisterRequirementsPanel,
   RegisterWizardField,
-} from './AuthRegisterShared'
-import formStyles from '../login/AuthFormControls.module.css'
-import styles from './AuthRegisterForm.module.css'
+  getRegisterStepRequirements,
+  registerStepRequirementTitles
+} from './AuthRegisterShared';
+
+import formStyles from '../login/AuthFormControls.module.css';
+import styles from './AuthRegisterForm.module.css';
 
 export function AuthMobileRegisterWizard({
   registerForm,
@@ -18,24 +19,24 @@ export function AuthMobileRegisterWizard({
   isPasswordVisible,
   onChange,
   onChangeStep,
-  onPasswordVisibilityChange,
+  onPasswordVisibilityChange
 }: {
-  registerForm: RegisterForm
-  registerProgress: boolean[]
-  mobileRegisterStep: number
-  isLoading: boolean
-  isPasswordVisible: boolean
-  onChange: (form: RegisterForm) => void
-  onChangeStep: (step: number) => void
-  onPasswordVisibilityChange: (isVisible: boolean) => void
+  registerForm: RegisterForm;
+  registerProgress: boolean[];
+  mobileRegisterStep: number;
+  isLoading: boolean;
+  isPasswordVisible: boolean;
+  onChange: (form: RegisterForm) => void;
+  onChangeStep: (step: number) => void;
+  onPasswordVisibilityChange: (isVisible: boolean) => void;
 }) {
-  const mobileStep = registerSteps[mobileRegisterStep] ?? registerSteps[0]
+  const mobileStep = registerSteps[mobileRegisterStep] ?? registerSteps[0];
   const mobileStepRequirements = getRegisterStepRequirements(
     registerForm,
-    mobileStep.key,
-  )
-  const isMobileStepComplete = registerProgress[mobileRegisterStep] ?? false
-  const isLastMobileStep = mobileRegisterStep === registerSteps.length - 1
+    mobileStep.key
+  );
+  const isMobileStepComplete = registerProgress[mobileRegisterStep] ?? false;
+  const isLastMobileStep = mobileRegisterStep === registerSteps.length - 1;
 
   return (
     <div className={styles.authRegisterWizard}>
@@ -44,8 +45,8 @@ export function AuthMobileRegisterWizard({
         aria-label={authCopy.aria.registerSteps}
       >
         {registerSteps.map((step, index) => {
-          const isComplete = registerProgress[index]
-          const isActive = index === mobileRegisterStep
+          const isComplete = registerProgress[index];
+          const isActive = index === mobileRegisterStep;
 
           return (
             <li
@@ -60,12 +61,16 @@ export function AuthMobileRegisterWizard({
                 onClick={() => onChangeStep(index)}
               >
                 <span>
-                  {isComplete ? <SystemIcon name="check" size={14} /> : index + 1}
+                  {isComplete ? (
+                    <SystemIcon name="check" size={14} />
+                  ) : (
+                    index + 1
+                  )}
                 </span>
                 <strong>{step.label}</strong>
               </button>
             </li>
-          )
+          );
         })}
       </ol>
 
@@ -126,5 +131,5 @@ export function AuthMobileRegisterWizard({
         )}
       </div>
     </div>
-  )
+  );
 }

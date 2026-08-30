@@ -1,5 +1,5 @@
-import type { SystemTheme } from '../systemThemes'
-import { themeCopy } from '../theme.copy'
+import type { SystemTheme } from '../systemThemes';
+import { themeCopy } from '../theme.copy';
 
 export const graphiteTheme: SystemTheme = {
   code: 'graphite',
@@ -48,15 +48,13 @@ export const graphiteTheme: SystemTheme = {
     '--theme-glow-strong': 'rgba(0, 0, 0, 0.3)',
     '--theme-surface-raised':
       'linear-gradient(180deg, rgba(36, 36, 36, 0.98), rgba(21, 21, 21, 0.98))',
-    '--theme-surface-accent':
-      'linear-gradient(135deg, #666666, #4e4e4e)',
+    '--theme-surface-accent': 'linear-gradient(135deg, #666666, #4e4e4e)',
     '--theme-surface-accent-strong':
       'linear-gradient(180deg, #666666, #4e4e4e)',
-    '--theme-avatar-bg':
-      'linear-gradient(135deg, #444444, #2c2c2c)',
+    '--theme-avatar-bg': 'linear-gradient(135deg, #444444, #2c2c2c)',
     '--theme-avatar-contrast': '#f2f2f2',
     '--theme-arcane-backdrop':
       'linear-gradient(180deg, rgba(18, 18, 18, 0.2), rgba(14, 14, 14, 0.32)), radial-gradient(circle at 76% 26%, rgba(184, 184, 184, 0.05), transparent 32%)',
-    '--shadow-sapphire': '0 26px 90px rgba(0, 0, 0, 0.34)',
-  },
-}
+    '--shadow-sapphire': '0 26px 90px rgba(0, 0, 0, 0.34)'
+  }
+};

@@ -20,8 +20,7 @@
   --profile-surface-accent: var(--theme-surface-accent);
   --profile-surface-accent-strong: var(--theme-surface-accent-strong);
   --profile-shadow-raised:
-    0 22px 72px rgba(0, 0, 0, 0.44),
-    0 0 42px var(--theme-glow);
+    0 22px 72px rgba(0, 0, 0, 0.44), 0 0 42px var(--theme-glow);
   --mobile-page-transition-duration: 350ms;
   --mobile-menu-transition-duration: var(--mobile-page-transition-duration);
   --mobile-page-transition-distance: 30vw;
@@ -35,9 +34,22 @@
   overflow: hidden;
   padding: 0;
   background:
-    radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--theme-accent), transparent 80%), transparent 30%),
-    radial-gradient(circle at 24% 86%, color-mix(in srgb, var(--theme-accent-light), transparent 88%), transparent 28%),
-    linear-gradient(115deg, var(--theme-bg-start) 0%, var(--theme-bg-mid) 44%, var(--theme-bg-end) 100%);
+    radial-gradient(
+      circle at 78% 18%,
+      color-mix(in srgb, var(--theme-accent), transparent 80%),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 24% 86%,
+      color-mix(in srgb, var(--theme-accent-light), transparent 88%),
+      transparent 28%
+    ),
+    linear-gradient(
+      115deg,
+      var(--theme-bg-start) 0%,
+      var(--theme-bg-mid) 44%,
+      var(--theme-bg-end) 100%
+    );
   color: var(--color-text);
   font-size: calc(16px * var(--profile-font-scale));
   animation: profilePageEnter 360ms ease-out both;
@@ -93,17 +105,31 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  content: "";
+  content: '';
   background-image:
-    radial-gradient(circle, color-mix(in srgb, var(--theme-text-soft), transparent 58%) 0 1px, transparent 1.7px),
-    radial-gradient(circle, color-mix(in srgb, var(--theme-accent-light), transparent 76%) 0 1px, transparent 1.6px);
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--theme-text-soft), transparent 58%) 0 1px,
+      transparent 1.7px
+    ),
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--theme-accent-light), transparent 76%) 0 1px,
+      transparent 1.6px
+    );
   background-position:
     0 0,
     42px 64px;
   background-size:
     120px 120px,
     170px 170px;
-  mask-image: linear-gradient(90deg, transparent, black 16%, black 84%, transparent);
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    black 16%,
+    black 84%,
+    transparent
+  );
   opacity: 0.28;
 }
 
@@ -138,7 +164,9 @@
   margin: 0;
   overflow: hidden;
   padding: 0;
-  font-size: calc(16px * var(--profile-font-scale) * var(--profile-server-scale));
+  font-size: calc(
+    16px * var(--profile-font-scale) * var(--profile-server-scale)
+  );
   scale: 1;
 }
 
@@ -165,8 +193,16 @@
   padding: 0;
   color: var(--color-text);
   background:
-    radial-gradient(circle at 70% 18%, var(--theme-backdrop-glow), transparent 34%),
-    linear-gradient(180deg, var(--theme-frame-bg), var(--theme-control-bg-strong));
+    radial-gradient(
+      circle at 70% 18%,
+      var(--theme-backdrop-glow),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      var(--theme-frame-bg),
+      var(--theme-control-bg-strong)
+    );
   background-color: var(--profile-surface-panel);
 }
 
@@ -202,7 +238,7 @@
   position: absolute;
   inset: 0 auto 0 50%;
   width: 1px;
-  content: "";
+  content: '';
   background: var(--theme-border-soft);
   transform: translateX(-50%);
   transition:
@@ -226,7 +262,7 @@
 }
 
 @media (max-width: 760px) {
-  .page:has([data-mobile-voice-expanded="true"]) {
+  .page:has([data-mobile-voice-expanded='true']) {
     --mobile-voice-dock-reserve: 132px;
   }
 
@@ -316,11 +352,14 @@
     overflow: hidden;
     padding-bottom: 0;
     background: var(--theme-frame-bg);
-    animation: mobilePrivateChatSlideIn var(--mobile-page-transition-duration) var(--mobile-page-transition-easing) both;
+    animation: mobilePrivateChatSlideIn var(--mobile-page-transition-duration)
+      var(--mobile-page-transition-easing) both;
   }
 
-  .page:global(.is-mobile-tab-messages.is-private-space.is-private-chat-closing) .content {
-    animation: mobilePrivateChatSlideOut var(--mobile-page-transition-duration) var(--mobile-page-transition-easing) both;
+  .page:global(.is-mobile-tab-messages.is-private-space.is-private-chat-closing)
+    .content {
+    animation: mobilePrivateChatSlideOut var(--mobile-page-transition-duration)
+      var(--mobile-page-transition-easing) both;
   }
 
   .page:global(.is-mobile-tab-menu) .hubShell {
@@ -341,19 +380,25 @@
   }
 
   .mobilePageTransitioning.mobilePageTransitionLeft .shell {
-    animation: mobileHubPageEnterFromLeft var(--mobile-page-transition-duration) var(--mobile-page-transition-easing) both;
+    animation: mobileHubPageEnterFromLeft var(--mobile-page-transition-duration)
+      var(--mobile-page-transition-easing) both;
   }
 
   .mobilePageTransitioning.mobilePageTransitionRight .shell {
-    animation: mobileHubPageEnterFromRight var(--mobile-page-transition-duration) var(--mobile-page-transition-easing) both;
+    animation: mobileHubPageEnterFromRight
+      var(--mobile-page-transition-duration)
+      var(--mobile-page-transition-easing) both;
   }
 
   .mobilePageTransitioning.mobilePageTransitionLeft .mobileMenuSurface {
-    animation: mobileHubMenuEnterFromLeft var(--mobile-menu-transition-duration) var(--mobile-page-transition-easing) both;
+    animation: mobileHubMenuEnterFromLeft var(--mobile-menu-transition-duration)
+      var(--mobile-page-transition-easing) both;
   }
 
   .mobilePageTransitioning.mobilePageTransitionRight .mobileMenuSurface {
-    animation: mobileHubMenuEnterFromRight var(--mobile-menu-transition-duration) var(--mobile-page-transition-easing) both;
+    animation: mobileHubMenuEnterFromRight
+      var(--mobile-menu-transition-duration)
+      var(--mobile-page-transition-easing) both;
   }
 
   .hubResizer {

@@ -20,16 +20,16 @@ export const commonCopy = {
     save: 'Сохранить',
     search: 'Поиск',
     send: 'Отправить',
-    showAll: 'Показать все',
+    showAll: 'Показать все'
   },
   empty: {
     noData: 'Данных пока нет.',
     notSpecified: 'Не указано',
-    nothingFound: 'Ничего не найдено.',
+    nothingFound: 'Ничего не найдено.'
   },
   imageEditor: {
     scale: 'Масштаб',
-    saving: 'Сохранение…',
+    saving: 'Сохранение…'
   },
   navigation: {
     menu: 'Меню',
@@ -37,10 +37,10 @@ export const commonCopy = {
     mobile: 'Мобильная навигация',
     mobileMenu: 'Мобильное меню',
     profile: 'Профиль',
-    servers: 'Серверы',
+    servers: 'Серверы'
   },
   placeholders: {
-    menuComingSoon: 'Меню появится позже',
+    menuComingSoon: 'Меню появится позже'
   },
   status: {
     loading: 'Загрузка...',
@@ -48,6 +48,6 @@ export const commonCopy = {
     online: 'Онлайн',
     processing: 'Выполняем…',
     ready: 'Готово',
-    saving: 'Сохраняем…',
-  },
-} as const
+    saving: 'Сохраняем…'
+  }
+} as const;

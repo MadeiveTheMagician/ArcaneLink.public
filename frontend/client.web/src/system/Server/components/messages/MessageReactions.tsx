@@ -4,118 +4,117 @@ import {
   useLayoutEffect,
   useReducer,
   useRef,
-  useState,
-} from 'react'
-import type { SpaceMessageResponse } from '../../../../shared/types'
-import { serverCopy } from '../../../shared'
-import styles from './MessageReactions.module.css'
+  useState
+} from 'react';
+
+import type { SpaceMessageResponse } from '../../../../shared/types';
+import { serverCopy } from '../../../shared';
 import {
+  type ReactionPresenceItem,
+  type ReactionPresenceState,
   completeReactionPresenceAnimation,
   createReactionPresenceState,
   reconcileReactionPresence,
-  shouldAddMessageReaction,
-  type ReactionPresenceItem,
-  type ReactionPresenceState,
-} from './messageReactionModel'
+  shouldAddMessageReaction
+} from './messageReactionModel';
+
+import styles from './MessageReactions.module.css';
 
 type MessageReactionsProps = {
-  message: SpaceMessageResponse
-  canReact: boolean
+  message: SpaceMessageResponse;
+  canReact: boolean;
   onSetReaction: (
     messageId: string,
     emojiCode: string,
-    isPresent: boolean,
-  ) => Promise<SpaceMessageResponse | null>
-}
+    isPresent: boolean
+  ) => Promise<SpaceMessageResponse | null>;
+};
 
 type ReactionPresenceAction =
   | {
-      type: 'reconcile'
-      messageId: string
-      reactions: SpaceMessageResponse['reactions']
+      type: 'reconcile';
+      messageId: string;
+      reactions: SpaceMessageResponse['reactions'];
     }
   | {
-      type: 'complete'
-      messageId: string
-      emojiCode: string
-      token: number
-    }
+      type: 'complete';
+      messageId: string;
+      emojiCode: string;
+      token: number;
+    };
 
 function reactionPresenceReducer(
   state: ReactionPresenceState,
-  action: ReactionPresenceAction,
+  action: ReactionPresenceAction
 ) {
   if (action.type === 'reconcile') {
-    return reconcileReactionPresence(
-      state,
-      action.messageId,
-      action.reactions,
-    )
+    return reconcileReactionPresence(state, action.messageId, action.reactions);
   }
 
   return completeReactionPresenceAnimation(
     state,
     action.messageId,
     action.emojiCode,
-    action.token,
-  )
+    action.token
+  );
 }
 
 type ReactionChipProps = {
-  item: ReactionPresenceItem
-  messageId: string
-  disabled: boolean
-  onToggle: (emojiCode: string) => void
+  item: ReactionPresenceItem;
+  messageId: string;
+  disabled: boolean;
+  onToggle: (emojiCode: string) => void;
   onAnimationComplete: (
     messageId: string,
     emojiCode: string,
-    token: number,
-  ) => void
-}
+    token: number
+  ) => void;
+};
 
 function ReactionChip({
   item,
   messageId,
   disabled,
   onToggle,
-  onAnimationComplete,
+  onAnimationComplete
 }: ReactionChipProps) {
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-  const { reaction, phase, token } = item
-  const isExiting = phase === 'exiting'
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const { reaction, phase, token } = item;
+  const isExiting = phase === 'exiting';
 
   useEffect(() => {
     if (phase === 'present') {
-      return
+      return;
     }
 
     if (isExiting) {
-      buttonRef.current?.blur()
+      buttonRef.current?.blur();
     }
 
     const prefersReducedMotion = window.matchMedia?.(
-      '(prefers-reduced-motion: reduce)',
-    ).matches
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
     const timeoutId = window.setTimeout(
       () => onAnimationComplete(messageId, reaction.emojiCode, token),
-      prefersReducedMotion ? 0 : phase === 'entering' ? 240 : 220,
-    )
+      prefersReducedMotion ? 0 : phase === 'entering' ? 240 : 220
+    );
 
-    return () => window.clearTimeout(timeoutId)
+    return () => window.clearTimeout(timeoutId);
   }, [
     isExiting,
     messageId,
     onAnimationComplete,
     phase,
     reaction.emojiCode,
-    token,
-  ])
+    token
+  ]);
 
-  const phaseClass = phase === 'entering'
-    ? styles.reactionChipEntering
-    : isExiting
-      ? styles.reactionChipExiting
-      : ''
+  const phaseClass =
+    phase === 'entering'
+      ? styles.reactionChipEntering
+      : isExiting
+        ? styles.reactionChipExiting
+        : '';
 
   return (
     <button
@@ -128,13 +127,13 @@ function ReactionChip({
       aria-pressed={reaction.reactedByCurrentUser}
       aria-label={serverCopy.messages.toggleReaction(
         reaction.emojiCode,
-        reaction.count,
+        reaction.count
       )}
       disabled={disabled || isExiting}
       tabIndex={isExiting ? -1 : undefined}
       onAnimationEnd={(event) => {
         if (event.target === event.currentTarget) {
-          onAnimationComplete(messageId, reaction.emojiCode, token)
+          onAnimationComplete(messageId, reaction.emojiCode, token);
         }
       }}
       onClick={() => onToggle(reaction.emojiCode)}
@@ -142,66 +141,65 @@ function ReactionChip({
       <span aria-hidden="true">{reaction.emojiCode}</span>
       <span>{reaction.count}</span>
     </button>
-  )
+  );
 }
 
 export function MessageReactions({
   message,
   canReact,
-  onSetReaction,
+  onSetReaction
 }: MessageReactionsProps) {
-  const [pendingEmojiCode, setPendingEmojiCode] = useState<string | null>(null)
+  const [pendingEmojiCode, setPendingEmojiCode] = useState<string | null>(null);
   const [presenceState, dispatchPresence] = useReducer(
     reactionPresenceReducer,
     {
       messageId: message.id,
-      reactions: message.reactions,
+      reactions: message.reactions
     },
     ({ messageId, reactions }) =>
-      createReactionPresenceState(messageId, reactions),
-  )
-  const isDisabled = !canReact || Boolean(message.deletedAt)
+      createReactionPresenceState(messageId, reactions)
+  );
+  const isDisabled = !canReact || Boolean(message.deletedAt);
 
   useLayoutEffect(() => {
     dispatchPresence({
       type: 'reconcile',
       messageId: message.id,
-      reactions: message.reactions,
-    })
-  }, [message.id, message.reactions])
+      reactions: message.reactions
+    });
+  }, [message.id, message.reactions]);
 
-  const completeAnimation = useCallback((
-    messageId: string,
-    emojiCode: string,
-    token: number,
-  ) => {
-    dispatchPresence({
-      type: 'complete',
-      messageId,
-      emojiCode,
-      token,
-    })
-  }, [])
+  const completeAnimation = useCallback(
+    (messageId: string, emojiCode: string, token: number) => {
+      dispatchPresence({
+        type: 'complete',
+        messageId,
+        emojiCode,
+        token
+      });
+    },
+    []
+  );
 
   async function toggleReaction(emojiCode: string) {
     if (isDisabled || pendingEmojiCode) {
-      return
+      return;
     }
 
-    setPendingEmojiCode(emojiCode)
+    setPendingEmojiCode(emojiCode);
     try {
       await onSetReaction(
         message.id,
         emojiCode,
-        shouldAddMessageReaction(message.reactions, emojiCode),
-      )
+        shouldAddMessageReaction(message.reactions, emojiCode)
+      );
     } finally {
-      setPendingEmojiCode(null)
+      setPendingEmojiCode(null);
     }
   }
 
   if (presenceState.items.length === 0) {
-    return null
+    return null;
   }
 
   return (
@@ -224,5 +222,5 @@ export function MessageReactions({
         ))}
       </div>
     </div>
-  )
+  );
 }

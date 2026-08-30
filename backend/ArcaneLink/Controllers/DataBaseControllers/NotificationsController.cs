@@ -4,79 +4,78 @@ using ArcaneLink.Services.Notifications.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ArcaneLink.Controllers.DataBaseControllers
+namespace ArcaneLink.Controllers.DataBaseControllers;
+
+[ApiController]
+[Authorize]
+[Route("api/notifications")]
+public class NotificationsController : ControllerBase
 {
-    [ApiController]
-    [Authorize]
-    [Route("api/notifications")]
-    public class NotificationsController : ControllerBase
+    private readonly IUserNotificationService _notifications;
+
+    public NotificationsController(IUserNotificationService notifications)
     {
-        private readonly IUserNotificationService _notifications;
+        this._notifications = notifications;
+    }
 
-        public NotificationsController(IUserNotificationService notifications)
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<UserNotificationResponse>>> Get(
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        return userId == null
+            ? this.Unauthorized()
+            : this.Ok(await this._notifications.GetAsync(userId.Value, cancellationToken));
+    }
+
+    [HttpPost("{notificationId:guid}/read")]
+    public async Task<IActionResult> MarkRead(
+        Guid notificationId,
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null)
         {
-            _notifications = notifications;
+            return this.Unauthorized();
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<UserNotificationResponse>>> Get(
-            CancellationToken cancellationToken)
+        return await this._notifications.MarkReadAsync(
+            userId.Value,
+            notificationId,
+            cancellationToken)
+            ? this.NoContent()
+            : this.NotFound();
+    }
+
+    [HttpPost("read-all")]
+    public async Task<IActionResult> MarkAllRead(CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null)
         {
-            var userId = GetCurrentUserId();
-            return userId == null
-                ? Unauthorized()
-                : Ok(await _notifications.GetAsync(userId.Value, cancellationToken));
+            return this.Unauthorized();
         }
 
-        [HttpPost("{notificationId:guid}/read")]
-        public async Task<IActionResult> MarkRead(
-            Guid notificationId,
-            CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
+        await this._notifications.MarkAllReadAsync(userId.Value, cancellationToken);
+        return this.NoContent();
+    }
 
-            return await _notifications.MarkReadAsync(
-                userId.Value,
-                notificationId,
-                cancellationToken)
-                ? NoContent()
-                : NotFound();
+    [HttpDelete("history")]
+    public async Task<IActionResult> ClearHistory(CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null)
+        {
+            return this.Unauthorized();
         }
 
-        [HttpPost("read-all")]
-        public async Task<IActionResult> MarkAllRead(CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
+        await this._notifications.ClearHistoryAsync(userId.Value, cancellationToken);
+        return this.NoContent();
+    }
 
-            await _notifications.MarkAllReadAsync(userId.Value, cancellationToken);
-            return NoContent();
-        }
-
-        [HttpDelete("history")]
-        public async Task<IActionResult> ClearHistory(CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
-
-            await _notifications.ClearHistoryAsync(userId.Value, cancellationToken);
-            return NoContent();
-        }
-
-        private Guid? GetCurrentUserId()
-        {
-            var value = User.FindFirstValue("userId");
-            return Guid.TryParse(value, out var userId) ? userId : null;
-        }
+    private Guid? GetCurrentUserId()
+    {
+        var value = this.User.FindFirstValue("userId");
+        return Guid.TryParse(value, out var userId) ? userId : null;
     }
 }

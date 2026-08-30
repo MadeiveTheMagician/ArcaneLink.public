@@ -1,26 +1,28 @@
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect } from 'react';
+
 import type {
   PermissionResponse,
-  ServerRoleResponse,
-} from '../../../../../shared/types'
-import { ServerMemberDisplayColorSettings } from './ServerMemberDisplayColorSettings'
-import { ServerRoleEditorDialog } from './ServerRoleEditorDialog'
-import { ServerRoleList } from './ServerRoleList'
-import { useServerRoleSettings } from './useServerRoleSettings'
-import styles from './ServerRolesSettings.module.css'
+  ServerRoleResponse
+} from '../../../../../shared/types';
+import { ServerMemberDisplayColorSettings } from './ServerMemberDisplayColorSettings';
+import { ServerRoleEditorDialog } from './ServerRoleEditorDialog';
+import { ServerRoleList } from './ServerRoleList';
+import { useServerRoleSettings } from './useServerRoleSettings';
+
+import styles from './ServerRolesSettings.module.css';
 
 type ServerRolesSettingsProps = {
-  accessToken: string
-  serverId: string
-  roles: readonly ServerRoleResponse[]
-  permissions: readonly PermissionResponse[]
-  actorLegacyPermissionCodes: readonly string[]
-  isLoading: boolean
-  onReloadRoles: () => Promise<readonly ServerRoleResponse[]>
-  onReloadMembers: () => Promise<void>
-  onDirtyChange: (isDirty: boolean) => void
-  onEditorOpenChange: (isOpen: boolean) => void
-}
+  accessToken: string;
+  serverId: string;
+  roles: readonly ServerRoleResponse[];
+  permissions: readonly PermissionResponse[];
+  actorLegacyPermissionCodes: readonly string[];
+  isLoading: boolean;
+  onReloadRoles: () => Promise<readonly ServerRoleResponse[]>;
+  onReloadMembers: () => Promise<void>;
+  onDirtyChange: (isDirty: boolean) => void;
+  onEditorOpenChange: (isOpen: boolean) => void;
+};
 
 export function ServerRolesSettings({
   accessToken,
@@ -32,7 +34,7 @@ export function ServerRolesSettings({
   onReloadRoles,
   onReloadMembers,
   onDirtyChange,
-  onEditorOpenChange,
+  onEditorOpenChange
 }: ServerRolesSettingsProps) {
   const controller = useServerRoleSettings({
     accessToken,
@@ -41,20 +43,20 @@ export function ServerRolesSettings({
     permissions,
     actorLegacyPermissionCodes,
     onReloadRoles,
-    onReloadMembers,
-  })
+    onReloadMembers
+  });
 
   useLayoutEffect(() => {
-    onDirtyChange(controller.isEditorOpen && controller.isDirty)
+    onDirtyChange(controller.isEditorOpen && controller.isDirty);
 
-    return () => onDirtyChange(false)
-  }, [controller.isDirty, controller.isEditorOpen, onDirtyChange])
+    return () => onDirtyChange(false);
+  }, [controller.isDirty, controller.isEditorOpen, onDirtyChange]);
 
   useLayoutEffect(() => {
-    onEditorOpenChange(controller.isEditorOpen)
+    onEditorOpenChange(controller.isEditorOpen);
 
-    return () => onEditorOpenChange(false)
-  }, [controller.isEditorOpen, onEditorOpenChange])
+    return () => onEditorOpenChange(false);
+  }, [controller.isEditorOpen, onEditorOpenChange]);
 
   return (
     <section
@@ -118,5 +120,5 @@ export function ServerRolesSettings({
         />
       ) : null}
     </section>
-  )
+  );
 }

@@ -1,21 +1,22 @@
-import styles from './UnreadBadge.module.css'
 import {
   formatUnreadCount,
   getUnreadMessageLabel,
-  normalizeUnreadCount,
-} from './unreadBadgeModel'
+  normalizeUnreadCount
+} from './unreadBadgeModel';
+
+import styles from './UnreadBadge.module.css';
 
 type UnreadBadgeProps = {
-  count: number
-  className?: string
-}
+  count: number;
+  className?: string;
+};
 
 export function UnreadBadge({ count, className = '' }: UnreadBadgeProps) {
-  const normalizedCount = normalizeUnreadCount(count)
-  const accessibleLabel = getUnreadMessageLabel(normalizedCount)
+  const normalizedCount = normalizeUnreadCount(count);
+  const accessibleLabel = getUnreadMessageLabel(normalizedCount);
 
   if (!accessibleLabel) {
-    return null
+    return null;
   }
 
   return (
@@ -26,5 +27,5 @@ export function UnreadBadge({ count, className = '' }: UnreadBadgeProps) {
     >
       <span aria-hidden="true">{formatUnreadCount(normalizedCount)}</span>
     </span>
-  )
+  );
 }

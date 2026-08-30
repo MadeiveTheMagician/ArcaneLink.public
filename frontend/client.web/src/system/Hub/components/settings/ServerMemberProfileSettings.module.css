@@ -45,7 +45,11 @@
   position: relative;
   min-height: 132px;
   background:
-    radial-gradient(circle at 72% 18%, var(--theme-backdrop-glow), transparent 35%),
+    radial-gradient(
+      circle at 72% 18%,
+      var(--theme-backdrop-glow),
+      transparent 35%
+    ),
     var(--theme-control-bg-strong);
   background-position: center;
   background-size: cover;
@@ -232,7 +236,11 @@
   border: 1px solid var(--theme-section-border);
   border-radius: 7px;
   background:
-    radial-gradient(circle at 72% 18%, var(--theme-backdrop-glow), transparent 35%),
+    radial-gradient(
+      circle at 72% 18%,
+      var(--theme-backdrop-glow),
+      transparent 35%
+    ),
     var(--theme-control-bg-strong);
   background-position: center;
   background-size: cover;

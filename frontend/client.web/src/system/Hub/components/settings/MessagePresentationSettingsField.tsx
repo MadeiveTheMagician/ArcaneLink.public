@@ -1,27 +1,28 @@
-import type { MessageDisplayFormat } from '../../../../shared/types'
+import type { MessageDisplayFormat } from '../../../../shared/types';
 import {
+  SystemSelect,
   normalizeMessageBubbleAlignment,
   normalizeMessageBubbleWidth,
-  normalizeMessageDisplayFormat,
-  SystemSelect,
-} from '../../../shared'
+  normalizeMessageDisplayFormat
+} from '../../../shared';
 import type {
   MessageBubbleAlignment,
-  MessageBubbleWidth,
-} from '../../../shared'
-import { settingsCopy } from '../../../shared/copy'
-import styles from './SystemSettingsInterface.module.css'
+  MessageBubbleWidth
+} from '../../../shared';
+import { settingsCopy } from '../../../shared/copy';
+
+import styles from './SystemSettingsInterface.module.css';
 
 type MessagePresentationSettingsFieldProps = {
-  title: string
-  description: string
-  format: MessageDisplayFormat
-  bubbleAlignment: MessageBubbleAlignment
-  bubbleWidth: MessageBubbleWidth
-  onFormatChange: (value: MessageDisplayFormat) => void
-  onBubbleAlignmentChange: (value: MessageBubbleAlignment) => void
-  onBubbleWidthChange: (value: MessageBubbleWidth) => void
-}
+  title: string;
+  description: string;
+  format: MessageDisplayFormat;
+  bubbleAlignment: MessageBubbleAlignment;
+  bubbleWidth: MessageBubbleWidth;
+  onFormatChange: (value: MessageDisplayFormat) => void;
+  onBubbleAlignmentChange: (value: MessageBubbleAlignment) => void;
+  onBubbleWidthChange: (value: MessageBubbleWidth) => void;
+};
 
 export function MessagePresentationSettingsField({
   title,
@@ -31,7 +32,7 @@ export function MessagePresentationSettingsField({
   bubbleWidth,
   onFormatChange,
   onBubbleAlignmentChange,
-  onBubbleWidthChange,
+  onBubbleWidthChange
 }: MessagePresentationSettingsFieldProps) {
   return (
     <div className={styles.messageFormatField}>
@@ -98,5 +99,5 @@ export function MessagePresentationSettingsField({
         </div>
       ) : null}
     </div>
-  )
+  );
 }

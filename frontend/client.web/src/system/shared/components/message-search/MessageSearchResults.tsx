@@ -1,16 +1,17 @@
-import type { SpaceMessageResponse } from '../../../../shared/types'
-import { messageSearchCopy } from './messageSearch.copy.ts'
-import styles from './MessageSearchResults.module.css'
+import type { SpaceMessageResponse } from '../../../../shared/types';
+import { messageSearchCopy } from './messageSearch.copy.ts';
+
+import styles from './MessageSearchResults.module.css';
 
 type MessageSearchResultsProps = {
-  query: string
-  results: SpaceMessageResponse[]
-  isSearching: boolean
-  error: string | null
-  getSpaceLabel?: (message: SpaceMessageResponse) => string | null
-  getCategoryLabel?: (message: SpaceMessageResponse) => string | null
-  onOpenMessage: (message: SpaceMessageResponse) => void
-}
+  query: string;
+  results: SpaceMessageResponse[];
+  isSearching: boolean;
+  error: string | null;
+  getSpaceLabel?: (message: SpaceMessageResponse) => string | null;
+  getCategoryLabel?: (message: SpaceMessageResponse) => string | null;
+  onOpenMessage: (message: SpaceMessageResponse) => void;
+};
 
 export function MessageSearchResults({
   query,
@@ -19,10 +20,13 @@ export function MessageSearchResults({
   error,
   getSpaceLabel,
   getCategoryLabel,
-  onOpenMessage,
+  onOpenMessage
 }: MessageSearchResultsProps) {
   return (
-    <section className={styles.panel} aria-label={messageSearchCopy.aria.results}>
+    <section
+      className={styles.panel}
+      aria-label={messageSearchCopy.aria.results}
+    >
       <header className={styles.header}>
         <span>{messageSearchCopy.results.found}</span>
         <strong>{isSearching ? '...' : results.length}</strong>
@@ -43,9 +47,10 @@ export function MessageSearchResults({
         {!isSearching &&
           !error &&
           results.map((message) => {
-            const spaceLabel = getSpaceLabel?.(message)
-            const categoryLabel = getCategoryLabel?.(message)
-            const body = message.body?.trim() || messageSearchCopy.attachments.withoutText
+            const spaceLabel = getSpaceLabel?.(message);
+            const categoryLabel = getCategoryLabel?.(message);
+            const body =
+              message.body?.trim() || messageSearchCopy.attachments.withoutText;
 
             return (
               <article key={message.id} className={styles.resultGroup}>
@@ -68,7 +73,10 @@ export function MessageSearchResults({
                   type="button"
                   onClick={() => onOpenMessage(message)}
                 >
-                  <span className={`${styles.avatar} ui-frame`} aria-hidden="true">
+                  <span
+                    className={`${styles.avatar} ui-frame`}
+                    aria-hidden="true"
+                  >
                     {message.senderAvatarAssetId ? (
                       <img
                         className="ui-media-fit"
@@ -79,7 +87,7 @@ export function MessageSearchResults({
                             message.senderAvatarCropOffsetX * 100
                           }%, ${
                             message.senderAvatarCropOffsetY * 100
-                          }%) scale(${message.senderAvatarCropZoom})`,
+                          }%) scale(${message.senderAvatarCropZoom})`
                         }}
                       />
                     ) : (
@@ -99,11 +107,11 @@ export function MessageSearchResults({
                   </span>
                 </button>
               </article>
-            )
+            );
           })}
       </div>
     </section>
-  )
+  );
 }
 
 function formatMessageTime(value: string) {
@@ -111,6 +119,6 @@ function formatMessageTime(value: string) {
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
+    minute: '2-digit'
+  }).format(new Date(value));
 }

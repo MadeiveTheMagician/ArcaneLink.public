@@ -22,9 +22,9 @@ public sealed class ServerMemberDisplayColorService : IServerMemberDisplayColorS
         IRealtimeNotificationService realtime,
         ILogger<ServerMemberDisplayColorService> logger)
     {
-        _db = db;
-        _realtime = realtime;
-        _logger = logger;
+        this._db = db;
+        this._realtime = realtime;
+        this._logger = logger;
     }
 
     public async Task<ServerMemberDisplayColorResponse?> GetAsync(
@@ -32,7 +32,7 @@ public sealed class ServerMemberDisplayColorService : IServerMemberDisplayColorS
         Guid serverId,
         CancellationToken cancellationToken = default)
     {
-        var member = await LoadMemberAsync(
+        var member = await this.LoadMemberAsync(
             currentUserId,
             serverId,
             tracked: false,
@@ -57,7 +57,7 @@ public sealed class ServerMemberDisplayColorService : IServerMemberDisplayColorS
 
         try
         {
-            return await UpdateTransactionAsync(
+            return await this.UpdateTransactionAsync(
                 currentUserId,
                 serverId,
                 mode,
@@ -67,12 +67,12 @@ public sealed class ServerMemberDisplayColorService : IServerMemberDisplayColorS
         }
         catch (DbUpdateConcurrencyException)
         {
-            _db.ChangeTracker.Clear();
+            this._db.ChangeTracker.Clear();
             return UpdateServerMemberDisplayColorResult.Conflict();
         }
         catch (Exception exception) when (IsPostgresSerializationFailure(exception))
         {
-            _db.ChangeTracker.Clear();
+            this._db.ChangeTracker.Clear();
             return UpdateServerMemberDisplayColorResult.Conflict();
         }
     }
@@ -85,10 +85,10 @@ public sealed class ServerMemberDisplayColorService : IServerMemberDisplayColorS
         Guid expectedRolesVersion,
         CancellationToken cancellationToken)
     {
-        await using var transaction = await _db.Database.BeginTransactionAsync(
+        await using var transaction = await this._db.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
-        var member = await LoadMemberAsync(
+        var member = await this.LoadMemberAsync(
             currentUserId,
             serverId,
             tracked: true,
@@ -119,11 +119,11 @@ public sealed class ServerMemberDisplayColorService : IServerMemberDisplayColorS
         member.DisplayColorRoleId = roleId;
         member.RolesVersion = Guid.NewGuid();
         member.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync(cancellationToken);
+        await this._db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        await _realtime.NotifyServerBestEffortAsync(
-            _logger,
+        await this._realtime.NotifyServerBestEffortAsync(
+            this._logger,
             serverId,
             RealtimeEventNames.ServerMembersChanged,
             new { serverId, memberId = member.Id },
@@ -137,7 +137,7 @@ public sealed class ServerMemberDisplayColorService : IServerMemberDisplayColorS
         bool tracked,
         CancellationToken cancellationToken)
     {
-        IQueryable<ServerMember> query = _db.ServerMembers
+        IQueryable<ServerMember> query = this._db.ServerMembers
             .Include(member => member.Roles.Where(assignment =>
                 assignment.RevokedAt == null &&
                 assignment.Role.DeletedAt == null))

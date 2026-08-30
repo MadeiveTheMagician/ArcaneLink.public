@@ -1,37 +1,49 @@
-import { useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
-import type { ServerMemberResponse, SpaceResponse } from '../../../../shared/types'
-import { serverCopy, SystemIcon } from '../../../shared'
-import styles from './ServerOverview.module.css'
+import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+
+import type {
+  ServerMemberResponse,
+  SpaceResponse
+} from '../../../../shared/types';
+import { SystemIcon, serverCopy } from '../../../shared';
 import {
-  getServerOverviewSpaceGroups,
   type ServerOverviewSpaceNode,
-} from './serverOverviewSpaceGroups'
+  getServerOverviewSpaceGroups
+} from './serverOverviewSpaceGroups';
+
+import styles from './ServerOverview.module.css';
+
 export function ServerOverview({
   server,
   memberCount,
   roleCount,
   spaces,
-  headerActions,
+  headerActions
 }: {
-  server: ServerMemberResponse['server']
-  memberCount: number
-  roleCount: number | null
-  spaces: SpaceResponse[]
-  headerActions?: ReactNode
+  server: ServerMemberResponse['server'];
+  memberCount: number;
+  roleCount: number | null;
+  spaces: SpaceResponse[];
+  headerActions?: ReactNode;
 }) {
-  const [spaceSearchQuery, setSpaceSearchQuery] = useState('')
-  const normalizedQuery = spaceSearchQuery.trim().toLocaleLowerCase('ru-RU')
+  const [spaceSearchQuery, setSpaceSearchQuery] = useState('');
+  const normalizedQuery = spaceSearchQuery.trim().toLocaleLowerCase('ru-RU');
   const spaceGroups = useMemo(
     () => getServerOverviewSpaceGroups(spaces, normalizedQuery),
-    [normalizedQuery, spaces],
-  )
-  const categoryCount = spaces.filter((space) => space.typeCode === 'category').length
-  const textSpaceCount = spaces.filter((space) => space.typeCode === 'text_room').length
-  const voiceSpaceCount = spaces.filter((space) => space.typeCode === 'voice_room').length
+    [normalizedQuery, spaces]
+  );
+  const categoryCount = spaces.filter(
+    (space) => space.typeCode === 'category'
+  ).length;
+  const textSpaceCount = spaces.filter(
+    (space) => space.typeCode === 'text_room'
+  ).length;
+  const voiceSpaceCount = spaces.filter(
+    (space) => space.typeCode === 'voice_room'
+  ).length;
   const defaultTextSpace = server.defaultTextSpaceId
     ? spaces.find((space) => space.id === server.defaultTextSpaceId)
-    : null
+    : null;
 
   return (
     <section className={styles.overviewSurface}>
@@ -60,7 +72,7 @@ export function ServerOverview({
                 style={{
                   transform: `translate(${server.iconCropOffsetX * 100}%, ${
                     server.iconCropOffsetY * 100
-                  }%) scale(${server.iconCropZoom})`,
+                  }%) scale(${server.iconCropZoom})`
                 }}
               />
             ) : (
@@ -143,7 +155,7 @@ export function ServerOverview({
                       title={serverCopy.overview.uncategorizedTitle}
                       summary={serverCopy.overview.groupSummary(
                         group.spaces.length,
-                        serverCopy.overview.uncategorizedDescription,
+                        serverCopy.overview.uncategorizedDescription
                       )}
                       badge={serverCopy.overview.uncategorizedBadge}
                     />
@@ -158,7 +170,7 @@ export function ServerOverview({
                       ))}
                     </div>
                   </section>
-                ),
+                )
               )
             ) : (
               <p>
@@ -171,19 +183,19 @@ export function ServerOverview({
         </section>
       </div>
     </section>
-  )
+  );
 }
 
 function SpaceOverviewNode({
   depth,
   node,
-  defaultTextSpaceId,
+  defaultTextSpaceId
 }: {
-  depth: number
-  node: ServerOverviewSpaceNode
-  defaultTextSpaceId: string | null
+  depth: number;
+  node: ServerOverviewSpaceNode;
+  defaultTextSpaceId: string | null;
 }) {
-  const { space, children } = node
+  const { space, children } = node;
 
   if (space.typeCode === 'category') {
     return (
@@ -192,7 +204,7 @@ function SpaceOverviewNode({
           title={space.title}
           summary={serverCopy.overview.groupSummary(
             children.length,
-            space.description || serverCopy.overview.categoryDescription,
+            space.description || serverCopy.overview.categoryDescription
           )}
           badge="category"
         />
@@ -207,7 +219,7 @@ function SpaceOverviewNode({
           ))}
         </div>
       </section>
-    )
+    );
   }
 
   return (
@@ -216,17 +228,17 @@ function SpaceOverviewNode({
       space={space}
       defaultTextSpaceId={defaultTextSpaceId}
     />
-  )
+  );
 }
 
 function SpaceOverviewGroupHeader({
   title,
   summary,
-  badge,
+  badge
 }: {
-  title: string
-  summary: string
-  badge: string
+  title: string;
+  summary: string;
+  badge: string;
 }) {
   return (
     <header>
@@ -237,20 +249,20 @@ function SpaceOverviewGroupHeader({
       </div>
       <em>{badge}</em>
     </header>
-  )
+  );
 }
 
 function SpaceOverviewRow({
   depth,
   space,
-  defaultTextSpaceId,
+  defaultTextSpaceId
 }: {
-  depth: number
-  space: SpaceResponse
-  defaultTextSpaceId: string | null
+  depth: number;
+  space: SpaceResponse;
+  defaultTextSpaceId: string | null;
 }) {
-  const isDefaultTextSpace = space.id === defaultTextSpaceId
-  const isVoice = space.typeCode === 'voice_room'
+  const isDefaultTextSpace = space.id === defaultTextSpaceId;
+  const isVoice = space.typeCode === 'voice_room';
 
   return (
     <article className={styles.spaceOverviewRow} data-depth={depth}>
@@ -268,6 +280,5 @@ function SpaceOverviewRow({
         {isDefaultTextSpace ? 'start' : isVoice ? 'voice' : 'text'}
       </em>
     </article>
-  )
+  );
 }
-

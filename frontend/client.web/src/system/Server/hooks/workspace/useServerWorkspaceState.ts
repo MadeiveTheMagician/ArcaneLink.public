@@ -1,43 +1,47 @@
-import { useMemo } from 'react'
+import { useMemo } from 'react';
+
 import type {
-  ServerMemberDetailsResponse,
   ServerEffectivePermissionsResponse,
+  ServerMemberDetailsResponse,
   ServerMemberResponse,
   SpaceResponse,
-  UserResponse,
-} from '../../../../shared/types'
-import { compareSpaces, type ServerDetail } from '../../utils/serverWorkspaceModel'
+  UserResponse
+} from '../../../../shared/types';
 import {
-  canAccessServerSettings,
   canAccessServerRoleSettings,
-  resolveServerWorkspacePermissionCapabilities,
-} from '../../utils/serverEffectivePermissions'
+  canAccessServerSettings,
+  resolveServerWorkspacePermissionCapabilities
+} from '../../utils/serverEffectivePermissions';
+import {
+  type ServerDetail,
+  compareSpaces
+} from '../../utils/serverWorkspaceModel';
 
 type UseServerWorkspaceStateOptions = {
-  selectedServerMembership: ServerMemberResponse
-  user: UserResponse
-  serverMembers: ServerMemberDetailsResponse[]
-  serverSpaces: SpaceResponse[]
-  activeDetail: ServerDetail | null
-  effectivePermissions: ServerEffectivePermissionsResponse | null
-}
+  selectedServerMembership: ServerMemberResponse;
+  user: UserResponse;
+  serverMembers: ServerMemberDetailsResponse[];
+  serverSpaces: SpaceResponse[];
+  activeDetail: ServerDetail | null;
+  effectivePermissions: ServerEffectivePermissionsResponse | null;
+};
 
 export function hasManageServerAccess(
   isOwner: boolean,
-  permissionCodes: readonly string[] | undefined,
+  permissionCodes: readonly string[] | undefined
 ) {
-  return isOwner || Boolean(permissionCodes?.includes('manage_server'))
+  return isOwner || Boolean(permissionCodes?.includes('manage_server'));
 }
 
 export function hasEffectiveServerPermission(
   isOwner: boolean,
   permissionCodes: readonly string[] | undefined,
-  requiredCode: string,
+  requiredCode: string
 ) {
   return (
     hasManageServerAccess(isOwner, permissionCodes) ||
     Boolean(permissionCodes?.includes(requiredCode))
-  )
+  );
 }
 
 export function useServerWorkspaceState({
@@ -46,58 +50,50 @@ export function useServerWorkspaceState({
   serverMembers,
   serverSpaces,
   activeDetail,
-  effectivePermissions,
+  effectivePermissions
 }: UseServerWorkspaceStateOptions) {
-  const server = selectedServerMembership.server
-  const isOwner = server.ownerUserId === user.id
-  const currentMember = serverMembers.find((member) => member.userId === user.id)
-  const permissionCapabilities =
-    resolveServerWorkspacePermissionCapabilities(
-      effectivePermissions,
-      isOwner,
-      server.id,
-    )
-  const canManageServer = permissionCapabilities.canAdministerServer
-  const canManageRoles = canAccessServerRoleSettings(
-    permissionCapabilities,
-  )
-  const canOpenServerSettings = canAccessServerSettings(
-    permissionCapabilities,
-  )
+  const server = selectedServerMembership.server;
+  const isOwner = server.ownerUserId === user.id;
+  const currentMember = serverMembers.find(
+    (member) => member.userId === user.id
+  );
+  const permissionCapabilities = resolveServerWorkspacePermissionCapabilities(
+    effectivePermissions,
+    isOwner,
+    server.id
+  );
+  const canManageServer = permissionCapabilities.canAdministerServer;
+  const canManageRoles = canAccessServerRoleSettings(permissionCapabilities);
+  const canOpenServerSettings = canAccessServerSettings(permissionCapabilities);
   const rootSpaces = useMemo(
     () =>
-      serverSpaces
-        .filter((space) => !space.parentSpaceId)
-        .sort(compareSpaces),
-    [serverSpaces],
-  )
+      serverSpaces.filter((space) => !space.parentSpaceId).sort(compareSpaces),
+    [serverSpaces]
+  );
   const textSpaces = useMemo(
     () =>
       serverSpaces
         .filter((space) => space.typeCode === 'text_room')
         .sort(compareSpaces),
-    [serverSpaces],
-  )
+    [serverSpaces]
+  );
   const activeChannelExists =
     activeDetail?.type !== 'channel' ||
     activeDetail.spaceId === null ||
-    serverSpaces.some((space) => space.id === activeDetail.spaceId)
+    serverSpaces.some((space) => space.id === activeDetail.spaceId);
   const visibleDetail: ServerDetail | null =
-    activeDetail && activeChannelExists
-      ? activeDetail
-      : null
-  const hasSelectedDetail = Boolean(visibleDetail)
+    activeDetail && activeChannelExists ? activeDetail : null;
+  const hasSelectedDetail = Boolean(visibleDetail);
   const visibleChannel =
-    visibleDetail?.type === 'channel' ? visibleDetail : null
+    visibleDetail?.type === 'channel' ? visibleDetail : null;
   const activeTextSpaceId =
-    visibleChannel?.kind === 'text' ? visibleChannel.spaceId : null
+    visibleChannel?.kind === 'text' ? visibleChannel.spaceId : null;
   return {
     activeTextSpaceId,
     canAssignRoles: permissionCapabilities.canAssignRoles,
     canBanMembers: permissionCapabilities.canBanMembers,
     canDeafenVoiceMembers: permissionCapabilities.canDeafenVoiceMembers,
-    canDisconnectVoiceMembers:
-      permissionCapabilities.canDisconnectVoiceMembers,
+    canDisconnectVoiceMembers: permissionCapabilities.canDisconnectVoiceMembers,
     canInviteMembers: permissionCapabilities.canCreateInvites,
     canKickMembers: permissionCapabilities.canKickMembers,
     canManageBans: permissionCapabilities.canManageBans,
@@ -121,6 +117,6 @@ export function useServerWorkspaceState({
     server,
     textSpaces,
     visibleChannel,
-    visibleDetail,
-  }
+    visibleDetail
+  };
 }

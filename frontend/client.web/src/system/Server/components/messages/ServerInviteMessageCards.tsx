@@ -1,55 +1,54 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ApiError, apiJson } from '../../../../shared/api/api'
-import type { ServerInvitePreviewResponse } from '../../../../shared/types'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
+import { useEffect, useMemo, useState } from 'react';
+
+import { ApiError, apiJson } from '../../../../shared/api/api';
+import type { ServerInvitePreviewResponse } from '../../../../shared/types';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
 import {
-  findServerInviteMessageLinks,
   type ServerInviteMessageLink,
-} from './serverInviteLinkModel'
+  findServerInviteMessageLinks
+} from './serverInviteLinkModel';
 import {
   getServerInviteRefreshDelayMs,
   resolveServerInviteClientExpiration,
-  shouldRefreshServerInviteOnAttention,
-} from './serverInviteRefreshModel'
-import styles from './ServerInviteMessageCards.module.css'
+  shouldRefreshServerInviteOnAttention
+} from './serverInviteRefreshModel';
+
+import styles from './ServerInviteMessageCards.module.css';
 
 type ServerInviteMessageCardsProps = {
-  body: string | null
-  accessToken: string
-  currentOrigin: string
-}
+  body: string | null;
+  accessToken: string;
+  currentOrigin: string;
+};
 
 type ServerInviteMessageCardProps = {
-  inviteLink: ServerInviteMessageLink
-  accessToken: string
-}
+  inviteLink: ServerInviteMessageLink;
+  accessToken: string;
+};
 
 type PreviewState =
   | { status: 'loading' }
   | { status: 'loaded'; preview: ServerInvitePreviewResponse }
-  | { status: 'missing' }
+  | { status: 'missing' };
 
-const countFormatter = new Intl.NumberFormat('ru-RU')
+const countFormatter = new Intl.NumberFormat('ru-RU');
 
 export function ServerInviteMessageCards({
   body,
   accessToken,
-  currentOrigin,
+  currentOrigin
 }: ServerInviteMessageCardsProps) {
   const inviteLinks = useMemo(
     () => findServerInviteMessageLinks(body, currentOrigin),
-    [body, currentOrigin],
-  )
+    [body, currentOrigin]
+  );
 
   if (inviteLinks.length === 0) {
-    return null
+    return null;
   }
 
   return (
-    <div
-      className={styles.list}
-      aria-label="Приглашения на серверы"
-    >
+    <div className={styles.list} aria-label="Приглашения на серверы">
       {inviteLinks.map((inviteLink) => (
         <ServerInviteMessageCard
           key={inviteLink.code}
@@ -58,161 +57,161 @@ export function ServerInviteMessageCards({
         />
       ))}
     </div>
-  )
+  );
 }
 
 export function ServerInviteMessageCard({
   inviteLink,
-  accessToken,
+  accessToken
 }: ServerInviteMessageCardProps) {
-  const [state, setState] = useState<PreviewState>({ status: 'loading' })
+  const [state, setState] = useState<PreviewState>({ status: 'loading' });
 
   useEffect(() => {
-    let isDisposed = false
-    let refreshTimerId: number | null = null
-    let activeRequest: AbortController | null = null
-    let currentPreview: ServerInvitePreviewResponse | null = null
-    let hasLoadedPreview = false
-    let lastRequestedAtMs = 0
+    let isDisposed = false;
+    let refreshTimerId: number | null = null;
+    let activeRequest: AbortController | null = null;
+    let currentPreview: ServerInvitePreviewResponse | null = null;
+    let hasLoadedPreview = false;
+    let lastRequestedAtMs = 0;
 
     function clearRefreshTimer() {
       if (refreshTimerId !== null) {
-        window.clearTimeout(refreshTimerId)
-        refreshTimerId = null
+        window.clearTimeout(refreshTimerId);
+        refreshTimerId = null;
       }
     }
 
     function updateClientExpiration(nowMs: number) {
       if (!currentPreview) {
-        return
+        return;
       }
 
       const effectivePreview = resolveServerInviteClientExpiration(
         currentPreview,
-        nowMs,
-      )
+        nowMs
+      );
 
       if (effectivePreview !== currentPreview) {
-        currentPreview = effectivePreview
-        setState({ status: 'loaded', preview: effectivePreview })
+        currentPreview = effectivePreview;
+        setState({ status: 'loaded', preview: effectivePreview });
       }
     }
 
     function scheduleRefresh(preview: ServerInvitePreviewResponse) {
-      clearRefreshTimer()
-      const delayMs = getServerInviteRefreshDelayMs(preview, Date.now())
+      clearRefreshTimer();
+      const delayMs = getServerInviteRefreshDelayMs(preview, Date.now());
 
       if (delayMs === null) {
-        return
+        return;
       }
 
       refreshTimerId = window.setTimeout(() => {
-        refreshTimerId = null
-        updateClientExpiration(Date.now())
+        refreshTimerId = null;
+        updateClientExpiration(Date.now());
 
         if (document.visibilityState === 'hidden') {
           if (currentPreview?.isActive) {
-            scheduleRefresh(currentPreview)
+            scheduleRefresh(currentPreview);
           }
 
-          return
+          return;
         }
 
-        void refreshPreview()
-      }, delayMs)
+        void refreshPreview();
+      }, delayMs);
     }
 
     async function refreshPreview() {
       if (isDisposed || activeRequest) {
-        return
+        return;
       }
 
-      const request = new AbortController()
-      activeRequest = request
-      lastRequestedAtMs = Date.now()
+      const request = new AbortController();
+      activeRequest = request;
+      lastRequestedAtMs = Date.now();
 
       try {
         const loadedPreview = await apiJson<ServerInvitePreviewResponse>(
           `/api/server-invites/${encodeURIComponent(inviteLink.code)}`,
           {
             accessToken,
-            signal: request.signal,
-          },
-        )
+            signal: request.signal
+          }
+        );
 
         if (isDisposed || activeRequest !== request) {
-          return
+          return;
         }
 
         const preview = resolveServerInviteClientExpiration(
           loadedPreview,
-          Date.now(),
-        )
-        currentPreview = preview
-        hasLoadedPreview = true
-        setState({ status: 'loaded', preview })
-        scheduleRefresh(preview)
+          Date.now()
+        );
+        currentPreview = preview;
+        hasLoadedPreview = true;
+        setState({ status: 'loaded', preview });
+        scheduleRefresh(preview);
       } catch (error) {
         if (isDisposed || request.signal.aborted) {
-          return
+          return;
         }
 
         if (error instanceof ApiError && error.status === 404) {
-          currentPreview = null
-          hasLoadedPreview = true
-          clearRefreshTimer()
-          setState({ status: 'missing' })
-          return
+          currentPreview = null;
+          hasLoadedPreview = true;
+          clearRefreshTimer();
+          setState({ status: 'missing' });
+          return;
         }
 
         if (!hasLoadedPreview) {
-          setState({ status: 'missing' })
+          setState({ status: 'missing' });
         } else if (currentPreview?.isActive) {
-          scheduleRefresh(currentPreview)
+          scheduleRefresh(currentPreview);
         }
       } finally {
         if (activeRequest === request) {
-          activeRequest = null
+          activeRequest = null;
         }
       }
     }
 
     function refreshOnAttention() {
       if (document.visibilityState === 'hidden') {
-        return
+        return;
       }
 
-      const nowMs = Date.now()
-      updateClientExpiration(nowMs)
+      const nowMs = Date.now();
+      updateClientExpiration(nowMs);
 
       if (
         shouldRefreshServerInviteOnAttention(
           currentPreview,
           lastRequestedAtMs,
-          nowMs,
+          nowMs
         )
       ) {
-        void refreshPreview()
+        void refreshPreview();
       }
     }
 
-    setState({ status: 'loading' })
-    window.addEventListener('focus', refreshOnAttention)
-    document.addEventListener('visibilitychange', refreshOnAttention)
-    void refreshPreview()
+    setState({ status: 'loading' });
+    window.addEventListener('focus', refreshOnAttention);
+    document.addEventListener('visibilitychange', refreshOnAttention);
+    void refreshPreview();
 
     return () => {
-      isDisposed = true
-      clearRefreshTimer()
-      activeRequest?.abort()
-      activeRequest = null
-      window.removeEventListener('focus', refreshOnAttention)
-      document.removeEventListener('visibilitychange', refreshOnAttention)
-    }
-  }, [accessToken, inviteLink.code])
+      isDisposed = true;
+      clearRefreshTimer();
+      activeRequest?.abort();
+      activeRequest = null;
+      window.removeEventListener('focus', refreshOnAttention);
+      document.removeEventListener('visibilitychange', refreshOnAttention);
+    };
+  }, [accessToken, inviteLink.code]);
 
   if (state.status === 'loading') {
-    return <ServerInviteLoadingCard />
+    return <ServerInviteLoadingCard />;
   }
 
   if (state.status === 'missing' || !state.preview.isActive) {
@@ -222,28 +221,25 @@ export function ServerInviteMessageCard({
           state.status === 'loaded' ? state.preview.invalidReason : 'not_found'
         }
       />
-    )
+    );
   }
 
   return (
-    <ServerInviteActiveCard
-      inviteLink={inviteLink}
-      preview={state.preview}
-    />
-  )
+    <ServerInviteActiveCard inviteLink={inviteLink} preview={state.preview} />
+  );
 }
 
 function ServerInviteActiveCard({
   inviteLink,
-  preview,
+  preview
 }: {
-  inviteLink: ServerInviteMessageLink
-  preview: ServerInvitePreviewResponse
+  inviteLink: ServerInviteMessageLink;
+  preview: ServerInvitePreviewResponse;
 }) {
-  const serverTitle = preview.serverTitle?.trim() || 'Сервер ArcaneLink'
+  const serverTitle = preview.serverTitle?.trim() || 'Сервер ArcaneLink';
   const iconUrl = preview.serverIconAssetId
     ? `/api/assets/${preview.serverIconAssetId}/content`
-    : null
+    : null;
 
   return (
     <article className={`${styles.card} ${styles.activeCard}`}>
@@ -259,7 +255,7 @@ function ServerInviteActiveCard({
                   -50 + preview.serverIconCropOffsetX * 100
                 }%, ${
                   -50 + preview.serverIconCropOffsetY * 100
-                }%) scale(${preview.serverIconCropZoom})`,
+                }%) scale(${preview.serverIconCropZoom})`
               }}
             />
           ) : (
@@ -293,15 +289,13 @@ function ServerInviteActiveCard({
         <SystemIcon name="chevron-right" size="small" />
       </a>
     </article>
-  )
+  );
 }
 
 function ServerInviteInvalidCard({ reason }: { reason: string | null }) {
   return (
     <article className={`${styles.card} ${styles.invalidCard}`}>
-      <div className={styles.invalidIntro}>
-        Вы отправили приглашение, но
-      </div>
+      <div className={styles.invalidIntro}>Вы отправили приглашение, но</div>
       <div className={styles.invalidSummary}>
         <div className={styles.invalidBadge} aria-hidden="true">
           <SystemIcon name="mail" size="medium" />
@@ -316,7 +310,7 @@ function ServerInviteInvalidCard({ reason }: { reason: string | null }) {
         </div>
       </div>
     </article>
-  )
+  );
 }
 
 function ServerInviteLoadingCard() {
@@ -335,21 +329,21 @@ function ServerInviteLoadingCard() {
         </div>
       </div>
     </article>
-  )
+  );
 }
 
 function getInvalidInviteMessage(reason: string | null) {
   if (reason === 'expired') {
-    return 'Срок действия приглашения истёк'
+    return 'Срок действия приглашения истёк';
   }
 
   if (reason === 'max_uses_reached') {
-    return 'Лимит использований приглашения исчерпан'
+    return 'Лимит использований приглашения исчерпан';
   }
 
   if (reason === 'revoked') {
-    return 'Приглашение было отозвано'
+    return 'Приглашение было отозвано';
   }
 
-  return 'Попробуйте отправить новое приглашение'
+  return 'Попробуйте отправить новое приглашение';
 }

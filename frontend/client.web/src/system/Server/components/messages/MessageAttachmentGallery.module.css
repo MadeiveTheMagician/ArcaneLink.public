@@ -7,7 +7,7 @@
   margin-top: 8px;
 }
 
-.gallery[data-expanded="true"] {
+.gallery[data-expanded='true'] {
   width: 100%;
 }
 
@@ -27,7 +27,9 @@
   font: inherit;
   font-size: 11px;
   cursor: pointer;
-  transition: color 150ms ease, text-shadow 150ms ease;
+  transition:
+    color 150ms ease,
+    text-shadow 150ms ease;
 }
 
 .layoutToggle:hover {
@@ -67,19 +69,37 @@
   gap: 5px;
 }
 
-.previewCount1 { grid-template: 1fr / 1fr; }
-.previewCount2 { grid-template: repeat(2, 1fr) / 1fr; }
-.previewCount3 { grid-template: repeat(3, 1fr) / 1fr; }
-.previewCount4 { grid-template: repeat(2, 1fr) / repeat(2, 1fr); }
+.previewCount1 {
+  grid-template: 1fr / 1fr;
+}
+.previewCount2 {
+  grid-template: repeat(2, 1fr) / 1fr;
+}
+.previewCount3 {
+  grid-template: repeat(3, 1fr) / 1fr;
+}
+.previewCount4 {
+  grid-template: repeat(2, 1fr) / repeat(2, 1fr);
+}
 .previewCount5,
-.previewCount6 { grid-template: repeat(3, 1fr) / repeat(2, 1fr); }
+.previewCount6 {
+  grid-template: repeat(3, 1fr) / repeat(2, 1fr);
+}
 .previewCount7,
 .previewCount8,
-.previewCount9 { grid-template: repeat(3, 1fr) / repeat(3, 1fr); }
+.previewCount9 {
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+}
 
-.previewCount5 .previewSlot:last-child { grid-column: 1 / -1; }
-.previewCount7 .previewSlot:last-child { grid-column: 1 / -1; }
-.previewCount8 .previewSlot:nth-last-child(2) { grid-column: span 2; }
+.previewCount5 .previewSlot:last-child {
+  grid-column: 1 / -1;
+}
+.previewCount7 .previewSlot:last-child {
+  grid-column: 1 / -1;
+}
+.previewCount8 .previewSlot:nth-last-child(2) {
+  grid-column: span 2;
+}
 
 .previewSlot {
   position: relative;
@@ -101,7 +121,10 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
 }
 
 .tile:hover,
@@ -117,7 +140,7 @@
   aspect-ratio: 1;
 }
 
-.gallery[data-expanded="true"] .full {
+.gallery[data-expanded='true'] .full {
   max-width: none;
 }
 
@@ -141,7 +164,9 @@
   background: var(--theme-control-bg-strong);
   filter: blur(0) brightness(1) saturate(1);
   transform: scale(1);
-  transition: filter 620ms ease, transform 680ms ease;
+  transition:
+    filter 620ms ease,
+    transform 680ms ease;
 }
 
 .videoPlay {
@@ -230,7 +255,10 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
 }
 
 .singleFile:hover,

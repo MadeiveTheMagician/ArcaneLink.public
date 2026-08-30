@@ -1,18 +1,19 @@
-import buttonStyles from '../../../shared/styles/Button.module.css'
-import { profileCopy } from '../../../shared/index'
-import dialogStyles from '../../../shared/styles/Dialog.module.css'
-import styles from './DeleteAssetDialog.module.css'
+import { profileCopy } from '../../../shared/index';
+
+import buttonStyles from '../../../shared/styles/Button.module.css';
+import dialogStyles from '../../../shared/styles/Dialog.module.css';
+import styles from './DeleteAssetDialog.module.css';
 
 type DeleteAssetDialogProps = {
-  isDeleting: boolean
-  onCancel: () => void
-  onConfirm: () => void
-}
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
 
 export function DeleteAssetDialog({
   isDeleting,
   onCancel,
-  onConfirm,
+  onConfirm
 }: DeleteAssetDialogProps) {
   return (
     <div className={dialogStyles.backdrop} role="presentation">
@@ -46,5 +47,5 @@ export function DeleteAssetDialog({
         </div>
       </section>
     </div>
-  )
+  );
 }

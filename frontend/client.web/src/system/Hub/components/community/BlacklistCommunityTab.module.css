@@ -217,7 +217,8 @@
 }
 
 .blockAction {
-  border: 1px solid color-mix(in srgb, var(--color-danger, #ff7189), transparent 48%);
+  border: 1px solid
+    color-mix(in srgb, var(--color-danger, #ff7189), transparent 48%);
   color: #ffd1d9;
   background: color-mix(in srgb, var(--color-danger, #ff7189), transparent 84%);
 }

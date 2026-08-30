@@ -1,14 +1,15 @@
-import { serverCopy } from '../../../shared/index'
-import styles from './ServerChannelPlaceholder.module.css'
+import { serverCopy } from '../../../shared/index';
+
+import styles from './ServerChannelPlaceholder.module.css';
 
 export function ServerChannelPlaceholder({
   serverTitle,
   title,
-  kind = 'text',
+  kind = 'text'
 }: {
-  serverTitle: string
-  title?: string
-  kind?: 'text' | 'voice'
+  serverTitle: string;
+  title?: string;
+  kind?: 'text' | 'voice';
 }) {
   return (
     <section className={styles.channelPlaceholder}>
@@ -23,7 +24,7 @@ export function ServerChannelPlaceholder({
                 kind === 'voice'
                   ? serverCopy.labels.voiceSpace
                   : serverCopy.labels.textSpace,
-                serverTitle,
+                serverTitle
               )
             : serverCopy.text.chooseSpaceInServer(serverTitle)}
         </p>
@@ -39,6 +40,5 @@ export function ServerChannelPlaceholder({
         </article>
       </div>
     </section>
-  )
+  );
 }
-

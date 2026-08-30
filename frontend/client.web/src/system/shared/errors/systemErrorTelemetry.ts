@@ -1,45 +1,48 @@
 export type SystemErrorTelemetryEvent = {
-  boundaryName: string
-  componentStack: string | null
-  error: Error
-  occurredAt: string
-}
+  boundaryName: string;
+  componentStack: string | null;
+  error: Error;
+  occurredAt: string;
+};
 
 export type SystemErrorTelemetryReporter = (
-  event: SystemErrorTelemetryEvent,
-) => void
+  event: SystemErrorTelemetryEvent
+) => void;
 
-let configuredReporter: SystemErrorTelemetryReporter | null = null
+let configuredReporter: SystemErrorTelemetryReporter | null = null;
 
 export function setSystemErrorTelemetryReporter(
-  reporter: SystemErrorTelemetryReporter | null,
+  reporter: SystemErrorTelemetryReporter | null
 ) {
-  configuredReporter = reporter
+  configuredReporter = reporter;
 }
 
 function notifyReporter(
   reporter: SystemErrorTelemetryReporter,
-  event: SystemErrorTelemetryEvent,
+  event: SystemErrorTelemetryEvent
 ) {
   try {
-    reporter(event)
+    reporter(event);
   } catch (reporterError) {
-    console.error('[ArcaneLink] Error telemetry reporter failed.', reporterError)
+    console.error(
+      '[ArcaneLink] Error telemetry reporter failed.',
+      reporterError
+    );
   }
 }
 
 export function reportSystemError(
   event: SystemErrorTelemetryEvent,
-  boundaryReporter?: SystemErrorTelemetryReporter,
+  boundaryReporter?: SystemErrorTelemetryReporter
 ) {
   console.error(
     `[ArcaneLink] UI error caught by ${event.boundaryName}.`,
     event.error,
-    { componentStack: event.componentStack },
-  )
+    { componentStack: event.componentStack }
+  );
 
-  if (configuredReporter) notifyReporter(configuredReporter, event)
+  if (configuredReporter) notifyReporter(configuredReporter, event);
   if (boundaryReporter && boundaryReporter !== configuredReporter) {
-    notifyReporter(boundaryReporter, event)
+    notifyReporter(boundaryReporter, event);
   }
 }

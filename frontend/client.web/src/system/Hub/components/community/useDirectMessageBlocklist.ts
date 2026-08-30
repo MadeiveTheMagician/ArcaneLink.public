@@ -1,176 +1,174 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  apiJson,
-  apiNoContent,
-} from '../../../../shared/api/api'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { apiJson, apiNoContent } from '../../../../shared/api/api';
 import type {
   DirectMessageBlockedUserPageResponse,
   DirectMessageBlockedUserResponse,
-  FriendUserResponse,
-} from '../../../../shared/types'
+  FriendUserResponse
+} from '../../../../shared/types';
 import {
   dispatchUserBlockChanged,
   isUserBlockChangedEvent,
-  userBlockChangedEventName,
-} from '../../../shared'
+  userBlockChangedEventName
+} from '../../../shared';
 
-const userSearchDelayMs = 250
-const minimumSearchLength = 2
+const userSearchDelayMs = 250;
+const minimumSearchLength = 2;
 
 export function useDirectMessageBlocklist(accessToken: string) {
   const [blockedUsers, setBlockedUsers] = useState<
     DirectMessageBlockedUserResponse[]
-  >([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<FriendUserResponse[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [totalCount, setTotalCount] = useState(0)
-  const [mutatingUserId, setMutatingUserId] = useState<string | null>(null)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [searchError, setSearchError] = useState<string | null>(null)
-  const [mutationError, setMutationError] = useState<string | null>(null)
-  const localMutationUserIdsRef = useRef(new Set<string>())
+  >([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<FriendUserResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [mutatingUserId, setMutatingUserId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const localMutationUserIdsRef = useRef(new Set<string>());
 
   const blockedUserIds = useMemo(
     () => new Set(blockedUsers.map((user) => user.userId)),
-    [blockedUsers],
-  )
+    [blockedUsers]
+  );
 
   const loadBlockedUsers = useCallback(async () => {
-    setIsLoading(true)
-    setLoadError(null)
+    setIsLoading(true);
+    setLoadError(null);
 
     try {
       const response = await apiJson<DirectMessageBlockedUserPageResponse>(
         '/api/users/me/direct-message-blocks?limit=100',
-        { accessToken },
-      )
-      setBlockedUsers(response.items)
-      setNextCursor(response.nextCursor)
-      setTotalCount(response.totalCount)
+        { accessToken }
+      );
+      setBlockedUsers(response.items);
+      setNextCursor(response.nextCursor);
+      setTotalCount(response.totalCount);
     } catch (error) {
-      setLoadError(readErrorMessage(error))
+      setLoadError(readErrorMessage(error));
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [accessToken])
+  }, [accessToken]);
 
   useEffect(() => {
-    void loadBlockedUsers()
-  }, [loadBlockedUsers])
+    void loadBlockedUsers();
+  }, [loadBlockedUsers]);
 
   useEffect(() => {
     function syncBlockChange(event: Event) {
-      if (!isUserBlockChangedEvent(event)) return
-      if (localMutationUserIdsRef.current.delete(event.detail.userId)) return
+      if (!isUserBlockChangedEvent(event)) return;
+      if (localMutationUserIdsRef.current.delete(event.detail.userId)) return;
 
       if (!event.detail.isBlocked) {
         setBlockedUsers((current) =>
-          current.filter((user) => user.userId !== event.detail.userId),
-        )
-        setTotalCount((current) => Math.max(0, current - 1))
-        return
+          current.filter((user) => user.userId !== event.detail.userId)
+        );
+        setTotalCount((current) => Math.max(0, current - 1));
+        return;
       }
 
       if (!blockedUserIds.has(event.detail.userId)) {
-        void loadBlockedUsers()
-        return
+        void loadBlockedUsers();
+        return;
       }
 
       setBlockedUsers((current) =>
         current.map((user) =>
           user.userId === event.detail.userId
             ? { ...user, comment: event.detail.comment }
-            : user,
-        ),
-      )
+            : user
+        )
+      );
     }
 
-    window.addEventListener(userBlockChangedEventName, syncBlockChange)
+    window.addEventListener(userBlockChangedEventName, syncBlockChange);
     return () =>
-      window.removeEventListener(userBlockChangedEventName, syncBlockChange)
-  }, [blockedUserIds, loadBlockedUsers])
+      window.removeEventListener(userBlockChangedEventName, syncBlockChange);
+  }, [blockedUserIds, loadBlockedUsers]);
 
   useEffect(() => {
-    const normalizedQuery = searchQuery.trim()
+    const normalizedQuery = searchQuery.trim();
     if (normalizedQuery.length < minimumSearchLength) {
-      setSearchResults([])
-      setSearchError(null)
-      setIsSearching(false)
-      return
+      setSearchResults([]);
+      setSearchError(null);
+      setIsSearching(false);
+      return;
     }
 
-    const controller = new AbortController()
+    const controller = new AbortController();
     const timeoutId = window.setTimeout(() => {
-      setIsSearching(true)
-      setSearchError(null)
+      setIsSearching(true);
+      setSearchError(null);
 
       void apiJson<FriendUserResponse[]>(
         `/api/users/search?query=${encodeURIComponent(normalizedQuery)}`,
         {
           accessToken,
-          signal: controller.signal,
-        },
+          signal: controller.signal
+        }
       )
         .then((response) => {
           if (!controller.signal.aborted) {
-            setSearchResults(response)
+            setSearchResults(response);
           }
         })
         .catch((error: unknown) => {
           if (!controller.signal.aborted) {
-            setSearchResults([])
-            setSearchError(readErrorMessage(error))
+            setSearchResults([]);
+            setSearchError(readErrorMessage(error));
           }
         })
         .finally(() => {
           if (!controller.signal.aborted) {
-            setIsSearching(false)
+            setIsSearching(false);
           }
-        })
-    }, userSearchDelayMs)
+        });
+    }, userSearchDelayMs);
 
     return () => {
-      window.clearTimeout(timeoutId)
-      controller.abort()
-    }
-  }, [accessToken, searchQuery])
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [accessToken, searchQuery]);
 
   const loadMoreBlockedUsers = useCallback(async () => {
-    if (!nextCursor || isLoading || isLoadingMore) return
+    if (!nextCursor || isLoading || isLoadingMore) return;
 
-    setIsLoadingMore(true)
-    setLoadError(null)
+    setIsLoadingMore(true);
+    setLoadError(null);
 
     try {
       const response = await apiJson<DirectMessageBlockedUserPageResponse>(
         `/api/users/me/direct-message-blocks?limit=100&cursor=${encodeURIComponent(
-          nextCursor,
+          nextCursor
         )}`,
-        { accessToken },
-      )
+        { accessToken }
+      );
       setBlockedUsers((current) => {
-        const knownIds = new Set(current.map((user) => user.userId))
+        const knownIds = new Set(current.map((user) => user.userId));
         return [
           ...current,
-          ...response.items.filter((user) => !knownIds.has(user.userId)),
-        ]
-      })
-      setNextCursor(response.nextCursor)
-      setTotalCount(response.totalCount)
+          ...response.items.filter((user) => !knownIds.has(user.userId))
+        ];
+      });
+      setNextCursor(response.nextCursor);
+      setTotalCount(response.totalCount);
     } catch (error) {
-      setLoadError(readErrorMessage(error))
+      setLoadError(readErrorMessage(error));
     } finally {
-      setIsLoadingMore(false)
+      setIsLoadingMore(false);
     }
-  }, [accessToken, isLoading, isLoadingMore, nextCursor])
+  }, [accessToken, isLoading, isLoadingMore, nextCursor]);
 
   async function blockUser(userId: string, comment: string | null = null) {
-    setMutatingUserId(userId)
-    setMutationError(null)
+    setMutatingUserId(userId);
+    setMutationError(null);
 
     try {
       const blockedUser = await apiJson<DirectMessageBlockedUserResponse>(
@@ -178,55 +176,55 @@ export function useDirectMessageBlocklist(accessToken: string) {
         {
           method: 'PUT',
           accessToken,
-          body: { comment },
-        },
-      )
+          body: { comment }
+        }
+      );
       setBlockedUsers((current) => [
         blockedUser,
-        ...current.filter((user) => user.userId !== blockedUser.userId),
-      ])
+        ...current.filter((user) => user.userId !== blockedUser.userId)
+      ]);
       setTotalCount((current) =>
-        blockedUserIds.has(blockedUser.userId) ? current : current + 1,
-      )
-      localMutationUserIdsRef.current.add(blockedUser.userId)
+        blockedUserIds.has(blockedUser.userId) ? current : current + 1
+      );
+      localMutationUserIdsRef.current.add(blockedUser.userId);
       dispatchUserBlockChanged({
         userId: blockedUser.userId,
         isBlocked: true,
-        comment: blockedUser.comment,
-      })
-      return blockedUser
+        comment: blockedUser.comment
+      });
+      return blockedUser;
     } catch (error) {
-      setMutationError(readErrorMessage(error))
-      throw error
+      setMutationError(readErrorMessage(error));
+      throw error;
     } finally {
-      setMutatingUserId(null)
+      setMutatingUserId(null);
     }
   }
 
   async function unblockUser(userId: string) {
-    setMutatingUserId(userId)
-    setMutationError(null)
+    setMutatingUserId(userId);
+    setMutationError(null);
 
     try {
       await apiNoContent(`/api/users/me/direct-message-blocks/${userId}`, {
         method: 'DELETE',
-        accessToken,
-      })
+        accessToken
+      });
       setBlockedUsers((current) =>
-        current.filter((user) => user.userId !== userId),
-      )
-      setTotalCount((current) => Math.max(0, current - 1))
-      localMutationUserIdsRef.current.add(userId)
+        current.filter((user) => user.userId !== userId)
+      );
+      setTotalCount((current) => Math.max(0, current - 1));
+      localMutationUserIdsRef.current.add(userId);
       dispatchUserBlockChanged({
         userId,
         isBlocked: false,
-        comment: null,
-      })
+        comment: null
+      });
     } catch (error) {
-      setMutationError(readErrorMessage(error))
-      throw error
+      setMutationError(readErrorMessage(error));
+      throw error;
     } finally {
-      setMutatingUserId(null)
+      setMutatingUserId(null);
     }
   }
 
@@ -248,12 +246,12 @@ export function useDirectMessageBlocklist(accessToken: string) {
     loadBlockedUsers,
     loadMoreBlockedUsers,
     blockUser,
-    unblockUser,
-  }
+    unblockUser
+  };
 }
 
 function readErrorMessage(error: unknown) {
   return error instanceof Error && error.message
     ? error.message
-    : 'Не удалось выполнить запрос.'
+    : 'Не удалось выполнить запрос.';
 }

@@ -1,97 +1,98 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { apiJson } from '../../../../shared/api/api'
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { apiJson } from '../../../../shared/api/api';
 import type {
   FriendUserResponse,
-  ProfileTagResponse,
-} from '../../../../shared/types'
-import { useUserPresenceChanged } from '../../../shared/hooks/useUserPresenceChanged'
-import { createRealtimeRefreshCoalescer } from '../../../shared/hooks/realtimeRefreshCoalescer'
-import { patchFriendUsersPresence } from '../../../shared/presence/presenceModel'
+  ProfileTagResponse
+} from '../../../../shared/types';
+import { createRealtimeRefreshCoalescer } from '../../../shared/hooks/realtimeRefreshCoalescer';
+import { useUserPresenceChanged } from '../../../shared/hooks/useUserPresenceChanged';
 import {
   captureUserPresenceEventBoundary,
-  reconcileFriendUsersWithLatestPresence,
-} from '../../../shared/presence/presenceEventStore'
+  reconcileFriendUsersWithLatestPresence
+} from '../../../shared/presence/presenceEventStore';
+import { patchFriendUsersPresence } from '../../../shared/presence/presenceModel';
 import type {
   CommunityPeopleScope,
   CommunityPeopleSort,
-  CommunityTab,
-} from './communityTypes'
-import { shouldRefreshPeopleDiscoveryForPresence } from './peoplePresenceRefreshModel'
+  CommunityTab
+} from './communityTypes';
+import { shouldRefreshPeopleDiscoveryForPresence } from './peoplePresenceRefreshModel';
 
 type CommunityDiscoveryOptions = {
-  accessToken: string
-  activeTab: CommunityTab
-  peopleSearchQuery: string
-}
+  accessToken: string;
+  activeTab: CommunityTab;
+  peopleSearchQuery: string;
+};
 
 type PeopleDiscoveryRequest = {
-  key: string
-  url: string
-  accessToken: string
-}
+  key: string;
+  url: string;
+  accessToken: string;
+};
 
 export function useCommunityDiscovery({
   accessToken,
   activeTab,
-  peopleSearchQuery,
+  peopleSearchQuery
 }: CommunityDiscoveryOptions) {
-  const [profileTags, setProfileTags] = useState<ProfileTagResponse[]>([])
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
-  const [peopleScope, setPeopleScope] = useState<CommunityPeopleScope>('all')
+  const [profileTags, setProfileTags] = useState<ProfileTagResponse[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [peopleScope, setPeopleScope] = useState<CommunityPeopleScope>('all');
   const [peopleSort, setPeopleSort] =
-    useState<CommunityPeopleSort>('recommended')
-  const [peopleOnlineOnly, setPeopleOnlineOnly] = useState(false)
-  const [discoveredPeople, setDiscoveredPeople] = useState<FriendUserResponse[]>(
-    [],
-  )
-  const [isDiscoveringPeople, setIsDiscoveringPeople] = useState(false)
-  const peopleRequestRef = useRef<PeopleDiscoveryRequest | null>(null)
-  const peopleRefreshRef = useRef<
-    ReturnType<typeof createRealtimeRefreshCoalescer> | null
-  >(null)
+    useState<CommunityPeopleSort>('recommended');
+  const [peopleOnlineOnly, setPeopleOnlineOnly] = useState(false);
+  const [discoveredPeople, setDiscoveredPeople] = useState<
+    FriendUserResponse[]
+  >([]);
+  const [isDiscoveringPeople, setIsDiscoveringPeople] = useState(false);
+  const peopleRequestRef = useRef<PeopleDiscoveryRequest | null>(null);
+  const peopleRefreshRef = useRef<ReturnType<
+    typeof createRealtimeRefreshCoalescer
+  > | null>(null);
 
   useEffect(() => {
     const refresh = createRealtimeRefreshCoalescer(async () => {
-      const request = peopleRequestRef.current
+      const request = peopleRequestRef.current;
       if (!request) {
-        return
+        return;
       }
 
-      setIsDiscoveringPeople(true)
+      setIsDiscoveringPeople(true);
 
       try {
-        const presenceBoundary = captureUserPresenceEventBoundary()
+        const presenceBoundary = captureUserPresenceEventBoundary();
         const users = reconcileFriendUsersWithLatestPresence(
           await apiJson<FriendUserResponse[]>(request.url, {
-            accessToken: request.accessToken,
+            accessToken: request.accessToken
           }),
-          presenceBoundary,
-        )
+          presenceBoundary
+        );
 
         if (peopleRequestRef.current?.key === request.key) {
-          setDiscoveredPeople(users)
+          setDiscoveredPeople(users);
         }
       } catch {
         if (peopleRequestRef.current?.key === request.key) {
-          setDiscoveredPeople([])
+          setDiscoveredPeople([]);
         }
       } finally {
         if (peopleRequestRef.current?.key === request.key) {
-          setIsDiscoveringPeople(false)
+          setIsDiscoveringPeople(false);
         }
       }
-    }, 220)
-    peopleRefreshRef.current = refresh
+    }, 220);
+    peopleRefreshRef.current = refresh;
 
     return () => {
-      refresh.dispose()
+      refresh.dispose();
 
       if (peopleRefreshRef.current === refresh) {
-        peopleRefreshRef.current = null
-        peopleRequestRef.current = null
+        peopleRefreshRef.current = null;
+        peopleRequestRef.current = null;
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const peopleRequest = useMemo(
     () =>
@@ -102,7 +103,7 @@ export function useCommunityDiscovery({
             query: peopleSearchQuery,
             scope: peopleScope,
             selectedTagIds,
-            sort: peopleSort,
+            sort: peopleSort
           })
         : null,
     [
@@ -112,60 +113,59 @@ export function useCommunityDiscovery({
       peopleScope,
       peopleSearchQuery,
       peopleSort,
-      selectedTagIds,
-    ],
-  )
-  const peopleRequestKey = peopleRequest?.key ?? null
+      selectedTagIds
+    ]
+  );
+  const peopleRequestKey = peopleRequest?.key ?? null;
 
   useEffect(() => {
-    peopleRequestRef.current = peopleRequest
-  }, [peopleRequest])
+    peopleRequestRef.current = peopleRequest;
+  }, [peopleRequest]);
 
   useUserPresenceChanged((payload) => {
     setDiscoveredPeople((current) =>
-      patchFriendUsersPresence(current, payload),
-    )
+      patchFriendUsersPresence(current, payload)
+    );
 
     if (
       shouldRefreshPeopleDiscoveryForPresence({
         activeTab,
         onlineOnly: peopleOnlineOnly,
-        sort: peopleSort,
+        sort: peopleSort
       })
     ) {
-      peopleRefreshRef.current?.request()
+      peopleRefreshRef.current?.request();
     }
-
-  })
+  });
 
   useEffect(() => {
-    let isDisposed = false
+    let isDisposed = false;
 
     apiJson<ProfileTagResponse[]>('/api/users/profile-tags', { accessToken })
       .then((tags) => {
         if (!isDisposed) {
-          setProfileTags(tags)
+          setProfileTags(tags);
         }
       })
       .catch(() => {
         if (!isDisposed) {
-          setProfileTags([])
+          setProfileTags([]);
         }
-      })
+      });
 
     return () => {
-      isDisposed = true
-    }
-  }, [accessToken])
+      isDisposed = true;
+    };
+  }, [accessToken]);
 
   useEffect(() => {
     if (!peopleRequestKey) {
-      setIsDiscoveringPeople(false)
-      return
+      setIsDiscoveringPeople(false);
+      return;
     }
 
-    peopleRefreshRef.current?.request()
-  }, [peopleRequestKey])
+    peopleRefreshRef.current?.request();
+  }, [peopleRequestKey]);
 
   return {
     discoveredPeople,
@@ -178,8 +178,8 @@ export function useCommunityDiscovery({
     setPeopleOnlineOnly,
     setPeopleScope,
     setPeopleSort,
-    setSelectedTagIds,
-  }
+    setSelectedTagIds
+  };
 }
 
 function createPeopleDiscoveryRequest({
@@ -188,35 +188,35 @@ function createPeopleDiscoveryRequest({
   query,
   scope,
   selectedTagIds,
-  sort,
+  sort
 }: {
-  accessToken: string
-  onlineOnly: boolean
-  query: string
-  scope: CommunityPeopleScope
-  selectedTagIds: string[]
-  sort: CommunityPeopleSort
+  accessToken: string;
+  onlineOnly: boolean;
+  query: string;
+  scope: CommunityPeopleScope;
+  selectedTagIds: string[];
+  sort: CommunityPeopleSort;
 }): PeopleDiscoveryRequest {
-  const params = new URLSearchParams()
-  const normalizedQuery = query.trim()
+  const params = new URLSearchParams();
+  const normalizedQuery = query.trim();
 
   if (normalizedQuery) {
-    params.set('query', normalizedQuery)
+    params.set('query', normalizedQuery);
   }
 
-  params.set('scope', scope)
-  params.set('sort', sort)
+  params.set('scope', scope);
+  params.set('sort', sort);
 
   if (onlineOnly) {
-    params.set('online', 'true')
+    params.set('online', 'true');
   }
 
-  selectedTagIds.forEach((tagId) => params.append('tagIds', tagId))
-  const url = `/api/users/discover?${params.toString()}`
+  selectedTagIds.forEach((tagId) => params.append('tagIds', tagId));
+  const url = `/api/users/discover?${params.toString()}`;
 
   return {
     accessToken,
     url,
-    key: `${accessToken}\u0000${url}`,
-  }
+    key: `${accessToken}\u0000${url}`
+  };
 }

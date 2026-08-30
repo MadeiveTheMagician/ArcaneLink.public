@@ -19,7 +19,7 @@
   width: 15px;
   height: 1.5px;
   border-radius: 999px;
-  content: "";
+  content: '';
   background: var(--color-danger);
   box-shadow: 0 0 4px color-mix(in srgb, var(--color-danger), transparent 46%);
   transform: rotate(45deg);

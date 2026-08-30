@@ -1,25 +1,26 @@
 import type {
   SpaceMessageReplyResponse,
-  SpaceMessageResponse,
-} from '../../../../shared/types'
-import { SystemIcon } from '../../../shared'
-import { formatMessageTime } from './messageUtils'
-import styles from './MessageReply.module.css'
+  SpaceMessageResponse
+} from '../../../../shared/types';
+import { SystemIcon } from '../../../shared';
+import { formatMessageTime } from './messageUtils';
+
+import styles from './MessageReply.module.css';
 
 type ReplyAvatarProps = {
-  assetId: string | null
-  displayName: string
-  cropOffsetX: number
-  cropOffsetY: number
-  cropZoom: number
-}
+  assetId: string | null;
+  displayName: string;
+  cropOffsetX: number;
+  cropOffsetY: number;
+  cropZoom: number;
+};
 
 function ReplyAvatar({
   assetId,
   displayName,
   cropOffsetX,
   cropOffsetY,
-  cropZoom,
+  cropZoom
 }: ReplyAvatarProps) {
   return (
     <span className={styles.avatar} aria-hidden="true">
@@ -29,35 +30,36 @@ function ReplyAvatar({
           src={`/api/assets/${assetId}/content`}
           alt=""
           style={{
-            transform: `translate(${cropOffsetX * 100}%, ${cropOffsetY * 100}%) scale(${cropZoom})`,
+            transform: `translate(${cropOffsetX * 100}%, ${cropOffsetY * 100}%) scale(${cropZoom})`
           }}
         />
       ) : (
         displayName.slice(0, 1).toUpperCase()
       )}
     </span>
-  )
+  );
 }
 
 function getSelectedReplyText(message: SpaceMessageResponse) {
-  if (message.body?.trim()) return message.body
-  if (message.assets.length > 0) return `Вложение: ${message.assets[0].fileName}`
-  return 'Сообщение без текста'
+  if (message.body?.trim()) return message.body;
+  if (message.assets.length > 0)
+    return `Вложение: ${message.assets[0].fileName}`;
+  return 'Сообщение без текста';
 }
 
 function getStoredReplyText(reply: SpaceMessageReplyResponse) {
-  if (reply.isUnavailable) return 'Исходное сообщение недоступно'
-  return reply.body?.trim() || 'Сообщение без текста'
+  if (reply.isUnavailable) return 'Исходное сообщение недоступно';
+  return reply.body?.trim() || 'Сообщение без текста';
 }
 
 export function MessageReplyPreview({
   message,
   onCancel,
-  disabled = false,
+  disabled = false
 }: {
-  message: SpaceMessageResponse
-  onCancel: () => void
-  disabled?: boolean
+  message: SpaceMessageResponse;
+  onCancel: () => void;
+  disabled?: boolean;
 }) {
   return (
     <section className={styles.preview} aria-live="polite">
@@ -75,7 +77,9 @@ export function MessageReplyPreview({
             {formatMessageTime(message.createdAt)}
           </time>
         </span>
-        <span className={styles.previewBody}>{getSelectedReplyText(message)}</span>
+        <span className={styles.previewBody}>
+          {getSelectedReplyText(message)}
+        </span>
       </span>
       <button
         className={styles.cancel}
@@ -87,28 +91,30 @@ export function MessageReplyPreview({
         <SystemIcon name="close" size={18} />
       </button>
     </section>
-  )
+  );
 }
 
 export function MessageReplyReference({
   reply,
-  onOpen,
+  onOpen
 }: {
-  reply: SpaceMessageReplyResponse
-  onOpen?: () => void
+  reply: SpaceMessageReplyResponse;
+  onOpen?: () => void;
 }) {
-  const senderName = reply.senderDisplayName ?? 'исходное сообщение'
+  const senderName = reply.senderDisplayName ?? 'исходное сообщение';
   const content = (
     <>
-      <span className={styles.referenceMark} aria-hidden="true">↩</span>
+      <span className={styles.referenceMark} aria-hidden="true">
+        ↩
+      </span>
       <span className={styles.referenceText}>
-        <span className={styles.referenceHeading}>
-          Ответ: {senderName}
+        <span className={styles.referenceHeading}>Ответ: {senderName}</span>
+        <span className={styles.referenceBody}>
+          {getStoredReplyText(reply)}
         </span>
-        <span className={styles.referenceBody}>{getStoredReplyText(reply)}</span>
       </span>
     </>
-  )
+  );
 
   if (onOpen && !reply.isUnavailable) {
     return (
@@ -120,8 +126,8 @@ export function MessageReplyReference({
       >
         {content}
       </button>
-    )
+    );
   }
 
-  return <div className={styles.reference}>{content}</div>
+  return <div className={styles.reference}>{content}</div>;
 }

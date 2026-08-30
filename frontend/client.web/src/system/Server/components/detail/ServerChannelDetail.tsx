@@ -1,3 +1,5 @@
+import type { MouseEvent as ReactMouseEvent } from 'react';
+
 import type {
   MessageDisplayFormat,
   ServerMemberDetailsResponse,
@@ -8,118 +10,122 @@ import type {
   SpaceMessageResponse,
   SpaceReadStateResponse,
   SpaceResponse,
-  UserResponse,
-} from '../../../../shared/types'
-import type { MouseEvent as ReactMouseEvent } from 'react'
-import type {
-  VoiceChannelController,
-  VoiceParticipant,
-} from '../../hooks/voice/useVoiceChannel'
-import type {
-  VoicePlaybackState,
-  VoiceUserAudioSettings,
-} from '../../../shared/types/voicePlayback'
-import { serverCopy, SystemIcon } from '../../../shared'
+  UserResponse
+} from '../../../../shared/types';
+import { SystemIcon, serverCopy } from '../../../shared';
 import type {
   MessageBubbleAlignment,
-  MessageBubbleWidth,
-} from '../../../shared'
-import type { ServerDetail } from '../../utils/serverWorkspaceModel'
-import { ServerOverview } from '../overview/ServerOverview'
-import { ServerChannelPlaceholder } from '../shell/ServerWorkspaceSections'
-import { ServerMessagePanel } from '../messages/ServerMessagePanel'
-import type { MessageComposerMentionInsertionRequest } from '../messages/MessageComposer'
-import type { MessageAttachmentDraft } from '../messages/messageAttachmentDraft'
-import { ServerVoiceChannel } from '../voice/channel/ServerVoiceChannel'
+  MessageBubbleWidth
+} from '../../../shared';
+import type {
+  VoicePlaybackState,
+  VoiceUserAudioSettings
+} from '../../../shared/types/voicePlayback';
+import type { OlderMessageLoadResult } from '../../hooks/messages/messagePaginationModel';
+import type {
+  VoiceChannelController,
+  VoiceParticipant
+} from '../../hooks/voice/useVoiceChannel';
+import type { ServerDetail } from '../../utils/serverWorkspaceModel';
 import {
   canConnectToVoiceSpace,
   canManageSpace,
-  canSendMessagesToSpace,
-} from '../../utils/spaceCapabilities'
-import styles from '../shell/ServerWorkspace.module.css'
-import { getServerMembersPanelDisclosure } from '../members/serverMembersPanelModel'
-import type { OlderMessageLoadResult } from '../../hooks/messages/messagePaginationModel'
+  canSendMessagesToSpace
+} from '../../utils/spaceCapabilities';
+import { getServerMembersPanelDisclosure } from '../members/serverMembersPanelModel';
+import type { MessageComposerMentionInsertionRequest } from '../messages/MessageComposer';
+import { ServerMessagePanel } from '../messages/ServerMessagePanel';
+import type { MessageAttachmentDraft } from '../messages/messageAttachmentDraft';
+import { ServerOverview } from '../overview/ServerOverview';
+import { ServerChannelPlaceholder } from '../shell/ServerWorkspaceSections';
+import { ServerVoiceChannel } from '../voice/channel/ServerVoiceChannel';
+
+import styles from '../shell/ServerWorkspace.module.css';
 
 type ServerChannelDetailProps = {
-  accessToken: string
-  server: ServerMemberResponse['server']
-  user: UserResponse
-  visibleDetail: ServerDetail | null
-  visibleChannel: Extract<ServerDetail, { type: 'channel' }> | null
-  canManageServer: boolean
-  serverMembers: ServerMemberDetailsResponse[]
-  serverMemberCount: number
-  serverRoles: ServerRoleResponse[]
-  serverSpaces: SpaceResponse[]
-  voice: VoiceChannelController
-  isVoiceChatOpen: boolean
-  membersPanelId: string
-  isMembersPanelCollapsed: boolean
-  onToggleMembersPanel: () => void
-  onToggleVoiceChat: (spaceId: string) => void
-  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>
-  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  messages: SpaceMessageResponse[]
-  pinnedMessages: SpaceMessageResponse[]
-  isLoadingMessages: boolean
-  isLoadingOlderMessages: boolean
-  hasOlderMessages: boolean
-  isLoadingPinnedMessages: boolean
-  isSendingMessage: boolean
-  messageError: string | null
-  mentionCandidates: SpaceMentionCandidatesResponse
-  mentionInsertionRequest?: MessageComposerMentionInsertionRequest | null
-  onMentionInsertionRequestHandled?: (requestId: number) => void
+  accessToken: string;
+  server: ServerMemberResponse['server'];
+  user: UserResponse;
+  visibleDetail: ServerDetail | null;
+  visibleChannel: Extract<ServerDetail, { type: 'channel' }> | null;
+  canManageServer: boolean;
+  serverMembers: ServerMemberDetailsResponse[];
+  serverMemberCount: number;
+  serverRoles: ServerRoleResponse[];
+  serverSpaces: SpaceResponse[];
+  voice: VoiceChannelController;
+  isVoiceChatOpen: boolean;
+  membersPanelId: string;
+  isMembersPanelCollapsed: boolean;
+  onToggleMembersPanel: () => void;
+  onToggleVoiceChat: (spaceId: string) => void;
+  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>;
+  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  messages: SpaceMessageResponse[];
+  pinnedMessages: SpaceMessageResponse[];
+  isLoadingMessages: boolean;
+  isLoadingOlderMessages: boolean;
+  hasOlderMessages: boolean;
+  isLoadingPinnedMessages: boolean;
+  isSendingMessage: boolean;
+  messageError: string | null;
+  mentionCandidates: SpaceMentionCandidatesResponse;
+  mentionInsertionRequest?: MessageComposerMentionInsertionRequest | null;
+  onMentionInsertionRequestHandled?: (requestId: number) => void;
   onResolveMentionCandidates: (
     query?: string,
-    signal?: AbortSignal,
-  ) => Promise<SpaceMentionCandidatesResponse>
-  defaultAttachmentExpanded: boolean
-  loadExternalMediaPreviews: boolean
-  horizontalVideoCardSize: number
-  verticalVideoCardSize: number
-  messageDisplayFormat: MessageDisplayFormat
-  messageBubbleAlignment: MessageBubbleAlignment
-  messageBubbleWidth: MessageBubbleWidth
+    signal?: AbortSignal
+  ) => Promise<SpaceMentionCandidatesResponse>;
+  defaultAttachmentExpanded: boolean;
+  loadExternalMediaPreviews: boolean;
+  horizontalVideoCardSize: number;
+  verticalVideoCardSize: number;
+  messageDisplayFormat: MessageDisplayFormat;
+  messageBubbleAlignment: MessageBubbleAlignment;
+  messageBubbleWidth: MessageBubbleWidth;
   onOpenVoiceParticipantContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
     participant: VoiceParticipant,
     sourceSpaceId: string,
     workspaceActions?: {
-      onOpenDetachedParticipant?: () => void
-      showParticipantsWithoutVideo?: boolean
-      onToggleParticipantsWithoutVideo?: () => void
-    },
-  ) => void
+      onOpenDetachedParticipant?: () => void;
+      showParticipantsWithoutVideo?: boolean;
+      onToggleParticipantsWithoutVideo?: () => void;
+    }
+  ) => void;
   onSendMessage: (
     body: string,
     attachments?: MessageAttachmentDraft[],
     replyToMessageId?: string | null,
-    mentions?: SpaceMessageMentionRequest[],
-  ) => Promise<SpaceMessageResponse | null>
+    mentions?: SpaceMessageMentionRequest[]
+  ) => Promise<SpaceMessageResponse | null>;
   onUpdateMessage: (
     messageId: string,
-    request: { body?: string | null; payload?: string | null; clearPayload?: boolean },
-  ) => Promise<SpaceMessageResponse | null>
-  onDeleteMessage: (messageId: string) => Promise<boolean>
-  onPinMessage: (messageId: string) => Promise<SpaceMessageResponse | null>
-  onUnpinMessage: (messageId: string) => Promise<boolean>
+    request: {
+      body?: string | null;
+      payload?: string | null;
+      clearPayload?: boolean;
+    }
+  ) => Promise<SpaceMessageResponse | null>;
+  onDeleteMessage: (messageId: string) => Promise<boolean>;
+  onPinMessage: (messageId: string) => Promise<SpaceMessageResponse | null>;
+  onUnpinMessage: (messageId: string) => Promise<boolean>;
   onSetMessageReaction: (
     messageId: string,
     emojiCode: string,
-    isPresent: boolean,
-  ) => Promise<SpaceMessageResponse | null>
+    isPresent: boolean
+  ) => Promise<SpaceMessageResponse | null>;
   onMarkMessagesRead: (
-    throughMessageId: string,
-  ) => Promise<SpaceReadStateResponse | null>
-  onLoadOlderMessages: () => Promise<OlderMessageLoadResult>
+    throughMessageId: string
+  ) => Promise<SpaceReadStateResponse | null>;
+  onLoadOlderMessages: () => Promise<OlderMessageLoadResult>;
   onLoadMessageWindow: (
     messageId: string,
-    createdAt: string,
-  ) => Promise<boolean>
-  onCloseDetail: () => void
-  focusedMessageId?: string | null
-}
+    createdAt: string
+  ) => Promise<boolean>;
+  onCloseDetail: () => void;
+  focusedMessageId?: string | null;
+};
 
 export function ServerChannelDetail({
   accessToken,
@@ -170,11 +176,11 @@ export function ServerChannelDetail({
   onLoadOlderMessages,
   onLoadMessageWindow,
   onCloseDetail,
-  focusedMessageId,
+  focusedMessageId
 }: ServerChannelDetailProps) {
   const selectedSpace = visibleChannel?.spaceId
     ? serverSpaces.find((space) => space.id === visibleChannel.spaceId)
-    : undefined
+    : undefined;
 
   if (visibleDetail?.type === 'overview') {
     return (
@@ -191,7 +197,7 @@ export function ServerChannelDetail({
           />
         }
       />
-    )
+    );
   }
 
   if (visibleChannel?.kind === 'text' && visibleChannel.spaceId) {
@@ -211,7 +217,7 @@ export function ServerChannelDetail({
         reportContext={{
           accessToken,
           serverId: server.id,
-          spaceId: visibleChannel.spaceId,
+          spaceId: visibleChannel.spaceId
         }}
         leadingAction={
           <button
@@ -258,17 +264,17 @@ export function ServerChannelDetail({
         onLoadOlderMessages={onLoadOlderMessages}
         focusedMessageId={focusedMessageId}
       />
-    )
+    );
   }
 
   if (visibleChannel?.kind === 'voice' && visibleChannel.spaceId) {
-    const voiceSpaceId = visibleChannel.spaceId
-    const voiceSpaceTitle = visibleChannel.title
-    const voiceMessageSpaceId = selectedSpace?.voiceChatSpaceId ?? null
+    const voiceSpaceId = visibleChannel.spaceId;
+    const voiceSpaceTitle = visibleChannel.title;
+    const voiceMessageSpaceId = selectedSpace?.voiceChatSpaceId ?? null;
     const isConnectedToVoiceChannel =
       voice.connectedChannel?.channelScope === 'server' &&
       voice.connectedChannel.serverId === server.id &&
-      voice.connectedChannel.spaceId === voiceSpaceId
+      voice.connectedChannel.spaceId === voiceSpaceId;
 
     return (
       <ServerVoiceChannel
@@ -310,7 +316,7 @@ export function ServerChannelDetail({
           reportContext: {
             accessToken,
             serverId: server.id,
-            spaceId: voiceMessageSpaceId ?? voiceSpaceId,
+            spaceId: voiceMessageSpaceId ?? voiceSpaceId
           },
           messages,
           unreadCount: selectedSpace?.unreadCount ?? 0,
@@ -336,7 +342,7 @@ export function ServerChannelDetail({
           onSetMessageReaction,
           onMarkRead: onMarkMessagesRead,
           onLoadMessageWindow,
-          onLoadOlderMessages,
+          onLoadOlderMessages
         }}
         participants={voice.participantsBySpaceId[voiceSpaceId] ?? []}
         serverMembers={serverMembers}
@@ -359,7 +365,7 @@ export function ServerChannelDetail({
             event,
             participant,
             voiceSpaceId,
-            workspaceActions,
+            workspaceActions
           )
         }
         onToggleMuted={voice.toggleMuted}
@@ -369,19 +375,19 @@ export function ServerChannelDetail({
         onLeaveVoiceChannel={voice.leaveVoiceChannel}
         onJoinVoiceChannel={() => {
           if (!canConnectToVoiceSpace(selectedSpace)) {
-            return
+            return;
           }
 
           void voice.joinVoiceChannel({
             serverId: server.id,
             spaceId: voiceSpaceId,
             title: voiceSpaceTitle,
-            channelScope: 'server',
-          })
+            channelScope: 'server'
+          });
         }}
         onOpenSettings={() => undefined}
       />
-    )
+    );
   }
 
   return (
@@ -390,19 +396,19 @@ export function ServerChannelDetail({
       title={visibleChannel?.title}
       kind={visibleChannel?.kind}
     />
-  )
+  );
 }
 
 function MembersPanelToggleButton({
   panelId,
   isCollapsed,
-  onToggle,
+  onToggle
 }: {
-  panelId: string
-  isCollapsed: boolean
-  onToggle: () => void
+  panelId: string;
+  isCollapsed: boolean;
+  onToggle: () => void;
 }) {
-  const disclosure = getServerMembersPanelDisclosure(isCollapsed)
+  const disclosure = getServerMembersPanelDisclosure(isCollapsed);
 
   return (
     <button
@@ -419,5 +425,5 @@ function MembersPanelToggleButton({
     >
       <SystemIcon name="chevron-right" size={18} />
     </button>
-  )
+  );
 }

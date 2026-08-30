@@ -1,7 +1,9 @@
-import type { ReactNode, RefObject } from 'react'
-import { communityCopy, serverCopy, SystemIcon } from '../../../shared'
-import workspaceStyles from '../shell/ServerWorkspace.module.css'
-import styles from './ServerMessageHeader.module.css'
+import type { ReactNode, RefObject } from 'react';
+
+import { SystemIcon, communityCopy, serverCopy } from '../../../shared';
+
+import workspaceStyles from '../shell/ServerWorkspace.module.css';
+import styles from './ServerMessageHeader.module.css';
 
 export function ServerMessageHeader({
   title,
@@ -16,21 +18,21 @@ export function ServerMessageHeader({
   trashHasMore,
   isTrashPanelOpen,
   onToggleTrashPanel,
-  trashToggleRef,
+  trashToggleRef
 }: {
-  title: string
-  titleIcon?: ReactNode
-  titleAccessory?: ReactNode
-  leadingAction?: ReactNode
-  headerActions?: ReactNode
-  pinnedMessageCount: number
-  isPinnedPanelOpen: boolean
-  onTogglePinnedPanel: () => void
-  trashMessageCount?: number
-  trashHasMore?: boolean
-  isTrashPanelOpen?: boolean
-  onToggleTrashPanel?: () => void
-  trashToggleRef?: RefObject<HTMLButtonElement | null>
+  title: string;
+  titleIcon?: ReactNode;
+  titleAccessory?: ReactNode;
+  leadingAction?: ReactNode;
+  headerActions?: ReactNode;
+  pinnedMessageCount: number;
+  isPinnedPanelOpen: boolean;
+  onTogglePinnedPanel: () => void;
+  trashMessageCount?: number;
+  trashHasMore?: boolean;
+  isTrashPanelOpen?: boolean;
+  onToggleTrashPanel?: () => void;
+  trashToggleRef?: RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <header>
@@ -40,7 +42,9 @@ export function ServerMessageHeader({
         <strong>{title}</strong>
         {titleAccessory}
       </div>
-      <div className={`${workspaceStyles.messageHeaderActions} ${styles.messageHeaderActions}`}>
+      <div
+        className={`${workspaceStyles.messageHeaderActions} ${styles.messageHeaderActions}`}
+      >
         <button
           className={styles.pinnedToggle}
           type="button"
@@ -67,11 +71,14 @@ export function ServerMessageHeader({
             <span className={styles.pinnedToggleIcon} aria-hidden="true">
               <SystemIcon name="trash" size={16} />
             </span>
-            <em>{trashMessageCount}{trashHasMore ? '+' : ''}</em>
+            <em>
+              {trashMessageCount}
+              {trashHasMore ? '+' : ''}
+            </em>
           </button>
         ) : null}
         {headerActions}
       </div>
     </header>
-  )
+  );
 }

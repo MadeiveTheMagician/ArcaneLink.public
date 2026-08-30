@@ -10,7 +10,7 @@
   left: 0;
   height: 24px;
   pointer-events: none;
-  content: "";
+  content: '';
   opacity: 0;
   background: linear-gradient(180deg, transparent, var(--theme-frame-bg));
   transition: opacity 160ms ease;
@@ -27,14 +27,13 @@
   left: auto;
   width: 52px;
   height: auto;
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0%,
-      color-mix(in srgb, var(--theme-frame-bg), transparent 88%) 28%,
-      color-mix(in srgb, var(--theme-frame-bg), transparent 52%) 64%,
-      color-mix(in srgb, var(--theme-frame-bg), transparent 12%) 100%
-    );
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--theme-frame-bg), transparent 88%) 28%,
+    color-mix(in srgb, var(--theme-frame-bg), transparent 52%) 64%,
+    color-mix(in srgb, var(--theme-frame-bg), transparent 12%) 100%
+  );
 }
 
 .folderRailViewport.horizontal.hasBottomFade::after {
@@ -153,9 +152,19 @@
   --private-folder-fixed-width: 39px;
   display: inline-grid;
   font-size: 11px;
-  flex: 0 0 calc(var(--private-folder-fixed-width) + var(--private-folder-title-width) + var(--private-folder-count-width));
-  min-width: calc(var(--private-folder-fixed-width) + var(--private-folder-title-width) + var(--private-folder-count-width));
-  max-width: calc(var(--private-folder-fixed-width) + var(--private-folder-title-width) + var(--private-folder-count-width));
+  flex: 0 0
+    calc(
+      var(--private-folder-fixed-width) + var(--private-folder-title-width) +
+        var(--private-folder-count-width)
+    );
+  min-width: calc(
+    var(--private-folder-fixed-width) + var(--private-folder-title-width) +
+      var(--private-folder-count-width)
+  );
+  max-width: calc(
+    var(--private-folder-fixed-width) + var(--private-folder-title-width) +
+      var(--private-folder-count-width)
+  );
   overflow: visible;
   opacity: 1;
   transform: translateY(0) scale(1);
@@ -166,8 +175,7 @@
     visibility 0ms linear;
   transition-delay:
     calc(var(--private-folder-index, 0) * 16ms),
-    calc(var(--private-folder-index, 0) * 16ms),
-    0ms;
+    calc(var(--private-folder-index, 0) * 16ms), 0ms;
 }
 
 .folderChipSlotHidden {
@@ -186,14 +194,17 @@
   --private-folder-color: var(--theme-accent);
   position: relative;
   display: inline-grid;
-  grid-template-columns: 17px minmax(0, var(--private-folder-title-width)) var(--private-folder-count-width);
+  grid-template-columns: 17px minmax(0, var(--private-folder-title-width)) var(
+      --private-folder-count-width
+    );
   align-items: center;
   gap: 4px;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
   min-height: 28px;
-  border: 1px solid color-mix(in srgb, var(--private-folder-color), transparent 70%);
+  border: 1px solid
+    color-mix(in srgb, var(--private-folder-color), transparent 70%);
   border-radius: 7px;
   padding: 4px 6px;
   color: var(--theme-text-soft);
@@ -201,7 +212,11 @@
   font: inherit;
   font-size: 11px;
   font-weight: 800;
-  transition: min-height 180ms ease, padding 180ms ease, background 160ms ease, box-shadow 160ms ease;
+  transition:
+    min-height 180ms ease,
+    padding 180ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .folderName {
@@ -226,14 +241,18 @@
 .folderChip.active {
   color: var(--color-text);
   background: color-mix(in srgb, var(--private-folder-color), transparent 84%);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--private-folder-color), transparent 82%);
+  box-shadow: 0 0 14px
+    color-mix(in srgb, var(--private-folder-color), transparent 82%);
 }
 
 .folderChip.expanded {
   min-height: 48px;
   padding-block: 12px;
   background: color-mix(in srgb, var(--private-folder-color), transparent 76%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--private-folder-color), transparent 46%), 0 0 18px color-mix(in srgb, var(--private-folder-color), transparent 72%);
+  box-shadow:
+    inset 0 0 0 1px
+      color-mix(in srgb, var(--private-folder-color), transparent 46%),
+    0 0 18px color-mix(in srgb, var(--private-folder-color), transparent 72%);
 }
 
 .folderChip.folderDragging {
@@ -245,7 +264,8 @@
 .folderChip.dropBefore,
 .folderChip.dropAfter {
   background: color-mix(in srgb, var(--private-folder-color), transparent 78%);
-  box-shadow: 0 0 17px color-mix(in srgb, var(--private-folder-color), transparent 70%);
+  box-shadow: 0 0 17px
+    color-mix(in srgb, var(--private-folder-color), transparent 70%);
 }
 
 .folderChip.dropBefore::before,
@@ -255,7 +275,7 @@
   bottom: 2px;
   width: 3px;
   border-radius: 999px;
-  content: "";
+  content: '';
   background: var(--theme-accent-light);
   box-shadow:
     0 0 7px var(--theme-accent-light),
@@ -263,8 +283,12 @@
   animation: folderDropMarkerIn 130ms ease both;
 }
 
-.folderChip.dropBefore::before { left: -5px; }
-.folderChip.dropAfter::after { right: -5px; }
+.folderChip.dropBefore::before {
+  left: -5px;
+}
+.folderChip.dropAfter::after {
+  right: -5px;
+}
 
 .folderDragPreview {
   --private-folder-color: var(--theme-accent);
@@ -275,12 +299,17 @@
   align-items: center;
   gap: 5px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--private-folder-color), transparent 40%);
+  border: 1px solid
+    color-mix(in srgb, var(--private-folder-color), transparent 40%);
   border-radius: 7px;
   padding: 0 7px;
   color: var(--color-text);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--private-folder-color), transparent 76%), transparent),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--private-folder-color), transparent 76%),
+      transparent
+    ),
     var(--theme-control-bg-strong);
   box-shadow:
     0 16px 34px rgba(0, 0, 0, 0.44),
@@ -292,8 +321,14 @@
 }
 
 @keyframes folderDropMarkerIn {
-  from { opacity: 0; transform: scaleY(.45); }
-  to { opacity: 1; transform: scaleY(1); }
+  from {
+    opacity: 0;
+    transform: scaleY(0.45);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -334,8 +369,10 @@
   padding: 16px;
   color: var(--color-text);
   background: var(--theme-surface-raised);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58), 0 0 36px color-mix(in srgb, var(--theme-accent), transparent 88%);
-  animation: folderDialogIn 210ms cubic-bezier(.2,.8,.2,1) both;
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.58),
+    0 0 36px color-mix(in srgb, var(--theme-accent), transparent 88%);
+  animation: folderDialogIn 210ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .dialog header,
@@ -346,21 +383,90 @@
   gap: 10px;
 }
 
-.dialog h2 { margin: 0; font-size: 18px; }
-.dialog header button { display: grid; width: 34px; height: 34px; min-height: 34px; place-items: center; }
-.dialog footer { justify-content: flex-end; }
-.dialog footer button { min-height: 38px; padding-inline: 18px; }
+.dialog h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.dialog header button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  place-items: center;
+}
+.dialog footer {
+  justify-content: flex-end;
+}
+.dialog footer button {
+  min-height: 38px;
+  padding-inline: 18px;
+}
 
-.nameField { display: grid; gap: 6px; color: var(--theme-text-soft); font-size: 12px; font-weight: 800; }
-.nameField input { min-height: 42px; border: 1px solid var(--theme-border-control); border-radius: 7px; padding: 0 12px; color: var(--color-text); background: var(--theme-control-bg); outline: none; }
-.nameField input::placeholder { color: var(--theme-text-faint); }
-.dialog fieldset { min-width: 0; margin: 0; border: 0; padding: 0; }
-.dialog legend { margin-bottom: 7px; color: var(--theme-text-soft); font-size: 12px; font-weight: 800; }
-.optionRow { display: flex; flex-wrap: wrap; gap: 7px; }
-.optionRow button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid transparent; border-radius: 7px; padding: 0; background: var(--theme-control-bg); font-size: 16px; }
-.optionRow button.selectedOption { border-color: var(--theme-accent-light); background-color: var(--theme-active-bg); box-shadow: 0 0 12px var(--theme-glow-strong); }
-.noColorOption { background: linear-gradient(135deg, transparent 46%, var(--color-danger) 47%, var(--color-danger) 53%, transparent 54%) !important; }
-.conversationFieldset { display: grid; min-height: 0; }
+.nameField {
+  display: grid;
+  gap: 6px;
+  color: var(--theme-text-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+.nameField input {
+  min-height: 42px;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 7px;
+  padding: 0 12px;
+  color: var(--color-text);
+  background: var(--theme-control-bg);
+  outline: none;
+}
+.nameField input::placeholder {
+  color: var(--theme-text-faint);
+}
+.dialog fieldset {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+.dialog legend {
+  margin-bottom: 7px;
+  color: var(--theme-text-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+.optionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.optionRow button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 0;
+  background: var(--theme-control-bg);
+  font-size: 16px;
+}
+.optionRow button.selectedOption {
+  border-color: var(--theme-accent-light);
+  background-color: var(--theme-active-bg);
+  box-shadow: 0 0 12px var(--theme-glow-strong);
+}
+.noColorOption {
+  background: linear-gradient(
+    135deg,
+    transparent 46%,
+    var(--color-danger) 47%,
+    var(--color-danger) 53%,
+    transparent 54%
+  ) !important;
+}
+.conversationFieldset {
+  display: grid;
+  min-height: 0;
+}
 .conversationSearch {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
@@ -374,16 +480,64 @@
   color: var(--theme-text-faint);
   background: var(--theme-control-bg);
 }
-.conversationSearch input { min-width: 0; border: 0; padding: 0; color: var(--color-text); background: transparent; outline: 0; }
-.conversationSearch input::placeholder { color: var(--theme-text-faint); }
-.conversationList { display: grid; gap: 4px; max-height: 190px; overflow: auto; }
-.conversationList p { margin: 12px 8px; color: var(--theme-text-faint); font-size: 12px; }
-.conversationOption { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 9px; min-height: 46px; border-radius: 6px; padding: 4px 7px; background: color-mix(in srgb, var(--theme-control-bg), transparent 24%); }
-.dialogAvatar { display: grid; overflow: hidden; width: 36px; height: 36px; place-items: center; border-radius: 8px; background: var(--theme-control-bg-strong); }
-.error { margin: 0; color: var(--color-danger); font-size: 12px; }
+.conversationSearch input {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  color: var(--color-text);
+  background: transparent;
+  outline: 0;
+}
+.conversationSearch input::placeholder {
+  color: var(--theme-text-faint);
+}
+.conversationList {
+  display: grid;
+  gap: 4px;
+  max-height: 190px;
+  overflow: auto;
+}
+.conversationList p {
+  margin: 12px 8px;
+  color: var(--theme-text-faint);
+  font-size: 12px;
+}
+.conversationOption {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  border-radius: 6px;
+  padding: 4px 7px;
+  background: color-mix(in srgb, var(--theme-control-bg), transparent 24%);
+}
+.dialogAvatar {
+  display: grid;
+  overflow: hidden;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--theme-control-bg-strong);
+}
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 12px;
+}
 
-@keyframes folderOverlayIn { from { opacity: 0; } }
-@keyframes folderDialogIn { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+@keyframes folderOverlayIn {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes folderDialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
 
 @media (max-width: 760px) {
   .folderRailViewport {
@@ -406,5 +560,7 @@
     min-height: 28px;
     padding-block: 4px;
   }
-  .dialog { padding: 14px; }
+  .dialog {
+    padding: 14px;
+  }
 }

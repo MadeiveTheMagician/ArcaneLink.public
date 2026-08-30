@@ -832,14 +832,14 @@ public sealed class NotificationIntegrationTests
         public ThrowingInviteReadNotificationService(
             UserNotificationService inner)
         {
-            _inner = inner;
+            this._inner = inner;
         }
 
         public Task<IReadOnlyList<UserNotificationResponse>> GetAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            return _inner.GetAsync(userId, cancellationToken);
+            return this._inner.GetAsync(userId, cancellationToken);
         }
 
         public Task<bool> MarkReadAsync(
@@ -847,21 +847,21 @@ public sealed class NotificationIntegrationTests
             Guid notificationId,
             CancellationToken cancellationToken = default)
         {
-            return _inner.MarkReadAsync(userId, notificationId, cancellationToken);
+            return this._inner.MarkReadAsync(userId, notificationId, cancellationToken);
         }
 
         public Task MarkAllReadAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            return _inner.MarkAllReadAsync(userId, cancellationToken);
+            return this._inner.MarkAllReadAsync(userId, cancellationToken);
         }
 
         public Task<int> ClearHistoryAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
-            return _inner.ClearHistoryAsync(userId, cancellationToken);
+            return this._inner.ClearHistoryAsync(userId, cancellationToken);
         }
 
         public Task<bool> StageInviteReadAsync(
@@ -880,7 +880,7 @@ public sealed class NotificationIntegrationTests
             Guid inviteId,
             CancellationToken cancellationToken = default)
         {
-            return _inner.StageDirectInviteAsync(
+            return this._inner.StageDirectInviteAsync(
                 targetUserId,
                 actorUserId,
                 serverId,
@@ -895,7 +895,7 @@ public sealed class NotificationIntegrationTests
             string spaceTitle,
             CancellationToken cancellationToken = default)
         {
-            return _inner.StagePrivateSpaceInviteAsync(
+            return this._inner.StagePrivateSpaceInviteAsync(
                 targetUserId,
                 actorUserId,
                 spaceId,
@@ -908,7 +908,7 @@ public sealed class NotificationIntegrationTests
             Guid actorUserId,
             CancellationToken cancellationToken = default)
         {
-            return _inner.StageFriendRequestAsync(
+            return this._inner.StageFriendRequestAsync(
                 targetUserId,
                 actorUserId,
                 cancellationToken);
@@ -919,7 +919,7 @@ public sealed class NotificationIntegrationTests
             Guid actorUserId,
             CancellationToken cancellationToken = default)
         {
-            return _inner.StageFriendRequestReadAsync(
+            return this._inner.StageFriendRequestReadAsync(
                 targetUserId,
                 actorUserId,
                 cancellationToken);
@@ -933,7 +933,7 @@ public sealed class NotificationIntegrationTests
             string body,
             CancellationToken cancellationToken = default)
         {
-            return _inner.StageMentionsAsync(
+            return this._inner.StageMentionsAsync(
                 actorUserId,
                 serverId,
                 spaceId,
@@ -952,7 +952,7 @@ public sealed class NotificationIntegrationTests
             IReadOnlyCollection<Guid> recipientUserIds,
             CancellationToken cancellationToken = default)
         {
-            return _inner.StageResolvedMentionsAsync(
+            return this._inner.StageResolvedMentionsAsync(
                 actorUserId,
                 serverId,
                 spaceId,
@@ -967,7 +967,7 @@ public sealed class NotificationIntegrationTests
             IReadOnlyCollection<Guid> userIds,
             CancellationToken cancellationToken = default)
         {
-            return _inner.NotifyChangedAsync(userIds, cancellationToken);
+            return this._inner.NotifyChangedAsync(userIds, cancellationToken);
         }
 
         public Task CreateSystemAsync(
@@ -977,7 +977,7 @@ public sealed class NotificationIntegrationTests
             string? detail = null,
             CancellationToken cancellationToken = default)
         {
-            return _inner.CreateSystemAsync(
+            return this._inner.CreateSystemAsync(
                 userId,
                 title,
                 body,

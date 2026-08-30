@@ -1,82 +1,84 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 import type {
   DragEvent as ReactDragEvent,
-  MouseEvent as ReactMouseEvent,
-} from 'react'
+  MouseEvent as ReactMouseEvent
+} from 'react';
+
 import type {
   ReorderSpacesRequest,
   ServerMemberDetailsResponse,
   ServerMemberResponse,
-  SpaceResponse,
-} from '../../../../shared/types'
-import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel'
-import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel'
-import type { VoiceUserAudioSettings } from '../../../shared/types/voicePlayback'
-import { serverCopy, SystemIcon } from '../../../shared'
-import type { ServerDetail } from '../../utils/serverWorkspaceModel'
-import headerStyles from './ServerChannelTreeHeader.module.css'
-import { MobileServerMembersPanel } from './MobileServerMembersPanel'
+  SpaceResponse
+} from '../../../../shared/types';
+import { SystemIcon, serverCopy } from '../../../shared';
+import type { VoiceUserAudioSettings } from '../../../shared/types/voicePlayback';
+import type { VoiceParticipant } from '../../hooks/voice/useVoiceChannel';
+import type { ServerDetail } from '../../utils/serverWorkspaceModel';
+import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel';
+import { MobileServerMembersPanel } from './MobileServerMembersPanel';
+import { ServerChannelTreeSkeleton } from './ServerChannelTreeSkeleton';
+import { SpaceNavigationNode } from './SpaceNavigationNode';
 import {
-  isMobileMembersPanelOpen,
   type MobileServerTab,
-} from './mobileServerMembersPanelModel'
-import styles from './ServerChannelTreeNavigation.module.css'
-import reorderStyles from './ServerChannelTreeReorder.module.css'
-import { SpaceNavigationNode } from './SpaceNavigationNode'
-import { ServerChannelTreeSkeleton } from './ServerChannelTreeSkeleton'
-import { useSpaceTreeDragAndDrop } from './useSpaceTreeDragAndDrop'
+  isMobileMembersPanelOpen
+} from './mobileServerMembersPanelModel';
+import { useSpaceTreeDragAndDrop } from './useSpaceTreeDragAndDrop';
 
-const MOBILE_SERVER_TREE_QUERY = '(max-width: 760px)'
+import headerStyles from './ServerChannelTreeHeader.module.css';
+import styles from './ServerChannelTreeNavigation.module.css';
+import reorderStyles from './ServerChannelTreeReorder.module.css';
+
+const MOBILE_SERVER_TREE_QUERY = '(max-width: 760px)';
 
 type ServerChannelTreeProps = {
-  server: ServerMemberResponse['server']
-  rootSpaces: SpaceResponse[]
-  spaces: SpaceResponse[]
-  visibleDetail: ServerDetail | null
-  selectedMemberId: string | null
-  isLoadingSpaces: boolean
-  canInviteMembers: boolean
-  canOpenServerSettings: boolean
-  canManageSpaces: boolean
-  canManageServer: boolean
-  canMoveVoiceParticipants: boolean
-  participantsBySpaceId: Record<string, VoiceParticipant[]>
-  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  serverMembers: ServerMemberDetailsResponse[]
-  serverMemberCount: number
-  isLoadingMoreMembers: boolean
-  hasMoreMembers: boolean
-  speakingParticipantIds: Record<string, boolean>
-  openVoiceChatSpaceId: string | null
-  collapsedCategoryIds: Set<string>
-  onOpenInviteDialog: () => void
-  onOpenSettings: () => void
-  onSelectOverview: () => void
+  server: ServerMemberResponse['server'];
+  rootSpaces: SpaceResponse[];
+  spaces: SpaceResponse[];
+  visibleDetail: ServerDetail | null;
+  selectedMemberId: string | null;
+  isLoadingSpaces: boolean;
+  canInviteMembers: boolean;
+  canOpenServerSettings: boolean;
+  canManageSpaces: boolean;
+  canManageServer: boolean;
+  canMoveVoiceParticipants: boolean;
+  participantsBySpaceId: Record<string, VoiceParticipant[]>;
+  audioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  serverMembers: ServerMemberDetailsResponse[];
+  serverMemberCount: number;
+  isLoadingMoreMembers: boolean;
+  hasMoreMembers: boolean;
+  speakingParticipantIds: Record<string, boolean>;
+  openVoiceChatSpaceId: string | null;
+  collapsedCategoryIds: Set<string>;
+  onOpenInviteDialog: () => void;
+  onOpenSettings: () => void;
+  onSelectOverview: () => void;
   onSelectMember: (
     member: ServerMemberDetailsResponse,
     anchor: ServerMemberProfileAnchor,
-    focusTarget: HTMLElement,
-  ) => void
-  onLoadMoreMembers: () => Promise<boolean>
-  onSelectSpace: (space: SpaceResponse) => void
-  onOpenVoiceChat: (space: SpaceResponse) => void
-  onToggleCategory: (spaceId: string) => void
-  onReorderSpaces: (request: ReorderSpacesRequest) => Promise<boolean>
+    focusTarget: HTMLElement
+  ) => void;
+  onLoadMoreMembers: () => Promise<boolean>;
+  onSelectSpace: (space: SpaceResponse) => void;
+  onOpenVoiceChat: (space: SpaceResponse) => void;
+  onToggleCategory: (spaceId: string) => void;
+  onReorderSpaces: (request: ReorderSpacesRequest) => Promise<boolean>;
   onMoveVoiceParticipant: (
     sourceSpaceId: string,
     targetSpaceId: string,
-    participantId: string,
-  ) => Promise<void>
+    participantId: string
+  ) => Promise<void>;
   onOpenVoiceParticipantContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
     participant: VoiceParticipant,
-    sourceSpaceId: string,
-  ) => void
+    sourceSpaceId: string
+  ) => void;
   onContextMenu: (
     event: ReactMouseEvent<HTMLElement>,
-    space?: SpaceResponse | null,
-  ) => void
-}
+    space?: SpaceResponse | null
+  ) => void;
+};
 
 export function ServerChannelTree({
   server,
@@ -110,19 +112,19 @@ export function ServerChannelTree({
   onReorderSpaces,
   onMoveVoiceParticipant,
   onOpenVoiceParticipantContextMenu,
-  onContextMenu,
+  onContextMenu
 }: ServerChannelTreeProps) {
   const [mobileServerTab, setMobileServerTab] =
-    useState<MobileServerTab>('spaces')
+    useState<MobileServerTab>('spaces');
   const [isMobileSpaceReorderEnabled, setIsMobileSpaceReorderEnabled] =
-    useState(false)
-  const isMobileServerTree = useMobileServerTree()
+    useState(false);
+  const isMobileServerTree = useMobileServerTree();
   const isMobileMembersOpen = isMobileMembersPanelOpen(
     isMobileServerTree,
-    mobileServerTab,
-  )
+    mobileServerTab
+  );
   const canDragSpaces =
-    canManageSpaces && (!isMobileServerTree || isMobileSpaceReorderEnabled)
+    canManageSpaces && (!isMobileServerTree || isMobileSpaceReorderEnabled);
   const dragAndDrop = useSpaceTreeDragAndDrop({
     spaces,
     canDragSpaces,
@@ -131,8 +133,8 @@ export function ServerChannelTree({
     onReorderSpaces,
     onMoveVoiceParticipant,
     setSpaceDragImage,
-    setVoiceParticipantDragImage,
-  })
+    setVoiceParticipantDragImage
+  });
   const {
     clearRootSpaceDropTarget,
     clearSpaceDragState,
@@ -149,26 +151,29 @@ export function ServerChannelTree({
     updateRootSpaceDropTarget,
     updateSpaceDropTarget,
     updateVoiceParticipantDropTarget,
-    voiceDropTargetSpaceId,
-  } = dragAndDrop
+    voiceDropTargetSpaceId
+  } = dragAndDrop;
 
   function toggleMobileSpaceReorder() {
-    clearSpaceDragState()
-    setMobileServerTab('spaces')
-    setIsMobileSpaceReorderEnabled((value) => !value)
+    clearSpaceDragState();
+    setMobileServerTab('spaces');
+    setIsMobileSpaceReorderEnabled((value) => !value);
   }
 
   function selectSpaceAfterPotentialDrag(space: SpaceResponse) {
     if (dragAndDrop.consumeSuppressedSpaceClick(space.id)) {
-      return
+      return;
     }
 
-    setMobileServerTab('spaces')
-    onSelectSpace(space)
+    setMobileServerTab('spaces');
+    onSelectSpace(space);
   }
 
   return (
-    <aside className={`${styles.spacePanel} ui-panel`} aria-label="Server spaces">
+    <aside
+      className={`${styles.spacePanel} ui-panel`}
+      aria-label="Server spaces"
+    >
       <header className={headerStyles.spaceTitle}>
         <div className={headerStyles.topbarTitle}>
           <span className={headerStyles.topbarIcon}>
@@ -180,7 +185,7 @@ export function ServerChannelTree({
                 style={{
                   transform: `translate(${server.iconCropOffsetX * 100}%, ${
                     server.iconCropOffsetY * 100
-                  }%) scale(${server.iconCropZoom})`,
+                  }%) scale(${server.iconCropZoom})`
                 }}
               />
             ) : (
@@ -206,7 +211,7 @@ export function ServerChannelTree({
                   headerStyles.mobileReorderButton,
                   isMobileSpaceReorderEnabled
                     ? headerStyles.mobileReorderButtonActive
-                    : '',
+                    : ''
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -245,8 +250,8 @@ export function ServerChannelTree({
             }
             type="button"
             onClick={() => {
-              setMobileServerTab('spaces')
-              onSelectOverview()
+              setMobileServerTab('spaces');
+              onSelectOverview();
             }}
           >
             {serverCopy.labels.overview}
@@ -265,9 +270,7 @@ export function ServerChannelTree({
           </button>
           <button
             className={
-              isMobileMembersOpen
-                ? headerStyles.mobileServerTabActive
-                : ''
+              isMobileMembersOpen ? headerStyles.mobileServerTabActive : ''
             }
             type="button"
             aria-controls="mobile-server-members-panel"
@@ -283,7 +286,7 @@ export function ServerChannelTree({
           'ui-scroll-list ui-scrollbar-none',
           isRootSpaceDropTarget ? reorderStyles.spaceRootDropTarget : '',
           isMobileMembersOpen ? styles.mobileSpacesPanelHidden : '',
-          isMobileSpaceReorderEnabled ? styles.mobileSpacesReorderEnabled : '',
+          isMobileSpaceReorderEnabled ? styles.mobileSpacesReorderEnabled : ''
         ]
           .filter(Boolean)
           .join(' ')}
@@ -336,7 +339,9 @@ export function ServerChannelTree({
                 onDropSpaceOnTarget={dropSpaceOnTarget}
                 onClearSpaceDragState={clearSpaceDragState}
                 onStartVoiceParticipantDrag={startVoiceParticipantDrag}
-                onUpdateVoiceParticipantDropTarget={updateVoiceParticipantDropTarget}
+                onUpdateVoiceParticipantDropTarget={
+                  updateVoiceParticipantDropTarget
+                }
                 onDropVoiceParticipantOnTarget={dropVoiceParticipantOnTarget}
                 onClearVoiceDragState={clearVoiceDragState}
                 onOpenVoiceParticipantContextMenu={
@@ -358,61 +363,61 @@ export function ServerChannelTree({
         onLoadMore={onLoadMoreMembers}
       />
     </aside>
-  )
+  );
 }
 
 function useMobileServerTree() {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
-      return
+      return;
     }
 
-    const mediaQuery = window.matchMedia(MOBILE_SERVER_TREE_QUERY)
+    const mediaQuery = window.matchMedia(MOBILE_SERVER_TREE_QUERY);
 
-    setIsMobile(mediaQuery.matches)
+    setIsMobile(mediaQuery.matches);
 
     function handleChange(event: MediaQueryListEvent) {
-      setIsMobile(event.matches)
+      setIsMobile(event.matches);
     }
 
-    mediaQuery.addEventListener('change', handleChange)
+    mediaQuery.addEventListener('change', handleChange);
 
     return () => {
-      mediaQuery.removeEventListener('change', handleChange)
-    }
-  }, [])
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, []);
 
-  return isMobile
+  return isMobile;
 }
 
 function setSpaceDragImage(event: ReactDragEvent<HTMLElement>) {
-  const sourceElement = event.currentTarget
+  const sourceElement = event.currentTarget;
   const dragImage =
     sourceElement.closest('button') ??
     sourceElement.closest(`.${styles.spaceLeaf}`) ??
-    sourceElement.closest(`.${styles.spaceCategory}`)
+    sourceElement.closest(`.${styles.spaceCategory}`);
 
   if (dragImage instanceof HTMLElement) {
-    const rect = dragImage.getBoundingClientRect()
+    const rect = dragImage.getBoundingClientRect();
     event.dataTransfer.setDragImage(
       dragImage,
       Math.min(32, rect.width / 2),
-      Math.min(18, rect.height / 2),
-    )
+      Math.min(18, rect.height / 2)
+    );
   }
 }
 
 function setVoiceParticipantDragImage(event: ReactDragEvent<HTMLElement>) {
-  const dragImage = event.currentTarget
+  const dragImage = event.currentTarget;
 
   if (dragImage instanceof HTMLElement) {
-    const rect = dragImage.getBoundingClientRect()
+    const rect = dragImage.getBoundingClientRect();
     event.dataTransfer.setDragImage(
       dragImage,
       Math.min(28, rect.width / 2),
-      Math.min(16, rect.height / 2),
-    )
+      Math.min(16, rect.height / 2)
+    );
   }
 }

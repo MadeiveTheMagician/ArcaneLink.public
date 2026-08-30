@@ -42,8 +42,7 @@
 }
 
 .danger.softGlow {
-  filter:
-    drop-shadow(0 0 5px rgb(255 62 88 / 58%))
+  filter: drop-shadow(0 0 5px rgb(255 62 88 / 58%))
     drop-shadow(0 0 12px rgb(255 62 88 / 34%));
 }
 
@@ -125,15 +124,21 @@
 }
 
 .softGlow {
-  filter:
-    drop-shadow(0 0 6px color-mix(in srgb, var(--theme-accent), transparent 44%))
-    drop-shadow(0 0 14px color-mix(in srgb, var(--theme-accent-light), transparent 70%));
+  filter: drop-shadow(
+      0 0 6px color-mix(in srgb, var(--theme-accent), transparent 44%)
+    )
+    drop-shadow(
+      0 0 14px color-mix(in srgb, var(--theme-accent-light), transparent 70%)
+    );
 }
 
 .compact.softGlow {
-  filter:
-    drop-shadow(0 0 2px color-mix(in srgb, var(--theme-accent), transparent 52%))
-    drop-shadow(0 0 5px color-mix(in srgb, var(--theme-accent-light), transparent 78%));
+  filter: drop-shadow(
+      0 0 2px color-mix(in srgb, var(--theme-accent), transparent 52%)
+    )
+    drop-shadow(
+      0 0 5px color-mix(in srgb, var(--theme-accent-light), transparent 78%)
+    );
 }
 
 .compact .paperPlaneBody {

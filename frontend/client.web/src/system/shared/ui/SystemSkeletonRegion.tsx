@@ -1,15 +1,17 @@
-import type { HTMLAttributes, ReactNode } from 'react'
-import type { SystemSkeletonPresencePhase } from './systemSkeletonPresenceModel'
-import styles from './SystemSkeletonRegion.module.css'
+import type { HTMLAttributes, ReactNode } from 'react';
+
+import type { SystemSkeletonPresencePhase } from './systemSkeletonPresenceModel';
+
+import styles from './SystemSkeletonRegion.module.css';
 
 type SystemSkeletonRegionProps = Omit<
   HTMLAttributes<HTMLDivElement>,
   'aria-busy' | 'aria-label' | 'children' | 'role'
 > & {
-  children: ReactNode
-  label: string
-  presencePhase?: SystemSkeletonPresencePhase
-}
+  children: ReactNode;
+  label: string;
+  presencePhase?: SystemSkeletonPresencePhase;
+};
 
 export function SystemSkeletonRegion({
   children,
@@ -32,5 +34,5 @@ export function SystemSkeletonRegion({
     >
       {children}
     </div>
-  )
+  );
 }

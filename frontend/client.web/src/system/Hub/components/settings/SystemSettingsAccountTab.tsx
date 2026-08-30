@@ -1,25 +1,27 @@
-import { useId } from 'react'
-import type { UserResponse } from '../../../../shared/types'
-import { commonCopy, settingsCopy } from '../../../shared/copy'
-import { useAccountSessions } from './useAccountSessions'
-import { SettingsSection } from './SystemSettingsControls'
-import { AccountCredentialEditors } from './AccountCredentialEditors'
-import styles from './SystemSettingsAccount.module.css'
-import sharedStyles from './SystemSettingsControls.module.css'
+import { useId } from 'react';
+
+import type { UserResponse } from '../../../../shared/types';
+import { commonCopy, settingsCopy } from '../../../shared/copy';
+import { AccountCredentialEditors } from './AccountCredentialEditors';
+import { SettingsSection } from './SystemSettingsControls';
+import { useAccountSessions } from './useAccountSessions';
+
+import styles from './SystemSettingsAccount.module.css';
+import sharedStyles from './SystemSettingsControls.module.css';
 
 type SystemSettingsAccountTabProps = {
-  accessToken: string
-  user: UserResponse
-  currentDeviceSessionId?: string | null
-  onLogout: () => void
-  onRequestDelete: () => void
-}
+  accessToken: string;
+  user: UserResponse;
+  currentDeviceSessionId?: string | null;
+  onLogout: () => void;
+  onRequestDelete: () => void;
+};
 
 function formatDateTime(value: string) {
-  const date = new Date(value)
+  const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return '—'
+    return '—';
   }
 
   return new Intl.DateTimeFormat('ru-RU', {
@@ -27,8 +29,8 @@ function formatDateTime(value: string) {
     month: 'long',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+    minute: '2-digit'
+  }).format(date);
 }
 
 export function SystemSettingsAccountTab({
@@ -36,13 +38,13 @@ export function SystemSettingsAccountTab({
   user,
   currentDeviceSessionId,
   onLogout,
-  onRequestDelete,
+  onRequestDelete
 }: SystemSettingsAccountTabProps) {
   const accountSessions = useAccountSessions({
     accessToken,
-    currentDeviceSessionId,
-  })
-  const sessionsId = useId()
+    currentDeviceSessionId
+  });
+  const sessionsId = useId();
 
   return (
     <>
@@ -55,8 +57,8 @@ export function SystemSettingsAccountTab({
           user={user}
           editors={['login', 'email']}
           onReauthenticationRequired={(message) => {
-            window.alert(message)
-            onLogout()
+            window.alert(message);
+            onLogout();
           }}
         />
       </SettingsSection>
@@ -70,8 +72,8 @@ export function SystemSettingsAccountTab({
           user={user}
           editors={['password']}
           onReauthenticationRequired={(message) => {
-            window.alert(message)
-            onLogout()
+            window.alert(message);
+            onLogout();
           }}
         />
 
@@ -108,7 +110,7 @@ export function SystemSettingsAccountTab({
                     <span>
                       {accountSessions.otherSessionCount > 0
                         ? settingsCopy.account.otherSessionsCount(
-                            accountSessions.otherSessionCount,
+                            accountSessions.otherSessionCount
                           )
                         : settingsCopy.account.currentSessionProtected}
                     </span>
@@ -125,11 +127,11 @@ export function SystemSettingsAccountTab({
                         }
                         onClick={() => {
                           const isConfirmed = window.confirm(
-                            `${settingsCopy.account.revokeOtherSessionsQuestion}\n\n${settingsCopy.account.revokeOtherSessionsWarning}`,
-                          )
+                            `${settingsCopy.account.revokeOtherSessionsQuestion}\n\n${settingsCopy.account.revokeOtherSessionsWarning}`
+                          );
 
                           if (isConfirmed) {
-                            void accountSessions.revokeOtherSessions()
+                            void accountSessions.revokeOtherSessions();
                           }
                         }}
                       >
@@ -147,13 +149,19 @@ export function SystemSettingsAccountTab({
                           Boolean(accountSessions.revokingSessionId)
                         }
                         onClick={() => {
-                          if (!window.confirm(settingsCopy.account.revokeAllSessionsWarning)) {
-                            return
+                          if (
+                            !window.confirm(
+                              settingsCopy.account.revokeAllSessionsWarning
+                            )
+                          ) {
+                            return;
                           }
 
-                          void accountSessions.revokeAllSessions().then((revoked) => {
-                            if (revoked) onLogout()
-                          })
+                          void accountSessions
+                            .revokeAllSessions()
+                            .then((revoked) => {
+                              if (revoked) onLogout();
+                            });
                         }}
                       >
                         {accountSessions.isRevokingAll
@@ -203,7 +211,8 @@ export function SystemSettingsAccountTab({
                   !accountSessions.error &&
                   accountSessions.sessions.map((session) => {
                     const isCurrent =
-                      session.isCurrent || session.id === currentDeviceSessionId
+                      session.isCurrent ||
+                      session.id === currentDeviceSessionId;
 
                     return (
                       <article className={styles.sessionRow} key={session.id}>
@@ -214,8 +223,9 @@ export function SystemSettingsAccountTab({
                               settingsCopy.account.unknownDevice}
                           </strong>
                           <small>
-                            {session.ipAddress || settingsCopy.account.ipUnknown} ·{' '}
-                            {settingsCopy.account.lastActivity}{' '}
+                            {session.ipAddress ||
+                              settingsCopy.account.ipUnknown}{' '}
+                            · {settingsCopy.account.lastActivity}{' '}
                             {formatDateTime(session.lastUsedAt)}
                           </small>
                         </span>
@@ -232,11 +242,11 @@ export function SystemSettingsAccountTab({
                             }
                             onClick={() => {
                               const isConfirmed = window.confirm(
-                                `${settingsCopy.account.revokeSessionQuestion}\n\n${settingsCopy.account.revokeSessionWarning}`,
-                              )
+                                `${settingsCopy.account.revokeSessionQuestion}\n\n${settingsCopy.account.revokeSessionWarning}`
+                              );
 
                               if (isConfirmed) {
-                                void accountSessions.revokeSession(session.id)
+                                void accountSessions.revokeSession(session.id);
                               }
                             }}
                           >
@@ -246,7 +256,7 @@ export function SystemSettingsAccountTab({
                           </button>
                         )}
                       </article>
-                    )
+                    );
                   })}
               </div>
             </div>
@@ -255,7 +265,11 @@ export function SystemSettingsAccountTab({
       </SettingsSection>
 
       <SettingsSection title={settingsCopy.account.logout}>
-        <button className={sharedStyles.dangerButton} type="button" onClick={onLogout}>
+        <button
+          className={sharedStyles.dangerButton}
+          type="button"
+          onClick={onLogout}
+        >
           {settingsCopy.account.logout}
         </button>
       </SettingsSection>
@@ -273,5 +287,5 @@ export function SystemSettingsAccountTab({
         </button>
       </SettingsSection>
     </>
-  )
+  );
 }

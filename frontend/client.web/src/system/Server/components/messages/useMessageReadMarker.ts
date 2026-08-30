@@ -1,23 +1,24 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react';
+
 import type {
   SpaceMessageResponse,
-  SpaceReadStateResponse,
-} from '../../../../shared/types'
+  SpaceReadStateResponse
+} from '../../../../shared/types';
 import {
   createReadMarkerCoordinator,
-  getReadMarkerCandidate,
-} from './messageReadMarkerModel'
+  getReadMarkerCandidate
+} from './messageReadMarkerModel';
 
 type UseMessageReadMarkerOptions = {
-  feedKey: string
-  messages: SpaceMessageResponse[]
-  isLoading: boolean
-  isNearBottom: boolean
-  isReadingHistory: boolean
+  feedKey: string;
+  messages: SpaceMessageResponse[];
+  isLoading: boolean;
+  isNearBottom: boolean;
+  isReadingHistory: boolean;
   onMarkRead?: (
-    throughMessageId: string,
-  ) => Promise<SpaceReadStateResponse | null>
-}
+    throughMessageId: string
+  ) => Promise<SpaceReadStateResponse | null>;
+};
 
 export function useMessageReadMarker({
   feedKey,
@@ -25,32 +26,32 @@ export function useMessageReadMarker({
   isLoading,
   isNearBottom,
   isReadingHistory,
-  onMarkRead,
+  onMarkRead
 }: UseMessageReadMarkerOptions) {
-  const markReadRef = useRef(onMarkRead)
+  const markReadRef = useRef(onMarkRead);
   const coordinatorRef = useRef<ReturnType<
     typeof createReadMarkerCoordinator
-  > | null>(null)
+  > | null>(null);
 
   useEffect(() => {
-    markReadRef.current = onMarkRead
-  }, [onMarkRead])
+    markReadRef.current = onMarkRead;
+  }, [onMarkRead]);
 
   useEffect(() => {
     const coordinator = createReadMarkerCoordinator(async ({ messageId }) =>
-      Boolean(await markReadRef.current?.(messageId)),
-    )
-    coordinatorRef.current = coordinator
+      Boolean(await markReadRef.current?.(messageId))
+    );
+    coordinatorRef.current = coordinator;
 
     return () => {
-      coordinator.dispose()
-      coordinatorRef.current = null
-    }
-  }, [])
+      coordinator.dispose();
+      coordinatorRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
-    coordinatorRef.current?.activateFeed(feedKey)
-  }, [feedKey])
+    coordinatorRef.current?.activateFeed(feedKey);
+  }, [feedKey]);
 
   const markVisibleMessagesRead = useCallback(() => {
     const messageId = getReadMarkerCandidate({
@@ -58,37 +59,37 @@ export function useMessageReadMarker({
       isLoaded: !isLoading,
       isDocumentVisible: document.visibilityState === 'visible',
       isNearBottom,
-      isReadingHistory,
-    })
+      isReadingHistory
+    });
 
     if (messageId && markReadRef.current) {
       coordinatorRef.current?.request({
         feedKey,
-        messageId,
-      })
+        messageId
+      });
     }
-  }, [feedKey, isLoading, isNearBottom, isReadingHistory, messages])
+  }, [feedKey, isLoading, isNearBottom, isReadingHistory, messages]);
 
   useEffect(() => {
-    markVisibleMessagesRead()
+    markVisibleMessagesRead();
   }, [
     feedKey,
     isLoading,
     isNearBottom,
     isReadingHistory,
     markVisibleMessagesRead,
-    messages,
-  ])
+    messages
+  ]);
 
   useEffect(() => {
     function markWhenVisible() {
       if (document.visibilityState === 'visible') {
-        markVisibleMessagesRead()
+        markVisibleMessagesRead();
       }
     }
 
-    document.addEventListener('visibilitychange', markWhenVisible)
+    document.addEventListener('visibilitychange', markWhenVisible);
     return () =>
-      document.removeEventListener('visibilitychange', markWhenVisible)
-  }, [markVisibleMessagesRead])
+      document.removeEventListener('visibilitychange', markWhenVisible);
+  }, [markVisibleMessagesRead]);
 }

@@ -1,205 +1,189 @@
 import type {
   DirectMessageCustomPermission,
-  DirectMessagePermission,
-} from '../../../../shared/types'
-import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings'
+  DirectMessagePermission
+} from '../../../../shared/types';
+import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings';
 
 export const defaultDirectMessagePermission: DirectMessagePermission =
-  'everyone'
+  'everyone';
 
-export type DirectMessagePrivacyMode = 'everyone' | 'custom' | 'nobody'
+export type DirectMessagePrivacyMode = 'everyone' | 'custom' | 'nobody';
 export type DirectMessagePrivacyCategory =
-  | 'friends'
-  | 'friends_of_friends'
-  | 'shared_servers'
+  'friends' | 'friends_of_friends' | 'shared_servers';
 
 export type DirectMessagePrivacyDraft = {
-  mode: DirectMessagePrivacyMode
-  friends: boolean
-  friendsOfFriends: boolean
-  sharedServers: boolean
-}
+  mode: DirectMessagePrivacyMode;
+  friends: boolean;
+  friendsOfFriends: boolean;
+  sharedServers: boolean;
+};
 
-const customPrefix = 'custom:'
+const customPrefix = 'custom:';
 const customCategoryOrder: DirectMessagePrivacyCategory[] = [
   'friends',
   'friends_of_friends',
-  'shared_servers',
-]
+  'shared_servers'
+];
 const legacyPermissions = new Set<DirectMessagePermission>([
   'everyone',
   'friends',
   'shared_servers',
-  'nobody',
-])
+  'nobody'
+]);
 
 export function normalizeDirectMessagePermission(
-  value: unknown,
+  value: unknown
 ): DirectMessagePermission {
   if (typeof value !== 'string') {
-    return defaultDirectMessagePermission
+    return defaultDirectMessagePermission;
   }
 
-  const normalized = value.trim().toLowerCase()
+  const normalized = value.trim().toLowerCase();
   if (legacyPermissions.has(normalized as DirectMessagePermission)) {
-    return normalized as DirectMessagePermission
+    return normalized as DirectMessagePermission;
   }
 
-  const categories = parseCustomCategories(normalized)
+  const categories = parseCustomCategories(normalized);
   return categories == null
     ? defaultDirectMessagePermission
-    : encodeCustomPermission(categories)
+    : encodeCustomPermission(categories);
 }
 
 export function toDirectMessagePrivacyDraft(
-  value: unknown,
+  value: unknown
 ): DirectMessagePrivacyDraft {
-  const permission = normalizeDirectMessagePermission(value)
+  const permission = normalizeDirectMessagePermission(value);
   if (permission === 'everyone') {
-    return emptyDraft('everyone')
+    return emptyDraft('everyone');
   }
   if (permission === 'nobody') {
-    return emptyDraft('nobody')
+    return emptyDraft('nobody');
   }
   if (permission === 'friends') {
     return {
       ...emptyDraft('custom'),
-      friends: true,
-    }
+      friends: true
+    };
   }
   if (permission === 'shared_servers') {
     return {
       ...emptyDraft('custom'),
-      sharedServers: true,
-    }
+      sharedServers: true
+    };
   }
 
-  return categoriesToDraft(
-    parseCustomCategories(permission) ?? new Set(),
-  )
+  return categoriesToDraft(parseCustomCategories(permission) ?? new Set());
 }
 
 export function serializeDirectMessagePrivacy(
-  draft: DirectMessagePrivacyDraft,
+  draft: DirectMessagePrivacyDraft
 ): DirectMessagePermission {
   if (draft.mode === 'everyone') {
-    return 'everyone'
+    return 'everyone';
   }
   if (draft.mode === 'nobody') {
-    return 'nobody'
+    return 'nobody';
   }
 
-  const categories = new Set<DirectMessagePrivacyCategory>()
-  if (draft.friends) categories.add('friends')
-  if (draft.friendsOfFriends) categories.add('friends_of_friends')
-  if (draft.sharedServers) categories.add('shared_servers')
+  const categories = new Set<DirectMessagePrivacyCategory>();
+  if (draft.friends) categories.add('friends');
+  if (draft.friendsOfFriends) categories.add('friends_of_friends');
+  if (draft.sharedServers) categories.add('shared_servers');
 
-  return categories.size === 0
-    ? 'nobody'
-    : encodeCustomPermission(categories)
+  return categories.size === 0 ? 'nobody' : encodeCustomPermission(categories);
 }
 
 export function selectDirectMessageGlobal(
-  mode: Exclude<DirectMessagePrivacyMode, 'custom'>,
+  mode: Exclude<DirectMessagePrivacyMode, 'custom'>
 ): DirectMessagePrivacyDraft {
-  return emptyDraft(mode)
+  return emptyDraft(mode);
 }
 
 export function toggleDirectMessageCategory(
   draft: DirectMessagePrivacyDraft,
   category: DirectMessagePrivacyCategory,
-  checked: boolean,
+  checked: boolean
 ): DirectMessagePrivacyDraft {
   const next = {
     ...draft,
     mode: 'custom' as const,
-    friends:
-      category === 'friends' ? checked : draft.friends,
+    friends: category === 'friends' ? checked : draft.friends,
     friendsOfFriends:
-      category === 'friends_of_friends'
-        ? checked
-        : draft.friendsOfFriends,
-    sharedServers:
-      category === 'shared_servers' ? checked : draft.sharedServers,
-  }
+      category === 'friends_of_friends' ? checked : draft.friendsOfFriends,
+    sharedServers: category === 'shared_servers' ? checked : draft.sharedServers
+  };
 
-  return next.friends ||
-    next.friendsOfFriends ||
-    next.sharedServers
+  return next.friends || next.friendsOfFriends || next.sharedServers
     ? next
-    : emptyDraft('nobody')
+    : emptyDraft('nobody');
 }
 
 export function mergeDirectMessagePermission(
   settings: ProfileSettingsDraft,
-  permission:
-    | DirectMessagePermission
-    | DirectMessagePrivacyDraft,
+  permission: DirectMessagePermission | DirectMessagePrivacyDraft
 ): ProfileSettingsDraft {
   return {
     ...settings,
     directMessagePermission:
       typeof permission === 'string'
         ? normalizeDirectMessagePermission(permission)
-        : serializeDirectMessagePrivacy(permission),
-  }
+        : serializeDirectMessagePrivacy(permission)
+  };
 }
 
 function parseCustomCategories(
-  value: string,
+  value: string
 ): Set<DirectMessagePrivacyCategory> | null {
   if (!value.startsWith(customPrefix)) {
-    return null
+    return null;
   }
 
   const tokens = value
     .slice(customPrefix.length)
     .split(',')
     .map((token) => token.trim())
-    .filter(Boolean)
-  const categories = new Set(tokens)
+    .filter(Boolean);
+  const categories = new Set(tokens);
   if (
     tokens.length === 0 ||
     categories.size !== tokens.length ||
     [...categories].some(
       (category) =>
-        !customCategoryOrder.includes(
-          category as DirectMessagePrivacyCategory,
-        ),
+        !customCategoryOrder.includes(category as DirectMessagePrivacyCategory)
     )
   ) {
-    return null
+    return null;
   }
 
-  return categories as Set<DirectMessagePrivacyCategory>
+  return categories as Set<DirectMessagePrivacyCategory>;
 }
 
 function encodeCustomPermission(
-  categories: ReadonlySet<DirectMessagePrivacyCategory>,
+  categories: ReadonlySet<DirectMessagePrivacyCategory>
 ): DirectMessageCustomPermission {
   return `${customPrefix}${customCategoryOrder
     .filter((category) => categories.has(category))
-    .join(',')}` as DirectMessageCustomPermission
+    .join(',')}` as DirectMessageCustomPermission;
 }
 
 function categoriesToDraft(
-  categories: ReadonlySet<DirectMessagePrivacyCategory>,
+  categories: ReadonlySet<DirectMessagePrivacyCategory>
 ): DirectMessagePrivacyDraft {
   return {
     mode: 'custom',
     friends: categories.has('friends'),
     friendsOfFriends: categories.has('friends_of_friends'),
-    sharedServers: categories.has('shared_servers'),
-  }
+    sharedServers: categories.has('shared_servers')
+  };
 }
 
 function emptyDraft(
-  mode: Exclude<DirectMessagePrivacyMode, 'custom'> | 'custom',
+  mode: Exclude<DirectMessagePrivacyMode, 'custom'> | 'custom'
 ): DirectMessagePrivacyDraft {
   return {
     mode,
     friends: false,
     friendsOfFriends: false,
-    sharedServers: false,
-  }
+    sharedServers: false
+  };
 }

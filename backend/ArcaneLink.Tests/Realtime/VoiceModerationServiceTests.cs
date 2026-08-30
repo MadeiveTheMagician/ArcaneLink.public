@@ -18,13 +18,13 @@ public sealed class VoiceModerationServiceTests : IClassFixture<ArcaneLinkApiFac
 
     public VoiceModerationServiceTests(ArcaneLinkApiFactory factory)
     {
-        _factory = factory;
+        this._factory = factory;
     }
 
     [Fact]
     public async Task OwnerModeration_IsAuthoritativeAcrossSelfUpdates_AndAppearsInRoster()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var service = CreateService(scope);
         var spaceId = Guid.NewGuid();
         var connectionId = $"voice-moderation-owner-{Guid.NewGuid():N}";
@@ -130,7 +130,7 @@ public sealed class VoiceModerationServiceTests : IClassFixture<ArcaneLinkApiFac
     [Fact]
     public async Task MemberModeration_RequiresGranularPermissionsAndStrictlyHigherRole()
     {
-        using var scope = _factory.Services.CreateScope();
+        using var scope = this._factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTime.UtcNow;
         var spaceId = Guid.NewGuid();
@@ -300,7 +300,7 @@ public sealed class VoiceModerationServiceTests : IClassFixture<ArcaneLinkApiFac
         {
             return Task.FromResult<SpaceAuthorizationSnapshot?>(
                 new SpaceAuthorizationSnapshot(
-                    ManagedSpaceIds.ToDictionary(
+                    this.ManagedSpaceIds.ToDictionary(
                         spaceId => spaceId,
                         _ => Capabilities with { CanManage = true })));
         }
@@ -322,7 +322,7 @@ public sealed class VoiceModerationServiceTests : IClassFixture<ArcaneLinkApiFac
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(
-                !DeniedPermissionCodes.Contains(requirement.PermissionCode));
+                !this.DeniedPermissionCodes.Contains(requirement.PermissionCode));
         }
 
         public Task<IReadOnlyList<Guid>?> GetAllowedSpaceIdsAsync(

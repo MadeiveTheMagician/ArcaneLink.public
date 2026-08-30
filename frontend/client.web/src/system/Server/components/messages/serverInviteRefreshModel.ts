@@ -1,68 +1,63 @@
-import type { ServerInvitePreviewResponse } from '../../../../shared/types'
+import type { ServerInvitePreviewResponse } from '../../../../shared/types';
 
-export const SERVER_INVITE_POLL_INTERVAL_MS = 2 * 60 * 1000
-export const SERVER_INVITE_ATTENTION_MIN_AGE_MS = 15 * 1000
+export const SERVER_INVITE_POLL_INTERVAL_MS = 2 * 60 * 1000;
+export const SERVER_INVITE_ATTENTION_MIN_AGE_MS = 15 * 1000;
 
-const expirySettleDelayMs = 100
-const minimumTimerDelayMs = 250
+const expirySettleDelayMs = 100;
+const minimumTimerDelayMs = 250;
 
 export function resolveServerInviteClientExpiration(
   preview: ServerInvitePreviewResponse,
-  nowMs: number,
+  nowMs: number
 ): ServerInvitePreviewResponse {
   if (!preview.isActive || !preview.expiresAt) {
-    return preview
+    return preview;
   }
 
-  const expiresAtMs = Date.parse(preview.expiresAt)
+  const expiresAtMs = Date.parse(preview.expiresAt);
   if (!Number.isFinite(expiresAtMs) || expiresAtMs > nowMs) {
-    return preview
+    return preview;
   }
 
   return {
     ...preview,
     isActive: false,
-    invalidReason: 'expired',
-  }
+    invalidReason: 'expired'
+  };
 }
 
 export function getServerInviteRefreshDelayMs(
   preview: ServerInvitePreviewResponse,
-  nowMs: number,
+  nowMs: number
 ) {
-  const effectivePreview = resolveServerInviteClientExpiration(preview, nowMs)
+  const effectivePreview = resolveServerInviteClientExpiration(preview, nowMs);
   if (!effectivePreview.isActive) {
-    return null
+    return null;
   }
 
   if (!effectivePreview.expiresAt) {
-    return SERVER_INVITE_POLL_INTERVAL_MS
+    return SERVER_INVITE_POLL_INTERVAL_MS;
   }
 
-  const expiresAtMs = Date.parse(effectivePreview.expiresAt)
+  const expiresAtMs = Date.parse(effectivePreview.expiresAt);
   if (!Number.isFinite(expiresAtMs)) {
-    return SERVER_INVITE_POLL_INTERVAL_MS
+    return SERVER_INVITE_POLL_INTERVAL_MS;
   }
 
   return Math.min(
     SERVER_INVITE_POLL_INTERVAL_MS,
-    Math.max(
-      minimumTimerDelayMs,
-      expiresAtMs - nowMs + expirySettleDelayMs,
-    ),
-  )
+    Math.max(minimumTimerDelayMs, expiresAtMs - nowMs + expirySettleDelayMs)
+  );
 }
 
 export function shouldRefreshServerInviteOnAttention(
   preview: ServerInvitePreviewResponse | null,
   lastRequestedAtMs: number,
-  nowMs: number,
+  nowMs: number
 ) {
   if (!preview?.isActive) {
-    return false
+    return false;
   }
 
-  return (
-    nowMs - lastRequestedAtMs >= SERVER_INVITE_ATTENTION_MIN_AGE_MS
-  )
+  return nowMs - lastRequestedAtMs >= SERVER_INVITE_ATTENTION_MIN_AGE_MS;
 }

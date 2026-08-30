@@ -1,57 +1,59 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties } from 'react';
+
 import {
+  SYSTEM_THEMES,
   getProfileColor,
   getSystemTheme,
-  getThemeDominantTextColor,
-  SYSTEM_THEMES,
-} from '../../../../styles/systemThemes'
-import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings'
-import { settingsCopy } from '../../../shared/copy'
-import { SystemIcon } from '../../../shared/icons/SystemIcon'
+  getThemeDominantTextColor
+} from '../../../../styles/systemThemes';
+import type { ProfileSettingsDraft } from '../../../Profile/hooks/useProfileSettings';
+import { settingsCopy } from '../../../shared/copy';
+import { SystemIcon } from '../../../shared/icons/SystemIcon';
+import { MessagePresentationSettingsField } from './MessagePresentationSettingsField';
 import {
   ScaleControl,
   SettingsSection,
-  ToggleField,
-} from './SystemSettingsControls'
-import styles from './SystemSettingsInterface.module.css'
-import sharedStyles from './SystemSettingsControls.module.css'
-import { MessagePresentationSettingsField } from './MessagePresentationSettingsField'
+  ToggleField
+} from './SystemSettingsControls';
+
+import sharedStyles from './SystemSettingsControls.module.css';
+import styles from './SystemSettingsInterface.module.css';
 
 type SystemSettingsInterfaceTabProps = {
-  settings: ProfileSettingsDraft
-  defaultSettings: ProfileSettingsDraft
-  onChange: (settings: ProfileSettingsDraft) => void
-  onCommit: (settings: ProfileSettingsDraft) => Promise<void> | void
-}
+  settings: ProfileSettingsDraft;
+  defaultSettings: ProfileSettingsDraft;
+  onChange: (settings: ProfileSettingsDraft) => void;
+  onCommit: (settings: ProfileSettingsDraft) => Promise<void> | void;
+};
 
 export function SystemSettingsInterfaceTab({
   settings,
   defaultSettings,
   onChange,
-  onCommit,
+  onCommit
 }: SystemSettingsInterfaceTabProps) {
   const previewStyle = {
     '--profile-preview-scale': settings.interfaceScale,
-    '--profile-preview-font-scale': settings.fontScale,
-  } as CSSProperties
+    '--profile-preview-font-scale': settings.fontScale
+  } as CSSProperties;
 
   function createSettings(patch: Partial<ProfileSettingsDraft>) {
-    return { ...settings, ...patch }
+    return { ...settings, ...patch };
   }
 
   function updateSettings(patch: Partial<ProfileSettingsDraft>) {
-    onChange(createSettings(patch))
+    onChange(createSettings(patch));
   }
 
   function commitSettings(patch: Partial<ProfileSettingsDraft>) {
-    const nextSettings = createSettings(patch)
-    onChange(nextSettings)
-    void onCommit(nextSettings)
+    const nextSettings = createSettings(patch);
+    onChange(nextSettings);
+    void onCommit(nextSettings);
   }
 
   function resetInterfaceSettings() {
-    onChange(defaultSettings)
-    void onCommit(defaultSettings)
+    onChange(defaultSettings);
+    void onCommit(defaultSettings);
   }
 
   return (
@@ -62,7 +64,7 @@ export function SystemSettingsInterfaceTab({
       >
         <div className={styles.themeGrid}>
           {SYSTEM_THEMES.map((theme) => {
-            const isActive = settings.selectedThemeCode === theme.code
+            const isActive = settings.selectedThemeCode === theme.code;
 
             return (
               <button
@@ -75,23 +77,23 @@ export function SystemSettingsInterfaceTab({
                 onClick={() =>
                   commitSettings({
                     selectedThemeCode: theme.code,
-                    profileColor: null,
+                    profileColor: null
                   })
                 }
                 style={
                   {
                     '--theme-tile-dominant': theme.dominantColor,
                     '--theme-tile-contrast': getThemeDominantTextColor(
-                      theme.dominantColor,
+                      theme.dominantColor
                     ),
                     '--theme-icon-gradient-start': theme.previewColors[2],
                     '--theme-icon-gradient-middle': theme.previewColors[1],
                     '--theme-accent-light': theme.previewColors[2],
                     '--theme-icon-gradient-end': theme.dominantColor,
                     '--theme-icon-outline': getThemeDominantTextColor(
-                      theme.dominantColor,
+                      theme.dominantColor
                     ),
-                    '--theme-icon-glow-color': theme.dominantColor,
+                    '--theme-icon-glow-color': theme.dominantColor
                   } as CSSProperties
                 }
               >
@@ -107,7 +109,7 @@ export function SystemSettingsInterfaceTab({
                 </span>
                 <strong>{theme.title}</strong>
               </button>
-            )
+            );
           })}
         </div>
 
@@ -117,8 +119,8 @@ export function SystemSettingsInterfaceTab({
             style={{
               background: getProfileColor(
                 settings.selectedThemeCode,
-                settings.profileColor,
-              ),
+                settings.profileColor
+              )
             }}
             aria-hidden="true"
           />
@@ -255,7 +257,9 @@ export function SystemSettingsInterfaceTab({
         />
         <ToggleField
           label={settingsCopy.interface.loadExternalMediaPreviews}
-          description={settingsCopy.interface.loadExternalMediaPreviewsDescription}
+          description={
+            settingsCopy.interface.loadExternalMediaPreviewsDescription
+          }
           checked={settings.loadExternalMediaPreviews}
           onChange={(loadExternalMediaPreviews) =>
             commitSettings({ loadExternalMediaPreviews })
@@ -309,7 +313,9 @@ export function SystemSettingsInterfaceTab({
         />
         <ToggleField
           label={settingsCopy.interface.showPrivateReadAllButton}
-          description={settingsCopy.interface.showPrivateReadAllButtonDescription}
+          description={
+            settingsCopy.interface.showPrivateReadAllButtonDescription
+          }
           checked={settings.showPrivateReadAllButton}
           onChange={(showPrivateReadAllButton) =>
             commitSettings({ showPrivateReadAllButton })
@@ -325,5 +331,5 @@ export function SystemSettingsInterfaceTab({
         {settingsCopy.actions.resetInterface}
       </button>
     </>
-  )
+  );
 }

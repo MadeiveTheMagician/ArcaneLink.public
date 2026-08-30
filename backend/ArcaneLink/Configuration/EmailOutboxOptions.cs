@@ -10,8 +10,8 @@ public sealed class EmailOutboxOptions
     public int MaxBackoffMinutes { get; set; } = 60;
 
     public bool IsValid() =>
-        PollIntervalSeconds is >= 1 and <= 300 &&
-        LeaseSeconds is >= 30 and <= 3600 &&
-        MaxAttempts is >= 1 and <= 25 &&
-        MaxBackoffMinutes is >= 1 and <= 1440;
+        this.PollIntervalSeconds is >= 1 and <= 300 &&
+        this.LeaseSeconds is >= 30 and <= 3600 &&
+        this.MaxAttempts is >= 1 and <= 25 &&
+        this.MaxBackoffMinutes is >= 1 and <= 1440;
 }

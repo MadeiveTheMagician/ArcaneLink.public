@@ -1,30 +1,32 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react';
+
 import {
+  type ConfirmEmailResponse,
   confirmAccountEmail,
   requestPasswordReset,
   resendVerificationEmail,
-  resetAccountPassword,
-  type ConfirmEmailResponse,
-} from '../../../shared/api/accountLifecycleApi'
-import { authCopy, SystemIcon } from '../../../system/shared'
-import type { AuthView } from '../model/AuthPageModel'
-import { AuthPasswordField } from '../fields/AuthPasswordField'
-import { getPasswordRequirements } from '../registration/AuthPageValidation'
-import formStyles from '../login/AuthFormControls.module.css'
-import styles from './AuthAccountFlow.module.css'
+  resetAccountPassword
+} from '../../../shared/api/accountLifecycleApi';
+import { SystemIcon, authCopy } from '../../../system/shared';
+import { AuthPasswordField } from '../fields/AuthPasswordField';
+import type { AuthView } from '../model/AuthPageModel';
+import { getPasswordRequirements } from '../registration/AuthPageValidation';
 
-type AccountFlowView = Exclude<AuthView, 'login' | 'register'>
+import formStyles from '../login/AuthFormControls.module.css';
+import styles from './AuthAccountFlow.module.css';
+
+type AccountFlowView = Exclude<AuthView, 'login' | 'register'>;
 
 type AuthAccountFlowProps = {
-  view: AccountFlowView
-  token?: string
-  initialEmail?: string
-  onBackToLogin: () => void
-  onAccountActionSettled: () => void
-  onRequiresReauthentication: () => void
-}
+  view: AccountFlowView;
+  token?: string;
+  initialEmail?: string;
+  onBackToLogin: () => void;
+  onAccountActionSettled: () => void;
+  onRequiresReauthentication: () => void;
+};
 
-type FlowStatus = 'idle' | 'loading' | 'success' | 'error'
+type FlowStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export function AuthAccountFlow({
   view,
@@ -32,23 +34,23 @@ export function AuthAccountFlow({
   initialEmail = '',
   onBackToLogin,
   onAccountActionSettled,
-  onRequiresReauthentication,
+  onRequiresReauthentication
 }: AuthAccountFlowProps) {
-  const processedConfirmationRef = useRef<string | null>(null)
-  const [email, setEmail] = useState(initialEmail)
-  const [loginOrEmail, setLoginOrEmail] = useState(initialEmail)
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmedPassword, setConfirmedPassword] = useState('')
+  const processedConfirmationRef = useRef<string | null>(null);
+  const [email, setEmail] = useState(initialEmail);
+  const [loginOrEmail, setLoginOrEmail] = useState(initialEmail);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmedPassword, setConfirmedPassword] = useState('');
   const [status, setStatus] = useState<FlowStatus>(
-    view === 'confirm-email' ? 'loading' : 'idle',
-  )
+    view === 'confirm-email' ? 'loading' : 'idle'
+  );
   const [statusMessage, setStatusMessage] = useState(
     view === 'confirm-email'
       ? authCopy.messages.confirmingEmail
       : view === 'verify-email'
         ? authCopy.messages.checkVerificationInbox
-        : '',
-  )
+        : ''
+  );
 
   useEffect(() => {
     if (
@@ -56,92 +58,92 @@ export function AuthAccountFlow({
       !token ||
       processedConfirmationRef.current === token
     ) {
-      return
+      return;
     }
 
-    processedConfirmationRef.current = token
-    setStatus('loading')
-    setStatusMessage(authCopy.messages.confirmingEmail)
+    processedConfirmationRef.current = token;
+    setStatus('loading');
+    setStatusMessage(authCopy.messages.confirmingEmail);
 
     void confirmAccountEmail(token)
       .then((response: ConfirmEmailResponse) => {
         if (response.requiresReauthentication) {
-          onRequiresReauthentication()
+          onRequiresReauthentication();
         }
 
-        setStatus('success')
+        setStatus('success');
         setStatusMessage(
           response.emailChanged
             ? authCopy.messages.emailChangeConfirmed
-            : authCopy.messages.emailConfirmed,
-        )
-        onAccountActionSettled()
+            : authCopy.messages.emailConfirmed
+        );
+        onAccountActionSettled();
       })
       .catch(() => {
-        setStatus('error')
-        setStatusMessage(authCopy.messages.emailConfirmationFailed)
-      })
-  }, [onAccountActionSettled, onRequiresReauthentication, token, view])
+        setStatus('error');
+        setStatusMessage(authCopy.messages.emailConfirmationFailed);
+      });
+  }, [onAccountActionSettled, onRequiresReauthentication, token, view]);
 
   async function submitResend(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setStatus('loading')
-    setStatusMessage(authCopy.messages.sendingVerification)
+    event.preventDefault();
+    setStatus('loading');
+    setStatusMessage(authCopy.messages.sendingVerification);
 
     try {
-      await resendVerificationEmail(email.trim())
-      setStatus('success')
-      setStatusMessage(authCopy.messages.verificationSent)
+      await resendVerificationEmail(email.trim());
+      setStatus('success');
+      setStatusMessage(authCopy.messages.verificationSent);
     } catch {
-      setStatus('error')
-      setStatusMessage(authCopy.messages.verificationSendFailed)
+      setStatus('error');
+      setStatusMessage(authCopy.messages.verificationSendFailed);
     }
   }
 
   async function submitRecovery(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setStatus('loading')
-    setStatusMessage(authCopy.messages.sendingRecovery)
+    event.preventDefault();
+    setStatus('loading');
+    setStatusMessage(authCopy.messages.sendingRecovery);
 
     try {
-      await requestPasswordReset(loginOrEmail.trim())
-      setStatus('success')
-      setStatusMessage(authCopy.messages.recoverySent)
+      await requestPasswordReset(loginOrEmail.trim());
+      setStatus('success');
+      setStatusMessage(authCopy.messages.recoverySent);
     } catch {
-      setStatus('error')
-      setStatusMessage(authCopy.messages.recoverySendFailed)
+      setStatus('error');
+      setStatusMessage(authCopy.messages.recoverySendFailed);
     }
   }
 
   async function submitReset(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (newPassword !== confirmedPassword) {
-      setStatus('error')
-      setStatusMessage(authCopy.messages.passwordsDoNotMatch)
-      return
+      setStatus('error');
+      setStatusMessage(authCopy.messages.passwordsDoNotMatch);
+      return;
     }
 
     if (!getPasswordRequirements(newPassword).every((item) => item.isMet)) {
-      setStatus('error')
-      setStatusMessage(authCopy.messages.passwordRequirementsNotMet)
-      return
+      setStatus('error');
+      setStatusMessage(authCopy.messages.passwordRequirementsNotMet);
+      return;
     }
 
-    setStatus('loading')
-    setStatusMessage(authCopy.messages.resettingPassword)
+    setStatus('loading');
+    setStatusMessage(authCopy.messages.resettingPassword);
 
     try {
-      await resetAccountPassword(token, newPassword)
-      onRequiresReauthentication()
-      setStatus('success')
-      setStatusMessage(authCopy.messages.passwordResetSuccess)
-      setNewPassword('')
-      setConfirmedPassword('')
-      onAccountActionSettled()
+      await resetAccountPassword(token, newPassword);
+      onRequiresReauthentication();
+      setStatus('success');
+      setStatusMessage(authCopy.messages.passwordResetSuccess);
+      setNewPassword('');
+      setConfirmedPassword('');
+      onAccountActionSettled();
     } catch {
-      setStatus('error')
-      setStatusMessage(authCopy.messages.passwordResetFailed)
+      setStatus('error');
+      setStatusMessage(authCopy.messages.passwordResetFailed);
     }
   }
 
@@ -160,7 +162,7 @@ export function AuthAccountFlow({
           </button>
         )}
       </div>
-    )
+    );
   }
 
   if (view === 'verify-email') {
@@ -180,7 +182,7 @@ export function AuthAccountFlow({
         onValueChange={setEmail}
         onBack={onBackToLogin}
       />
-    )
+    );
   }
 
   if (view === 'forgot-password') {
@@ -199,13 +201,16 @@ export function AuthAccountFlow({
         onValueChange={setLoginOrEmail}
         onBack={onBackToLogin}
       />
-    )
+    );
   }
 
-  const passwordRequirements = getPasswordRequirements(newPassword)
+  const passwordRequirements = getPasswordRequirements(newPassword);
 
   return (
-    <form className={`${formStyles.authForm} ${styles.accountForm}`} onSubmit={submitReset}>
+    <form
+      className={`${formStyles.authForm} ${styles.accountForm}`}
+      onSubmit={submitReset}
+    >
       <AuthPasswordField
         name="newPassword"
         autoComplete="new-password"
@@ -222,10 +227,16 @@ export function AuthAccountFlow({
         value={confirmedPassword}
         onChange={(event) => setConfirmedPassword(event.target.value)}
       />
-      <ul className={styles.passwordRequirements} aria-label={authCopy.requirements.password}>
+      <ul
+        className={styles.passwordRequirements}
+        aria-label={authCopy.requirements.password}
+      >
         {passwordRequirements.map((requirement) => (
           <li key={requirement.id} data-met={requirement.isMet || undefined}>
-            <SystemIcon name={requirement.isMet ? 'check' : 'close'} size={12} />
+            <SystemIcon
+              name={requirement.isMet ? 'check' : 'close'}
+              size={12}
+            />
             <span>{requirement.label}</span>
           </li>
         ))}
@@ -240,11 +251,15 @@ export function AuthAccountFlow({
           ? authCopy.actions.saving
           : authCopy.actions.resetPassword}
       </button>
-      <button className={styles.backButton} type="button" onClick={onBackToLogin}>
+      <button
+        className={styles.backButton}
+        type="button"
+        onClick={onBackToLogin}
+      >
         {authCopy.actions.backToLogin}
       </button>
     </form>
-  )
+  );
 }
 
 function AccountActionForm({
@@ -260,26 +275,31 @@ function AccountActionForm({
   statusMessage,
   onSubmit,
   onValueChange,
-  onBack,
+  onBack
 }: {
-  inputName: string
-  inputType?: string
-  autoComplete: string
-  value: string
-  placeholder: string
-  isLoading: boolean
-  submitLabel: string
-  loadingLabel: string
-  status: FlowStatus
-  statusMessage: string
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
-  onValueChange: (value: string) => void
-  onBack: () => void
+  inputName: string;
+  inputType?: string;
+  autoComplete: string;
+  value: string;
+  placeholder: string;
+  isLoading: boolean;
+  submitLabel: string;
+  loadingLabel: string;
+  status: FlowStatus;
+  statusMessage: string;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onValueChange: (value: string) => void;
+  onBack: () => void;
 }) {
   return (
-    <form className={`${formStyles.authForm} ${styles.accountForm}`} onSubmit={onSubmit}>
+    <form
+      className={`${formStyles.authForm} ${styles.accountForm}`}
+      onSubmit={onSubmit}
+    >
       <label className={formStyles.authField}>
-        <i aria-hidden="true"><SystemIcon name="mail" /></i>
+        <i aria-hidden="true">
+          <SystemIcon name="mail" />
+        </i>
         <span>{placeholder}</span>
         <input
           name={inputName}
@@ -303,26 +323,42 @@ function AccountActionForm({
         {authCopy.actions.backToLogin}
       </button>
     </form>
-  )
+  );
 }
 
-function FlowMessage({ status, message }: { status: FlowStatus; message: string }) {
-  if (!message) return null
+function FlowMessage({
+  status,
+  message
+}: {
+  status: FlowStatus;
+  message: string;
+}) {
+  if (!message) return null;
 
   return (
-    <p className={styles.flowMessage} data-status={status} role={status === 'error' ? 'alert' : 'status'}>
+    <p
+      className={styles.flowMessage}
+      data-status={status}
+      role={status === 'error' ? 'alert' : 'status'}
+    >
       {message}
     </p>
-  )
+  );
 }
 
 function StatusMark({ status }: { status: FlowStatus }) {
   return (
     <span className={styles.statusMark} data-status={status} aria-hidden="true">
       <SystemIcon
-        name={status === 'success' ? 'check' : status === 'error' ? 'close' : 'settings'}
+        name={
+          status === 'success'
+            ? 'check'
+            : status === 'error'
+              ? 'close'
+              : 'settings'
+        }
         size={24}
       />
     </span>
-  )
+  );
 }

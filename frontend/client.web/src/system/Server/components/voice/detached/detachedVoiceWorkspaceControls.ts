@@ -1,25 +1,23 @@
-import { voiceCopy } from '../../../../shared/index'
-import {
-  createDetachedControlButton,
-} from './detachedVoiceControls'
+import { voiceCopy } from '../../../../shared/index';
+import { createDetachedControlButton } from './detachedVoiceControls';
 import {
   createDetachedControlsDock,
-  createDetachedWindowControlsDock,
-} from './detachedVoiceDocument'
+  createDetachedWindowControlsDock
+} from './detachedVoiceDocument';
 import type {
   DetachedVoiceWorkspaceActions,
-  DetachedVoiceWorkspaceControlState,
-} from './detachedVoiceWorkspaceTypes'
+  DetachedVoiceWorkspaceControlState
+} from './detachedVoiceWorkspaceTypes';
 
 type DetachedVoiceWorkspaceControlsOptions = {
-  document: Document
-  detachedWindow: Window
-  controlState: DetachedVoiceWorkspaceControlState
-  actions: DetachedVoiceWorkspaceActions | null
-  isSettingsOpen: boolean
-  isVoiceChatOpen: boolean
-  onSettingsClick: (event: MouseEvent) => void
-}
+  document: Document;
+  detachedWindow: Window;
+  controlState: DetachedVoiceWorkspaceControlState;
+  actions: DetachedVoiceWorkspaceActions | null;
+  isSettingsOpen: boolean;
+  isVoiceChatOpen: boolean;
+  onSettingsClick: (event: MouseEvent) => void;
+};
 
 export function createDetachedVoiceWorkspaceControls({
   document,
@@ -28,18 +26,18 @@ export function createDetachedVoiceWorkspaceControls({
   actions,
   isSettingsOpen,
   isVoiceChatOpen,
-  onSettingsClick,
+  onSettingsClick
 }: DetachedVoiceWorkspaceControlsOptions) {
-  const controls = createDetachedControlsDock(document)
+  const controls = createDetachedControlsDock(document);
   const voiceChatButton = createDetachedControlButton(document, {
     label: isVoiceChatOpen
       ? voiceCopy.channel.closeChat
       : voiceCopy.channel.openChat,
     icon: 'message',
     active: isVoiceChatOpen,
-    onClick: () => actions?.onToggleVoiceChat?.(),
-  })
-  voiceChatButton.dataset.detachedVoiceChatToggle = 'true'
+    onClick: () => actions?.onToggleVoiceChat?.()
+  });
+  voiceChatButton.dataset.detachedVoiceChatToggle = 'true';
 
   controls.append(
     createDetachedControlButton(document, {
@@ -49,7 +47,7 @@ export function createDetachedVoiceWorkspaceControls({
       icon: 'mic',
       active: !controlState.isMuted,
       controlName: 'isMuted',
-      onClick: () => actions?.onToggleMuted(),
+      onClick: () => actions?.onToggleMuted()
     }),
     createDetachedControlButton(document, {
       label: controlState.isDeafened
@@ -58,7 +56,7 @@ export function createDetachedVoiceWorkspaceControls({
       icon: 'headphones',
       active: !controlState.isDeafened,
       controlName: 'isDeafened',
-      onClick: () => actions?.onToggleDeafened(),
+      onClick: () => actions?.onToggleDeafened()
     }),
     createDetachedControlButton(document, {
       label: controlState.isCameraEnabled
@@ -67,7 +65,7 @@ export function createDetachedVoiceWorkspaceControls({
       icon: 'camera',
       active: controlState.isCameraEnabled,
       controlName: 'isCameraEnabled',
-      onClick: () => actions?.onToggleCamera(),
+      onClick: () => actions?.onToggleCamera()
     }),
     createDetachedControlButton(document, {
       label: controlState.isScreenSharing
@@ -76,13 +74,13 @@ export function createDetachedVoiceWorkspaceControls({
       icon: 'screen',
       active: controlState.isScreenSharing,
       controlName: 'isScreenSharing',
-      onClick: () => actions?.onToggleScreenShare(),
+      onClick: () => actions?.onToggleScreenShare()
     }),
     createDetachedControlButton(document, {
       label: voiceCopy.controls.settings,
       icon: 'settings',
       active: isSettingsOpen,
-      onClick: onSettingsClick,
+      onClick: onSettingsClick
     }),
     voiceChatButton,
     createDetachedControlButton(document, {
@@ -90,32 +88,32 @@ export function createDetachedVoiceWorkspaceControls({
       icon: 'leave',
       danger: true,
       onClick: () => {
-        actions?.onLeaveVoiceChannel()
-        detachedWindow.close()
-      },
-    }),
-  )
+        actions?.onLeaveVoiceChannel();
+        detachedWindow.close();
+      }
+    })
+  );
 
-  const windowControls = createDetachedWindowControlsDock(document)
+  const windowControls = createDetachedWindowControlsDock(document);
   windowControls.append(
     createDetachedControlButton(document, {
       label: voiceCopy.detached.windowFullscreen,
       icon: 'fullscreen',
       onClick: () => {
-        const root = document.documentElement
+        const root = document.documentElement;
         if (document.fullscreenElement) {
-          void document.exitFullscreen()
+          void document.exitFullscreen();
         } else {
-          void root.requestFullscreen()
+          void root.requestFullscreen();
         }
-      },
+      }
     }),
     createDetachedControlButton(document, {
       label: voiceCopy.detached.windowClose,
       icon: 'close',
-      onClick: () => detachedWindow.close(),
-    }),
-  )
+      onClick: () => detachedWindow.close()
+    })
+  );
 
-  return { controls, windowControls }
+  return { controls, windowControls };
 }

@@ -1,13 +1,15 @@
-import { useId } from 'react'
-import type { VoiceThresholdMode } from '../../../shared/voice/voiceSettings'
+import { useId } from 'react';
+
+import type { VoiceThresholdMode } from '../../../shared/voice/voiceSettings';
 import {
   getVoiceInputThresholdTrackRatio,
   normalizeVoiceInputMeterDb,
   voiceInputMeterCeilingDb,
   voiceInputMeterFloorDb,
-  voiceInputThresholdMaximumDb,
-} from './voiceInputMeterModel'
-import styles from './VoiceInputSensitivityMeter.module.css'
+  voiceInputThresholdMaximumDb
+} from './voiceInputMeterModel';
+
+import styles from './VoiceInputSensitivityMeter.module.css';
 
 export function VoiceInputSensitivityMeter({
   automaticDescription,
@@ -25,33 +27,33 @@ export function VoiceInputSensitivityMeter({
   onManualThresholdChange,
   onThresholdModeChange,
   thresholdDb,
-  thresholdMode,
+  thresholdMode
 }: {
-  automaticDescription: string
-  automaticLabel: string
-  dbUnit: string
-  idleLabel: string
-  isLive: boolean
-  isSpeaking: boolean
-  levelDb: number
-  liveLabel: string
-  manualDescription: string
-  manualLabel: string
-  manualThresholdDb: number
-  meterLabel: string
-  onManualThresholdChange: (thresholdDb: number) => void
-  onThresholdModeChange: (mode: VoiceThresholdMode) => void
-  thresholdDb: number
-  thresholdMode: VoiceThresholdMode
+  automaticDescription: string;
+  automaticLabel: string;
+  dbUnit: string;
+  idleLabel: string;
+  isLive: boolean;
+  isSpeaking: boolean;
+  levelDb: number;
+  liveLabel: string;
+  manualDescription: string;
+  manualLabel: string;
+  manualThresholdDb: number;
+  meterLabel: string;
+  onManualThresholdChange: (thresholdDb: number) => void;
+  onThresholdModeChange: (mode: VoiceThresholdMode) => void;
+  thresholdDb: number;
+  thresholdMode: VoiceThresholdMode;
 }) {
-  const levelRatio = normalizeVoiceInputMeterDb(levelDb)
-  const thresholdRatio = normalizeVoiceInputMeterDb(thresholdDb)
-  const thresholdTrackRatio = getVoiceInputThresholdTrackRatio()
-  const thresholdModeName = useId()
+  const levelRatio = normalizeVoiceInputMeterDb(levelDb);
+  const thresholdRatio = normalizeVoiceInputMeterDb(thresholdDb);
+  const thresholdTrackRatio = getVoiceInputThresholdTrackRatio();
+  const thresholdModeName = useId();
   const accessibleLevelDb = Math.min(
     voiceInputMeterCeilingDb,
-    Math.max(voiceInputMeterFloorDb, Math.round(levelDb)),
-  )
+    Math.max(voiceInputMeterFloorDb, Math.round(levelDb))
+  );
 
   return (
     <div className={styles.panel}>
@@ -129,29 +131,24 @@ export function VoiceInputSensitivityMeter({
           : manualDescription}
       </p>
     </div>
-  )
+  );
 }
 
 function ModeOption({
   checked,
   label,
   name,
-  onChange,
+  onChange
 }: {
-  checked: boolean
-  label: string
-  name: string
-  onChange: () => void
+  checked: boolean;
+  label: string;
+  name: string;
+  onChange: () => void;
 }) {
   return (
     <label className={checked ? styles.modeActive : undefined}>
-      <input
-        type="radio"
-        name={name}
-        checked={checked}
-        onChange={onChange}
-      />
+      <input type="radio" name={name} checked={checked} onChange={onChange} />
       <span>{label}</span>
     </label>
-  )
+  );
 }

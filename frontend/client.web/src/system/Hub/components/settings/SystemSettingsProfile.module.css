@@ -105,12 +105,11 @@
 .profileTagGrid button.activeProfileTag {
   border-color: color-mix(in srgb, var(--theme-accent), #fff 22%);
   color: #fff;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--theme-surface-accent), #fff 10%),
-      color-mix(in srgb, var(--theme-surface-accent), transparent 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-surface-accent), #fff 10%),
+    color-mix(in srgb, var(--theme-surface-accent), transparent 18%)
+  );
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, #fff, transparent 78%),
     0 0 24px color-mix(in srgb, var(--theme-glow-strong), transparent 24%);
@@ -157,7 +156,11 @@
   border-radius: 50%;
   padding: 0;
   color: var(--color-text);
-  background: color-mix(in srgb, var(--theme-control-bg-strong), transparent 8%);
+  background: color-mix(
+    in srgb,
+    var(--theme-control-bg-strong),
+    transparent 8%
+  );
   box-shadow: 0 4px 12px color-mix(in srgb, #000, transparent 52%);
 }
 
@@ -195,7 +198,11 @@
   border: 1px solid var(--theme-section-border);
   border-radius: 6px;
   background:
-    radial-gradient(circle at 70% 20%, var(--theme-backdrop-glow), transparent 34%),
+    radial-gradient(
+      circle at 70% 20%,
+      var(--theme-backdrop-glow),
+      transparent 34%
+    ),
     var(--theme-control-bg-strong);
   background-position: center;
   background-repeat: no-repeat;

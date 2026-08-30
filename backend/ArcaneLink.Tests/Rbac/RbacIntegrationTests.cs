@@ -16,15 +16,15 @@ public sealed class RbacIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
 
     public RbacIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _client = factory.CreateClient();
+        this._client = factory.CreateClient();
     }
 
     [Fact]
     public async Task Owner_CanCreateRoleWithPermissions()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await this._client.PostAsJsonAsync(
             $"/api/servers/{ArcaneLinkApiFactory.ServerId}/roles",
             new CreateServerRoleRequest
             {
@@ -44,9 +44,9 @@ public sealed class RbacIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
     [Fact]
     public async Task NonOwner_CannotCreateRole()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
 
-        var response = await _client.PostAsJsonAsync(
+        var response = await this._client.PostAsJsonAsync(
             $"/api/servers/{ArcaneLinkApiFactory.ServerId}/roles",
             new CreateServerRoleRequest
             {
@@ -60,16 +60,16 @@ public sealed class RbacIntegrationTests : IClassFixture<ArcaneLinkApiFactory>
     [Fact]
     public async Task MemberRemoval_ProtectsOwnerAndRejectsNonOwner()
     {
-        _client.AuthorizeWith(await _client.LoginAsync("member"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("member"));
 
-        var memberRemoveOwnerResponse = await _client.DeleteAsync(
+        var memberRemoveOwnerResponse = await this._client.DeleteAsync(
             $"/api/servers/{ArcaneLinkApiFactory.ServerId}/members/{ArcaneLinkApiFactory.OwnerMemberId}");
 
         Assert.Equal(HttpStatusCode.NotFound, memberRemoveOwnerResponse.StatusCode);
 
-        _client.AuthorizeWith(await _client.LoginAsync("owner"));
+        this._client.AuthorizeWith(await this._client.LoginAsync("owner"));
 
-        var ownerRemoveSelfResponse = await _client.DeleteAsync(
+        var ownerRemoveSelfResponse = await this._client.DeleteAsync(
             $"/api/servers/{ArcaneLinkApiFactory.ServerId}/members/{ArcaneLinkApiFactory.OwnerMemberId}");
 
         Assert.Equal(HttpStatusCode.BadRequest, ownerRemoveSelfResponse.StatusCode);

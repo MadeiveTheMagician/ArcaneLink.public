@@ -1,17 +1,16 @@
 using ArcaneLink.Exceptions.ServerExceptions.Abstractions;
 
-namespace ArcaneLink.Exceptions.ServerExceptions
-{
-    public class InvalidServerDataException : ServerException
-    {
-        public InvalidServerDataException()
-            : base(ExceptionMessages.InvalidServerData)
-        {
-        }
+namespace ArcaneLink.Exceptions.ServerExceptions;
 
-        public InvalidServerDataException(string message)
-            : base(message)
-        {
-        }
+public class InvalidServerDataException : ServerException
+{
+    public InvalidServerDataException()
+        : base(ExceptionMessages.InvalidServerData)
+    {
+    }
+
+    public InvalidServerDataException(string message)
+        : base(message)
+    {
     }
 }

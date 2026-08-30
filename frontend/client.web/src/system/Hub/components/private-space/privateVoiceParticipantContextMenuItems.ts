@@ -1,50 +1,47 @@
 import type {
   PrivateSpaceMemberResponse,
-  ServerMemberResponse,
-} from '../../../../shared/types'
-import type { VoiceParticipant } from '../../../Server/hooks/voice/useVoiceChannel'
-import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu'
-import { serverCopy, voiceCopy } from '../../../shared/copy'
-import type { VoiceUserAudioSettings } from '../../../shared/types/voicePlayback'
+  ServerMemberResponse
+} from '../../../../shared/types';
+import type { VoiceParticipant } from '../../../Server/hooks/voice/useVoiceChannel';
+import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu';
+import { serverCopy, voiceCopy } from '../../../shared/copy';
+import type { VoiceUserAudioSettings } from '../../../shared/types/voicePlayback';
 import {
   maximumVoiceParticipantVolumePercent,
   minimumVoiceParticipantVolumePercent,
   voiceParticipantVolumeFromPercent,
   voiceParticipantVolumePercentStep,
-  voiceParticipantVolumeToPercent,
-} from '../../../shared/voice/voiceParticipantVolume'
+  voiceParticipantVolumeToPercent
+} from '../../../shared/voice/voiceParticipantVolume';
 
 type BuildPrivateVoiceParticipantContextMenuItemsOptions = {
-  participant: VoiceParticipant
-  member: PrivateSpaceMemberResponse | null
-  currentUserId: string
-  spaceKind: 'direct' | 'group'
-  audioSettings: VoiceUserAudioSettings
-  friendUserIds: ReadonlySet<string>
-  pendingOutgoingUserIds: ReadonlySet<string>
-  inviteServers: readonly ServerMemberResponse[]
-  isLoadingInviteServers: boolean
-  isMutatingFriends: boolean
-  isMutatingBlock: boolean
-  isUserBlockStatusResolved: boolean
-  isUserBlocked: boolean
-  onOpenProfile: (member: PrivateSpaceMemberResponse) => void
-  onMentionUser: (participant: VoiceParticipant) => void
-  onOpenDirectSpace: (userId: string) => void
-  onStartDirectCall: (member: PrivateSpaceMemberResponse) => void
-  onSendFriendRequest: (userId: string) => void
-  onRemoveFriend: (userId: string) => void
-  onCreateDirectInvite: (serverId: string, userId: string) => void
-  onToggleUserBlock: (participant: VoiceParticipant) => void
-  onChangeAudioSettings: (patch: Partial<VoiceUserAudioSettings>) => void
-  onCopyUserId: (userId: string) => void
-}
+  participant: VoiceParticipant;
+  member: PrivateSpaceMemberResponse | null;
+  currentUserId: string;
+  spaceKind: 'direct' | 'group';
+  audioSettings: VoiceUserAudioSettings;
+  friendUserIds: ReadonlySet<string>;
+  pendingOutgoingUserIds: ReadonlySet<string>;
+  inviteServers: readonly ServerMemberResponse[];
+  isLoadingInviteServers: boolean;
+  isMutatingFriends: boolean;
+  isMutatingBlock: boolean;
+  isUserBlockStatusResolved: boolean;
+  isUserBlocked: boolean;
+  onOpenProfile: (member: PrivateSpaceMemberResponse) => void;
+  onMentionUser: (participant: VoiceParticipant) => void;
+  onOpenDirectSpace: (userId: string) => void;
+  onStartDirectCall: (member: PrivateSpaceMemberResponse) => void;
+  onSendFriendRequest: (userId: string) => void;
+  onRemoveFriend: (userId: string) => void;
+  onCreateDirectInvite: (serverId: string, userId: string) => void;
+  onToggleUserBlock: (participant: VoiceParticipant) => void;
+  onChangeAudioSettings: (patch: Partial<VoiceUserAudioSettings>) => void;
+  onCopyUserId: (userId: string) => void;
+};
 
-export function isPrivateVoiceContextMenuKey(
-  key: string,
-  shiftKey: boolean,
-) {
-  return key === 'ContextMenu' || (shiftKey && key === 'F10')
+export function isPrivateVoiceContextMenuKey(key: string, shiftKey: boolean) {
+  return key === 'ContextMenu' || (shiftKey && key === 'F10');
 }
 
 export function buildPrivateVoiceParticipantContextMenuItems({
@@ -70,25 +67,27 @@ export function buildPrivateVoiceParticipantContextMenuItems({
   onCreateDirectInvite,
   onToggleUserBlock,
   onChangeAudioSettings,
-  onCopyUserId,
+  onCopyUserId
 }: BuildPrivateVoiceParticipantContextMenuItemsOptions): ContextMenuItem[] {
-  const participantUserId = normalizeUserId(participant.userId)
-  const isSelf = participantUserId === normalizeUserId(currentUserId)
-  const isFriend = hasNormalizedUserId(friendUserIds, participantUserId)
+  const participantUserId = normalizeUserId(participant.userId);
+  const isSelf = participantUserId === normalizeUserId(currentUserId);
+  const isFriend = hasNormalizedUserId(friendUserIds, participantUserId);
   const hasPendingFriendRequest = hasNormalizedUserId(
     pendingOutgoingUserIds,
-    participantUserId,
-  )
-  const canOpenPeerConversation = !isSelf && spaceKind === 'group'
+    participantUserId
+  );
+  const canOpenPeerConversation = !isSelf && spaceKind === 'group';
 
   const identityItems: ContextMenuItem[] = [
     ...(member
-      ? ([{
-          type: 'item',
-          label: serverCopy.contextMenu.profile,
-          icon: 'profile',
-          onSelect: () => onOpenProfile(member),
-        }] satisfies ContextMenuItem[])
+      ? ([
+          {
+            type: 'item',
+            label: serverCopy.contextMenu.profile,
+            icon: 'profile',
+            onSelect: () => onOpenProfile(member)
+          }
+        ] satisfies ContextMenuItem[])
       : []),
     ...(canOpenPeerConversation
       ? ([
@@ -96,25 +95,27 @@ export function buildPrivateVoiceParticipantContextMenuItems({
             type: 'item',
             label: voiceCopy.participantMenu.mention,
             icon: 'message',
-            onSelect: () => onMentionUser(participant),
+            onSelect: () => onMentionUser(participant)
           },
           {
             type: 'item',
             label: serverCopy.contextMenu.directMessage,
             icon: 'message',
-            onSelect: () => onOpenDirectSpace(participant.userId),
+            onSelect: () => onOpenDirectSpace(participant.userId)
           },
           ...(member
-            ? ([{
-                type: 'item',
-                label: voiceCopy.participantMenu.startCall,
-                icon: 'call',
-                onSelect: () => onStartDirectCall(member),
-              }] satisfies ContextMenuItem[])
-            : []),
+            ? ([
+                {
+                  type: 'item',
+                  label: voiceCopy.participantMenu.startCall,
+                  icon: 'call',
+                  onSelect: () => onStartDirectCall(member)
+                }
+              ] satisfies ContextMenuItem[])
+            : [])
         ] satisfies ContextMenuItem[])
-      : []),
-  ]
+      : [])
+  ];
 
   const audioItems: ContextMenuItem[] = isSelf
     ? []
@@ -130,8 +131,8 @@ export function buildPrivateVoiceParticipantContextMenuItems({
           valueLabel: `${voiceParticipantVolumeToPercent(audioSettings.volume)}%`,
           onChange: (volumePercent) =>
             onChangeAudioSettings({
-              volume: voiceParticipantVolumeFromPercent(volumePercent),
-            }),
+              volume: voiceParticipantVolumeFromPercent(volumePercent)
+            })
         },
         {
           type: 'item',
@@ -139,42 +140,46 @@ export function buildPrivateVoiceParticipantContextMenuItems({
           icon: 'audio',
           selected: audioSettings.isMuted,
           onSelect: () =>
-            onChangeAudioSettings({ isMuted: !audioSettings.isMuted }),
+            onChangeAudioSettings({ isMuted: !audioSettings.isMuted })
         },
-        ...(
-          participant.isCameraEnabled || participant.isScreenSharing
-            ? ([{
+        ...(participant.isCameraEnabled || participant.isScreenSharing
+          ? ([
+              {
                 type: 'item',
                 label: voiceCopy.participantMenu.hideVideo,
                 icon: 'video',
                 selected: audioSettings.isVideoHidden === true,
                 onSelect: () =>
                   onChangeAudioSettings({
-                    isVideoHidden: audioSettings.isVideoHidden !== true,
-                  }),
-              }] satisfies ContextMenuItem[])
-            : []
-        ),
-      ]
+                    isVideoHidden: audioSettings.isVideoHidden !== true
+                  })
+              }
+            ] satisfies ContextMenuItem[])
+          : [])
+      ];
 
   const relationshipItems: ContextMenuItem[] = isSelf
     ? []
     : [
         ...(!isMutatingFriends && !hasPendingFriendRequest && !isFriend
-          ? ([{
-              type: 'item',
-              label: serverCopy.contextMenu.addFriend,
-              icon: 'friend',
-              onSelect: () => onSendFriendRequest(participant.userId),
-            }] satisfies ContextMenuItem[])
+          ? ([
+              {
+                type: 'item',
+                label: serverCopy.contextMenu.addFriend,
+                icon: 'friend',
+                onSelect: () => onSendFriendRequest(participant.userId)
+              }
+            ] satisfies ContextMenuItem[])
           : []),
         ...(!isMutatingFriends && isFriend
-          ? ([{
-              type: 'item',
-              label: serverCopy.contextMenu.removeFriend,
-              icon: 'friend',
-              onSelect: () => onRemoveFriend(participant.userId),
-            }] satisfies ContextMenuItem[])
+          ? ([
+              {
+                type: 'item',
+                label: serverCopy.contextMenu.removeFriend,
+                icon: 'friend',
+                onSelect: () => onRemoveFriend(participant.userId)
+              }
+            ] satisfies ContextMenuItem[])
           : []),
         {
           type: 'item',
@@ -190,10 +195,10 @@ export function buildPrivateVoiceParticipantContextMenuItems({
                   onSelect: () =>
                     onCreateDirectInvite(
                       membership.serverId,
-                      participant.userId,
-                    ),
+                      participant.userId
+                    )
                 }))
-              : undefined,
+              : undefined
         },
         {
           type: 'item',
@@ -205,43 +210,43 @@ export function buildPrivateVoiceParticipantContextMenuItems({
           icon: 'block',
           danger: isUserBlockStatusResolved && !isUserBlocked,
           disabled: isMutatingBlock || !isUserBlockStatusResolved,
-          onSelect: () => onToggleUserBlock(participant),
-        },
-      ]
+          onSelect: () => onToggleUserBlock(participant)
+        }
+      ];
 
-  const utilityItems: ContextMenuItem[] = [{
-    type: 'item',
-    label: voiceCopy.participantMenu.copyUserId,
-    icon: 'copy',
-    onSelect: () => onCopyUserId(participant.userId),
-  }]
+  const utilityItems: ContextMenuItem[] = [
+    {
+      type: 'item',
+      label: voiceCopy.participantMenu.copyUserId,
+      icon: 'copy',
+      onSelect: () => onCopyUserId(participant.userId)
+    }
+  ];
 
   return joinContextMenuSections([
     identityItems,
     audioItems,
     relationshipItems,
-    utilityItems,
-  ])
+    utilityItems
+  ]);
 }
 
 function joinContextMenuSections(sections: readonly ContextMenuItem[][]) {
   return sections
     .filter((section) => section.length > 0)
     .flatMap((section, index) =>
-      index === 0
-        ? section
-        : [{ type: 'separator' as const }, ...section],
-    )
+      index === 0 ? section : [{ type: 'separator' as const }, ...section]
+    );
 }
 
 function hasNormalizedUserId(userIds: ReadonlySet<string>, userId: string) {
   for (const candidate of userIds) {
-    if (normalizeUserId(candidate) === userId) return true
+    if (normalizeUserId(candidate) === userId) return true;
   }
 
-  return false
+  return false;
 }
 
 function normalizeUserId(userId: string) {
-  return userId.trim().toLowerCase()
+  return userId.trim().toLowerCase();
 }

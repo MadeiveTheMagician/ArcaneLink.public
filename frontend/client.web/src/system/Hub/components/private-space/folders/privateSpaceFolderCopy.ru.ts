@@ -1,4 +1,4 @@
-import { privateSpaceFolderNameMaxLength } from './privateSpaceFolderModel'
+import { privateSpaceFolderNameMaxLength } from './privateSpaceFolderModel';
 
 export const privateSpaceFolderCopy = {
   all: 'Все',
@@ -31,6 +31,5 @@ export const privateSpaceFolderCopy = {
   dropHint: 'Добавить переписку в папку',
   addToFolder: 'Добавить в папку',
   addToFolderLabel: (folderName: string) => `Добавить в папку «${folderName}»`,
-  removeFromFolder: (folderName: string) =>
-    `Удалить из папки «${folderName}»`,
-} as const
+  removeFromFolder: (folderName: string) => `Удалить из папки «${folderName}»`
+} as const;

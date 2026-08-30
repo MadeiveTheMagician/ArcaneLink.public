@@ -1,7 +1,7 @@
 export type VoiceUserAudioSettings = {
-  volume: number
-  isMuted: boolean
-  isVideoHidden?: boolean
-}
+  volume: number;
+  isMuted: boolean;
+  isVideoHidden?: boolean;
+};
 
-export type VoicePlaybackState = 'idle' | 'playing' | 'blocked' | 'silent'
+export type VoicePlaybackState = 'idle' | 'playing' | 'blocked' | 'silent';

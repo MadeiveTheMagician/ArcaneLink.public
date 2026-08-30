@@ -1,86 +1,83 @@
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react';
+
 import {
+  type SystemSkeletonPresenceEvent,
+  type SystemSkeletonPresenceTiming,
   createSystemSkeletonPresencePhase,
   defaultSystemSkeletonPresenceTiming,
   getSystemSkeletonPresenceDelayMs,
   isSystemSkeletonPresenceMounted,
-  reduceSystemSkeletonPresence,
-  type SystemSkeletonPresenceEvent,
-  type SystemSkeletonPresenceTiming,
-} from './systemSkeletonPresenceModel'
+  reduceSystemSkeletonPresence
+} from './systemSkeletonPresenceModel';
 
-type SystemSkeletonPresenceOptions = Partial<SystemSkeletonPresenceTiming>
+type SystemSkeletonPresenceOptions = Partial<SystemSkeletonPresenceTiming>;
 
 function usePrefersReducedMotion() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(
     () =>
       typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  )
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const handleChange = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches)
-    }
+      setPrefersReducedMotion(event.matches);
+    };
 
-    setPrefersReducedMotion(mediaQuery.matches)
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
+    setPrefersReducedMotion(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
-  return prefersReducedMotion
+  return prefersReducedMotion;
 }
 
 function normalizeDuration(value: number | undefined, fallback: number) {
-  return Number.isFinite(value) ? Math.max(0, value ?? fallback) : fallback
+  return Number.isFinite(value) ? Math.max(0, value ?? fallback) : fallback;
 }
 
 export function useSystemSkeletonPresence(
   isLoading: boolean,
-  options: SystemSkeletonPresenceOptions = {},
+  options: SystemSkeletonPresenceOptions = {}
 ) {
-  const prefersReducedMotion = usePrefersReducedMotion()
+  const prefersReducedMotion = usePrefersReducedMotion();
   const timing = useMemo<SystemSkeletonPresenceTiming>(
     () => ({
       revealDelayMs: normalizeDuration(
         options.revealDelayMs,
-        defaultSystemSkeletonPresenceTiming.revealDelayMs,
+        defaultSystemSkeletonPresenceTiming.revealDelayMs
       ),
       enterDurationMs: normalizeDuration(
         options.enterDurationMs,
-        defaultSystemSkeletonPresenceTiming.enterDurationMs,
+        defaultSystemSkeletonPresenceTiming.enterDurationMs
       ),
       exitDurationMs: normalizeDuration(
         options.exitDurationMs,
-        defaultSystemSkeletonPresenceTiming.exitDurationMs,
-      ),
+        defaultSystemSkeletonPresenceTiming.exitDurationMs
+      )
     }),
-    [
-      options.enterDurationMs,
-      options.exitDurationMs,
-      options.revealDelayMs,
-    ],
-  )
+    [options.enterDurationMs, options.exitDurationMs, options.revealDelayMs]
+  );
   const [phase, dispatch] = useReducer(
     reduceSystemSkeletonPresence,
     isLoading,
-    createSystemSkeletonPresencePhase,
-  )
+    createSystemSkeletonPresencePhase
+  );
 
   useEffect(() => {
-    dispatch(isLoading ? 'show' : 'hide')
-  }, [isLoading])
+    dispatch(isLoading ? 'show' : 'hide');
+  }, [isLoading]);
 
   useEffect(() => {
     const delayMs = getSystemSkeletonPresenceDelayMs(
       phase,
       timing,
-      prefersReducedMotion,
-    )
+      prefersReducedMotion
+    );
 
     if (delayMs == null) {
-      return
+      return;
     }
 
     const eventByPhase: Partial<
@@ -88,19 +85,19 @@ export function useSystemSkeletonPresence(
     > = {
       waiting: 'reveal',
       entering: 'entered',
-      exiting: 'exited',
-    }
-    const event = eventByPhase[phase]
+      exiting: 'exited'
+    };
+    const event = eventByPhase[phase];
     if (!event) {
-      return
+      return;
     }
 
-    const timeoutId = window.setTimeout(() => dispatch(event), delayMs)
-    return () => window.clearTimeout(timeoutId)
-  }, [phase, prefersReducedMotion, timing])
+    const timeoutId = window.setTimeout(() => dispatch(event), delayMs);
+    return () => window.clearTimeout(timeoutId);
+  }, [phase, prefersReducedMotion, timing]);
 
   return {
     isMounted: isSystemSkeletonPresenceMounted(phase),
-    phase,
-  }
+    phase
+  };
 }

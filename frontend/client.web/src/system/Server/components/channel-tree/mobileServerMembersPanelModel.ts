@@ -1,8 +1,8 @@
-export type MobileServerTab = 'spaces' | 'members'
+export type MobileServerTab = 'spaces' | 'members';
 
 export function isMobileMembersPanelOpen(
   isMobileServerTree: boolean,
-  mobileServerTab: MobileServerTab,
+  mobileServerTab: MobileServerTab
 ) {
-  return isMobileServerTree && mobileServerTab === 'members'
+  return isMobileServerTree && mobileServerTab === 'members';
 }

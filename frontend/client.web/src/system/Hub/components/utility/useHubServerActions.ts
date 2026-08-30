@@ -1,49 +1,50 @@
-import { useState } from 'react'
-import { apiJson } from '../../../../shared/api/api'
+import { useState } from 'react';
+
+import { apiJson } from '../../../../shared/api/api';
 import type {
   ServerMemberResponse,
   ServerResponse,
-  UpdateServerRequest,
-} from '../../../../shared/types'
-import type { ServerCoreTab } from '../../../Server/utils/serverWorkspaceModel'
+  UpdateServerRequest
+} from '../../../../shared/types';
+import type { ServerCoreTab } from '../../../Server/utils/serverWorkspaceModel';
 
 type UseHubServerActionsOptions = {
-  accessToken: string
-  selectedServerMembership: ServerMemberResponse | null
-  serverCoreTab: ServerCoreTab
+  accessToken: string;
+  selectedServerMembership: ServerMemberResponse | null;
+  serverCoreTab: ServerCoreTab;
   loadServerGovernance: (
     tab?: ServerCoreTab,
-    silent?: boolean,
-  ) => Promise<void>
-  updateServerMembership: (server: ServerResponse) => void
-}
+    silent?: boolean
+  ) => Promise<void>;
+  updateServerMembership: (server: ServerResponse) => void;
+};
 
 export function useHubServerActions({
   accessToken,
   selectedServerMembership,
   serverCoreTab,
   loadServerGovernance,
-  updateServerMembership,
+  updateServerMembership
 }: UseHubServerActionsOptions) {
   const [isServerSettingsMenuOpen, setIsServerSettingsMenuOpen] =
-    useState(false)
+    useState(false);
 
   function openServerSettingsMenu() {
-    setIsServerSettingsMenuOpen(true)
-    void loadServerGovernance(serverCoreTab)
+    setIsServerSettingsMenuOpen(true);
+    void loadServerGovernance(serverCoreTab);
   }
 
   function openServerSettingsMenuWithoutReload() {
-    setIsServerSettingsMenuOpen(true)
+    setIsServerSettingsMenuOpen(true);
   }
 
   function closeServerSettingsMenu() {
-    setIsServerSettingsMenuOpen(false)
+    setIsServerSettingsMenuOpen(false);
   }
 
   async function updateServerSettings(request: UpdateServerRequest) {
     if (!selectedServerMembership) {
-      return null
+      return null;
     }
 
     const updatedServer = await apiJson<ServerResponse>(
@@ -51,12 +52,12 @@ export function useHubServerActions({
       {
         method: 'PATCH',
         accessToken,
-        body: request,
-      },
-    )
+        body: request
+      }
+    );
 
-    updateServerMembership(updatedServer)
-    return updatedServer
+    updateServerMembership(updatedServer);
+    return updatedServer;
   }
 
   return {
@@ -64,6 +65,6 @@ export function useHubServerActions({
     openServerSettingsMenu,
     openServerSettingsMenuWithoutReload,
     closeServerSettingsMenu,
-    updateServerSettings,
-  }
+    updateServerSettings
+  };
 }

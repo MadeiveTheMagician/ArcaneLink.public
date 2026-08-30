@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
+
 import {
-  readLayoutCache,
-  writeLayoutCache,
   type LayoutCacheMobileTab,
   type LayoutCacheSnapshot,
   type LayoutCacheWorkspace,
-} from '../../../../shared/cache/clientCache'
+  readLayoutCache,
+  writeLayoutCache
+} from '../../../../shared/cache/clientCache';
 
 type UseHubLayoutPersistenceOptions = {
-  userId: string
-  activeWorkspace: LayoutCacheWorkspace
-  activeServerId: string | null
-  selectedServerId: string | null
-  activePrivateSpaceId: string | null
-  isServerPanelOpen: boolean
-  mobileTab: LayoutCacheMobileTab
-  sidePanelWidth: number
-  memberPanelWidth: number
-  profileSettings: LayoutCacheSnapshot['profileSettings']
-}
+  userId: string;
+  activeWorkspace: LayoutCacheWorkspace;
+  activeServerId: string | null;
+  selectedServerId: string | null;
+  activePrivateSpaceId: string | null;
+  isServerPanelOpen: boolean;
+  mobileTab: LayoutCacheMobileTab;
+  sidePanelWidth: number;
+  memberPanelWidth: number;
+  profileSettings: LayoutCacheSnapshot['profileSettings'];
+};
 
 export function useHubInitialLayout(userId: string) {
-  const [layoutCache] = useState(() => readLayoutCache(userId))
-  return layoutCache
+  const [layoutCache] = useState(() => readLayoutCache(userId));
+  return layoutCache;
 }
 
 export function useHubLayoutPersistence({
@@ -35,14 +36,14 @@ export function useHubLayoutPersistence({
   mobileTab,
   sidePanelWidth,
   memberPanelWidth,
-  profileSettings,
+  profileSettings
 }: UseHubLayoutPersistenceOptions) {
   useEffect(() => {
     writeLayoutCache(userId, {
       activeWorkspace,
       activeServerId:
         activeWorkspace === 'server'
-          ? selectedServerId ?? activeServerId
+          ? (selectedServerId ?? activeServerId)
           : null,
       activePrivateSpaceId:
         activeWorkspace === 'private-space' ? activePrivateSpaceId : null,
@@ -50,10 +51,10 @@ export function useHubLayoutPersistence({
       mobileTab,
       panelWidths: {
         sidePanelWidth,
-        memberPanelWidth,
+        memberPanelWidth
       },
-      profileSettings,
-    })
+      profileSettings
+    });
   }, [
     activePrivateSpaceId,
     activeServerId,
@@ -64,6 +65,6 @@ export function useHubLayoutPersistence({
     profileSettings,
     selectedServerId,
     sidePanelWidth,
-    userId,
-  ])
+    userId
+  ]);
 }

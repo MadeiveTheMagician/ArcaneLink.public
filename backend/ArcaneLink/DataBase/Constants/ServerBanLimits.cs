@@ -1,7 +1,6 @@
-namespace ArcaneLink.DataBase.Constants
+namespace ArcaneLink.DataBase.Constants;
+
+public static class ServerBanLimits
 {
-    public static class ServerBanLimits
-    {
-        public const int ReasonMaxLength = 500;
-    }
+    public const int ReasonMaxLength = 500;
 }

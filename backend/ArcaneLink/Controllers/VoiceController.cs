@@ -17,7 +17,7 @@ public sealed class VoiceController : ControllerBase
 
     public VoiceController(ITurnCredentialService turnCredentials)
     {
-        _turnCredentials = turnCredentials;
+        this._turnCredentials = turnCredentials;
     }
 
     [HttpGet("ice-servers")]
@@ -26,28 +26,28 @@ public sealed class VoiceController : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
     public ActionResult<VoiceIceServerResponse> GetIceServers()
     {
-        Response.Headers.CacheControl = "no-store";
-        Response.Headers.Pragma = "no-cache";
+        this.Response.Headers.CacheControl = "no-store";
+        this.Response.Headers.Pragma = "no-cache";
 
-        var userIdValue = User.FindFirstValue("userId");
+        var userIdValue = this.User.FindFirstValue("userId");
         if (!Guid.TryParse(userIdValue, out var userId))
         {
-            return Unauthorized();
+            return this.Unauthorized();
         }
 
-        if (!_turnCredentials.IsAvailable)
+        if (!this._turnCredentials.IsAvailable)
         {
             var problem = new ProblemDetails
             {
                 Title = "Voice relay credentials are unavailable.",
                 Detail = "The server voice relay is not configured.",
                 Status = StatusCodes.Status503ServiceUnavailable,
-                Instance = HttpContext.Request.Path
+                Instance = this.HttpContext.Request.Path
             };
             problem.Extensions["code"] = "turn_credentials_unavailable";
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, problem);
+            return this.StatusCode(StatusCodes.Status503ServiceUnavailable, problem);
         }
 
-        return Ok(_turnCredentials.IssueForUser(userId));
+        return this.Ok(this._turnCredentials.IssueForUser(userId));
     }
 }

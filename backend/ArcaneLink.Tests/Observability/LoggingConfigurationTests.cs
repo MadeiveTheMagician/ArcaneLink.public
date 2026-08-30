@@ -93,7 +93,7 @@ public sealed class LoggingConfigurationTests
     {
         public TestHostEnvironment(string environmentName)
         {
-            EnvironmentName = environmentName;
+            this.EnvironmentName = environmentName;
         }
 
         public string EnvironmentName { get; set; }

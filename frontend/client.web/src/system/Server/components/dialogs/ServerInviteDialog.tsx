@@ -4,102 +4,140 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
-} from 'react'
-import { createPortal } from 'react-dom'
+  useState
+} from 'react';
+import { createPortal } from 'react-dom';
+
 import type {
   CreateServerInviteRequest,
   ServerInviteResponse,
   ServerResponse,
-  UserFriendResponse,
-} from '../../../../shared/types'
+  UserFriendResponse
+} from '../../../../shared/types';
 import {
   SystemButton,
   SystemSearchInput,
   SystemSelect,
   SystemTabPanel,
-  SystemTabs,
-} from '../../../shared'
-import { serverCopy } from '../../../shared/copy/index'
-import { useAnimatedOverlayClose } from '../../../shared/hooks/useAnimatedOverlayClose'
-import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer'
-import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon'
-import dialogStyles from '../../../shared/styles/Dialog.module.css'
-import styles from './ServerInviteDialog.module.css'
+  SystemTabs
+} from '../../../shared';
+import { serverCopy } from '../../../shared/copy/index';
+import { useAnimatedOverlayClose } from '../../../shared/hooks/useAnimatedOverlayClose';
+import { useDismissableLayer } from '../../../shared/hooks/useDismissableLayer';
+import { SystemCloseIcon } from '../../../shared/icons/components/SystemCloseIcon';
+
+import dialogStyles from '../../../shared/styles/Dialog.module.css';
+import styles from './ServerInviteDialog.module.css';
 
 type ServerInviteDialogProps = {
-  server: ServerResponse
-  invites: ServerInviteResponse[]
-  friends: UserFriendResponse[]
-  canInviteMembers: boolean
-  isLoading: boolean
-  loadError: string | null
-  isMutating: boolean
+  server: ServerResponse;
+  invites: ServerInviteResponse[];
+  friends: UserFriendResponse[];
+  canInviteMembers: boolean;
+  isLoading: boolean;
+  loadError: string | null;
+  isMutating: boolean;
   onCreateInvite: (
-    request?: CreateServerInviteRequest,
-  ) => Promise<ServerInviteResponse | null>
-  onClose: () => void
-}
+    request?: CreateServerInviteRequest
+  ) => Promise<ServerInviteResponse | null>;
+  onClose: () => void;
+};
 
-type ServerInviteDialogTab = 'friends' | 'link'
+type ServerInviteDialogTab = 'friends' | 'link';
 
 type ServerInviteDialogNotice = {
-  message: string
-  tone: 'error' | 'status'
-}
+  message: string;
+  tone: 'error' | 'status';
+};
 
 type ServerInviteDialogStyle = CSSProperties & {
-  '--server-invite-close-duration': string
-}
+  '--server-invite-close-duration': string;
+};
 
-const serverInviteCloseDurationMs = 200
+const serverInviteCloseDurationMs = 200;
 const serverInviteDialogStyle: ServerInviteDialogStyle = {
-  '--server-invite-close-duration': String(serverInviteCloseDurationMs) + 'ms',
-}
+  '--server-invite-close-duration': String(serverInviteCloseDurationMs) + 'ms'
+};
 
 const modalFocusableSelector = [
   'a[href]:not([tabindex="-1"])',
   'button:not(:disabled)',
   'input:not(:disabled)',
   'select:not(:disabled)',
-  '[tabindex]:not([tabindex="-1"])',
-].join(',')
+  '[tabindex]:not([tabindex="-1"])'
+].join(',');
 
 const expirationOptions = [
-  { label: serverCopy.invites.expirationOptions.never, value: 'never', milliseconds: null },
-  { label: serverCopy.invites.expirationOptions.minutes30, value: '30m', milliseconds: 30 * 60 * 1000 },
-  { label: serverCopy.invites.expirationOptions.hours1, value: '1h', milliseconds: 60 * 60 * 1000 },
-  { label: serverCopy.invites.expirationOptions.hours6, value: '6h', milliseconds: 6 * 60 * 60 * 1000 },
-  { label: serverCopy.invites.expirationOptions.day1, value: '1d', milliseconds: 24 * 60 * 60 * 1000 },
-  { label: serverCopy.invites.expirationOptions.days7, value: '7d', milliseconds: 7 * 24 * 60 * 60 * 1000 },
-  { label: serverCopy.invites.expirationOptions.days30, value: '30d', milliseconds: 30 * 24 * 60 * 60 * 1000 },
-]
+  {
+    label: serverCopy.invites.expirationOptions.never,
+    value: 'never',
+    milliseconds: null
+  },
+  {
+    label: serverCopy.invites.expirationOptions.minutes30,
+    value: '30m',
+    milliseconds: 30 * 60 * 1000
+  },
+  {
+    label: serverCopy.invites.expirationOptions.hours1,
+    value: '1h',
+    milliseconds: 60 * 60 * 1000
+  },
+  {
+    label: serverCopy.invites.expirationOptions.hours6,
+    value: '6h',
+    milliseconds: 6 * 60 * 60 * 1000
+  },
+  {
+    label: serverCopy.invites.expirationOptions.day1,
+    value: '1d',
+    milliseconds: 24 * 60 * 60 * 1000
+  },
+  {
+    label: serverCopy.invites.expirationOptions.days7,
+    value: '7d',
+    milliseconds: 7 * 24 * 60 * 60 * 1000
+  },
+  {
+    label: serverCopy.invites.expirationOptions.days30,
+    value: '30d',
+    milliseconds: 30 * 24 * 60 * 60 * 1000
+  }
+];
 
 const maxUseOptions = [
-  { label: serverCopy.invites.maxUsesOptions.unlimited, value: 'unlimited', maxUses: null },
+  {
+    label: serverCopy.invites.maxUsesOptions.unlimited,
+    value: 'unlimited',
+    maxUses: null
+  },
   { label: serverCopy.invites.maxUsesOptions.use1, value: '1', maxUses: 1 },
   { label: serverCopy.invites.maxUsesOptions.uses5, value: '5', maxUses: 5 },
   { label: serverCopy.invites.maxUsesOptions.uses10, value: '10', maxUses: 10 },
   { label: serverCopy.invites.maxUsesOptions.uses25, value: '25', maxUses: 25 },
   { label: serverCopy.invites.maxUsesOptions.uses50, value: '50', maxUses: 50 },
-  { label: serverCopy.invites.maxUsesOptions.uses100, value: '100', maxUses: 100 },
-]
+  {
+    label: serverCopy.invites.maxUsesOptions.uses100,
+    value: '100',
+    maxUses: 100
+  }
+];
 
 function createExpiresAt(value: string) {
-  const option = expirationOptions.find((item) => item.value === value)
+  const option = expirationOptions.find((item) => item.value === value);
   if (!option?.milliseconds) {
-    return null
+    return null;
   }
 
-  return new Date(Date.now() + option.milliseconds).toISOString()
+  return new Date(Date.now() + option.milliseconds).toISOString();
 }
 
 function buildInviteUrl(code: string | null) {
   if (!code) {
-    return ''
+    return '';
   }
 
-  return window.location.origin + '/invite/' + code
+  return window.location.origin + '/invite/' + code;
 }
 
 export function ServerInviteDialog({
@@ -111,186 +149,185 @@ export function ServerInviteDialog({
   loadError,
   isMutating,
   onCreateInvite,
-  onClose,
+  onClose
 }: ServerInviteDialogProps) {
-  const [activeTab, setActiveTab] =
-    useState<ServerInviteDialogTab>('friends')
-  const [search, setSearch] = useState('')
-  const [expiration, setExpiration] = useState('30d')
-  const [maxUses, setMaxUses] = useState('unlimited')
-  const [notice, setNotice] = useState<ServerInviteDialogNotice | null>(null)
-  const inviteDialogRef = useRef<HTMLElement | null>(null)
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+  const [activeTab, setActiveTab] = useState<ServerInviteDialogTab>('friends');
+  const [search, setSearch] = useState('');
+  const [expiration, setExpiration] = useState('30d');
+  const [maxUses, setMaxUses] = useState('unlimited');
+  const [notice, setNotice] = useState<ServerInviteDialogNotice | null>(null);
+  const inviteDialogRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const { isClosing, requestClose } = useAnimatedOverlayClose(
-    serverInviteCloseDurationMs,
-  )
+    serverInviteCloseDurationMs
+  );
   const closeDialog = useCallback(() => {
-    requestClose(onClose)
-  }, [onClose, requestClose])
+    requestClose(onClose);
+  }, [onClose, requestClose]);
 
   useDismissableLayer({
     isOpen: !isClosing,
     layerRef: inviteDialogRef,
-    onDismiss: closeDialog,
-  })
+    onDismiss: closeDialog
+  });
 
   useEffect(() => {
     const previouslyFocusedElement =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
-        : null
+        : null;
     const focusFrame = window.requestAnimationFrame(() => {
-      closeButtonRef.current?.focus()
-    })
+      closeButtonRef.current?.focus();
+    });
 
     function keepFocusInsideDialog(event: KeyboardEvent) {
-      if (event.key !== 'Tab') return
+      if (event.key !== 'Tab') return;
 
-      const dialog = inviteDialogRef.current
-      if (!dialog) return
+      const dialog = inviteDialogRef.current;
+      if (!dialog) return;
 
       const focusableElements = Array.from(
-        dialog.querySelectorAll<HTMLElement>(modalFocusableSelector),
-      ).filter((element) => element.getClientRects().length > 0)
-      const firstElement = focusableElements[0]
-      const lastElement = focusableElements[focusableElements.length - 1]
+        dialog.querySelectorAll<HTMLElement>(modalFocusableSelector)
+      ).filter((element) => element.getClientRects().length > 0);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
 
       if (!firstElement || !lastElement) {
-        event.preventDefault()
-        dialog.focus()
-        return
+        event.preventDefault();
+        dialog.focus();
+        return;
       }
 
-      const activeElement = document.activeElement
+      const activeElement = document.activeElement;
       if (
         event.shiftKey &&
         (activeElement === firstElement || !dialog.contains(activeElement))
       ) {
-        event.preventDefault()
-        lastElement.focus()
-        return
+        event.preventDefault();
+        lastElement.focus();
+        return;
       }
 
       if (
         !event.shiftKey &&
         (activeElement === lastElement || !dialog.contains(activeElement))
       ) {
-        event.preventDefault()
-        firstElement.focus()
+        event.preventDefault();
+        firstElement.focus();
       }
     }
 
-    document.addEventListener('keydown', keepFocusInsideDialog)
+    document.addEventListener('keydown', keepFocusInsideDialog);
     return () => {
-      window.cancelAnimationFrame(focusFrame)
-      document.removeEventListener('keydown', keepFocusInsideDialog)
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', keepFocusInsideDialog);
       if (previouslyFocusedElement?.isConnected) {
-        previouslyFocusedElement.focus()
+        previouslyFocusedElement.focus();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const activeLinkInvite = useMemo(
     () =>
       invites.find(
         (invite) =>
-          invite.kindCode === 'link' && invite.isActive && Boolean(invite.code),
+          invite.kindCode === 'link' && invite.isActive && Boolean(invite.code)
       ) ?? null,
-    [invites],
-  )
-  const inviteUrl = buildInviteUrl(activeLinkInvite?.code ?? null)
-  const maxUseOption = maxUseOptions.find((item) => item.value === maxUses)
+    [invites]
+  );
+  const inviteUrl = buildInviteUrl(activeLinkInvite?.code ?? null);
+  const maxUseOption = maxUseOptions.find((item) => item.value === maxUses);
   const filteredFriends = useMemo(() => {
-    const normalizedSearch = search.trim().toUpperCase()
+    const normalizedSearch = search.trim().toUpperCase();
 
     return friends.filter((friend) => {
       if (!normalizedSearch) {
-        return true
+        return true;
       }
 
       return (
         friend.friend.displayName.toUpperCase().includes(normalizedSearch) ||
         friend.friend.login.toUpperCase().includes(normalizedSearch)
-      )
-    })
-  }, [friends, search])
+      );
+    });
+  }, [friends, search]);
 
   function handleTabChange(value: ServerInviteDialogTab) {
-    setActiveTab(value)
-    setNotice(null)
+    setActiveTab(value);
+    setNotice(null);
   }
 
   async function handleCopyInvite() {
     if (!inviteUrl) {
-      return
+      return;
     }
 
-    setNotice(null)
+    setNotice(null);
 
     try {
       if (!navigator.clipboard?.writeText) {
-        throw new Error('Clipboard API is unavailable')
+        throw new Error('Clipboard API is unavailable');
       }
 
-      await navigator.clipboard.writeText(inviteUrl)
+      await navigator.clipboard.writeText(inviteUrl);
       setNotice({
         message: serverCopy.invites.copied,
-        tone: 'status',
-      })
+        tone: 'status'
+      });
     } catch {
       setNotice({
         message: serverCopy.invites.copyFailed,
-        tone: 'error',
-      })
+        tone: 'error'
+      });
     }
   }
 
   async function handleCreateInvite() {
     if (!canInviteMembers) {
-      return
+      return;
     }
 
-    setNotice(null)
+    setNotice(null);
 
     try {
       await onCreateInvite({
         kindCode: 'link',
         expiresAt: createExpiresAt(expiration),
-        maxUses: maxUseOption?.maxUses ?? null,
-      })
+        maxUses: maxUseOption?.maxUses ?? null
+      });
       setNotice({
         message: serverCopy.invites.created,
-        tone: 'status',
-      })
+        tone: 'status'
+      });
     } catch {
       setNotice({
         message: serverCopy.invites.createFailed,
-        tone: 'error',
-      })
+        tone: 'error'
+      });
     }
   }
 
   async function handleCreateDirectInvite(targetUserId: string) {
     if (!canInviteMembers) {
-      return
+      return;
     }
 
-    setNotice(null)
+    setNotice(null);
 
     try {
       await onCreateInvite({
         kindCode: 'direct',
-        targetUserId,
-      })
+        targetUserId
+      });
       setNotice({
         message: serverCopy.invites.directCreated,
-        tone: 'status',
-      })
+        tone: 'status'
+      });
     } catch {
       setNotice({
         message: serverCopy.invites.directFailed,
-        tone: 'error',
-      })
+        tone: 'error'
+      });
     }
   }
 
@@ -299,8 +336,10 @@ export function ServerInviteDialog({
       className={[
         dialogStyles.backdrop,
         styles.backdrop,
-        isClosing ? styles.backdropClosing : '',
-      ].filter(Boolean).join(' ')}
+        isClosing ? styles.backdropClosing : ''
+      ]
+        .filter(Boolean)
+        .join(' ')}
       data-state={isClosing ? 'closing' : 'open'}
       role="presentation"
       style={serverInviteDialogStyle}
@@ -310,8 +349,10 @@ export function ServerInviteDialog({
         className={[
           dialogStyles.dialog,
           styles.dialog,
-          isClosing ? styles.dialogClosing : '',
-        ].filter(Boolean).join(' ')}
+          isClosing ? styles.dialogClosing : ''
+        ]
+          .filter(Boolean)
+          .join(' ')}
         role="dialog"
         aria-busy={isLoading || isMutating}
         aria-modal="true"
@@ -347,13 +388,13 @@ export function ServerInviteDialog({
               badge: friends.length,
               disabled: isClosing,
               label: serverCopy.invites.friendsTab,
-              value: 'friends',
+              value: 'friends'
             },
             {
               disabled: isClosing,
               label: serverCopy.invites.linkTab,
-              value: 'link',
-            },
+              value: 'link'
+            }
           ]}
           value={activeTab}
         />
@@ -384,8 +425,10 @@ export function ServerInviteDialog({
                   <p
                     className={[
                       styles.status,
-                      notice.tone === 'error' ? styles.statusError : '',
-                    ].filter(Boolean).join(' ')}
+                      notice.tone === 'error' ? styles.statusError : ''
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
                     role={notice.tone === 'error' ? 'alert' : 'status'}
                   >
                     {notice.message}
@@ -415,9 +458,7 @@ export function ServerInviteDialog({
                         className={styles.inviteButton}
                         size="small"
                         type="button"
-                        disabled={
-                          !canInviteMembers || isMutating || isClosing
-                        }
+                        disabled={!canInviteMembers || isMutating || isClosing}
                         onClick={() =>
                           void handleCreateDirectInvite(friend.friendUserId)
                         }
@@ -471,18 +512,18 @@ export function ServerInviteDialog({
                       : loadError
                         ? serverCopy.invites.linkUnavailable
                         : activeLinkInvite?.expiresAt
-                        ? serverCopy.invites.expiresAt(
-                            new Intl.DateTimeFormat('ru-RU').format(
-                              new Date(activeLinkInvite.expiresAt),
-                            ),
-                          )
-                        : activeLinkInvite
-                          ? serverCopy.invites.linkWithoutExpiration
-                          : serverCopy.invites.linkEmptyHint}
+                          ? serverCopy.invites.expiresAt(
+                              new Intl.DateTimeFormat('ru-RU').format(
+                                new Date(activeLinkInvite.expiresAt)
+                              )
+                            )
+                          : activeLinkInvite
+                            ? serverCopy.invites.linkWithoutExpiration
+                            : serverCopy.invites.linkEmptyHint}
                     {!isLoading && !loadError && activeLinkInvite?.maxUses
                       ? serverCopy.invites.useCount(
                           activeLinkInvite.usedCount,
-                          activeLinkInvite.maxUses,
+                          activeLinkInvite.maxUses
                         )
                       : ''}
                   </span>
@@ -584,10 +625,7 @@ export function ServerInviteDialog({
                   type="button"
                   onClick={() => void handleCreateInvite()}
                   disabled={
-                    isLoading ||
-                    isMutating ||
-                    !canInviteMembers ||
-                    isClosing
+                    isLoading || isMutating || !canInviteMembers || isClosing
                   }
                 >
                   {serverCopy.invites.submitNewLink}
@@ -598,8 +636,10 @@ export function ServerInviteDialog({
                 <p
                   className={[
                     styles.status,
-                    notice.tone === 'error' ? styles.statusError : '',
-                  ].filter(Boolean).join(' ')}
+                    notice.tone === 'error' ? styles.statusError : ''
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                   role={notice.tone === 'error' ? 'alert' : 'status'}
                 >
                   {notice.message}
@@ -610,20 +650,18 @@ export function ServerInviteDialog({
         </SystemTabPanel>
       </section>
     </div>,
-    document.body,
-  )
+    document.body
+  );
 }
 
-function getServerInviteDescription(
-  accessMode: ServerResponse['accessMode'],
-) {
+function getServerInviteDescription(accessMode: ServerResponse['accessMode']) {
   if (accessMode === 'public') {
-    return serverCopy.invites.publicServerDescription
+    return serverCopy.invites.publicServerDescription;
   }
 
   if (accessMode === 'restricted') {
-    return serverCopy.invites.restrictedServerDescription
+    return serverCopy.invites.restrictedServerDescription;
   }
 
-  return serverCopy.invites.privateServerDescription
+  return serverCopy.invites.privateServerDescription;
 }

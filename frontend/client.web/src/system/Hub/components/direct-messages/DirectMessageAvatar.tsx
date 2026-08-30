@@ -1,23 +1,23 @@
 import type {
   FriendUserResponse,
-  PrivateSpaceResponse,
-} from '../../../../shared/types'
-import { getPrivateSpaceViewerAvatar } from '../private-space/privateSpaceAvatarModel'
-import { getPrivateSpaceOtherMember } from './directMessageModel'
+  PrivateSpaceResponse
+} from '../../../../shared/types';
+import { getPrivateSpaceViewerAvatar } from '../private-space/privateSpaceAvatarModel';
+import { getPrivateSpaceOtherMember } from './directMessageModel';
 
 export function PrivateSpaceAvatar({
   className,
   space,
   currentUserId,
-  title,
+  title
 }: {
-  className: string
-  space: PrivateSpaceResponse
-  currentUserId: string
-  title: string
+  className: string;
+  space: PrivateSpaceResponse;
+  currentUserId: string;
+  title: string;
 }) {
-  const otherMember = getPrivateSpaceOtherMember(space, currentUserId)
-  const viewerAvatar = getPrivateSpaceViewerAvatar(space)
+  const otherMember = getPrivateSpaceOtherMember(space, currentUserId);
+  const viewerAvatar = getPrivateSpaceViewerAvatar(space);
 
   if (viewerAvatar) {
     return (
@@ -29,7 +29,7 @@ export function PrivateSpaceAvatar({
         cropZoom={viewerAvatar.cropZoom}
         title={title}
       />
-    )
+    );
   }
 
   if (space.kind === 'direct' && otherMember) {
@@ -39,7 +39,7 @@ export function PrivateSpaceAvatar({
         user={otherMember.user}
         title={otherMember.user.displayName}
       />
-    )
+    );
   }
 
   if (space.kind === 'group' && space.avatarAssetId) {
@@ -52,10 +52,10 @@ export function PrivateSpaceAvatar({
         cropZoom={space.avatarCropZoom}
         title={title}
       />
-    )
+    );
   }
 
-  return <UserAvatar className={className} title={title} />
+  return <UserAvatar className={className} title={title} />;
 }
 
 function AssetAvatar({
@@ -64,14 +64,14 @@ function AssetAvatar({
   cropOffsetX,
   cropOffsetY,
   cropZoom,
-  title,
+  title
 }: {
-  className: string
-  assetId: string
-  cropOffsetX: number
-  cropOffsetY: number
-  cropZoom: number
-  title: string
+  className: string;
+  assetId: string;
+  cropOffsetX: number;
+  cropOffsetY: number;
+  cropZoom: number;
+  title: string;
 }) {
   return (
     <span className={`${className} ui-frame`} aria-hidden="true">
@@ -83,38 +83,35 @@ function AssetAvatar({
         style={{
           transform: `translate(${cropOffsetX * 100}%, ${
             cropOffsetY * 100
-          }%) scale(${cropZoom})`,
+          }%) scale(${cropZoom})`
         }}
       />
       <span className="sr-only">{title}</span>
     </span>
-  )
+  );
 }
 
 export function UserAvatar({
   className,
   user,
-  title,
+  title
 }: {
-  className: string
+  className: string;
   user?: Pick<
     FriendUserResponse,
     | 'avatarAssetId'
     | 'avatarCropOffsetX'
     | 'avatarCropOffsetY'
     | 'avatarCropZoom'
-  >
-  title: string
+  >;
+  title: string;
 }) {
   const avatarUrl = user?.avatarAssetId
     ? `/api/assets/${user.avatarAssetId}/content`
-    : null
+    : null;
 
   return (
-    <span
-      className={`${className} ui-frame`}
-      aria-hidden="true"
-    >
+    <span className={`${className} ui-frame`} aria-hidden="true">
       {avatarUrl ? (
         <img
           className="ui-media-fit"
@@ -124,12 +121,12 @@ export function UserAvatar({
           style={{
             transform: `translate(${(user?.avatarCropOffsetX ?? 0) * 100}%, ${
               (user?.avatarCropOffsetY ?? 0) * 100
-            }%) scale(${user?.avatarCropZoom ?? 1})`,
+            }%) scale(${user?.avatarCropZoom ?? 1})`
           }}
         />
       ) : (
         title.slice(0, 1).toUpperCase()
       )}
     </span>
-  )
+  );
 }

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { apiJson, apiNoContent } from '../../../../shared/api/api'
+import { useEffect, useRef, useState } from 'react';
+
+import { apiJson, apiNoContent } from '../../../../shared/api/api';
 import type {
   CreateSpaceRequest,
   DeleteSpaceRequest,
@@ -9,77 +10,79 @@ import type {
   SpacePermissionOverrideResponse,
   SpaceResponse,
   SpaceTypeResponse,
-  UpsertSpacePermissionOverrideRequest,
   UpdateSpaceRequest,
-} from '../../../../shared/types'
+  UpsertSpacePermissionOverrideRequest
+} from '../../../../shared/types';
 
 export function useServerSpaces(
   accessToken: string,
-  selectedServerMembership: ServerMemberResponse | null,
+  selectedServerMembership: ServerMemberResponse | null
 ) {
-  const selectedServerId = selectedServerMembership?.serverId ?? null
-  const selectedServerIdRef = useRef<string | null>(selectedServerId)
-  const [spaceTypes, setSpaceTypes] = useState<SpaceTypeResponse[]>([])
-  const [spacePermissions, setSpacePermissions] = useState<PermissionResponse[]>([])
-  const [serverSpaces, setServerSpaces] = useState<SpaceResponse[]>([])
-  const [loadedServerId, setLoadedServerId] = useState<string | null>(null)
-  const [isLoadingSpaces, setIsLoadingSpaces] = useState(false)
-  const [isMutatingSpaces, setIsMutatingSpaces] = useState(false)
+  const selectedServerId = selectedServerMembership?.serverId ?? null;
+  const selectedServerIdRef = useRef<string | null>(selectedServerId);
+  const [spaceTypes, setSpaceTypes] = useState<SpaceTypeResponse[]>([]);
+  const [spacePermissions, setSpacePermissions] = useState<
+    PermissionResponse[]
+  >([]);
+  const [serverSpaces, setServerSpaces] = useState<SpaceResponse[]>([]);
+  const [loadedServerId, setLoadedServerId] = useState<string | null>(null);
+  const [isLoadingSpaces, setIsLoadingSpaces] = useState(false);
+  const [isMutatingSpaces, setIsMutatingSpaces] = useState(false);
   const visibleServerSpaces = selectedServerId
     ? serverSpaces.filter(
         (space) =>
-          space.serverId?.toLowerCase() === selectedServerId.toLowerCase(),
+          space.serverId?.toLowerCase() === selectedServerId.toLowerCase()
       )
-    : []
+    : [];
 
   async function loadSpaceTypes() {
     const [types, permissions] = await Promise.all([
       apiJson<SpaceTypeResponse[]>('/api/space-types', {
-        accessToken,
+        accessToken
       }),
       apiJson<PermissionResponse[]>('/api/permissions/space', {
-        accessToken,
-      }),
-    ])
-    setSpaceTypes(types)
-    setSpacePermissions(permissions)
+        accessToken
+      })
+    ]);
+    setSpaceTypes(types);
+    setSpacePermissions(permissions);
   }
 
   async function loadServerSpaces(silent = false) {
-    const serverId = selectedServerId
+    const serverId = selectedServerId;
 
     if (!serverId) {
-      setServerSpaces([])
-      return
+      setServerSpaces([]);
+      return;
     }
 
     if (!silent) {
-      setIsLoadingSpaces(true)
+      setIsLoadingSpaces(true);
     }
 
     try {
       const spaces = await apiJson<SpaceResponse[]>(
         `/api/servers/${serverId}/spaces`,
-        { accessToken },
-      )
+        { accessToken }
+      );
 
       if (selectedServerIdRef.current === serverId) {
-        setServerSpaces(spaces)
-        setLoadedServerId(serverId)
+        setServerSpaces(spaces);
+        setLoadedServerId(serverId);
       }
     } finally {
       if (!silent && selectedServerIdRef.current === serverId) {
-        setIsLoadingSpaces(false)
+        setIsLoadingSpaces(false);
       }
     }
   }
 
   async function createSpace(request: CreateSpaceRequest) {
     if (!selectedServerMembership) {
-      return null
+      return null;
     }
 
-    setIsMutatingSpaces(true)
+    setIsMutatingSpaces(true);
 
     try {
       const space = await apiJson<SpaceResponse>(
@@ -87,22 +90,22 @@ export function useServerSpaces(
         {
           method: 'POST',
           accessToken,
-          body: request,
-        },
-      )
-      setServerSpaces((current) => [...current, space])
-      return space
+          body: request
+        }
+      );
+      setServerSpaces((current) => [...current, space]);
+      return space;
     } finally {
-      setIsMutatingSpaces(false)
+      setIsMutatingSpaces(false);
     }
   }
 
   async function updateSpace(spaceId: string, request: UpdateSpaceRequest) {
     if (!selectedServerMembership) {
-      return null
+      return null;
     }
 
-    setIsMutatingSpaces(true)
+    setIsMutatingSpaces(true);
 
     try {
       const space = await apiJson<SpaceResponse>(
@@ -110,27 +113,27 @@ export function useServerSpaces(
         {
           method: 'PATCH',
           accessToken,
-          body: request,
-        },
-      )
+          body: request
+        }
+      );
       setServerSpaces((current) =>
-        current.map((item) => (item.id === space.id ? space : item)),
-      )
-      return space
+        current.map((item) => (item.id === space.id ? space : item))
+      );
+      return space;
     } finally {
-      setIsMutatingSpaces(false)
+      setIsMutatingSpaces(false);
     }
   }
 
   async function deleteSpace(
     spaceId: string,
-    request: DeleteSpaceRequest = {},
+    request: DeleteSpaceRequest = {}
   ) {
     if (!selectedServerMembership) {
-      return false
+      return false;
     }
 
-    setIsMutatingSpaces(true)
+    setIsMutatingSpaces(true);
 
     try {
       await apiNoContent(
@@ -138,40 +141,40 @@ export function useServerSpaces(
         {
           method: 'DELETE',
           accessToken,
-          body: request,
-        },
-      )
-      await loadServerSpaces(true)
-      return true
+          body: request
+        }
+      );
+      await loadServerSpaces(true);
+      return true;
     } finally {
-      setIsMutatingSpaces(false)
+      setIsMutatingSpaces(false);
     }
   }
 
   async function reorderSpaces(request: ReorderSpacesRequest) {
     if (!selectedServerMembership || request.spaces.length === 0) {
-      return false
+      return false;
     }
 
-    const previousSpaces = serverSpaces
+    const previousSpaces = serverSpaces;
     const positionBySpaceId = new Map(
-      request.spaces.map((space) => [space.spaceId, space]),
-    )
+      request.spaces.map((space) => [space.spaceId, space])
+    );
 
-    setIsMutatingSpaces(true)
+    setIsMutatingSpaces(true);
     setServerSpaces((current) =>
       current.map((space) => {
-        const nextPosition = positionBySpaceId.get(space.id)
+        const nextPosition = positionBySpaceId.get(space.id);
 
         return nextPosition
           ? {
               ...space,
               parentSpaceId: nextPosition.parentSpaceId,
-              position: nextPosition.position,
+              position: nextPosition.position
             }
-          : space
-      }),
-    )
+          : space;
+      })
+    );
 
     try {
       await apiNoContent(
@@ -179,28 +182,28 @@ export function useServerSpaces(
         {
           method: 'PUT',
           accessToken,
-          body: request,
-        },
-      )
-      await loadServerSpaces(true)
-      return true
+          body: request
+        }
+      );
+      await loadServerSpaces(true);
+      return true;
     } catch (error) {
-      setServerSpaces(previousSpaces)
-      throw error
+      setServerSpaces(previousSpaces);
+      throw error;
     } finally {
-      setIsMutatingSpaces(false)
+      setIsMutatingSpaces(false);
     }
   }
 
   async function upsertSpacePermissionOverride(
     spaceId: string,
-    request: UpsertSpacePermissionOverrideRequest,
+    request: UpsertSpacePermissionOverrideRequest
   ) {
     if (!selectedServerMembership) {
-      return null
+      return null;
     }
 
-    setIsMutatingSpaces(true)
+    setIsMutatingSpaces(true);
 
     try {
       const permissionOverride = await apiJson<SpacePermissionOverrideResponse>(
@@ -208,61 +211,62 @@ export function useServerSpaces(
         {
           method: 'PUT',
           accessToken,
-          body: request,
-        },
-      )
-      await loadServerSpaces(true)
-      return permissionOverride
+          body: request
+        }
+      );
+      await loadServerSpaces(true);
+      return permissionOverride;
     } finally {
-      setIsMutatingSpaces(false)
+      setIsMutatingSpaces(false);
     }
   }
 
   async function deleteSpacePermissionOverride(
     spaceId: string,
-    overrideId: string,
+    overrideId: string
   ) {
     if (!selectedServerMembership) {
-      return false
+      return false;
     }
 
-    setIsMutatingSpaces(true)
+    setIsMutatingSpaces(true);
 
     try {
       await apiNoContent(
         `/api/servers/${selectedServerMembership.serverId}/spaces/${spaceId}/permission-overrides/${overrideId}`,
         {
           method: 'DELETE',
-          accessToken,
-        },
-      )
-      await loadServerSpaces(true)
-      return true
+          accessToken
+        }
+      );
+      await loadServerSpaces(true);
+      return true;
     } finally {
-      setIsMutatingSpaces(false)
+      setIsMutatingSpaces(false);
     }
   }
 
   useEffect(() => {
-    void loadSpaceTypes()
+    void loadSpaceTypes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken])
+  }, [accessToken]);
 
   useEffect(() => {
-    selectedServerIdRef.current = selectedServerId
-    setServerSpaces([])
-    setLoadedServerId(null)
+    selectedServerIdRef.current = selectedServerId;
+    setServerSpaces([]);
+    setLoadedServerId(null);
 
-    void loadServerSpaces()
+    void loadServerSpaces();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, selectedServerId])
+  }, [accessToken, selectedServerId]);
 
   return {
     spaceTypes,
     spacePermissions,
     serverSpaces: visibleServerSpaces,
     isLoadingSpaces:
-      isLoadingSpaces || Boolean(selectedServerId && loadedServerId !== selectedServerId),
+      isLoadingSpaces ||
+      Boolean(selectedServerId && loadedServerId !== selectedServerId),
     isMutatingSpaces,
     loadServerSpaces,
     createSpace,
@@ -270,6 +274,6 @@ export function useServerSpaces(
     deleteSpace,
     reorderSpaces,
     upsertSpacePermissionOverride,
-    deleteSpacePermissionOverride,
-  }
+    deleteSpacePermissionOverride
+  };
 }

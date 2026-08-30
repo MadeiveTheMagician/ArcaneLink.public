@@ -1,22 +1,24 @@
-import { useState } from 'react'
-import type { ChangeEventHandler, FocusEventHandler } from 'react'
-import { authCopy, SystemIcon } from '../../../system/shared'
-import formStyles from '../login/AuthFormControls.module.css'
-import { getAuthPasswordFieldPresentation } from './authPasswordFieldModel'
+import { useState } from 'react';
+import type { ChangeEventHandler, FocusEventHandler } from 'react';
+
+import { SystemIcon, authCopy } from '../../../system/shared';
+import { getAuthPasswordFieldPresentation } from './authPasswordFieldModel';
+
+import formStyles from '../login/AuthFormControls.module.css';
 
 type AuthPasswordFieldProps = {
-  autoComplete: string
-  className?: string
-  isVisible?: boolean
-  label: string
-  name: string
-  onChange: ChangeEventHandler<HTMLInputElement>
-  onFocus?: FocusEventHandler<HTMLInputElement>
-  onVisibilityChange?: (isVisible: boolean) => void
-  placeholder: string
-  required?: boolean
-  value: string
-}
+  autoComplete: string;
+  className?: string;
+  isVisible?: boolean;
+  label: string;
+  name: string;
+  onChange: ChangeEventHandler<HTMLInputElement>;
+  onFocus?: FocusEventHandler<HTMLInputElement>;
+  onVisibilityChange?: (isVisible: boolean) => void;
+  placeholder: string;
+  required?: boolean;
+  value: string;
+};
 
 export function AuthPasswordField({
   autoComplete,
@@ -29,25 +31,25 @@ export function AuthPasswordField({
   onVisibilityChange,
   placeholder,
   required = false,
-  value,
+  value
 }: AuthPasswordFieldProps) {
-  const [localIsVisible, setLocalIsVisible] = useState(false)
-  const isVisible = controlledIsVisible ?? localIsVisible
+  const [localIsVisible, setLocalIsVisible] = useState(false);
+  const isVisible = controlledIsVisible ?? localIsVisible;
   const presentation = getAuthPasswordFieldPresentation({
     isVisible,
     fieldLabel: label,
     showLabel: authCopy.aria.showPassword,
-    hideLabel: authCopy.aria.hidePassword,
-  })
+    hideLabel: authCopy.aria.hidePassword
+  });
 
   function toggleVisibility() {
-    const nextValue = !isVisible
+    const nextValue = !isVisible;
 
     if (controlledIsVisible === undefined) {
-      setLocalIsVisible(nextValue)
+      setLocalIsVisible(nextValue);
     }
 
-    onVisibilityChange?.(nextValue)
+    onVisibilityChange?.(nextValue);
   }
 
   return (
@@ -78,5 +80,5 @@ export function AuthPasswordField({
         <SystemIcon name={presentation.toggleIcon} />
       </button>
     </label>
-  )
+  );
 }

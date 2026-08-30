@@ -5,10 +5,10 @@ export const directSpacesCopy = {
     filesSent: 'Скинул файлы',
     greeting: 'Привет! Как дела?',
     thanks: 'Понял, спасибо!',
-    seeYou: 'До встречи',
+    seeYou: 'До встречи'
   },
   time: {
     daysAgo2: '2 дня назад',
-    yesterday: 'Вчера',
-  },
-} as const
+    yesterday: 'Вчера'
+  }
+} as const;

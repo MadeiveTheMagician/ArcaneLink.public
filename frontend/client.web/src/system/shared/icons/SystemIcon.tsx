@@ -1,28 +1,30 @@
-import { useId, type CSSProperties } from 'react'
-import { SystemIconGlyph } from './SystemIconGlyph'
-import type { SystemIconName, SystemIconSize } from './SystemIcon.types'
-import styles from './SystemIcon.module.css'
+import { type CSSProperties, useId } from 'react';
 
-export type { SystemIconName, SystemIconSize } from './SystemIcon.types'
+import type { SystemIconName, SystemIconSize } from './SystemIcon.types';
+import { SystemIconGlyph } from './SystemIconGlyph';
+
+import styles from './SystemIcon.module.css';
+
+export type { SystemIconName, SystemIconSize } from './SystemIcon.types';
 
 type SystemIconProps = {
-  className?: string
-  glow?: boolean
-  monochrome?: boolean
-  name: SystemIconName
-  size?: SystemIconSize
-  title?: string
-  tone?: 'default' | 'danger'
-}
+  className?: string;
+  glow?: boolean;
+  monochrome?: boolean;
+  name: SystemIconName;
+  size?: SystemIconSize;
+  title?: string;
+  tone?: 'default' | 'danger';
+};
 
 const iconSizes: Record<Exclude<SystemIconSize, number>, number> = {
   small: 16,
   medium: 22,
-  large: 38,
-}
+  large: 38
+};
 
 function getIconSize(size: SystemIconSize) {
-  return typeof size === 'number' ? size : iconSizes[size]
+  return typeof size === 'number' ? size : iconSizes[size];
 }
 
 export function SystemIcon({
@@ -32,22 +34,22 @@ export function SystemIcon({
   name,
   size = 'medium',
   title,
-  tone = 'default',
+  tone = 'default'
 }: SystemIconProps) {
-  const definitionId = useId().replace(/:/g, '')
-  const fillId = `${definitionId}-fill`
-  const boxFillId = `${definitionId}-fill-box`
-  const glowId = `${definitionId}-glow`
-  const pixelSize = getIconSize(size)
-  const isCompact = pixelSize <= 24
+  const definitionId = useId().replace(/:/g, '');
+  const fillId = `${definitionId}-fill`;
+  const boxFillId = `${definitionId}-fill-box`;
+  const glowId = `${definitionId}-glow`;
+  const pixelSize = getIconSize(size);
+  const isCompact = pixelSize <= 24;
   const style = {
     '--system-icon-size': `${pixelSize}px`,
     '--system-icon-fill': monochrome ? 'currentColor' : `url(#${fillId})`,
     '--system-icon-fill-box': monochrome
       ? 'currentColor'
       : `url(#${boxFillId})`,
-    '--system-icon-glow': `url(#${glowId})`,
-  } as CSSProperties
+    '--system-icon-glow': `url(#${glowId})`
+  } as CSSProperties;
 
   return (
     <span
@@ -96,5 +98,5 @@ export function SystemIcon({
         <SystemIconGlyph name={name} />
       </svg>
     </span>
-  )
+  );
 }

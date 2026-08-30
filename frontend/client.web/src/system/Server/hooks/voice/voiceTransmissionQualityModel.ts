@@ -1,5 +1,5 @@
-import type { VoiceTransmissionQualityProfile } from '../../../shared/voice/voiceSettings'
-import type { VoiceConnectionQualityState } from './voiceConnectionQualityModel'
+import type { VoiceTransmissionQualityProfile } from '../../../shared/voice/voiceSettings';
+import type { VoiceConnectionQualityState } from './voiceConnectionQualityModel';
 
 export type VoiceTransmissionQualityPlanReason =
   | 'fixed-profile'
@@ -7,20 +7,20 @@ export type VoiceTransmissionQualityPlanReason =
   | 'adaptive-good'
   | 'adaptive-degraded'
   | 'adaptive-poor'
-  | 'adaptive-transitional'
+  | 'adaptive-transitional';
 
 export type VoiceTransmissionQualityPlan = {
-  requestedProfile: VoiceTransmissionQualityProfile
-  maxBitrateBps: number
-  isAdaptive: boolean
-  reason: VoiceTransmissionQualityPlanReason
-}
+  requestedProfile: VoiceTransmissionQualityProfile;
+  maxBitrateBps: number;
+  isAdaptive: boolean;
+  reason: VoiceTransmissionQualityPlanReason;
+};
 
 export type ResolveVoiceTransmissionQualityOptions = {
-  qualityProfile: VoiceTransmissionQualityProfile
-  adaptiveQuality: boolean
-  diagnosticsQualityState: VoiceConnectionQualityState
-}
+  qualityProfile: VoiceTransmissionQualityProfile;
+  adaptiveQuality: boolean;
+  diagnosticsQualityState: VoiceConnectionQualityState;
+};
 
 /**
  * Nominal Opus ceilings for voice. Explicit profiles are deliberate user
@@ -32,8 +32,8 @@ export const voiceTransmissionProfileMaxBitrateBps: Readonly<
   automatic: 64_000,
   'data-saver': 24_000,
   balanced: 48_000,
-  high: 96_000,
-})
+  high: 96_000
+});
 
 const automaticMaxBitrateByQuality: Readonly<
   Record<VoiceConnectionQualityState, number>
@@ -44,8 +44,8 @@ const automaticMaxBitrateByQuality: Readonly<
   poor: voiceTransmissionProfileMaxBitrateBps['data-saver'],
   reconnecting: voiceTransmissionProfileMaxBitrateBps['data-saver'],
   disconnected: voiceTransmissionProfileMaxBitrateBps['data-saver'],
-  unknown: voiceTransmissionProfileMaxBitrateBps.balanced,
-})
+  unknown: voiceTransmissionProfileMaxBitrateBps.balanced
+});
 
 /**
  * adaptiveQuality has intentionally narrow semantics: it enables diagnostics-
@@ -56,15 +56,15 @@ const automaticMaxBitrateByQuality: Readonly<
 export function resolveVoiceTransmissionQualityPlan({
   qualityProfile,
   adaptiveQuality,
-  diagnosticsQualityState,
+  diagnosticsQualityState
 }: ResolveVoiceTransmissionQualityOptions): VoiceTransmissionQualityPlan {
   if (qualityProfile !== 'automatic') {
     return {
       requestedProfile: qualityProfile,
       maxBitrateBps: voiceTransmissionProfileMaxBitrateBps[qualityProfile],
       isAdaptive: false,
-      reason: 'fixed-profile',
-    }
+      reason: 'fixed-profile'
+    };
   }
 
   if (!adaptiveQuality) {
@@ -72,36 +72,36 @@ export function resolveVoiceTransmissionQualityPlan({
       requestedProfile: qualityProfile,
       maxBitrateBps: voiceTransmissionProfileMaxBitrateBps.automatic,
       isAdaptive: false,
-      reason: 'adaptation-disabled',
-    }
+      reason: 'adaptation-disabled'
+    };
   }
 
   return {
     requestedProfile: qualityProfile,
     maxBitrateBps: automaticMaxBitrateByQuality[diagnosticsQualityState],
     isAdaptive: true,
-    reason: resolveAdaptiveReason(diagnosticsQualityState),
-  }
+    reason: resolveAdaptiveReason(diagnosticsQualityState)
+  };
 }
 
 export function resolveVoiceTransmissionMaxBitrateBps(
-  options: ResolveVoiceTransmissionQualityOptions,
+  options: ResolveVoiceTransmissionQualityOptions
 ) {
-  return resolveVoiceTransmissionQualityPlan(options).maxBitrateBps
+  return resolveVoiceTransmissionQualityPlan(options).maxBitrateBps;
 }
 
 function resolveAdaptiveReason(
-  qualityState: VoiceConnectionQualityState,
+  qualityState: VoiceConnectionQualityState
 ): VoiceTransmissionQualityPlanReason {
   if (qualityState === 'good') {
-    return 'adaptive-good'
+    return 'adaptive-good';
   }
   if (qualityState === 'degraded') {
-    return 'adaptive-degraded'
+    return 'adaptive-degraded';
   }
   if (qualityState === 'poor') {
-    return 'adaptive-poor'
+    return 'adaptive-poor';
   }
 
-  return 'adaptive-transitional'
+  return 'adaptive-transitional';
 }

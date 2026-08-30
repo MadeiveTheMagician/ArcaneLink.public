@@ -19,25 +19,25 @@ public sealed class EmailDeliveryOptions
 
     public bool IsValid()
     {
-        if (!Enabled)
+        if (!this.Enabled)
         {
             return true;
         }
 
-        return !string.IsNullOrWhiteSpace(Host) &&
-               Port is > 0 and <= 65535 &&
-               !string.IsNullOrWhiteSpace(Username) &&
-               !string.IsNullOrWhiteSpace(Password) &&
-               System.Net.Mail.MailAddress.TryCreate(FromAddress, out _) &&
-               Uri.TryCreate(PublicOrigin, UriKind.Absolute, out var origin) &&
+        return !string.IsNullOrWhiteSpace(this.Host) &&
+               this.Port is > 0 and <= 65535 &&
+               !string.IsNullOrWhiteSpace(this.Username) &&
+               !string.IsNullOrWhiteSpace(this.Password) &&
+               System.Net.Mail.MailAddress.TryCreate(this.FromAddress, out _) &&
+               Uri.TryCreate(this.PublicOrigin, UriKind.Absolute, out var origin) &&
                origin.Scheme == Uri.UriSchemeHttps &&
                !string.IsNullOrWhiteSpace(origin.Host) &&
                string.IsNullOrEmpty(origin.UserInfo) &&
                string.IsNullOrEmpty(origin.Query) &&
                string.IsNullOrEmpty(origin.Fragment) &&
                (origin.AbsolutePath.Length == 0 || origin.AbsolutePath == "/") &&
-               EmailVerificationLifetimeHours is >= 1 and <= 168 &&
-               EmailChangeLifetimeHours is >= 1 and <= 24 &&
-               PasswordResetLifetimeMinutes is >= 10 and <= 1440;
+               this.EmailVerificationLifetimeHours is >= 1 and <= 168 &&
+               this.EmailChangeLifetimeHours is >= 1 and <= 24 &&
+               this.PasswordResetLifetimeMinutes is >= 10 and <= 1440;
     }
 }

@@ -1,23 +1,25 @@
-import type { UIEvent } from 'react'
-import type { ServerMemberDetailsResponse } from '../../../../shared/types'
-import { commonCopy, PresenceName, serverCopy } from '../../../shared'
-import { shouldLoadMoreServerMembers } from '../../hooks/workspace/serverMemberPaginationModel'
-import styles from './MobileServerMembersPanel.module.css'
-import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel'
+import type { UIEvent } from 'react';
+
+import type { ServerMemberDetailsResponse } from '../../../../shared/types';
+import { PresenceName, commonCopy, serverCopy } from '../../../shared';
+import { shouldLoadMoreServerMembers } from '../../hooks/workspace/serverMemberPaginationModel';
+import type { ServerMemberProfileAnchor } from '../member-profile/serverMemberProfileModel';
+
+import styles from './MobileServerMembersPanel.module.css';
 
 type MobileServerMembersPanelProps = {
-  members: ServerMemberDetailsResponse[]
-  selectedMemberId: string | null
-  isOpen: boolean
-  isLoadingMore: boolean
-  hasMore: boolean
+  members: ServerMemberDetailsResponse[];
+  selectedMemberId: string | null;
+  isOpen: boolean;
+  isLoadingMore: boolean;
+  hasMore: boolean;
   onSelectMember: (
     member: ServerMemberDetailsResponse,
     anchor: ServerMemberProfileAnchor,
-    focusTarget: HTMLElement,
-  ) => void
-  onLoadMore: () => Promise<boolean>
-}
+    focusTarget: HTMLElement
+  ) => void;
+  onLoadMore: () => Promise<boolean>;
+};
 
 export function MobileServerMembersPanel({
   members,
@@ -26,17 +28,17 @@ export function MobileServerMembersPanel({
   isLoadingMore,
   hasMore,
   onSelectMember,
-  onLoadMore,
+  onLoadMore
 }: MobileServerMembersPanelProps) {
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     if (!hasMore || isLoadingMore) {
-      return
+      return;
     }
 
-    const list = event.currentTarget
+    const list = event.currentTarget;
 
     if (shouldLoadMoreServerMembers(list)) {
-      void onLoadMore()
+      void onLoadMore();
     }
   }
 
@@ -46,7 +48,7 @@ export function MobileServerMembersPanel({
       className={[
         styles.panel,
         isOpen ? styles.open : '',
-        'ui-scroll-list ui-scrollbar-none',
+        'ui-scroll-list ui-scrollbar-none'
       ]
         .filter(Boolean)
         .join(' ')}
@@ -60,7 +62,7 @@ export function MobileServerMembersPanel({
       {members.map((member) => {
         const avatarUrl = member.user.avatarAssetId
           ? `/api/assets/${member.user.avatarAssetId}/content`
-          : null
+          : null;
 
         return (
           <button
@@ -71,7 +73,7 @@ export function MobileServerMembersPanel({
               onSelectMember(
                 member,
                 event.currentTarget.getBoundingClientRect(),
-                event.currentTarget,
+                event.currentTarget
               )
             }
           >
@@ -84,7 +86,7 @@ export function MobileServerMembersPanel({
                   style={{
                     transform: `translate(${member.user.avatarCropOffsetX * 100}%, ${
                       member.user.avatarCropOffsetY * 100
-                    }%) scale(${member.user.avatarCropZoom})`,
+                    }%) scale(${member.user.avatarCropZoom})`
                   }}
                 />
               ) : (
@@ -104,13 +106,16 @@ export function MobileServerMembersPanel({
               </small>
             </span>
           </button>
-        )
+        );
       })}
       {isLoadingMore && (
-        <div className={styles.loadingMore} aria-label={serverCopy.state.loadingMembers}>
+        <div
+          className={styles.loadingMore}
+          aria-label={serverCopy.state.loadingMembers}
+        >
           {serverCopy.state.loadingMembers}
         </div>
       )}
     </div>
-  )
+  );
 }

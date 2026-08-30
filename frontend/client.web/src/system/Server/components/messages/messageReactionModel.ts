@@ -1,26 +1,26 @@
 import type {
   SpaceMessageReactionResponse,
-  SpaceMessageResponse,
-} from '../../../../shared/types'
+  SpaceMessageResponse
+} from '../../../../shared/types';
 
 export type CuratedMessageReaction = {
-  emojiCode: string
-  label: string
-}
+  emojiCode: string;
+  label: string;
+};
 
-export type ReactionPresencePhase = 'present' | 'entering' | 'exiting'
+export type ReactionPresencePhase = 'present' | 'entering' | 'exiting';
 
 export type ReactionPresenceItem = {
-  reaction: SpaceMessageReactionResponse
-  phase: ReactionPresencePhase
-  token: number
-}
+  reaction: SpaceMessageReactionResponse;
+  phase: ReactionPresencePhase;
+  token: number;
+};
 
 export type ReactionPresenceState = {
-  messageId: string
-  items: ReactionPresenceItem[]
-  nextToken: number
-}
+  messageId: string;
+  items: ReactionPresenceItem[];
+  nextToken: number;
+};
 
 const curatedReactionEntries = [
   ['👍', 'Нравится'],
@@ -166,130 +166,128 @@ const curatedReactionEntries = [
   ['🍻', 'Пиво'],
   ['🌈', 'Радуга'],
   ['☀️', 'Солнце'],
-  ['🌙', 'Луна'],
-] as const
+  ['🌙', 'Луна']
+] as const;
 
 export const curatedMessageReactions: readonly CuratedMessageReaction[] =
-  curatedReactionEntries.map(([emojiCode, label]) => ({ emojiCode, label }))
+  curatedReactionEntries.map(([emojiCode, label]) => ({ emojiCode, label }));
 
 const curatedReactionOrder = new Map(
-  curatedMessageReactions.map((reaction, index) => [reaction.emojiCode, index]),
-)
+  curatedMessageReactions.map((reaction, index) => [reaction.emojiCode, index])
+);
 
 export function shouldAddMessageReaction(
   reactions: readonly SpaceMessageReactionResponse[],
-  emojiCode: string,
+  emojiCode: string
 ) {
   return !reactions.some(
     (reaction) =>
-      reaction.emojiCode === emojiCode && reaction.reactedByCurrentUser,
-  )
+      reaction.emojiCode === emojiCode && reaction.reactedByCurrentUser
+  );
 }
 
 export function replaceMessage(
   messages: SpaceMessageResponse[],
-  updatedMessage: SpaceMessageResponse,
+  updatedMessage: SpaceMessageResponse
 ) {
   if (!messages.some((message) => message.id === updatedMessage.id)) {
-    return messages
+    return messages;
   }
 
   return messages.map((message) => {
     if (message.id !== updatedMessage.id) {
-      return message
+      return message;
     }
 
-    return updatedMessage
-  })
+    return updatedMessage;
+  });
 }
 
 export function sortMessageReactions(
-  reactions: readonly SpaceMessageReactionResponse[],
+  reactions: readonly SpaceMessageReactionResponse[]
 ) {
   return [...reactions].sort((left, right) => {
-    const leftOrder = curatedReactionOrder.get(left.emojiCode)
-    const rightOrder = curatedReactionOrder.get(right.emojiCode)
+    const leftOrder = curatedReactionOrder.get(left.emojiCode);
+    const rightOrder = curatedReactionOrder.get(right.emojiCode);
 
     if (leftOrder != null || rightOrder != null) {
-      if (leftOrder == null) return 1
-      if (rightOrder == null) return -1
-      return leftOrder - rightOrder
+      if (leftOrder == null) return 1;
+      if (rightOrder == null) return -1;
+      return leftOrder - rightOrder;
     }
 
     if (left.count !== right.count) {
-      return right.count - left.count
+      return right.count - left.count;
     }
 
-    return left.emojiCode.localeCompare(right.emojiCode)
-  })
+    return left.emojiCode.localeCompare(right.emojiCode);
+  });
 }
 
 function sortReactionPresenceItems(items: ReactionPresenceItem[]) {
   const itemsByEmojiCode = new Map(
-    items.map((item) => [item.reaction.emojiCode, item]),
-  )
+    items.map((item) => [item.reaction.emojiCode, item])
+  );
 
   return sortMessageReactions(items.map((item) => item.reaction))
     .map((reaction) => itemsByEmojiCode.get(reaction.emojiCode))
-    .filter((item): item is ReactionPresenceItem => item != null)
+    .filter((item): item is ReactionPresenceItem => item != null);
 }
 
 export function createReactionPresenceState(
   messageId: string,
-  reactions: readonly SpaceMessageReactionResponse[],
+  reactions: readonly SpaceMessageReactionResponse[]
 ): ReactionPresenceState {
   return {
     messageId,
     items: sortMessageReactions(reactions).map((reaction) => ({
       reaction,
       phase: 'present',
-      token: 0,
+      token: 0
     })),
-    nextToken: 1,
-  }
+    nextToken: 1
+  };
 }
 
 export function reconcileReactionPresence(
   state: ReactionPresenceState,
   messageId: string,
-  reactions: readonly SpaceMessageReactionResponse[],
+  reactions: readonly SpaceMessageReactionResponse[]
 ): ReactionPresenceState {
   if (state.messageId !== messageId) {
-    const resetState = createReactionPresenceState(messageId, reactions)
-    return { ...resetState, nextToken: state.nextToken }
+    const resetState = createReactionPresenceState(messageId, reactions);
+    return { ...resetState, nextToken: state.nextToken };
   }
 
-  const incomingReactions = sortMessageReactions(reactions)
+  const incomingReactions = sortMessageReactions(reactions);
   const incomingEmojiCodes = new Set(
-    incomingReactions.map((reaction) => reaction.emojiCode),
-  )
+    incomingReactions.map((reaction) => reaction.emojiCode)
+  );
   const previousItems = new Map(
-    state.items.map((item) => [item.reaction.emojiCode, item]),
-  )
-  let nextToken = state.nextToken
+    state.items.map((item) => [item.reaction.emojiCode, item])
+  );
+  let nextToken = state.nextToken;
 
   const items = incomingReactions.map((reaction): ReactionPresenceItem => {
-    const previousItem = previousItems.get(reaction.emojiCode)
+    const previousItem = previousItems.get(reaction.emojiCode);
     if (!previousItem) {
       return {
         reaction,
         phase: 'entering',
-        token: nextToken++,
-      }
+        token: nextToken++
+      };
     }
 
     return {
       reaction,
-      phase: previousItem.phase === 'exiting'
-        ? 'present'
-        : previousItem.phase,
-      token: previousItem.token,
-    }
-  })
+      phase: previousItem.phase === 'exiting' ? 'present' : previousItem.phase,
+      token: previousItem.token
+    };
+  });
 
   for (const previousItem of state.items) {
     if (incomingEmojiCodes.has(previousItem.reaction.emojiCode)) {
-      continue
+      continue;
     }
 
     items.push(
@@ -298,50 +296,47 @@ export function reconcileReactionPresence(
         : {
             ...previousItem,
             phase: 'exiting',
-            token: nextToken++,
-          },
-    )
+            token: nextToken++
+          }
+    );
   }
 
   return {
     messageId,
     items: sortReactionPresenceItems(items),
-    nextToken,
-  }
+    nextToken
+  };
 }
 
 export function completeReactionPresenceAnimation(
   state: ReactionPresenceState,
   messageId: string,
   emojiCode: string,
-  token: number,
+  token: number
 ): ReactionPresenceState {
   if (state.messageId !== messageId) {
-    return state
+    return state;
   }
 
   const item = state.items.find(
     (candidate) =>
-      candidate.reaction.emojiCode === emojiCode &&
-      candidate.token === token,
-  )
+      candidate.reaction.emojiCode === emojiCode && candidate.token === token
+  );
   if (!item || item.phase === 'present') {
-    return state
+    return state;
   }
 
   if (item.phase === 'exiting') {
     return {
       ...state,
-      items: state.items.filter((candidate) => candidate !== item),
-    }
+      items: state.items.filter((candidate) => candidate !== item)
+    };
   }
 
   return {
     ...state,
     items: state.items.map((candidate) =>
-      candidate === item
-        ? { ...candidate, phase: 'present' }
-        : candidate,
-    ),
-  }
+      candidate === item ? { ...candidate, phase: 'present' } : candidate
+    )
+  };
 }

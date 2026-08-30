@@ -1,14 +1,11 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type PointerEvent,
-} from 'react'
+import { type PointerEvent, useEffect, useId, useRef, useState } from 'react';
+
 import type {
   CreateServerInviteRequest,
   CreateSpaceRequest,
   DeleteSpaceRequest,
+  FriendUserResponse,
+  MessageDisplayFormat,
   PermissionResponse,
   ReorderSpacesRequest,
   ServerAuditLogResponse,
@@ -22,173 +19,171 @@ import type {
   ServerRoleResponse,
   SpacePermissionOverrideResponse,
   SpaceResponse,
-  UpsertSpacePermissionOverrideRequest,
   UpdateServerRequest,
   UpdateSpaceRequest,
+  UpsertSpacePermissionOverrideRequest,
   UserFriendResponse,
-  FriendUserResponse,
-  UserResponse,
-  MessageDisplayFormat,
-} from '../../../../shared/types'
-import { ServerChannelTree } from '../channel-tree/ServerChannelTree'
-import { ServerChannelDetail } from '../detail/ServerChannelDetail'
-import type { MessageComposerMentionInsertionRequest } from '../messages/MessageComposer'
-import { ServerWorkspaceLayout } from '../layout/ServerWorkspaceLayout'
-import { ServerWorkspaceOverlays } from '../overlays/ServerWorkspaceOverlays'
+  UserResponse
+} from '../../../../shared/types';
 import {
-  type VoicePlaybackState,
-  type VoiceUserAudioSettings,
-} from '../../../shared/types/voicePlayback'
-import { ServerMembersPanel } from './ServerWorkspaceSections'
-import {
-  ServerMemberCompactProfile,
-  ServerMemberFullProfile,
-} from '../member-profile/ServerMemberProfileSurfaces'
-import { useSpaceMessages } from '../../hooks/messages/useSpaceMessages'
-import { useServerSpaceDialogs } from '../../hooks/workspace/useServerSpaceDialogs'
-import { useServerWorkspaceContextMenus } from '../../hooks/workspace/useServerWorkspaceContextMenus'
-import { useServerWorkspaceNavigation } from '../../hooks/workspace/useServerWorkspaceNavigation'
-import { useServerMemberProfileOverlay } from '../../hooks/workspace/useServerMemberProfileOverlay'
-import type { VoiceChannelController } from '../../hooks/voice/useVoiceChannel'
-import {
-  type ServerCoreTab,
-  toChannelDetail,
-} from '../../utils/serverWorkspaceModel'
-import {
+  UserBlockDialog,
   defaultMessageBubbleAlignment,
   defaultMessageBubbleWidth,
-  serverCopy,
-  UserBlockDialog,
-} from '../../../shared'
+  serverCopy
+} from '../../../shared';
 import type {
   MessageBubbleAlignment,
-  MessageBubbleWidth,
-} from '../../../shared'
-import type { MessageFocusRequest } from '../../../shared/messages/messageFocusModel'
+  MessageBubbleWidth
+} from '../../../shared';
+import type { MessageFocusRequest } from '../../../shared/messages/messageFocusModel';
+import {
+  type VoicePlaybackState,
+  type VoiceUserAudioSettings
+} from '../../../shared/types/voicePlayback';
+import { useSpaceMessages } from '../../hooks/messages/useSpaceMessages';
+import type { VoiceChannelController } from '../../hooks/voice/useVoiceChannel';
+import { useServerMemberProfileOverlay } from '../../hooks/workspace/useServerMemberProfileOverlay';
+import { useServerSpaceDialogs } from '../../hooks/workspace/useServerSpaceDialogs';
+import { useServerWorkspaceContextMenus } from '../../hooks/workspace/useServerWorkspaceContextMenus';
+import { useServerWorkspaceNavigation } from '../../hooks/workspace/useServerWorkspaceNavigation';
+import {
+  type ServerCoreTab,
+  toChannelDetail
+} from '../../utils/serverWorkspaceModel';
 import {
   canApplySpaceReorder,
   canManageAnySpace,
   canManageSpace,
-  canSendMessagesToSpace,
-} from '../../utils/spaceCapabilities'
+  canSendMessagesToSpace
+} from '../../utils/spaceCapabilities';
+import { ServerChannelTree } from '../channel-tree/ServerChannelTree';
+import { ServerChannelDetail } from '../detail/ServerChannelDetail';
+import { ServerWorkspaceLayout } from '../layout/ServerWorkspaceLayout';
+import {
+  ServerMemberCompactProfile,
+  ServerMemberFullProfile
+} from '../member-profile/ServerMemberProfileSurfaces';
+import type { MessageComposerMentionInsertionRequest } from '../messages/MessageComposer';
+import { ServerWorkspaceOverlays } from '../overlays/ServerWorkspaceOverlays';
 import {
   getActiveMessageSpaceId,
   getVoiceChatSpaceIdAfterSelection,
   isVoiceSpaceChatOpen,
-  toggleVoiceChatSpaceId,
-} from '../voice/chat/voiceSpaceChatModel'
+  toggleVoiceChatSpaceId
+} from '../voice/chat/voiceSpaceChatModel';
+import { ServerMembersPanel } from './ServerWorkspaceSections';
 
-const MAX_CATEGORY_DEPTH = 3
+const MAX_CATEGORY_DEPTH = 3;
 type ServerWorkspaceProps = {
-  accessToken: string
-  selectedServerMembership: ServerMemberResponse
-  serverMemberships: ServerMemberResponse[]
-  user: UserResponse
-  serverMembers: ServerMemberDetailsResponse[]
-  onResolveServerMember: (member: ServerMemberDetailsResponse) => void
-  serverInvites: ServerInviteResponse[]
-  serverJoinRequests: ServerJoinRequestResponse[]
-  serverJoinRequestTotalCount: number
-  serverJoinRequestError: string | null
-  hasMoreServerJoinRequests: boolean
-  serverRoles: ServerRoleResponse[]
-  serverSpaces: SpaceResponse[]
-  spacePermissions: PermissionResponse[]
-  serverPermissions: PermissionResponse[]
-  serverEffectivePermissions: ServerEffectivePermissionsResponse | null
-  serverAuditLogs: ServerAuditLogResponse[]
-  serverBans: ServerBanResponse[]
-  friends: UserFriendResponse[]
-  friendUserIds: Set<string>
-  pendingOutgoingUserIds: Set<string>
-  serverCoreTab: ServerCoreTab
-  isMemberPanelCompact: boolean
-  isLoadingServerMembers: boolean
-  isLoadingMoreServerMembers: boolean
-  hasMoreServerMembers: boolean
-  serverMemberCount: number
-  isLoadingGovernance: boolean
-  isLoadingMoreServerJoinRequests: boolean
-  isLoadingSpaces: boolean
-  isMutatingServerMember: boolean
-  isMutatingGovernance: boolean
-  isMutatingSpaces: boolean
-  isMutatingFriends: boolean
-  defaultAttachmentExpanded: boolean
-  loadExternalMediaPreviews: boolean
-  horizontalVideoCardSize: number
-  verticalVideoCardSize: number
-  selectedThemeCode: string
-  profileColor: string | null
-  applySystemThemeToOtherProfiles: boolean
-  messageDisplayFormat?: MessageDisplayFormat
-  messageBubbleAlignment?: MessageBubbleAlignment
-  messageBubbleWidth?: MessageBubbleWidth
-  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>
-  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>
+  accessToken: string;
+  selectedServerMembership: ServerMemberResponse;
+  serverMemberships: ServerMemberResponse[];
+  user: UserResponse;
+  serverMembers: ServerMemberDetailsResponse[];
+  onResolveServerMember: (member: ServerMemberDetailsResponse) => void;
+  serverInvites: ServerInviteResponse[];
+  serverJoinRequests: ServerJoinRequestResponse[];
+  serverJoinRequestTotalCount: number;
+  serverJoinRequestError: string | null;
+  hasMoreServerJoinRequests: boolean;
+  serverRoles: ServerRoleResponse[];
+  serverSpaces: SpaceResponse[];
+  spacePermissions: PermissionResponse[];
+  serverPermissions: PermissionResponse[];
+  serverEffectivePermissions: ServerEffectivePermissionsResponse | null;
+  serverAuditLogs: ServerAuditLogResponse[];
+  serverBans: ServerBanResponse[];
+  friends: UserFriendResponse[];
+  friendUserIds: Set<string>;
+  pendingOutgoingUserIds: Set<string>;
+  serverCoreTab: ServerCoreTab;
+  isMemberPanelCompact: boolean;
+  isLoadingServerMembers: boolean;
+  isLoadingMoreServerMembers: boolean;
+  hasMoreServerMembers: boolean;
+  serverMemberCount: number;
+  isLoadingGovernance: boolean;
+  isLoadingMoreServerJoinRequests: boolean;
+  isLoadingSpaces: boolean;
+  isMutatingServerMember: boolean;
+  isMutatingGovernance: boolean;
+  isMutatingSpaces: boolean;
+  isMutatingFriends: boolean;
+  defaultAttachmentExpanded: boolean;
+  loadExternalMediaPreviews: boolean;
+  horizontalVideoCardSize: number;
+  verticalVideoCardSize: number;
+  selectedThemeCode: string;
+  profileColor: string | null;
+  applySystemThemeToOtherProfiles: boolean;
+  messageDisplayFormat?: MessageDisplayFormat;
+  messageBubbleAlignment?: MessageBubbleAlignment;
+  messageBubbleWidth?: MessageBubbleWidth;
+  voiceAudioSettingsByUserId: Record<string, VoiceUserAudioSettings>;
+  voicePlaybackStatesByParticipantId: Record<string, VoicePlaybackState>;
   onStartPaneResize: (
     pane: 'spaces' | 'members',
-    event: PointerEvent<HTMLButtonElement>,
-  ) => void
+    event: PointerEvent<HTMLButtonElement>
+  ) => void;
   onChangeVoiceAudioSettings: (
     participantId: string,
-    patch: Partial<VoiceUserAudioSettings>,
-  ) => void
-  onOpenSettings: () => void
-  onOpenServerCoreTab: (tab: ServerCoreTab) => void
-  onLoadServerInvites: () => Promise<void>
+    patch: Partial<VoiceUserAudioSettings>
+  ) => void;
+  onOpenSettings: () => void;
+  onOpenServerCoreTab: (tab: ServerCoreTab) => void;
+  onLoadServerInvites: () => Promise<void>;
   onCreateServerInvite: (
-    request?: CreateServerInviteRequest,
-  ) => Promise<ServerInviteResponse | null>
+    request?: CreateServerInviteRequest
+  ) => Promise<ServerInviteResponse | null>;
   onUpdateServer: (
-    request: UpdateServerRequest,
-  ) => Promise<ServerResponse | null>
-  onDeleteServer: () => Promise<void>
-  onRevokeServerInvite: (inviteId: string) => void
-  onLoadMoreServerJoinRequests: () => void
-  onApproveServerJoinRequest: (requestId: string) => void
-  onDeclineServerJoinRequest: (requestId: string) => void
-  onReloadServerRoles: () => Promise<readonly ServerRoleResponse[]>
-  onReloadServerMembers: () => Promise<void>
-  onCreateSpace: (request: CreateSpaceRequest) => Promise<SpaceResponse | null>
+    request: UpdateServerRequest
+  ) => Promise<ServerResponse | null>;
+  onDeleteServer: () => Promise<void>;
+  onRevokeServerInvite: (inviteId: string) => void;
+  onLoadMoreServerJoinRequests: () => void;
+  onApproveServerJoinRequest: (requestId: string) => void;
+  onDeclineServerJoinRequest: (requestId: string) => void;
+  onReloadServerRoles: () => Promise<readonly ServerRoleResponse[]>;
+  onReloadServerMembers: () => Promise<void>;
+  onCreateSpace: (request: CreateSpaceRequest) => Promise<SpaceResponse | null>;
   onUpdateSpace: (
     spaceId: string,
-    request: UpdateSpaceRequest,
-  ) => Promise<SpaceResponse | null>
+    request: UpdateSpaceRequest
+  ) => Promise<SpaceResponse | null>;
   onDeleteSpace: (
     spaceId: string,
-    request?: DeleteSpaceRequest,
-  ) => Promise<boolean>
-  onReorderSpaces: (request: ReorderSpacesRequest) => Promise<boolean>
+    request?: DeleteSpaceRequest
+  ) => Promise<boolean>;
+  onReorderSpaces: (request: ReorderSpacesRequest) => Promise<boolean>;
   onUpsertSpacePermissionOverride: (
     spaceId: string,
-    request: UpsertSpacePermissionOverrideRequest,
-  ) => Promise<SpacePermissionOverrideResponse | null>
+    request: UpsertSpacePermissionOverrideRequest
+  ) => Promise<SpacePermissionOverrideResponse | null>;
   onDeleteSpacePermissionOverride: (
     spaceId: string,
-    overrideId: string,
-  ) => Promise<boolean>
-  onRemoveServerMember: (member: ServerMemberDetailsResponse) => void
-  onLoadMoreServerMembers: () => Promise<boolean>
+    overrideId: string
+  ) => Promise<boolean>;
+  onRemoveServerMember: (member: ServerMemberDetailsResponse) => void;
+  onLoadMoreServerMembers: () => Promise<boolean>;
   onBanServerMember: (
     member: ServerMemberDetailsResponse,
-    reason: string,
-  ) => void
-  onUnbanServerMember: (memberId: string) => void
-  onTransferServerOwnership: (member: ServerMemberDetailsResponse) => void
-  onAssignServerRole: (memberId: string, roleId: string) => void
-  onSendFriendRequest: (userId: string) => void
-  onRemoveFriend: (userId: string) => void
+    reason: string
+  ) => void;
+  onUnbanServerMember: (memberId: string) => void;
+  onTransferServerOwnership: (member: ServerMemberDetailsResponse) => void;
+  onAssignServerRole: (memberId: string, roleId: string) => void;
+  onSendFriendRequest: (userId: string) => void;
+  onRemoveFriend: (userId: string) => void;
   onStartDirectVoice: (
-    user: Pick<FriendUserResponse, 'id' | 'displayName'>,
-  ) => void
-  onOpenDirectSpace: (userId: string) => void
-  onCloseSettings: () => void
-  isSettingsOpen: boolean
-  voice: VoiceChannelController
-  externalMessageFocus?: MessageFocusRequest | null
-  onExternalMessageFocusConsumed?: () => void
-}
+    user: Pick<FriendUserResponse, 'id' | 'displayName'>
+  ) => void;
+  onOpenDirectSpace: (userId: string) => void;
+  onCloseSettings: () => void;
+  isSettingsOpen: boolean;
+  voice: VoiceChannelController;
+  externalMessageFocus?: MessageFocusRequest | null;
+  onExternalMessageFocusConsumed?: () => void;
+};
 
 export function ServerWorkspace({
   accessToken,
@@ -271,24 +266,24 @@ export function ServerWorkspace({
   voicePlaybackStatesByParticipantId,
   onChangeVoiceAudioSettings,
   externalMessageFocus,
-  onExternalMessageFocusConsumed,
+  onExternalMessageFocusConsumed
 }: ServerWorkspaceProps) {
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
-  const [isLoadingInviteDialog, setIsLoadingInviteDialog] = useState(false)
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isLoadingInviteDialog, setIsLoadingInviteDialog] = useState(false);
   const [inviteDialogLoadError, setInviteDialogLoadError] = useState<
     string | null
-  >(null)
-  const inviteDialogLoadVersionRef = useRef(0)
+  >(null);
+  const inviteDialogLoadVersionRef = useRef(0);
   const [pendingOwnershipTransfer, setPendingOwnershipTransfer] =
-    useState<ServerMemberDetailsResponse | null>(null)
+    useState<ServerMemberDetailsResponse | null>(null);
   const [voiceMentionRequest, setVoiceMentionRequest] =
-    useState<MessageComposerMentionInsertionRequest | null>(null)
+    useState<MessageComposerMentionInsertionRequest | null>(null);
   const [openVoiceChatSpaceId, setOpenVoiceChatSpaceId] = useState<
     string | null
-  >(null)
-  const [isMembersPanelCollapsed, setIsMembersPanelCollapsed] = useState(false)
-  const membersPanelId = useId()
-  const [hasUnsavedRoleChanges, setHasUnsavedRoleChanges] = useState(false)
+  >(null);
+  const [isMembersPanelCollapsed, setIsMembersPanelCollapsed] = useState(false);
+  const membersPanelId = useId();
+  const [hasUnsavedRoleChanges, setHasUnsavedRoleChanges] = useState(false);
 
   function confirmDiscardRoleChanges() {
     return (
@@ -296,21 +291,21 @@ export function ServerWorkspace({
       serverCoreTab !== 'roles' ||
       !hasUnsavedRoleChanges ||
       window.confirm(serverCopy.settings.unsavedRoleChanges)
-    )
+    );
   }
 
   function requestCloseSettings() {
     if (!isSettingsOpen) {
-      return true
+      return true;
     }
 
     if (!confirmDiscardRoleChanges()) {
-      return false
+      return false;
     }
 
-    setHasUnsavedRoleChanges(false)
-    onCloseSettings()
-    return true
+    setHasUnsavedRoleChanges(false);
+    onCloseSettings();
+    return true;
   }
 
   function requestOpenServerCoreTab(tab: ServerCoreTab) {
@@ -319,18 +314,18 @@ export function ServerWorkspace({
       tab !== serverCoreTab &&
       !confirmDiscardRoleChanges()
     ) {
-      return
+      return;
     }
 
-    setHasUnsavedRoleChanges(false)
-    onOpenServerCoreTab(tab)
+    setHasUnsavedRoleChanges(false);
+    onOpenServerCoreTab(tab);
   }
 
   useEffect(() => {
     if (!isSettingsOpen) {
-      setHasUnsavedRoleChanges(false)
+      setHasUnsavedRoleChanges(false);
     }
-  }, [isSettingsOpen, selectedServerMembership.serverId])
+  }, [isSettingsOpen, selectedServerMembership.serverId]);
 
   const {
     activeDetail,
@@ -367,7 +362,7 @@ export function ServerWorkspace({
     setActiveDetail,
     toggleCategory,
     visibleChannel,
-    visibleDetail,
+    visibleDetail
   } = useServerWorkspaceNavigation({
     selectedServerMembership,
     user,
@@ -379,32 +374,32 @@ export function ServerWorkspace({
     onOpenVoiceChat: setOpenVoiceChatSpaceId,
     effectivePermissions: serverEffectivePermissions,
     externalMessageFocus,
-    onExternalMessageFocusConsumed,
-  })
+    onExternalMessageFocusConsumed
+  });
   const memberProfile = useServerMemberProfileOverlay({
     accessToken,
-    serverId: server.id,
-  })
+    serverId: server.id
+  });
   const memberProfileViewerTheme = {
     selectedThemeCode,
     profileColor,
-    applySystemThemeToOtherProfiles,
-  }
+    applySystemThemeToOtherProfiles
+  };
 
   useEffect(() => {
     if (serverEffectivePermissions === null) {
-      return
+      return;
     }
 
     if (!canInviteMembers && isInviteDialogOpen) {
-      inviteDialogLoadVersionRef.current += 1
-      setIsInviteDialogOpen(false)
-      setIsLoadingInviteDialog(false)
+      inviteDialogLoadVersionRef.current += 1;
+      setIsInviteDialogOpen(false);
+      setIsLoadingInviteDialog(false);
     }
 
     if (!canOpenServerSettings && isSettingsOpen) {
-      setHasUnsavedRoleChanges(false)
-      onCloseSettings()
+      setHasUnsavedRoleChanges(false);
+      onCloseSettings();
     }
   }, [
     canInviteMembers,
@@ -412,23 +407,22 @@ export function ServerWorkspace({
     isInviteDialogOpen,
     isSettingsOpen,
     onCloseSettings,
-    serverEffectivePermissions,
-  ])
+    serverEffectivePermissions
+  ]);
   const visibleMessageSpace = visibleChannel?.spaceId
     ? serverSpaces.find((space) => space.id === visibleChannel.spaceId)
-    : undefined
+    : undefined;
   const activeMessageSpaceId = getActiveMessageSpaceId(
     visibleChannel,
     visibleMessageSpace,
-    openVoiceChatSpaceId,
-  )
+    openVoiceChatSpaceId
+  );
   const activeMessagePermissionSpace = activeMessageSpaceId
     ? visibleMessageSpace
-    : undefined
-  const canSendMessages = canSendMessagesToSpace(activeMessagePermissionSpace)
-  const canManageMessages = canManageSpace(activeMessagePermissionSpace)
-  const canManageSpaces =
-    canManageServer || canManageAnySpace(serverSpaces)
+    : undefined;
+  const canSendMessages = canSendMessagesToSpace(activeMessagePermissionSpace);
+  const canManageMessages = canManageSpace(activeMessagePermissionSpace);
+  const canManageSpaces = canManageServer || canManageAnySpace(serverSpaces);
   const {
     createSpaceDialog,
     deleteSpace,
@@ -444,19 +438,19 @@ export function ServerWorkspace({
     spaceDescriptionDraft,
     spaceTitleDraft,
     submitCreateSpace,
-    submitEditSpace,
+    submitEditSpace
   } = useServerSpaceDialogs({
     serverSpaces,
     activeDetail,
     onCreateSpace: (request) => {
       const parentSpace = request.parentSpaceId
         ? serverSpaces.find((space) => space.id === request.parentSpaceId)
-        : null
+        : null;
       const canCreateSpace = parentSpace
         ? canManageSpace(parentSpace)
-        : canManageServer
+        : canManageServer;
 
-      return canCreateSpace ? onCreateSpace(request) : Promise.resolve(null)
+      return canCreateSpace ? onCreateSpace(request) : Promise.resolve(null);
     },
     onUpdateSpace: (spaceId, request) =>
       canManageSpace(serverSpaces.find((space) => space.id === spaceId))
@@ -467,8 +461,8 @@ export function ServerWorkspace({
         ? onDeleteSpace(spaceId, request)
         : Promise.resolve(false),
     onSelectDetail: selectDetail,
-    onSetActiveDetail: setActiveDetail,
-  })
+    onSetActiveDetail: setActiveDetail
+  });
   const {
     closeMemberContextMenu,
     closeSpaceContextMenu,
@@ -485,7 +479,7 @@ export function ServerWorkspace({
     userBlockDialogTarget,
     closeUserBlockDialog,
     confirmUserBlock,
-    isMutatingUserBlock,
+    isMutatingUserBlock
   } = useServerWorkspaceContextMenus({
     accessToken,
     selectedServerMembership,
@@ -533,9 +527,9 @@ export function ServerWorkspace({
               user: {
                 id: participant.userId,
                 login: participant.login,
-                displayName: participant.displayName,
-              },
-            })
+                displayName: participant.displayName
+              }
+            });
           }
         : undefined,
     onChangeVoiceAudioSettings,
@@ -544,30 +538,30 @@ export function ServerWorkspace({
         server.id,
         sourceSpaceId,
         targetSpaceId,
-        participantId,
+        participantId
       ),
     onUpdateVoiceParticipantModeration: (request) =>
       voice.updateVoiceParticipantModeration({
         serverId: server.id,
-        ...request,
+        ...request
       }),
     onDisconnectVoiceParticipant: (request) =>
       voice.disconnectVoiceParticipant({
         serverId: server.id,
-        ...request,
+        ...request
       }),
     onAssignServerRole,
     onTransferOwnership: setPendingOwnershipTransfer,
     onRemoveServerMember,
     onBanServerMember: (member) => {
-      const reason = window.prompt(serverCopy.moderation.banReasonPrompt)
+      const reason = window.prompt(serverCopy.moderation.banReasonPrompt);
 
       if (reason?.trim()) {
-        onBanServerMember(member, reason.trim())
+        onBanServerMember(member, reason.trim());
       }
-    },
-  })
-  const pinnedSpaceMessagePreview: string | null = null
+    }
+  });
+  const pinnedSpaceMessagePreview: string | null = null;
   const {
     messages,
     pinnedMessages,
@@ -587,56 +581,56 @@ export function ServerWorkspace({
     pinMessage,
     unpinMessage,
     setMessageReaction,
-    markMessagesRead,
+    markMessagesRead
   } = useSpaceMessages(
     accessToken,
     selectedServerMembership,
     activeMessageSpaceId,
     focusedMessage,
     canSendMessages,
-    canManageMessages,
-  )
+    canManageMessages
+  );
 
   function selectSpaceAndCloseVoiceChat(space: SpaceResponse) {
-    setOpenVoiceChatSpaceId(getVoiceChatSpaceIdAfterSelection(space, false))
-    selectSpace(space)
+    setOpenVoiceChatSpaceId(getVoiceChatSpaceIdAfterSelection(space, false));
+    selectSpace(space);
   }
 
   function openVoiceSpaceChat(space: SpaceResponse) {
     setOpenVoiceChatSpaceId((current) =>
-      toggleVoiceChatSpaceId(current, space),
-    )
-    selectDetail(toChannelDetail(space))
+      toggleVoiceChatSpaceId(current, space)
+    );
+    selectDetail(toChannelDetail(space));
   }
 
   function openInviteDialog() {
     if (!canInviteMembers) {
-      return
+      return;
     }
 
-    const loadVersion = inviteDialogLoadVersionRef.current + 1
-    inviteDialogLoadVersionRef.current = loadVersion
-    setIsInviteDialogOpen(true)
-    setInviteDialogLoadError(null)
-    setIsLoadingInviteDialog(true)
+    const loadVersion = inviteDialogLoadVersionRef.current + 1;
+    inviteDialogLoadVersionRef.current = loadVersion;
+    setIsInviteDialogOpen(true);
+    setInviteDialogLoadError(null);
+    setIsLoadingInviteDialog(true);
 
     void onLoadServerInvites()
       .catch(() => {
         if (inviteDialogLoadVersionRef.current === loadVersion) {
-          setInviteDialogLoadError(serverCopy.invites.loadFailed)
+          setInviteDialogLoadError(serverCopy.invites.loadFailed);
         }
       })
       .finally(() => {
         if (inviteDialogLoadVersionRef.current === loadVersion) {
-          setIsLoadingInviteDialog(false)
+          setIsLoadingInviteDialog(false);
         }
-      })
+      });
   }
 
   function closeInviteDialog() {
-    inviteDialogLoadVersionRef.current += 1
-    setIsInviteDialogOpen(false)
-    setIsLoadingInviteDialog(false)
+    inviteDialogLoadVersionRef.current += 1;
+    setIsInviteDialogOpen(false);
+    setIsLoadingInviteDialog(false);
   }
 
   return (
@@ -676,7 +670,7 @@ export function ServerWorkspace({
             onOpenInviteDialog={openInviteDialog}
             onOpenSettings={() => {
               if (canOpenServerSettings) {
-                onOpenSettings()
+                onOpenSettings();
               }
             }}
             onSelectOverview={() => selectDetail({ type: 'overview' })}
@@ -688,33 +682,29 @@ export function ServerWorkspace({
             canManageSpaces={canManageSpaces}
             canManageServer={canManageServer}
             onReorderSpaces={(request) =>
-              canApplySpaceReorder(
-                serverSpaces,
-                request,
-                canManageServer,
-              )
+              canApplySpaceReorder(serverSpaces, request, canManageServer)
                 ? onReorderSpaces(request)
                 : Promise.resolve(false)
             }
             canMoveVoiceParticipants={canMoveVoiceParticipants}
-            onMoveVoiceParticipant={(sourceSpaceId, targetSpaceId, participantId) =>
+            onMoveVoiceParticipant={(
+              sourceSpaceId,
+              targetSpaceId,
+              participantId
+            ) =>
               voice.moveVoiceParticipant(
                 server.id,
                 sourceSpaceId,
                 targetSpaceId,
-                participantId,
+                participantId
               )
             }
             onOpenVoiceParticipantContextMenu={(
               event,
               participant,
-              sourceSpaceId,
+              sourceSpaceId
             ) =>
-              openVoiceParticipantContextMenu(
-                participant,
-                sourceSpaceId,
-                event,
-              )
+              openVoiceParticipantContextMenu(participant, sourceSpaceId, event)
             }
           />
         }
@@ -733,7 +723,7 @@ export function ServerWorkspace({
             voice={voice}
             isVoiceChatOpen={isVoiceSpaceChatOpen(
               visibleChannel,
-              openVoiceChatSpaceId,
+              openVoiceChatSpaceId
             )}
             membersPanelId={membersPanelId}
             isMembersPanelCollapsed={isMembersPanelCollapsed}
@@ -745,15 +735,18 @@ export function ServerWorkspace({
                 current === spaceId
                   ? null
                   : serverSpaces.some(
-                      (space) =>
-                        space.id === spaceId && Boolean(space.voiceChatSpaceId),
-                    )
+                        (space) =>
+                          space.id === spaceId &&
+                          Boolean(space.voiceChatSpaceId)
+                      )
                     ? spaceId
-                    : null,
+                    : null
               )
             }
             onCloseDetail={() => selectDetail(null)}
-            voicePlaybackStatesByParticipantId={voicePlaybackStatesByParticipantId}
+            voicePlaybackStatesByParticipantId={
+              voicePlaybackStatesByParticipantId
+            }
             voiceAudioSettingsByUserId={voiceAudioSettingsByUserId}
             messages={messages}
             pinnedMessages={pinnedMessages}
@@ -767,7 +760,7 @@ export function ServerWorkspace({
             mentionInsertionRequest={voiceMentionRequest}
             onMentionInsertionRequestHandled={(requestId) =>
               setVoiceMentionRequest((current) =>
-                current?.id === requestId ? null : current,
+                current?.id === requestId ? null : current
               )
             }
             onResolveMentionCandidates={loadMentionCandidates}
@@ -782,13 +775,13 @@ export function ServerWorkspace({
               event,
               participant,
               sourceSpaceId,
-              workspaceActions,
+              workspaceActions
             ) =>
               openVoiceParticipantContextMenu(
                 participant,
                 sourceSpaceId,
                 event,
-                workspaceActions,
+                workspaceActions
               )
             }
             onSendMessage={sendMessage}
@@ -859,9 +852,7 @@ export function ServerWorkspace({
         isLoadingInviteDialog={isLoadingInviteDialog}
         inviteDialogLoadError={inviteDialogLoadError}
         isLoadingGovernance={isLoadingGovernance}
-        isLoadingMoreServerJoinRequests={
-          isLoadingMoreServerJoinRequests
-        }
+        isLoadingMoreServerJoinRequests={isLoadingMoreServerJoinRequests}
         isMutatingGovernance={isMutatingGovernance}
         isMutatingSpaces={isMutatingSpaces}
         pendingOwnershipTransfer={pendingOwnershipTransfer}
@@ -898,8 +889,8 @@ export function ServerWorkspace({
         onCloseInviteDialog={closeInviteDialog}
         onCloseOwnershipTransfer={() => setPendingOwnershipTransfer(null)}
         onConfirmOwnershipTransfer={(member) => {
-          setPendingOwnershipTransfer(null)
-          onTransferServerOwnership(member)
+          setPendingOwnershipTransfer(null);
+          onTransferServerOwnership(member);
         }}
         onCloseCreateSpaceDialog={() => setCreateSpaceDialog(null)}
         onCloseEditSpaceDialog={() => setEditSpaceDialog(null)}
@@ -913,9 +904,7 @@ export function ServerWorkspace({
         onDeleteSpacePermissionOverride={onDeleteSpacePermissionOverride}
         onCloseMemberContextMenu={closeMemberContextMenu}
         onCloseSpaceContextMenu={closeSpaceContextMenu}
-        onCloseVoiceParticipantContextMenu={
-          closeVoiceParticipantContextMenu
-        }
+        onCloseVoiceParticipantContextMenu={closeVoiceParticipantContextMenu}
       />
 
       {userBlockDialogTarget && (
@@ -927,20 +916,21 @@ export function ServerWorkspace({
         />
       )}
 
-      {memberProfile.overlay?.mode === 'compact' && memberProfile.overlay.anchor && (
-        <ServerMemberCompactProfile
-          currentUserId={user.id}
-          member={memberProfile.overlay.member}
-          profile={memberProfile.profile}
-          viewerTheme={memberProfileViewerTheme}
-          anchor={memberProfile.overlay.anchor}
-          isLoading={memberProfile.isLoading}
-          error={memberProfile.error}
-          onRetry={memberProfile.retry}
-          onClose={memberProfile.close}
-          onOpenFull={memberProfile.expandToFull}
-        />
-      )}
+      {memberProfile.overlay?.mode === 'compact' &&
+        memberProfile.overlay.anchor && (
+          <ServerMemberCompactProfile
+            currentUserId={user.id}
+            member={memberProfile.overlay.member}
+            profile={memberProfile.profile}
+            viewerTheme={memberProfileViewerTheme}
+            anchor={memberProfile.overlay.anchor}
+            isLoading={memberProfile.isLoading}
+            error={memberProfile.error}
+            onRetry={memberProfile.retry}
+            onClose={memberProfile.close}
+            onOpenFull={memberProfile.expandToFull}
+          />
+        )}
 
       {memberProfile.overlay?.mode === 'full' && (
         <ServerMemberFullProfile
@@ -955,5 +945,5 @@ export function ServerWorkspace({
         />
       )}
     </>
-  )
+  );
 }

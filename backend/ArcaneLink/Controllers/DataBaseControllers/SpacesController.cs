@@ -4,167 +4,166 @@ using ArcaneLink.Services.Spaces.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ArcaneLink.Controllers.DataBaseControllers
+namespace ArcaneLink.Controllers.DataBaseControllers;
+
+[ApiController]
+[Authorize]
+public class SpacesController : ControllerBase
 {
-    [ApiController]
-    [Authorize]
-    public class SpacesController : ControllerBase
+    private readonly ISpaceService _spaceService;
+
+    public SpacesController(ISpaceService spaceService)
     {
-        private readonly ISpaceService _spaceService;
+        this._spaceService = spaceService;
+    }
 
-        public SpacesController(ISpaceService spaceService)
-        {
-            _spaceService = spaceService;
-        }
+    [HttpGet("api/space-types")]
+    public async Task<ActionResult<IReadOnlyList<SpaceTypeResponse>>> GetSpaceTypes(
+        CancellationToken cancellationToken)
+    {
+        return this.Ok(await this._spaceService.GetSpaceTypesAsync(cancellationToken));
+    }
 
-        [HttpGet("api/space-types")]
-        public async Task<ActionResult<IReadOnlyList<SpaceTypeResponse>>> GetSpaceTypes(
-            CancellationToken cancellationToken)
-        {
-            return Ok(await _spaceService.GetSpaceTypesAsync(cancellationToken));
-        }
+    [HttpGet("api/servers/{serverId:guid}/spaces")]
+    public async Task<ActionResult<IReadOnlyList<SpaceResponse>>> GetServerSpaces(
+        Guid serverId,
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
 
-        [HttpGet("api/servers/{serverId:guid}/spaces")]
-        public async Task<ActionResult<IReadOnlyList<SpaceResponse>>> GetServerSpaces(
-            Guid serverId,
-            CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+        var response = await this._spaceService.GetServerSpacesAsync(
+            userId.Value,
+            serverId,
+            cancellationToken);
 
-            var response = await _spaceService.GetServerSpacesAsync(
-                userId.Value,
-                serverId,
-                cancellationToken);
+        return response == null ? this.NotFound() : this.Ok(response);
+    }
 
-            return response == null ? NotFound() : Ok(response);
-        }
+    [HttpPost("api/servers/{serverId:guid}/spaces")]
+    public async Task<ActionResult<SpaceResponse>> CreateSpace(
+        Guid serverId,
+        [FromBody] CreateSpaceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
 
-        [HttpPost("api/servers/{serverId:guid}/spaces")]
-        public async Task<ActionResult<SpaceResponse>> CreateSpace(
-            Guid serverId,
-            [FromBody] CreateSpaceRequest request,
-            CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+        var response = await this._spaceService.CreateSpaceAsync(
+            userId.Value,
+            serverId,
+            request,
+            cancellationToken);
 
-            var response = await _spaceService.CreateSpaceAsync(
-                userId.Value,
-                serverId,
-                request,
-                cancellationToken);
+        return response == null
+            ? this.NotFound()
+            : this.CreatedAtAction(
+                nameof(GetServerSpaces),
+                new { serverId },
+                response);
+    }
 
-            return response == null
-                ? NotFound()
-                : CreatedAtAction(
-                    nameof(GetServerSpaces),
-                    new { serverId },
-                    response);
-        }
+    [HttpPatch("api/servers/{serverId:guid}/spaces/{spaceId:guid}")]
+    public async Task<ActionResult<SpaceResponse>> UpdateSpace(
+        Guid serverId,
+        Guid spaceId,
+        [FromBody] UpdateSpaceRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
 
-        [HttpPatch("api/servers/{serverId:guid}/spaces/{spaceId:guid}")]
-        public async Task<ActionResult<SpaceResponse>> UpdateSpace(
-            Guid serverId,
-            Guid spaceId,
-            [FromBody] UpdateSpaceRequest request,
-            CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+        var response = await this._spaceService.UpdateSpaceAsync(
+            userId.Value,
+            serverId,
+            spaceId,
+            request,
+            cancellationToken);
 
-            var response = await _spaceService.UpdateSpaceAsync(
-                userId.Value,
-                serverId,
-                spaceId,
-                request,
-                cancellationToken);
+        return response == null ? this.NotFound() : this.Ok(response);
+    }
 
-            return response == null ? NotFound() : Ok(response);
-        }
+    [HttpDelete("api/servers/{serverId:guid}/spaces/{spaceId:guid}")]
+    public async Task<IActionResult> DeleteSpace(
+        Guid serverId,
+        Guid spaceId,
+        [FromBody] DeleteSpaceRequest? request,
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
 
-        [HttpDelete("api/servers/{serverId:guid}/spaces/{spaceId:guid}")]
-        public async Task<IActionResult> DeleteSpace(
-            Guid serverId,
-            Guid spaceId,
-            [FromBody] DeleteSpaceRequest? request,
-            CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+        return await this._spaceService.DeleteSpaceAsync(
+            userId.Value,
+            serverId,
+            spaceId,
+            request ?? new DeleteSpaceRequest(),
+            cancellationToken)
+            ? this.NoContent()
+            : this.NotFound();
+    }
 
-            return await _spaceService.DeleteSpaceAsync(
-                userId.Value,
-                serverId,
-                spaceId,
-                request ?? new DeleteSpaceRequest(),
-                cancellationToken)
-                ? NoContent()
-                : NotFound();
-        }
+    [HttpPut("api/servers/{serverId:guid}/spaces/reorder")]
+    public async Task<IActionResult> ReorderSpaces(
+        Guid serverId,
+        [FromBody] ReorderSpacesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
 
-        [HttpPut("api/servers/{serverId:guid}/spaces/reorder")]
-        public async Task<IActionResult> ReorderSpaces(
-            Guid serverId,
-            [FromBody] ReorderSpacesRequest request,
-            CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+        return await this._spaceService.ReorderSpacesAsync(
+            userId.Value,
+            serverId,
+            request,
+            cancellationToken)
+            ? this.NoContent()
+            : this.NotFound();
+    }
 
-            return await _spaceService.ReorderSpacesAsync(
-                userId.Value,
-                serverId,
-                request,
-                cancellationToken)
-                ? NoContent()
-                : NotFound();
-        }
+    [HttpPut("api/servers/{serverId:guid}/spaces/{spaceId:guid}/permission-overrides")]
+    public async Task<ActionResult<SpacePermissionOverrideResponse>> UpsertPermissionOverride(
+        Guid serverId,
+        Guid spaceId,
+        [FromBody] UpsertSpacePermissionOverrideRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
 
-        [HttpPut("api/servers/{serverId:guid}/spaces/{spaceId:guid}/permission-overrides")]
-        public async Task<ActionResult<SpacePermissionOverrideResponse>> UpsertPermissionOverride(
-            Guid serverId,
-            Guid spaceId,
-            [FromBody] UpsertSpacePermissionOverrideRequest request,
-            CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+        var response = await this._spaceService.UpsertPermissionOverrideAsync(
+            userId.Value,
+            serverId,
+            spaceId,
+            request,
+            cancellationToken);
 
-            var response = await _spaceService.UpsertPermissionOverrideAsync(
-                userId.Value,
-                serverId,
-                spaceId,
-                request,
-                cancellationToken);
+        return response == null ? this.NotFound() : this.Ok(response);
+    }
 
-            return response == null ? NotFound() : Ok(response);
-        }
+    [HttpDelete("api/servers/{serverId:guid}/spaces/{spaceId:guid}/permission-overrides/{overrideId:guid}")]
+    public async Task<IActionResult> DeletePermissionOverride(
+        Guid serverId,
+        Guid spaceId,
+        Guid overrideId,
+        CancellationToken cancellationToken)
+    {
+        var userId = this.GetCurrentUserId();
+        if (userId == null) return this.Unauthorized();
 
-        [HttpDelete("api/servers/{serverId:guid}/spaces/{spaceId:guid}/permission-overrides/{overrideId:guid}")]
-        public async Task<IActionResult> DeletePermissionOverride(
-            Guid serverId,
-            Guid spaceId,
-            Guid overrideId,
-            CancellationToken cancellationToken)
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null) return Unauthorized();
+        return await this._spaceService.DeletePermissionOverrideAsync(
+            userId.Value,
+            serverId,
+            spaceId,
+            overrideId,
+            cancellationToken)
+            ? this.NoContent()
+            : this.NotFound();
+    }
 
-            return await _spaceService.DeletePermissionOverrideAsync(
-                userId.Value,
-                serverId,
-                spaceId,
-                overrideId,
-                cancellationToken)
-                ? NoContent()
-                : NotFound();
-        }
-
-        private Guid? GetCurrentUserId()
-        {
-            var userIdValue = User.FindFirstValue("userId");
-            return Guid.TryParse(userIdValue, out var userId) ? userId : null;
-        }
+    private Guid? GetCurrentUserId()
+    {
+        var userIdValue = this.User.FindFirstValue("userId");
+        return Guid.TryParse(userIdValue, out var userId) ? userId : null;
     }
 }

@@ -1,21 +1,21 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { apiJson } from '../../../../shared/api/api'
-import type { ImageCrop } from '../../../../shared/media/ImageCropEditor'
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+
+import { apiJson } from '../../../../shared/api/api';
+import type { ImageCrop } from '../../../../shared/media/ImageCropEditor';
 import type {
   AssetResponse,
   OwnServerMemberProfileResponse,
   ServerMemberResponse,
-  UpdateServerMemberProfileRequest,
-} from '../../../../shared/types'
-import { AssetCropDialog } from '../../../Profile/components/assets/AssetCropDialog'
-import { AssetLibraryDialog } from '../../../Profile/components/assets/AssetLibraryDialog'
-import { useAssetImagePicker } from '../../../Profile/hooks/useAssetImagePicker'
-import { settingsCopy } from '../../../shared/copy'
-import { SystemSelect } from '../../../shared/ui/SystemSelect'
-import { SettingsSection } from './SystemSettingsControls'
-import sharedStyles from './SystemSettingsControls.module.css'
-import styles from './ServerMemberProfileSettings.module.css'
+  UpdateServerMemberProfileRequest
+} from '../../../../shared/types';
+import { AssetCropDialog } from '../../../Profile/components/assets/AssetCropDialog';
+import { AssetLibraryDialog } from '../../../Profile/components/assets/AssetLibraryDialog';
+import { useAssetImagePicker } from '../../../Profile/hooks/useAssetImagePicker';
+import { settingsCopy } from '../../../shared/copy';
+import { SystemSelect } from '../../../shared/ui/SystemSelect';
+import { SettingsSection } from './SystemSettingsControls';
 import {
+  type ServerMemberProfileDraft,
   createServerMemberProfileDraft,
   createServerMemberProfileUpdate,
   createServerProfileAssetReset,
@@ -23,67 +23,69 @@ import {
   serverProfileAboutMaxLength,
   serverProfileDisplayNameMaxLength,
   serverProfileStatusMaxLength,
-  validateServerMemberProfileDraft,
-  type ServerMemberProfileDraft,
-} from './serverMemberProfileModel'
+  validateServerMemberProfileDraft
+} from './serverMemberProfileModel';
 import {
   ServerMemberProfileRequestGate,
-  type ServerMemberProfileRequestTicket,
-} from './serverMemberProfileRequestGate'
+  type ServerMemberProfileRequestTicket
+} from './serverMemberProfileRequestGate';
 
-const avatarAssetTypeId = '11000000-0000-0000-0000-000000000000'
-const bannerAssetTypeId = '12000000-0000-0000-0000-000000000000'
-const maxProfileAssetSizeBytes = 10 * 1024 * 1024
+import styles from './ServerMemberProfileSettings.module.css';
+import sharedStyles from './SystemSettingsControls.module.css';
+
+const avatarAssetTypeId = '11000000-0000-0000-0000-000000000000';
+const bannerAssetTypeId = '12000000-0000-0000-0000-000000000000';
+const maxProfileAssetSizeBytes = 10 * 1024 * 1024;
 const allowedProfileImageMimeTypes = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/gif',
-  'image/bmp',
-])
-const profileImageAccept = [...allowedProfileImageMimeTypes].join(',')
+  'image/bmp'
+]);
+const profileImageAccept = [...allowedProfileImageMimeTypes].join(',');
 
 type ServerMemberProfileSettingsProps = {
-  accessToken: string
-  memberships: ServerMemberResponse[]
-}
+  accessToken: string;
+  memberships: ServerMemberResponse[];
+};
 
 type MutationOptions = {
-  preserveTextDraft?: boolean
-  successMessage: string
-}
+  preserveTextDraft?: boolean;
+  successMessage: string;
+};
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: 'long',
-    year: 'numeric',
-  }).format(new Date(value))
+    year: 'numeric'
+  }).format(new Date(value));
 }
 
 function assetUrl(assetId: string | null) {
-  return assetId ? `/api/assets/${assetId}/content` : null
+  return assetId ? `/api/assets/${assetId}/content` : null;
 }
 
 export function ServerMemberProfileSettings({
   accessToken,
-  memberships,
+  memberships
 }: ServerMemberProfileSettingsProps) {
   const [selectedServerId, setSelectedServerId] = useState(
-    memberships[0]?.serverId ?? '',
-  )
+    memberships[0]?.serverId ?? ''
+  );
   const [profile, setProfile] = useState<OwnServerMemberProfileResponse | null>(
-    null,
-  )
-  const [draft, setDraft] = useState<ServerMemberProfileDraft | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
-  const [avatarSort, setAvatarSort] = useState<'newest' | 'oldest'>('newest')
-  const bannerInputRef = useRef<HTMLInputElement | null>(null)
-  const selectedServerIdRef = useRef(selectedServerId)
-  const requestGateRef = useRef(new ServerMemberProfileRequestGate())
+    null
+  );
+  const [draft, setDraft] = useState<ServerMemberProfileDraft | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [avatarSort, setAvatarSort] = useState<'newest' | 'oldest'>('newest');
+  const bannerInputRef = useRef<HTMLInputElement | null>(null);
+  const selectedServerIdRef = useRef(selectedServerId);
+  const requestGateRef = useRef(new ServerMemberProfileRequestGate());
   const {
     fileInputRef: avatarInputRef,
     draft: avatarDraft,
@@ -97,83 +99,84 @@ export function ServerMemberProfileSettings({
     openLibrary: openAvatarLibrary,
     selectAsset: selectAvatarAsset,
     cancelCrop: cancelAvatarCrop,
-    completeCrop: completeAvatarCrop,
+    completeCrop: completeAvatarCrop
   } = useAssetImagePicker({
     accessToken,
     libraryEndpoint: '/api/assets/me/avatar',
-    sort: avatarSort,
-  })
+    sort: avatarSort
+  });
   const selectedMembership = memberships.find(
-    (membership) => membership.serverId === selectedServerId,
-  )
+    (membership) => membership.serverId === selectedServerId
+  );
 
   useEffect(() => {
-    selectedServerIdRef.current = selectedServerId
-  }, [selectedServerId])
+    selectedServerIdRef.current = selectedServerId;
+  }, [selectedServerId]);
 
   useEffect(() => {
     if (
       selectedServerId &&
       memberships.some((membership) => membership.serverId === selectedServerId)
     ) {
-      return
+      return;
     }
 
-    const nextServerId = memberships[0]?.serverId ?? ''
-    requestGateRef.current.cancel()
-    selectedServerIdRef.current = nextServerId
-    setSelectedServerId(nextServerId)
-  }, [memberships, selectedServerId])
+    const nextServerId = memberships[0]?.serverId ?? '';
+    requestGateRef.current.cancel();
+    selectedServerIdRef.current = nextServerId;
+    setSelectedServerId(nextServerId);
+  }, [memberships, selectedServerId]);
 
   useEffect(() => {
     if (!selectedServerId) {
-      setProfile(null)
-      setDraft(null)
-      return
+      setProfile(null);
+      setDraft(null);
+      return;
     }
 
-    const requestGate = requestGateRef.current
-    const request = requestGate.begin(selectedServerId)
-    setIsLoading(true)
-    setIsSaving(false)
-    setProfile(null)
-    setDraft(null)
-    setError(null)
-    setStatus(null)
+    const requestGate = requestGateRef.current;
+    const request = requestGate.begin(selectedServerId);
+    setIsLoading(true);
+    setIsSaving(false);
+    setProfile(null);
+    setDraft(null);
+    setError(null);
+    setStatus(null);
 
     void apiJson<OwnServerMemberProfileResponse>(
       `/api/servers/${request.serverId}/member-profiles/me`,
-      { accessToken, signal: request.signal },
+      { accessToken, signal: request.signal }
     )
       .then((response) => {
-        if (!request.isCurrent(selectedServerIdRef.current)) return
-        setProfile(response)
-        setDraft(createServerMemberProfileDraft(response))
+        if (!request.isCurrent(selectedServerIdRef.current)) return;
+        setProfile(response);
+        setDraft(createServerMemberProfileDraft(response));
       })
       .catch((requestError: unknown) => {
         if (
           !request.isCurrent(selectedServerIdRef.current) ||
-          (requestError instanceof DOMException && requestError.name === 'AbortError')
+          (requestError instanceof DOMException &&
+            requestError.name === 'AbortError')
         ) {
-          return
+          return;
         }
-        setError(settingsCopy.errors.loadServerProfile)
+        setError(settingsCopy.errors.loadServerProfile);
       })
       .finally(() => {
-        if (request.isCurrent(selectedServerIdRef.current)) setIsLoading(false)
-      })
+        if (request.isCurrent(selectedServerIdRef.current)) setIsLoading(false);
+      });
 
-    return () => requestGate.cancel()
-  }, [accessToken, selectedServerId])
+    return () => requestGate.cancel();
+  }, [accessToken, selectedServerId]);
 
   function applyProfile(
     nextProfile: OwnServerMemberProfileResponse,
-    preserveTextDraft = false,
+    preserveTextDraft = false
   ) {
-    setProfile(nextProfile)
+    setProfile(nextProfile);
     setDraft((currentDraft) => {
       if (!preserveTextDraft || !currentDraft) {
-        return createServerMemberProfileDraft(nextProfile)
+        return createServerMemberProfileDraft(nextProfile);
       }
 
       return {
@@ -183,47 +186,48 @@ export function ServerMemberProfileSettings({
           : currentDraft.displayName,
         about: currentDraft.useGlobalAbout
           ? (nextProfile.about ?? '')
-          : currentDraft.about,
-      }
-    })
+          : currentDraft.about
+      };
+    });
   }
 
   async function runMutation(
     mutation: (
-      request: ServerMemberProfileRequestTicket,
+      request: ServerMemberProfileRequestTicket
     ) => Promise<OwnServerMemberProfileResponse>,
-    options: MutationOptions,
+    options: MutationOptions
   ) {
-    const request = requestGateRef.current.begin(selectedServerId)
-    setIsSaving(true)
-    setError(null)
-    setStatus(null)
+    const request = requestGateRef.current.begin(selectedServerId);
+    setIsSaving(true);
+    setError(null);
+    setStatus(null);
     try {
-      const nextProfile = await mutation(request)
-      if (!request.isCurrent(selectedServerIdRef.current)) return null
-      applyProfile(nextProfile, options.preserveTextDraft)
-      setStatus(options.successMessage)
-      return nextProfile
+      const nextProfile = await mutation(request);
+      if (!request.isCurrent(selectedServerIdRef.current)) return null;
+      applyProfile(nextProfile, options.preserveTextDraft);
+      setStatus(options.successMessage);
+      return nextProfile;
     } catch (requestError) {
-      if (!request.isCurrent(selectedServerIdRef.current)) return null
+      if (!request.isCurrent(selectedServerIdRef.current)) return null;
       const localAssetErrors = new Set<string>([
         settingsCopy.errors.serverProfileAssetMustBeImage,
-        settingsCopy.errors.serverProfileAssetTooLarge,
-      ])
+        settingsCopy.errors.serverProfileAssetTooLarge
+      ]);
       setError(
-        requestError instanceof Error && localAssetErrors.has(requestError.message)
+        requestError instanceof Error &&
+          localAssetErrors.has(requestError.message)
           ? requestError.message
-          : settingsCopy.errors.saveServerProfile,
-      )
-      return null
+          : settingsCopy.errors.saveServerProfile
+      );
+      return null;
     } finally {
-      if (request.isCurrent(selectedServerIdRef.current)) setIsSaving(false)
+      if (request.isCurrent(selectedServerIdRef.current)) setIsSaving(false);
     }
   }
 
   function patchProfile(
     request: UpdateServerMemberProfileRequest,
-    options: MutationOptions,
+    options: MutationOptions
   ) {
     return runMutation(
       (operation) =>
@@ -233,65 +237,65 @@ export function ServerMemberProfileSettings({
             method: 'PATCH',
             accessToken,
             body: request,
-            signal: operation.signal,
-          },
+            signal: operation.signal
+          }
         ),
-      options,
-    )
+      options
+    );
   }
 
   async function saveTextFields() {
-    if (!profile || !draft || isSaving) return
-    const update = createServerMemberProfileUpdate(profile, draft)
-    if (!update) return
+    if (!profile || !draft || isSaving) return;
+    const update = createServerMemberProfileUpdate(profile, draft);
+    if (!update) return;
 
     await patchProfile(update, {
-      successMessage: settingsCopy.profile.serverProfileSaved,
-    })
+      successMessage: settingsCopy.profile.serverProfileSaved
+    });
   }
 
   async function resetProfile() {
-    if (!selectedServerId || isSaving) return
+    if (!selectedServerId || isSaving) return;
 
     await runMutation(
       (operation) =>
         apiJson<OwnServerMemberProfileResponse>(
           `/api/servers/${operation.serverId}/member-profiles/me`,
-          { method: 'DELETE', accessToken, signal: operation.signal },
+          { method: 'DELETE', accessToken, signal: operation.signal }
         ),
-      { successMessage: settingsCopy.profile.serverProfileResetDone },
-    )
+      { successMessage: settingsCopy.profile.serverProfileResetDone }
+    );
   }
 
   async function resetAsset(field: 'avatar' | 'banner') {
     await patchProfile(createServerProfileAssetReset(field), {
       preserveTextDraft: true,
-      successMessage: settingsCopy.profile.serverProfileFieldReset,
-    })
+      successMessage: settingsCopy.profile.serverProfileFieldReset
+    });
   }
 
   async function confirmAvatar(crop: ImageCrop) {
-    if (!avatarDraft || isSaving) return
+    if (!avatarDraft || isSaving) return;
 
     const nextProfile = await runMutation(
       async (operation) => {
-        let avatarAssetId = avatarDraft.assetId
+        let avatarAssetId = avatarDraft.assetId;
 
         if (!avatarAssetId && avatarDraft.file) {
-          validateImageFile(avatarDraft.file)
-          const formData = new FormData()
-          formData.append('AssetTypeId', avatarAssetTypeId)
-          formData.append('File', avatarDraft.file)
+          validateImageFile(avatarDraft.file);
+          const formData = new FormData();
+          formData.append('AssetTypeId', avatarAssetTypeId);
+          formData.append('File', avatarDraft.file);
           const asset = await apiJson<AssetResponse>('/api/assets/upload', {
             method: 'POST',
             accessToken,
             body: formData,
-            signal: operation.signal,
-          })
-          avatarAssetId = asset.id
+            signal: operation.signal
+          });
+          avatarAssetId = asset.id;
         }
 
-        if (!avatarAssetId) throw new Error('avatar-asset-missing')
+        if (!avatarAssetId) throw new Error('avatar-asset-missing');
 
         return await apiJson<OwnServerMemberProfileResponse>(
           `/api/servers/${operation.serverId}/member-profiles/me/avatar/${avatarAssetId}`,
@@ -301,39 +305,39 @@ export function ServerMemberProfileSettings({
             body: {
               cropOffsetX: crop.offsetX,
               cropOffsetY: crop.offsetY,
-              cropZoom: crop.zoom,
+              cropZoom: crop.zoom
             },
-            signal: operation.signal,
-          },
-        )
+            signal: operation.signal
+          }
+        );
       },
       {
         preserveTextDraft: true,
-        successMessage: settingsCopy.profile.serverProfileAvatarSaved,
-      },
-    )
+        successMessage: settingsCopy.profile.serverProfileAvatarSaved
+      }
+    );
 
     if (nextProfile) {
-      completeAvatarCrop()
-      void loadAvatarAssets()
+      completeAvatarCrop();
+      void loadAvatarAssets();
     }
   }
 
   async function uploadBanner(file: File | undefined) {
-    if (!file || isSaving) return
+    if (!file || isSaving) return;
 
     await runMutation(
       async (operation) => {
-        validateImageFile(file)
-        const formData = new FormData()
-        formData.append('AssetTypeId', bannerAssetTypeId)
-        formData.append('File', file)
+        validateImageFile(file);
+        const formData = new FormData();
+        formData.append('AssetTypeId', bannerAssetTypeId);
+        formData.append('File', file);
         const asset = await apiJson<AssetResponse>('/api/assets/upload', {
           method: 'POST',
           accessToken,
           body: formData,
-          signal: operation.signal,
-        })
+          signal: operation.signal
+        });
 
         return await apiJson<OwnServerMemberProfileResponse>(
           `/api/servers/${operation.serverId}/member-profiles/me`,
@@ -341,40 +345,37 @@ export function ServerMemberProfileSettings({
             method: 'PATCH',
             accessToken,
             body: { bannerAssetId: asset.id },
-            signal: operation.signal,
-          },
-        )
+            signal: operation.signal
+          }
+        );
       },
       {
         preserveTextDraft: true,
-        successMessage: settingsCopy.profile.serverProfileBannerSaved,
-      },
-    )
+        successMessage: settingsCopy.profile.serverProfileBannerSaved
+      }
+    );
 
-    if (bannerInputRef.current) bannerInputRef.current.value = ''
+    if (bannerInputRef.current) bannerInputRef.current.value = '';
   }
 
   function chooseServer(serverId: string) {
-    requestGateRef.current.cancel()
-    selectedServerIdRef.current = serverId
-    cancelAvatarCrop()
-    setIsAvatarLibraryOpen(false)
-    setSelectedServerId(serverId)
+    requestGateRef.current.cancel();
+    selectedServerIdRef.current = serverId;
+    cancelAvatarCrop();
+    setIsAvatarLibraryOpen(false);
+    setSelectedServerId(serverId);
   }
 
-  const validation = draft
-    ? validateServerMemberProfileDraft(draft)
-    : null
-  const textUpdate = profile && draft
-    ? createServerMemberProfileUpdate(profile, draft)
-    : null
-  const avatarImageUrl = profile ? assetUrl(profile.avatarAssetId) : null
-  const bannerImageUrl = profile ? assetUrl(profile.bannerAssetId) : null
+  const validation = draft ? validateServerMemberProfileDraft(draft) : null;
+  const textUpdate =
+    profile && draft ? createServerMemberProfileUpdate(profile, draft) : null;
+  const avatarImageUrl = profile ? assetUrl(profile.avatarAssetId) : null;
+  const bannerImageUrl = profile ? assetUrl(profile.bannerAssetId) : null;
   const avatarDisplayTransform = profile
     ? profile.inheritance.avatar
       ? `translate(-50%, -50%) translate(${profile.avatarCropOffsetX * 100}%, ${profile.avatarCropOffsetY * 100}%) scale(${profile.avatarCropZoom})`
       : 'translate(-50%, -50%)'
-    : undefined
+    : undefined;
 
   return (
     <>
@@ -465,13 +466,15 @@ export function ServerMemberProfileSettings({
             <form
               className={styles.profileForm}
               onSubmit={(event) => {
-                event.preventDefault()
-                void saveTextFields()
+                event.preventDefault();
+                void saveTextFields();
               }}
             >
               <ProfileTextField
                 label={settingsCopy.profile.displayName}
-                description={settingsCopy.profile.serverProfileDisplayNameDescription}
+                description={
+                  settingsCopy.profile.serverProfileDisplayNameDescription
+                }
                 inherited={draft.useGlobalDisplayName}
                 inheritLabel={settingsCopy.profile.serverProfileUseGlobal}
                 customizeLabel={settingsCopy.profile.serverProfileCustomize}
@@ -479,7 +482,7 @@ export function ServerMemberProfileSettings({
                 onToggleInheritance={() =>
                   setDraft({
                     ...draft,
-                    useGlobalDisplayName: !draft.useGlobalDisplayName,
+                    useGlobalDisplayName: !draft.useGlobalDisplayName
                   })
                 }
               >
@@ -520,7 +523,9 @@ export function ServerMemberProfileSettings({
 
               <ProfileTextField
                 label={settingsCopy.profile.serverProfileStatus}
-                description={settingsCopy.profile.serverProfileStatusDescription}
+                description={
+                  settingsCopy.profile.serverProfileStatusDescription
+                }
                 inherited={false}
               >
                 <span className={styles.inlineControl}>
@@ -530,7 +535,9 @@ export function ServerMemberProfileSettings({
                     value={draft.statusText}
                     disabled={isSaving}
                     maxLength={serverProfileStatusMaxLength}
-                    placeholder={settingsCopy.profile.serverProfileStatusPlaceholder}
+                    placeholder={
+                      settingsCopy.profile.serverProfileStatusPlaceholder
+                    }
                     onChange={(event) =>
                       setDraft({ ...draft, statusText: event.target.value })
                     }
@@ -549,7 +556,7 @@ export function ServerMemberProfileSettings({
                 <span aria-live="polite">
                   {validation
                     ? serverProfileValidationCopy(validation)
-                    : status ?? settingsCopy.profile.serverProfileUnsavedHint}
+                    : (status ?? settingsCopy.profile.serverProfileUnsavedHint)}
                 </span>
                 <button
                   className={sharedStyles.secondaryAction}
@@ -679,7 +686,7 @@ export function ServerMemberProfileSettings({
               ? {
                   offsetX: profile.avatarCropOffsetX,
                   offsetY: profile.avatarCropOffsetY,
-                  zoom: profile.avatarCropZoom,
+                  zoom: profile.avatarCropZoom
                 }
               : undefined
           }
@@ -694,7 +701,9 @@ export function ServerMemberProfileSettings({
         <AssetLibraryDialog
           titleId="server-profile-avatar-library-title"
           title={settingsCopy.profile.serverProfileAvatarLibraryTitle}
-          description={settingsCopy.profile.serverProfileAvatarLibraryDescription}
+          description={
+            settingsCopy.profile.serverProfileAvatarLibraryDescription
+          }
           emptyText={settingsCopy.profile.serverProfileAvatarLibraryEmpty}
           loadingText={settingsCopy.profile.serverProfileAvatarLibraryLoading}
           assets={avatarAssets}
@@ -709,7 +718,7 @@ export function ServerMemberProfileSettings({
         />
       )}
     </>
-  )
+  );
 }
 
 function ProfileTextField({
@@ -720,16 +729,16 @@ function ProfileTextField({
   customizeLabel,
   disabled = false,
   onToggleInheritance,
-  children,
+  children
 }: {
-  label: string
-  description: string
-  inherited: boolean
-  inheritLabel?: string
-  customizeLabel?: string
-  disabled?: boolean
-  onToggleInheritance?: () => void
-  children: ReactNode
+  label: string;
+  description: string;
+  inherited: boolean;
+  inheritLabel?: string;
+  customizeLabel?: string;
+  disabled?: boolean;
+  onToggleInheritance?: () => void;
+  children: ReactNode;
 }) {
   return (
     <div className={styles.textField}>
@@ -757,28 +766,28 @@ function ProfileTextField({
         </em>
       )}
     </div>
-  )
+  );
 }
 
 function serverProfileValidationCopy(
-  error: Exclude<ReturnType<typeof validateServerMemberProfileDraft>, null>,
+  error: Exclude<ReturnType<typeof validateServerMemberProfileDraft>, null>
 ) {
-  const copy = settingsCopy.profile
+  const copy = settingsCopy.profile;
   const errors = {
     'display-name-required': copy.serverProfileDisplayNameRequired,
     'display-name-too-long': copy.serverProfileDisplayNameTooLong,
     'about-required': copy.serverProfileAboutRequired,
     'about-too-long': copy.serverProfileAboutTooLong,
-    'status-too-long': copy.serverProfileStatusTooLong,
-  }
-  return errors[error]
+    'status-too-long': copy.serverProfileStatusTooLong
+  };
+  return errors[error];
 }
 
 function validateImageFile(file: File) {
   if (!allowedProfileImageMimeTypes.has(file.type)) {
-    throw new Error(settingsCopy.errors.serverProfileAssetMustBeImage)
+    throw new Error(settingsCopy.errors.serverProfileAssetMustBeImage);
   }
   if (file.size > maxProfileAssetSizeBytes) {
-    throw new Error(settingsCopy.errors.serverProfileAssetTooLarge)
+    throw new Error(settingsCopy.errors.serverProfileAssetTooLarge);
   }
 }

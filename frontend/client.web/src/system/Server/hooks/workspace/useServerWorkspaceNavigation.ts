@@ -1,45 +1,46 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import type {
-  ServerMemberDetailsResponse,
   ServerEffectivePermissionsResponse,
+  ServerMemberDetailsResponse,
   ServerMemberResponse,
   SpaceMessageResponse,
   SpaceResponse,
-  UserResponse,
-} from '../../../../shared/types'
+  UserResponse
+} from '../../../../shared/types';
+import { resolveMessageFocus } from '../../../shared/messages/messageFocusModel';
+import { rememberRecentServerDetail } from '../../utils/serverRecentSpace';
 import {
   type ServerDetail,
-  toChannelDetail,
-} from '../../utils/serverWorkspaceModel'
-import type { FocusMessageRequest } from '../messages/useSpaceMessages'
-import { useServerWorkspaceSelection } from './useServerWorkspaceSelection'
-import { useServerWorkspaceState } from './useServerWorkspaceState'
-import type { VoiceChannelController } from '../voice/useVoiceChannel'
-import { rememberRecentServerDetail } from '../../utils/serverRecentSpace'
-import { canConnectToVoiceSpace } from '../../utils/spaceCapabilities'
-import { resolveMessageFocus } from '../../../shared/messages/messageFocusModel'
+  toChannelDetail
+} from '../../utils/serverWorkspaceModel';
+import { canConnectToVoiceSpace } from '../../utils/spaceCapabilities';
+import type { FocusMessageRequest } from '../messages/useSpaceMessages';
+import type { VoiceChannelController } from '../voice/useVoiceChannel';
+import { useServerWorkspaceSelection } from './useServerWorkspaceSelection';
+import { useServerWorkspaceState } from './useServerWorkspaceState';
 
-const MOBILE_SERVER_WORKSPACE_QUERY = '(max-width: 760px)'
+const MOBILE_SERVER_WORKSPACE_QUERY = '(max-width: 760px)';
 
 type UseServerWorkspaceNavigationOptions = {
-  selectedServerMembership: ServerMemberResponse
-  user: UserResponse
-  serverMembers: ServerMemberDetailsResponse[]
-  serverSpaces: SpaceResponse[]
-  isLoadingSpaces: boolean
-  voice: VoiceChannelController
-  onCloseSettings: () => boolean
-  onOpenVoiceChat: (spaceId: string | null) => void
-  effectivePermissions: ServerEffectivePermissionsResponse | null
-  externalMessageFocus?: FocusMessageRequest | null
-  onExternalMessageFocusConsumed?: () => void
-}
+  selectedServerMembership: ServerMemberResponse;
+  user: UserResponse;
+  serverMembers: ServerMemberDetailsResponse[];
+  serverSpaces: SpaceResponse[];
+  isLoadingSpaces: boolean;
+  voice: VoiceChannelController;
+  onCloseSettings: () => boolean;
+  onOpenVoiceChat: (spaceId: string | null) => void;
+  effectivePermissions: ServerEffectivePermissionsResponse | null;
+  externalMessageFocus?: FocusMessageRequest | null;
+  onExternalMessageFocusConsumed?: () => void;
+};
 
 function isMobileServerWorkspace() {
   return (
     typeof window !== 'undefined' &&
     window.matchMedia(MOBILE_SERVER_WORKSPACE_QUERY).matches
-  )
+  );
 }
 
 export function useServerWorkspaceNavigation({
@@ -53,32 +54,31 @@ export function useServerWorkspaceNavigation({
   onOpenVoiceChat,
   effectivePermissions,
   externalMessageFocus,
-  onExternalMessageFocusConsumed,
+  onExternalMessageFocusConsumed
 }: UseServerWorkspaceNavigationOptions) {
-  const serverId = selectedServerMembership.server.id
+  const serverId = selectedServerMembership.server.id;
   const [activeSelection, setActiveSelection] = useState<{
-    serverId: string
-    detail: ServerDetail | null
-  }>(() => ({ serverId, detail: null }))
-  const activeDetail = activeSelection.serverId === serverId
-    ? activeSelection.detail
-    : null
+    serverId: string;
+    detail: ServerDetail | null;
+  }>(() => ({ serverId, detail: null }));
+  const activeDetail =
+    activeSelection.serverId === serverId ? activeSelection.detail : null;
   const setActiveDetail = useCallback(
     (detail: ServerDetail | null) => {
-      setActiveSelection({ serverId, detail })
+      setActiveSelection({ serverId, detail });
     },
-    [serverId],
-  )
+    [serverId]
+  );
   const [focusedMessage, setFocusedMessage] =
-    useState<FocusMessageRequest | null>(null)
+    useState<FocusMessageRequest | null>(null);
   const workspaceState = useServerWorkspaceState({
     selectedServerMembership,
     user,
     serverMembers,
     serverSpaces,
     activeDetail,
-    effectivePermissions,
-  })
+    effectivePermissions
+  });
   const { collapsedCategoryIds, toggleCategory } = useServerWorkspaceSelection({
     activeDetail,
     autoSelectDefaultDetail: true,
@@ -88,109 +88,114 @@ export function useServerWorkspaceNavigation({
     serverSpaces,
     textSpaces: workspaceState.textSpaces,
     visibleDetail: workspaceState.visibleDetail,
-    onSetActiveDetail: setActiveDetail,
-  })
+    onSetActiveDetail: setActiveDetail
+  });
   const voiceSpaceIds = useMemo(
     () =>
       serverSpaces
         .filter((space) => space.typeCode === 'voice_room')
         .map((space) => space.id),
-    [serverSpaces],
-  )
-  const voiceSpaceIdsKey = voiceSpaceIds.join('|')
+    [serverSpaces]
+  );
+  const voiceSpaceIdsKey = voiceSpaceIds.join('|');
 
   useEffect(() => {
-    if (isLoadingSpaces) return
+    if (isLoadingSpaces) return;
 
-    void voice.refreshServerVoiceStates(workspaceState.server.id, voiceSpaceIds)
+    void voice.refreshServerVoiceStates(
+      workspaceState.server.id,
+      voiceSpaceIds
+    );
     // The joined key tracks identity changes without retriggering for an
     // equivalent array created by a refreshed server-space payload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoadingSpaces, workspaceState.server.id, voiceSpaceIdsKey])
+  }, [isLoadingSpaces, workspaceState.server.id, voiceSpaceIdsKey]);
 
   useEffect(() => {
-    setFocusedMessage(null)
-  }, [serverId])
+    setFocusedMessage(null);
+  }, [serverId]);
 
   function selectDetail(
     detail: ServerDetail | null,
-    preserveFocusedMessage = false,
+    preserveFocusedMessage = false
   ) {
     if (!onCloseSettings()) {
-      return false
+      return false;
     }
 
     if (!preserveFocusedMessage) {
-      setFocusedMessage(resolveMessageFocus({ kind: 'latest' }))
+      setFocusedMessage(resolveMessageFocus({ kind: 'latest' }));
     }
     if (detail) {
-      rememberRecentServerDetail(serverId, detail)
+      rememberRecentServerDetail(serverId, detail);
     }
-    setActiveDetail(detail)
-    return true
+    setActiveDetail(detail);
+    return true;
   }
 
   function selectSpace(space: SpaceResponse) {
-    const detail = toChannelDetail(space)
+    const detail = toChannelDetail(space);
     if (!selectDetail(detail)) {
-      return
+      return;
     }
 
-    if (detail.type !== 'channel' || detail.kind !== 'voice' || !detail.spaceId) {
-      return
+    if (
+      detail.type !== 'channel' ||
+      detail.kind !== 'voice' ||
+      !detail.spaceId
+    ) {
+      return;
     }
 
-    if (isMobileServerWorkspace()) return
-    if (!canConnectToVoiceSpace(space)) return
+    if (isMobileServerWorkspace()) return;
+    if (!canConnectToVoiceSpace(space)) return;
 
     if (
       voice.connectedChannel?.channelScope === 'server' &&
       voice.connectedChannel.serverId === workspaceState.server.id &&
       voice.connectedChannel.spaceId === detail.spaceId
     ) {
-      return
+      return;
     }
 
     void voice.joinVoiceChannel({
       serverId: workspaceState.server.id,
       spaceId: detail.spaceId,
       title: detail.title,
-      channelScope: 'server',
-    })
+      channelScope: 'server'
+    });
   }
 
   function openSearchResult(message: SpaceMessageResponse) {
-    const space = serverSpaces.find((item) =>
-      item.id === message.spaceId ||
-      item.voiceChatSpaceId === message.spaceId,
-    )
-    if (!space || space.typeCode === 'category') return
+    const space = serverSpaces.find(
+      (item) =>
+        item.id === message.spaceId || item.voiceChatSpaceId === message.spaceId
+    );
+    if (!space || space.typeCode === 'category') return;
 
     if (!selectDetail(toChannelDetail(space), true)) {
-      return
+      return;
     }
 
-    setFocusedMessage(
-      resolveMessageFocus({ kind: 'search-result', message }),
-    )
-    onOpenVoiceChat(space.typeCode === 'voice_room' ? space.id : null)
+    setFocusedMessage(resolveMessageFocus({ kind: 'search-result', message }));
+    onOpenVoiceChat(space.typeCode === 'voice_room' ? space.id : null);
   }
 
   useEffect(() => {
-    if (!externalMessageFocus || isLoadingSpaces) return
+    if (!externalMessageFocus || isLoadingSpaces) return;
 
     const space = serverSpaces.find(
       (item) =>
         item.id === externalMessageFocus.spaceId ||
-        item.voiceChatSpaceId === externalMessageFocus.spaceId,
-    )
-    if (!space || space.typeCode === 'category') return
+        item.voiceChatSpaceId === externalMessageFocus.spaceId
+    );
+    if (!space || space.typeCode === 'category') return;
 
-    if (!selectDetail(toChannelDetail(space), true)) return
+    if (!selectDetail(toChannelDetail(space), true)) return;
 
-    setFocusedMessage(externalMessageFocus)
-    onOpenVoiceChat(space.typeCode === 'voice_room' ? space.id : null)
-    onExternalMessageFocusConsumed?.()
+    setFocusedMessage(externalMessageFocus);
+    onOpenVoiceChat(space.typeCode === 'voice_room' ? space.id : null);
+    onExternalMessageFocusConsumed?.();
     // The target is an explicit one-shot navigation request. Selection helpers
     // intentionally remain outside the dependency list to avoid replaying it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,8 +203,8 @@ export function useServerWorkspaceNavigation({
     externalMessageFocus,
     isLoadingSpaces,
     onExternalMessageFocusConsumed,
-    serverSpaces,
-  ])
+    serverSpaces
+  ]);
 
   return {
     ...workspaceState,
@@ -210,6 +215,6 @@ export function useServerWorkspaceNavigation({
     selectDetail,
     selectSpace,
     setActiveDetail,
-    toggleCategory,
-  }
+    toggleCategory
+  };
 }

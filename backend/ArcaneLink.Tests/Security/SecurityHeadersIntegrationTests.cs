@@ -12,7 +12,7 @@ public sealed class SecurityHeadersIntegrationTests : IClassFixture<ArcaneLinkAp
 
     public SecurityHeadersIntegrationTests(ArcaneLinkApiFactory factory)
     {
-        _factory = factory;
+        this._factory = factory;
     }
 
     [Theory]
@@ -20,7 +20,7 @@ public sealed class SecurityHeadersIntegrationTests : IClassFixture<ArcaneLinkAp
     [InlineData("/route-that-does-not-exist")]
     public async Task Responses_IncludeBaselineAndReportOnlyPolicies(string path)
     {
-        using var client = _factory.CreateClient();
+        using var client = this._factory.CreateClient();
 
         using var response = await client.GetAsync(path);
 
@@ -59,7 +59,7 @@ public sealed class SecurityHeadersIntegrationTests : IClassFixture<ArcaneLinkAp
     [Fact]
     public async Task EnforcedMode_ReplacesReportOnlyHeader()
     {
-        using var enforcedFactory = _factory.WithWebHostBuilder(builder =>
+        using var enforcedFactory = this._factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureAppConfiguration((_, configuration) =>
             {

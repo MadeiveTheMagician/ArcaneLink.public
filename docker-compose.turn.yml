@@ -25,6 +25,26 @@ services:
     restart: unless-stopped
     environment:
       TURN_SHARED_SECRET: ${TURN_SHARED_SECRET:?Set TURN_SHARED_SECRET in .env.turn}
+      TURN_EXTERNAL_IP: ${TURN_EXTERNAL_IP:?Set TURN_EXTERNAL_IP in .env.turn}
+    # Coturn maps its public relay address back to the container before checking
+    # peer permissions. Allow only its own IP so two relay-only clients can talk.
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        relay_ip=$$(hostname -i)
+        if ! printf '%s\n' "$$relay_ip" | grep -Eq '^([0-9]{1,3}[.]){3}[0-9]{1,3}$$'; then
+          printf 'Expected exactly one IPv4 address for the TURN relay\n' >&2
+          exit 1
+        fi
+        exec turnserver \
+          --listening-ip="$$relay_ip" \
+          --relay-ip="$$relay_ip" \
+          --external-ip="$${TURN_EXTERNAL_IP}/$$relay_ip" \
+          --allowed-peer-ip="$$relay_ip" \
+          --static-auth-secret="$$TURN_SHARED_SECRET" \
+          "$$@"
+      - arcanelink-turn
     ports:
       - "${TURN_BIND_ADDRESS:-0.0.0.0}:3478:3478/tcp"
       - "${TURN_BIND_ADDRESS:-0.0.0.0}:3478:3478/udp"
@@ -35,9 +55,7 @@ services:
       - --max-port=${TURN_MAX_PORT:-49200}
       - --realm=${TURN_REALM:?Set TURN_REALM in .env.turn}
       - --server-name=${TURN_REALM:?Set TURN_REALM in .env.turn}
-      - --external-ip=${TURN_EXTERNAL_IP:?Set TURN_EXTERNAL_IP in .env.turn}
       - --use-auth-secret
-      - --static-auth-secret=${TURN_SHARED_SECRET:?Set TURN_SHARED_SECRET in .env.turn}
       - --user-quota=${TURN_USER_QUOTA:?Set TURN_USER_QUOTA in .env.turn}
       - --total-quota=${TURN_TOTAL_QUOTA:?Set TURN_TOTAL_QUOTA in .env.turn}
       - --max-bps=${TURN_MAX_BPS:?Set TURN_MAX_BPS in .env.turn}
@@ -72,15 +90,18 @@ services:
       - --log-file=stdout
       - --simple-log
     healthcheck:
-      test: ["CMD", "nc", "-z", "-w", "3", "127.0.0.1", "3478"]
+      test: ['CMD-SHELL', 'nc -z -w 3 "$$(hostname -i)" 3478']
       interval: 30s
       timeout: 8s
       retries: 3
       start_period: 10s
     networks:
-      - edge
+      - turn_relay
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "5"
+
+networks:
+  turn_relay: {}

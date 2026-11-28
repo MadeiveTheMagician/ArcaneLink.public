@@ -11,9 +11,15 @@
 .cache
 artifacts
 backups
+.arcanelink-deploy.lock
 docs
 frontend/client.desktop
-frontend/client.mobile
+frontend/client.mobile/**
+!frontend/client.mobile/android/
+!frontend/client.mobile/android/app/
+!frontend/client.mobile/android/app/src/
+!frontend/client.mobile/android/app/src/main/
+!frontend/client.mobile/android/app/src/main/AndroidManifest.xml
 frontend/client.web/node_modules
 frontend/client.web/dist
 frontend/client.web/playwright-report

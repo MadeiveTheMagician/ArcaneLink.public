@@ -4,6 +4,7 @@ import type {
   ServerMemberResponse,
   SpaceMessageResponse,
 } from '../../../../shared/types'
+import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu'
 import { useContextMenuDismiss } from '../../../shared/hooks/useContextMenuDismiss'
 import {
   resolveMessageFocus,
@@ -14,12 +15,14 @@ export type HubWorkspace =
   | 'profile'
   | 'server'
   | 'servers'
+  | 'favorites'
   | 'friends'
   | 'invites'
   | 'private-space'
 
 type ServerContextMenuState = {
   membership: ServerMemberResponse
+  folderItems: ContextMenuItem[]
   x: number
   y: number
 }
@@ -76,21 +79,26 @@ export function useHubWorkspace({
     setServerContextMenu(null),
   )
 
-  async function openServerWorkspace(membership: ServerMemberResponse) {
+  async function openServerWorkspace(
+    membership: ServerMemberResponse,
+    workspace: 'server' | 'favorites' = 'server',
+  ) {
     setFocusedPrivateMessage(resolveMessageFocus({ kind: 'latest' }))
     setActiveServerId(membership.serverId)
-    setActiveWorkspace('server')
+    setActiveWorkspace(workspace)
     await loadServerMembers(membership)
   }
 
   function openServerContextMenu(
     event: MouseEvent<HTMLButtonElement>,
     membership: ServerMemberResponse,
+    folderItems: ContextMenuItem[] = [],
   ) {
     event.preventDefault()
     event.stopPropagation()
     setServerContextMenu({
       membership,
+      folderItems,
       x: event.clientX,
       y: event.clientY,
     })
@@ -120,6 +128,12 @@ export function useHubWorkspace({
     setActivePrivateSpaceId(null)
     setActiveServerId(null)
     setActiveWorkspace('servers')
+  }
+
+  function showFavoritesWorkspace() {
+    setActivePrivateSpaceId(null)
+    setActiveServerId(null)
+    setActiveWorkspace('favorites')
   }
 
   function showFriendsWorkspace() {
@@ -185,6 +199,7 @@ export function useHubWorkspace({
     toggleServerPanel,
     showProfileWorkspace,
     showServersWorkspace,
+    showFavoritesWorkspace,
     showFriendsWorkspace,
     showInvitesWorkspace,
     openPrivateSpace,

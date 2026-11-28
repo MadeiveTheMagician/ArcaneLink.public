@@ -164,6 +164,11 @@ export const settingsCopy = {
     toggleServerRailPinned: 'Закрепить закладку серверов открытой',
     toggleServerRailPinnedDescription:
       'Когда включено, закладка открыта постоянно, а внешний переключатель скрыт.',
+    desktopWindowSettings: 'Окно и трей Windows',
+    enableServerRailResize: 'Изменение ширины закладки серверов',
+    enableServerRailResizeDescription:
+      'Потяните за правую границу закладки, чтобы показать серверы в нескольких столбцах.',
+    serverRailWidth: 'Ширина закладки серверов',
     showPrivateReadAllButton: 'Отображать кнопку «Прочитать всё»',
     showPrivateReadAllButtonDescription:
       'Показывать кнопку над списком переписок, когда есть непрочитанные сообщения.',
@@ -373,6 +378,15 @@ export const settingsCopy = {
       'Показывать подтверждение перед скачиванием архивов, исполняемых файлов и системных сценариев.',
   },
   streaming: {
+    camera: 'Камера',
+    cameraDefault: 'Камера по умолчанию',
+    cameraDeviceFallback: 'Камера',
+    cameraDevicesRefresh: 'Обновить список камер',
+    cameraDeviceUnavailable: 'Выбранная камера недоступна',
+    cameraDevicesUnavailable: 'Не удалось получить список камер. Проверьте разрешения браузера.',
+    cameraDevicesMissing: 'Камеры не найдены.',
+    cameraPermissionNeeded: 'Разрешите доступ к камере, чтобы увидеть список устройств.',
+    cameraCaptureFailed: 'Не удалось открыть выбранную камеру. Проверьте устройство и разрешения браузера.',
     frameRate: 'Кадров в секунду',
     qualityDescription:
       'Эти параметры применяются к камере и демонстрации экрана перед отправкой потока.',
@@ -483,7 +497,7 @@ export const settingsCopy = {
     inputLevelLive: 'Микрофон улавливает сигнал.',
     inputModePushToTalk: 'Рация',
     inputModePushToTalkDescription:
-      'Звук передаётся, пока назначенная клавиша удерживается.',
+      'Звук передаётся, пока вы удерживаете назначенную клавишу или боковую кнопку мыши.',
     inputModeVoiceActivity: 'Активация голосом',
     inputModeVoiceActivityDescription:
       'Передача начинается автоматически, когда громкость превышает порог.',
@@ -493,9 +507,9 @@ export const settingsCopy = {
     inputUnavailableNotification:
       'ArcaneLink не получает сигнал с выбранного микрофона.',
     keyCaptureCancelled: 'Назначение клавиши отменено.',
-    keyCaptureHint: 'Нажмите клавишу. Escape отменяет назначение.',
+    keyCaptureHint: 'Нажмите клавишу или боковую кнопку мыши. Escape отменяет назначение.',
     keyCaptureInvalid:
-      'Эту клавишу нельзя использовать. Выберите обычную клавишу клавиатуры.',
+      'Выберите обычную клавишу клавиатуры или боковую кнопку мыши X1 или X2.',
     manualThreshold: 'Вручную',
     manualThresholdDescription:
       'Укажите минимальную громкость, при которой начинается передача.',

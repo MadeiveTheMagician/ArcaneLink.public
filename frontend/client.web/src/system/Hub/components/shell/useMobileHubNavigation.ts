@@ -37,7 +37,7 @@ export function useMobileHubNavigation({
   const mobilePrivateChatCloseTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (activeWorkspace === 'servers') {
+    if (activeWorkspace === 'servers' || activeWorkspace === 'favorites') {
       setMobileTab('servers')
       return
     }

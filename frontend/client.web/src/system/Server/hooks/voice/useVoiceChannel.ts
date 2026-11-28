@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import * as signalR from '@microsoft/signalr'
 import { voiceDebug } from './voiceChannelDebug'
 import { resolveVoicePeerConfiguration } from './voiceChannelConfig'
@@ -74,17 +74,29 @@ export type { VoiceNoiseSuppressionTelemetry } from './voiceNoiseSuppressionMode
 export function useVoiceChannel(
   accessToken: string,
   currentUserId: string,
+  deviceSessionId: string | null,
 ) {
   const normalizedCurrentUserId = normalizeUserId(currentUserId)
-  const getPeerConfiguration = () =>
-    resolveVoicePeerConfiguration({
-      accessToken,
-      cacheScope: normalizedCurrentUserId,
-    })
-  useEffect(
-    () => () => voiceIceCredentialsClient.clear(),
-    [normalizedCurrentUserId],
-  )
+  const sessionKey = JSON.stringify([normalizedCurrentUserId, deviceSessionId])
+  const credentialsRef = useRef({ sessionKey, accessToken })
+
+  useLayoutEffect(() => {
+    credentialsRef.current = { sessionKey, accessToken }
+  }, [sessionKey, accessToken])
+
+  const getAccessToken = useCallback(() => {
+    const credentials = credentialsRef.current
+    return credentials.sessionKey === sessionKey ? credentials.accessToken : ''
+  }, [sessionKey])
+
+  const getPeerConfiguration = () => {
+    const token = getAccessToken()
+    if (!token) {
+      throw new VoiceIceCredentialsError('request_failed', 'Voice session has changed.')
+    }
+    return resolveVoicePeerConfiguration({ accessToken: token, cacheScope: sessionKey })
+  }
+  useEffect(() => () => voiceIceCredentialsClient.clear(), [sessionKey])
   const connectionRef = useRef<signalR.HubConnection | null>(null)
   const connectedChannelRef = useRef<ConnectedVoiceChannel | null>(null)
   const connectionCuePlayerRef = useRef<ReturnType<
@@ -344,6 +356,7 @@ export function useVoiceChannel(
   const {
     syncPeers,
     ensurePeerConnection,
+    bindVideoSendersForAnswer,
     renegotiatePeer,
     recoverPeer,
     closePeerIfCurrent,
@@ -392,6 +405,7 @@ export function useVoiceChannel(
     getCurrentVoiceOperationId,
     isCurrentVoiceOperation,
     ensurePeerConnection,
+    bindVideoSendersForAnswer,
     closePeerIfCurrent,
     getPeerConnection,
     getPendingIceCandidates,
@@ -501,8 +515,8 @@ export function useVoiceChannel(
   }
 
   useVoiceHubConnectionLifecycle({
-    accessToken,
-    currentUserId,
+    getAccessToken,
+    currentUserId: normalizedCurrentUserId,
     connectionRef,
     connectedChannelRef,
     localParticipantIdRef,

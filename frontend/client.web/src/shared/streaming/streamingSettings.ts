@@ -9,6 +9,7 @@ export type StreamingTier = 'free' | 'plus' | 'prime'
 export type StreamingSettings = {
   frameRate: StreamingFrameRate
   resolution: StreamingResolution
+  cameraDeviceId: string
 }
 
 type StreamingVideoConstraints = MediaTrackConstraints & {
@@ -32,6 +33,7 @@ let streamingConfigPromise:
 export const defaultStreamingSettings: StreamingSettings = {
   frameRate: 30,
   resolution: '720p',
+  cameraDeviceId: 'default',
 }
 
 export const streamingFrameRateOptions = [
@@ -153,6 +155,10 @@ export function normalizeStreamingSettings(value: unknown): StreamingSettings {
     resolution: isStreamingResolution(candidate.resolution)
       ? candidate.resolution
       : defaultStreamingSettings.resolution,
+    cameraDeviceId:
+      typeof candidate.cameraDeviceId === 'string' && candidate.cameraDeviceId.trim()
+        ? candidate.cameraDeviceId
+        : defaultStreamingSettings.cameraDeviceId,
   }
 }
 

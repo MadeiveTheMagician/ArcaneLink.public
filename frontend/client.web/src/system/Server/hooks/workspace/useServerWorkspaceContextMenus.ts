@@ -29,6 +29,7 @@ import {
   userBlockChangedEventName,
 } from '../../../shared'
 import { serverCopy } from '../../../shared/copy'
+import type { ContextMenuItem } from '../../../shared/components/context-menu/ContextMenu'
 import { useContextMenuDismiss } from '../../../shared/hooks/useContextMenuDismiss'
 import {
   buildMemberContextMenuItems,
@@ -93,6 +94,8 @@ type UseServerWorkspaceContextMenusOptions = {
   isMutatingGovernance: boolean
   isMutatingServerMember: boolean
   maxCategoryDepth: number
+  favoriteSpaceIds: string[]
+  onToggleFavoriteSpace: (spaceId: string) => void
   onCreateServerInvite: (
     request?: CreateServerInviteRequest,
   ) => Promise<ServerInviteResponse | null>
@@ -162,6 +165,8 @@ export function useServerWorkspaceContextMenus({
   isMutatingGovernance,
   isMutatingServerMember,
   maxCategoryDepth,
+  favoriteSpaceIds,
+  onToggleFavoriteSpace,
   onCreateServerInvite,
   onCreateSpace,
   onEditSpace,
@@ -249,7 +254,7 @@ export function useServerWorkspaceContextMenus({
       ? canManageSpace(space)
       : canManageServer
 
-    if (!canManageTarget) {
+    if (!space && !canManageTarget) {
       return
     }
 
@@ -322,7 +327,7 @@ export function useServerWorkspaceContextMenus({
     }
   }
 
-  function getSpaceContextItems() {
+  function getSpaceContextItems(): ContextMenuItem[] {
     if (!spaceContextMenu) {
       return []
     }
@@ -335,7 +340,7 @@ export function useServerWorkspaceContextMenus({
       ? canManageSpace(selectedSpace)
       : canManageServer
 
-    return buildSpaceContextMenuItems({
+    const items = buildSpaceContextMenuItems({
       space: selectedSpace,
       spaces: serverSpaces,
       canManageSpace: canManageTarget,
@@ -345,6 +350,14 @@ export function useServerWorkspaceContextMenus({
       onEditSpace,
       onDeleteSpace,
     })
+    if (!selectedSpace) return items
+    const favoriteItem: ContextMenuItem = {
+      type: 'item',
+      icon: 'space',
+      label: favoriteSpaceIds.includes(selectedSpace.id) ? 'Убрать из избранного' : 'Добавить в избранное',
+      onSelect: () => onToggleFavoriteSpace(selectedSpace.id),
+    }
+    return items.length ? [favoriteItem, { type: 'separator' }, ...items] : [favoriteItem]
   }
 
   function getMemberContextItems() {

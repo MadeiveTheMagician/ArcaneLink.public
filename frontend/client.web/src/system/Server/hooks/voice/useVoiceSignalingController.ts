@@ -17,6 +17,10 @@ type UseVoiceSignalingControllerOptions = {
   getCurrentVoiceOperationId: () => number
   isCurrentVoiceOperation: (operationId: number) => boolean
   ensurePeerConnection: (participantId: string) => Promise<RTCPeerConnection>
+  bindVideoSendersForAnswer: (
+    participantId: string,
+    peer: RTCPeerConnection,
+  ) => Promise<void>
   closePeerIfCurrent: (
     participantId: string,
     peerConnection: RTCPeerConnection,
@@ -43,6 +47,7 @@ export function useVoiceSignalingController({
   getCurrentVoiceOperationId,
   isCurrentVoiceOperation,
   ensurePeerConnection,
+  bindVideoSendersForAnswer,
   closePeerIfCurrent,
   getPeerConnection,
   getPendingIceCandidates,
@@ -163,6 +168,7 @@ export function useVoiceSignalingController({
         return
       }
 
+      await bindVideoSendersForAnswer(fromParticipantId, peer)
       await flushPendingIceCandidates(fromParticipantId)
       updatePeerStatus(fromParticipantId)
       const answer = await peer.createAnswer()

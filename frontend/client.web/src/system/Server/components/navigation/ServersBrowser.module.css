@@ -23,6 +23,12 @@
   gap: 12px;
 }
 
+.desktopActions { display: flex; gap: 12px; }
+
+@media (max-width: 760px) {
+  .desktopActions { display: none; }
+}
+
 .heading h1 {
   margin: 0;
   font-size: 22px;
@@ -105,14 +111,6 @@
       env(safe-area-inset-bottom) +
       20px
     );
-  }
-
-  .heading {
-    display: grid;
-  }
-
-  .heading > button {
-    width: 100%;
   }
 
   .controls {

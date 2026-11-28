@@ -7,6 +7,7 @@ type BuildHubProfileStyleOptions = {
   hubPanelWidth: number
   spacePanelWidth: number
   memberPanelWidth: number
+  serverRailExtraWidth: number
 }
 
 export function buildHubProfileStyle({
@@ -14,6 +15,7 @@ export function buildHubProfileStyle({
   hubPanelWidth,
   spacePanelWidth,
   memberPanelWidth,
+  serverRailExtraWidth,
 }: BuildHubProfileStyleOptions) {
   return {
     '--profile-interface-scale': profileSettings.interfaceScale,
@@ -28,6 +30,7 @@ export function buildHubProfileStyle({
           '--theme-profile-bg-image': `url("/api/assets/${profileSettings.profileBackgroundAssetId}/content")`,
         }
       : {}),
+    '--profile-rail-extra-width': `${serverRailExtraWidth}px`,
     '--profile-side-panel-width': `${hubPanelWidth}px`,
     '--profile-space-panel-width': `${spacePanelWidth}px`,
     '--profile-member-panel-width': `${memberPanelWidth}px`,

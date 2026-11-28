@@ -18,6 +18,7 @@ import type { VoiceChannelController } from '../voice/useVoiceChannel'
 import { rememberRecentServerDetail } from '../../utils/serverRecentSpace'
 import { canConnectToVoiceSpace } from '../../utils/spaceCapabilities'
 import { resolveMessageFocus } from '../../../shared/messages/messageFocusModel'
+import { getVoiceChatSpaceIdAfterSelection } from '../../components/voice/chat/voiceSpaceChatModel'
 
 const MOBILE_SERVER_WORKSPACE_QUERY = '(max-width: 760px)'
 
@@ -32,6 +33,8 @@ type UseServerWorkspaceNavigationOptions = {
   onOpenVoiceChat: (spaceId: string | null) => void
   effectivePermissions: ServerEffectivePermissionsResponse | null
   externalMessageFocus?: FocusMessageRequest | null
+  externalSpace?: { spaceId: string; openVoiceChat: boolean } | null
+  onExternalSpaceConsumed?: () => void
   onExternalMessageFocusConsumed?: () => void
 }
 
@@ -53,6 +56,8 @@ export function useServerWorkspaceNavigation({
   onOpenVoiceChat,
   effectivePermissions,
   externalMessageFocus,
+  externalSpace,
+  onExternalSpaceConsumed,
   onExternalMessageFocusConsumed,
 }: UseServerWorkspaceNavigationOptions) {
   const serverId = selectedServerMembership.server.id
@@ -175,6 +180,24 @@ export function useServerWorkspaceNavigation({
     )
     onOpenVoiceChat(space.typeCode === 'voice_room' ? space.id : null)
   }
+
+  useEffect(() => {
+    if (!externalSpace || isLoadingSpaces) return
+    const space = serverSpaces.find((item) => item.id === externalSpace.spaceId)
+    if (!space || space.typeCode === 'category') return
+
+    const voiceChatSpaceId = getVoiceChatSpaceIdAfterSelection(space, externalSpace.openVoiceChat)
+    if (voiceChatSpaceId) {
+      if (!selectDetail(toChannelDetail(space))) return
+      onOpenVoiceChat(voiceChatSpaceId)
+    } else {
+      onOpenVoiceChat(null)
+      selectSpace(space)
+    }
+    onExternalSpaceConsumed?.()
+    // This is a one-shot request. Selection callbacks change during navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalSpace, isLoadingSpaces, serverSpaces])
 
   useEffect(() => {
     if (!externalMessageFocus || isLoadingSpaces) return

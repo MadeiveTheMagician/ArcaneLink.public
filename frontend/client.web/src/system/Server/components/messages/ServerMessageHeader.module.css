@@ -17,7 +17,6 @@
   background: transparent;
   transition:
     opacity 150ms ease,
-    transform 150ms ease,
     filter 150ms ease;
 }
 
@@ -25,7 +24,6 @@
 .pinnedToggle[aria-pressed="true"] {
   color: var(--color-text);
   filter: drop-shadow(0 0 12px var(--theme-glow-strong));
-  transform: scale(1.06);
 }
 
 .pinnedToggleIcon {

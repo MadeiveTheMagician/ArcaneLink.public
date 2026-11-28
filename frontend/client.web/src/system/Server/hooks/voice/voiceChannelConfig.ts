@@ -7,6 +7,7 @@ import {
 const developmentPeerConfiguration: RTCConfiguration = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
   iceTransportPolicy: 'all',
+  bundlePolicy: 'max-bundle',
 }
 
 type ResolveVoicePeerConfigurationOptions = {
@@ -33,6 +34,7 @@ export async function resolveVoicePeerConfiguration({
     return {
       iceServers: credentials.iceServers,
       iceTransportPolicy: 'relay',
+      bundlePolicy: 'max-bundle',
     }
   } catch (error) {
     if (allowDevelopmentFallback && isDevelopmentBuild) {

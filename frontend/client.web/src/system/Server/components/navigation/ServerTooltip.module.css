@@ -40,6 +40,18 @@
   text-shadow: 0 0 12px var(--theme-glow);
 }
 
+.serverNames {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--theme-text-soft);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .participants {
   display: flex;
   align-items: center;

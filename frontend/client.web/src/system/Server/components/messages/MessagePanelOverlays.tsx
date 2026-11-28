@@ -42,10 +42,19 @@ export type MessageAssetPreviewState = {
 
 export type MessageContextMenuState = {
   message: SpaceMessageResponse
+  asset?: SpaceMessageAssetResponse
   x: number
   y: number
   focusOnOpen: boolean
 }
+
+export type OpenMessageContextMenu = (
+  message: SpaceMessageResponse,
+  x: number,
+  y: number,
+  focusOnOpen: boolean,
+  asset?: SpaceMessageAssetResponse,
+) => void
 
 type MessagePanelOverlaysProps = {
   downloadWarning: DownloadWarningState | null
@@ -60,6 +69,8 @@ type MessagePanelOverlaysProps = {
   onNavigatePreview: (direction: MessageAssetPreviewDirection) => void
   onCloseReport: () => void
   onConfirmAssetDownload: () => void
+  onOpenMessageContextMenu: OpenMessageContextMenu
+  attachmentActionFailed: boolean
 }
 
 type AttachmentDownloadWarningDialogProps = {
@@ -225,6 +236,8 @@ export function MessagePanelOverlays({
   onNavigatePreview,
   onCloseReport,
   onConfirmAssetDownload,
+  onOpenMessageContextMenu,
+  attachmentActionFailed,
 }: MessagePanelOverlaysProps) {
   return (
     <>
@@ -234,6 +247,7 @@ export function MessagePanelOverlays({
           y={messageContextMenu.y}
           items={messageContextItems}
           autoFocus={messageContextMenu.focusOnOpen}
+          wrapLabels={Boolean(messageContextMenu.asset)}
           onClose={onCloseMessageContextMenu}
         />
       )}
@@ -261,9 +275,15 @@ export function MessagePanelOverlays({
               ? onNavigatePreview
               : undefined
           }
+          onMediaContextMenu={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            onOpenMessageContextMenu(previewAsset.message, event.clientX, event.clientY, false, previewAsset.asset)
+          }}
           onClose={onClosePreview}
         />
       )}
+      {attachmentActionFailed && <span role="alert">{serverCopy.messages.attachmentActionFailed}</span>}
       {reportContext && reportMessage && (
         <MessageReportDialog
           context={reportContext}

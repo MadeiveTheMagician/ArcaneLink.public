@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ServerMemberResponse, SpaceResponse } from '../../../../shared/types'
@@ -35,7 +36,7 @@ export function ServerOverview({
 
   return (
     <section className={styles.overviewSurface}>
-      <header className={styles.workspaceHeader}>
+      <header className={styles.workspaceHeader} data-workspace-channel-header="true">
         <div className={styles.workspaceHeaderTitle}>
           <span className={styles.workspaceHeaderIcon} aria-hidden="true">
             <SystemIcon name="server" size={18} />
@@ -57,11 +58,11 @@ export function ServerOverview({
                 className="ui-media-fit"
                 src={`/api/assets/${server.iconAssetId}/content`}
                 alt=""
-                style={{
-                  transform: `translate(${server.iconCropOffsetX * 100}%, ${
-                    server.iconCropOffsetY * 100
-                  }%) scale(${server.iconCropZoom})`,
-                }}
+                style={getServerIconImageStyle(
+                  server.iconCropOffsetX,
+                  server.iconCropOffsetY,
+                  server.iconCropZoom,
+                )}
               />
             ) : (
               server.title.slice(0, 1).toUpperCase()

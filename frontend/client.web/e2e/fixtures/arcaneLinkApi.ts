@@ -295,6 +295,8 @@ function createMessage(overrides: {
 }
 
 export type MockArcaneLinkApiOptions = {
+  withVoiceChat?: boolean
+  isServerRailPinned?: boolean
   friendCount?: number
   serverInvites?: ServerInviteResponse[]
   serverInviteLoadDelayMs?: number
@@ -458,7 +460,10 @@ export async function mockArcaneLinkApi(
     }
 
     if (method === 'GET' && path === '/api/users/me/profile/settings') {
-      return json(route, profileSettings)
+      return json(route, {
+        ...profileSettings,
+        isServerRailPinned: options.isServerRailPinned ?? profileSettings.isServerRailPinned,
+      })
     }
 
     if (method === 'GET' && path === '/api/servers/me') {
@@ -486,7 +491,13 @@ export async function mockArcaneLinkApi(
     }
 
     if (method === 'GET' && path === `/api/servers/${server.id}/spaces`) {
-      return json(route, spaces)
+      return json(route, options.withVoiceChat
+        ? spaces.map((space) => space.id === 'space-voice' ? { ...space, voiceChatSpaceId: 'space-voice-chat' } : space)
+        : spaces)
+    }
+
+    if (method === 'GET' && path.startsWith(`/api/servers/${server.id}/spaces/space-voice-chat/messages`)) {
+      return json(route, [])
     }
 
     if (method === 'GET' && path === `/api/servers/${server.id}/spaces/space-chat/messages`) {

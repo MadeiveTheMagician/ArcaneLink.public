@@ -33,6 +33,8 @@ import { useContextMenuDismiss } from '../../../shared/hooks/useContextMenuDismi
 import workspaceStyles from '../shell/ServerWorkspace.module.css'
 import styles from './ServerMessageLayout.module.css'
 import panelStyles from './ServerMessagePanel.module.css'
+import { useMessageDraft } from './useMessageDraft'
+import { clearSentMessageDraft } from './messageDraftStorage'
 import {
   MessageComposer,
   type MessageComposerMentionInsertionRequest,
@@ -42,6 +44,7 @@ import {
   getAdjacentMessagePreviewAsset,
   type MessageAssetPreviewDirection,
 } from './messageAssetPreviewModel'
+import { getAttachmentContextItems } from './attachmentContextItems'
 import { getScrollToBottomPlacement } from './messageAttachmentLayoutModel'
 import {
   canDeleteMessage,
@@ -91,7 +94,6 @@ import {
   discoverDraftMentions,
   findUnresolvedMentionCandidateQueries,
   prepareMessageWithMentions,
-  type DraftMention,
   type MentionRoleCandidate,
   type MentionUserCandidate,
 } from './mentions'
@@ -240,21 +242,20 @@ export function ServerMessagePanel({
   messageBubbleAlignment = defaultMessageBubbleAlignment,
   messageBubbleWidth = defaultMessageBubbleWidth,
 }: ServerMessagePanelProps) {
-  const [draft, setDraft] = useState('')
-  const [draftMentions, setDraftMentions] = useState<DraftMention[]>([])
+  const {
+    draft, setDraft, draftMentions, setDraftMentions, replyTarget, setReplyTarget,
+    editingMessage, beginEditing, endEditing, savedDraft,
+  } = useMessageDraft(currentUserId, feedKey)
   const [selectedAttachments, setSelectedAttachments] = useState<
     MessageAttachmentDraft[]
   >([])
-  const [editingMessage, setEditingMessage] =
-    useState<SpaceMessageResponse | null>(null)
-  const [replyTarget, setReplyTarget] =
-    useState<SpaceMessageResponse | null>(null)
   const [messageContextMenu, setMessageContextMenu] =
     useState<MessageContextMenuState | null>(null)
   const [reportRequest, setReportRequest] = useState<{
     feedKey: string
     message: SpaceMessageResponse
   } | null>(null)
+  const [attachmentActionFailed, setAttachmentActionFailed] = useState(false)
   const [downloadWarning, setDownloadWarning] =
     useState<DownloadWarningState | null>(null)
   const [isPinnedPanelOpen, setIsPinnedPanelOpen] = useState(false)
@@ -270,7 +271,7 @@ export function ServerMessagePanel({
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const trashToggleRef = useRef<HTMLButtonElement | null>(null)
   const isPreparingSubmitRef = useRef(false)
-  const isConfirmingAssetDownloadRef = useRef(false)
+  const lastConfirmedDownloadRef = useRef<DownloadWarningState | null>(null)
   const draftRef = useRef(draft)
   const selectedAttachmentsRef = useRef(selectedAttachments)
   const editingMessageRef = useRef(editingMessage)
@@ -445,22 +446,23 @@ export function ServerMessagePanel({
       editingMessage &&
       !displayedMessageIds.has(editingMessage.id)
     ) {
-      setEditingMessage(null)
-      setDraft('')
-      setDraftMentions([])
+      endEditing()
     }
 
-    if (replyTarget && !displayedMessageIds.has(replyTarget.id)) {
+    // A restored reply may be outside the currently loaded history window.
+    if (replyTarget && messages.some((message) => message.id === replyTarget.id &&
+      (message.deletedAt || !displayedMessageIds.has(message.id)))) {
       setReplyTarget(null)
     }
 
     if (
       messageContextMenu &&
-      !displayedMessageIds.has(messageContextMenu.message.id)
+      !displayedMessageIds.has(messageContextMenu.message.id) &&
+      !(isPinnedPanelOpen && displayedPinnedMessages.some(({ id }) => id === messageContextMenu.message.id))
     ) {
       setMessageContextMenu(null)
     }
-  }, [displayedMessageIds, editingMessage, messageContextMenu, replyTarget])
+  }, [displayedMessageIds, displayedPinnedMessages, isPinnedPanelOpen, editingMessage, messageContextMenu, replyTarget, messages, endEditing, setReplyTarget])
   const {
     feedRef,
     canScrollToBottom,
@@ -606,6 +608,7 @@ export function ServerMessagePanel({
     const submittedAttachments = selectedAttachments
     const submittedEditingMessage = editingMessage
     const submittedReplyTarget = replyTarget
+    const submittedSavedDraft = savedDraft
     try {
       let resolvedMentionUsers = mentionUsers
       let resolvedMentionRoles = mentionRoles
@@ -655,10 +658,8 @@ export function ServerMessagePanel({
 
         if (message) {
           if (draftRef.current === submittedDraft) {
-            setDraft('')
-            setDraftMentions([])
             if (editingMessageRef.current?.id === submittedEditingMessage.id) {
-              setEditingMessage(null)
+              endEditing()
             }
           }
           setComposerFocusRequestId((current) => current + 1)
@@ -675,6 +676,7 @@ export function ServerMessagePanel({
       )
 
       if (message) {
+        clearSentMessageDraft(currentUserId, feedKey, submittedSavedDraft)
         if (draftRef.current === submittedDraft) {
           setDraft('')
           setDraftMentions([])
@@ -710,29 +712,29 @@ export function ServerMessagePanel({
     fileInputRef.current.click()
   }
 
-  const requestAssetDownload = useCallback((asset: SpaceMessageAssetResponse) => {
+  const requestAssetDownload = useCallback((asset: SpaceMessageAssetResponse, action?: () => void) => {
     const url = `/api/assets/${asset.assetId}/content`
+    const transfer = action ?? (() => triggerAssetDownload(url, asset.fileName))
     const warning = getAttachmentDownloadWarning(asset)
 
     if (!warning || !loadAttachmentSecuritySettings().warnAboutPotentiallyDangerousFiles) {
-      triggerAssetDownload(url, asset.fileName)
+      transfer()
       return
     }
 
     setDownloadWarning({
       asset,
-      url,
+      onConfirm: transfer,
       title: warning.title,
       body: warning.body,
       openedAtMs: performance.now(),
     })
-    isConfirmingAssetDownloadRef.current = false
   }, [])
 
   function confirmAssetDownload() {
     if (
       !downloadWarning ||
-      isConfirmingAssetDownloadRef.current ||
+      lastConfirmedDownloadRef.current === downloadWarning ||
       !canConfirmAttachmentDownload(
         downloadWarning.openedAtMs,
         performance.now(),
@@ -741,9 +743,9 @@ export function ServerMessagePanel({
       return
     }
 
-    isConfirmingAssetDownloadRef.current = true
+    lastConfirmedDownloadRef.current = downloadWarning
     setDownloadWarning(null)
-    triggerAssetDownload(downloadWarning.url, downloadWarning.asset.fileName)
+    downloadWarning.onConfirm()
   }
 
   const openMessageContextMenu = useCallback((
@@ -751,9 +753,12 @@ export function ServerMessagePanel({
     x: number,
     y: number,
     focusOnOpen: boolean,
+    asset?: SpaceMessageAssetResponse,
   ) => {
+    setAttachmentActionFailed(false)
     setMessageContextMenu({
       message,
+      asset,
       x,
       y,
       focusOnOpen,
@@ -815,11 +820,8 @@ export function ServerMessagePanel({
       return
     }
 
-    setEditingMessage(message)
-    setReplyTarget(null)
     setSelectedAttachments([])
-    setDraft(message.body ?? '')
-    setDraftMentions(
+    beginEditing(message,
       (message.mentions ?? []).map((mention) => ({
         kind: mention.kind,
         targetId: mention.targetUserId ?? mention.targetRoleId,
@@ -838,7 +840,7 @@ export function ServerMessagePanel({
       return []
     }
 
-    const { message } = messageContextMenu
+    const { message, asset } = messageContextMenu
     const isDeleted = Boolean(message.deletedAt)
     const canShowEdit = canShowEditMessageAction(
       message,
@@ -892,7 +894,10 @@ export function ServerMessagePanel({
         type: 'item',
         label: serverCopy.messages.contextEdit,
         icon: 'edit',
-        onSelect: () => startEditingMessage(message),
+        onSelect: () => {
+          setPreviewAsset(null)
+          startEditingMessage(message)
+        },
       })
     }
 
@@ -903,11 +908,8 @@ export function ServerMessagePanel({
         icon: 'message',
         disabled: isDeleted || !canSendMessages,
         onSelect: () => {
-          if (editingMessage) {
-            setDraft('')
-            setDraftMentions([])
-          }
-          setEditingMessage(null)
+          setPreviewAsset(null)
+          endEditing()
           setReplyTarget(message)
         },
       },
@@ -946,7 +948,10 @@ export function ServerMessagePanel({
           type: 'item',
           label: serverCopy.messages.contextReport,
           icon: 'report',
-          onSelect: () => setReportRequest({ feedKey, message }),
+          onSelect: () => {
+            setPreviewAsset(null)
+            setReportRequest({ feedKey, message })
+          },
         },
       )
     }
@@ -978,14 +983,23 @@ export function ServerMessagePanel({
       })
     }
 
+    if (asset && !isDeleted) {
+      items.push(
+        { type: 'separator' },
+        ...getAttachmentContextItems(
+          asset,
+          (selectedAsset, action) => requestAssetDownload(selectedAsset, action),
+          () => setAttachmentActionFailed(true),
+        ),
+      )
+    }
+
     return items
   }
 
   function cancelComposerMode() {
-    setEditingMessage(null)
-    setReplyTarget(null)
-    setDraft('')
-    setDraftMentions([])
+    if (editingMessage) endEditing()
+    else setReplyTarget(null)
   }
 
   return (
@@ -997,13 +1011,6 @@ export function ServerMessagePanel({
         onDragLeave={deactivateAssetDrop}
         onDragOver={keepAssetDropActive}
         onDrop={dropAssets}
-      >
-      <div
-        className={`${workspaceStyles.textMain} ${styles.textMain}`}
-        data-has-attachments={selectedAttachments.length > 0 ? 'true' : 'false'}
-        data-scroll-bottom-placement={getScrollToBottomPlacement(
-          selectedAttachments.length,
-        )}
       >
         <ServerMessageHeader
           title={title}
@@ -1031,122 +1038,132 @@ export function ServerMessagePanel({
           trashToggleRef={trashToggleRef}
         />
 
-        <ServerMessageTimeline
-          feedKey={feedKey}
-          feedRef={feedRef}
-          messages={displayedMessages}
-          isLoading={isLoading}
-          isLoadingOlder={isLoadingOlderMessages}
-          highlightedMessageId={highlightedMessageId}
-          canScrollToBottom={canScrollToBottom}
-          onScroll={updateScrollState}
-          onScrollToBottom={scrollTimelineToBottom}
-          scrollToBottomLabel={
-            latestUnreadMessageId &&
-            handledUnreadMessageId !== latestUnreadMessageId
-              ? serverCopy.messages.scrollLatestUnread
-              : serverCopy.messages.scrollBottom
-          }
-          onJumpToMessage={requestJumpToMessage}
-          onOpenPreview={openMessagePreview}
-          onRequestDownload={requestAssetDownload}
-          onContextMenu={openMessageContextMenu}
-          defaultAttachmentExpanded={defaultAttachmentExpanded}
-          loadExternalMediaPreviews={loadExternalMediaPreviews}
-          horizontalVideoCardSize={horizontalVideoCardSize}
-          verticalVideoCardSize={verticalVideoCardSize}
-          canReact={canSendMessages}
-          invitePreviewAccessToken={invitePreviewAccessToken}
-          invitePreviewOrigin={invitePreviewOrigin}
-          privateMessageReceiptViewerUserId={
-            showPrivateMessageReceipts ? currentUserId : null
-          }
-          currentUserId={currentUserId}
-          messageDisplayFormat={messageDisplayFormat}
-          messageBubbleAlignment={messageBubbleAlignment}
-          messageBubbleWidth={messageBubbleWidth}
-          onSetReaction={onSetMessageReaction}
-        />
+        <div className={styles.messageBody}>
+          <div
+            className={`${workspaceStyles.textMain} ${styles.textMain}`}
+            data-has-attachments={selectedAttachments.length > 0 ? 'true' : 'false'}
+            data-scroll-bottom-placement={getScrollToBottomPlacement(
+              selectedAttachments.length,
+            )}
+          >
+            <ServerMessageTimeline
+              feedKey={feedKey}
+              feedRef={feedRef}
+              messages={displayedMessages}
+              isLoading={isLoading}
+              isLoadingOlder={isLoadingOlderMessages}
+              highlightedMessageId={highlightedMessageId}
+              canScrollToBottom={canScrollToBottom}
+              onScroll={updateScrollState}
+              onScrollToBottom={scrollTimelineToBottom}
+              scrollToBottomLabel={
+                latestUnreadMessageId &&
+                handledUnreadMessageId !== latestUnreadMessageId
+                  ? serverCopy.messages.scrollLatestUnread
+                  : serverCopy.messages.scrollBottom
+              }
+              onJumpToMessage={requestJumpToMessage}
+              onOpenPreview={openMessagePreview}
+              onRequestDownload={requestAssetDownload}
+              onContextMenu={openMessageContextMenu}
+              defaultAttachmentExpanded={defaultAttachmentExpanded}
+              loadExternalMediaPreviews={loadExternalMediaPreviews}
+              horizontalVideoCardSize={horizontalVideoCardSize}
+              verticalVideoCardSize={verticalVideoCardSize}
+              canReact={canSendMessages}
+              invitePreviewAccessToken={invitePreviewAccessToken}
+              invitePreviewOrigin={invitePreviewOrigin}
+              privateMessageReceiptViewerUserId={
+                showPrivateMessageReceipts ? currentUserId : null
+              }
+              currentUserId={currentUserId}
+              messageDisplayFormat={messageDisplayFormat}
+              messageBubbleAlignment={messageBubbleAlignment}
+              messageBubbleWidth={messageBubbleWidth}
+              onSetReaction={onSetMessageReaction}
+            />
 
-        <MessageComposer
-          title={title}
-          draft={draft}
-          draftMentions={draftMentions}
-          mentionUsers={mentionUsers}
-          mentionRoles={mentionRoles}
-          mentionInsertionRequest={mentionInsertionRequest}
-          onMentionInsertionRequestHandled={onMentionInsertionRequestHandled}
-          onRefreshMentionCandidates={
-            onResolveMentionCandidates
-              ? (query, signal) => {
-                  void onResolveMentionCandidates(query, signal)
-                }
-              : undefined
-          }
-          editingMessage={editingMessage}
-          fileInputRef={fileInputRef}
-          hasComposerContent={hasComposerContent}
-          isSending={isComposerBusy}
-          canSendMessages={canUseComposer}
-          autoFocusOnMount={autoFocusComposer}
-          focusRequestId={composerFocusRequestId}
-          replyTarget={replyTarget}
-          selectedAttachments={selectedAttachments}
-          onAddSelectedFiles={addSelectedFiles}
-          onCancelComposerMode={cancelComposerMode}
-          onCancelReply={() => setReplyTarget(null)}
-          onOpenFilePicker={openFilePicker}
-          onChangeSelectedAttachments={setSelectedAttachments}
-          onSetDraft={setDraft}
-          onSetDraftMentions={setDraftMentions}
-          onSubmitMessage={submitMessage}
-        />
-        {(error || hasUnreadBoundaryLoadFailure) && (
-          <div className={styles.messageLoadError} role="status">
-            <p className={styles.textError}>
-              {error ?? serverCopy.messages.loadFailed}
-            </p>
-            {hasUnreadBoundaryLoadFailure && (
-              <button type="button" onClick={retryUnreadBoundaryLoad}>
-                {serverCopy.browser.retry}
-              </button>
+            <MessageComposer
+              title={title}
+              draft={draft}
+              draftMentions={draftMentions}
+              mentionUsers={mentionUsers}
+              mentionRoles={mentionRoles}
+              mentionInsertionRequest={mentionInsertionRequest}
+              onMentionInsertionRequestHandled={onMentionInsertionRequestHandled}
+              onRefreshMentionCandidates={
+                onResolveMentionCandidates
+                  ? (query, signal) => {
+                      void onResolveMentionCandidates(query, signal)
+                    }
+                  : undefined
+              }
+              editingMessage={editingMessage}
+              fileInputRef={fileInputRef}
+              hasComposerContent={hasComposerContent}
+              isSending={isComposerBusy}
+              canSendMessages={canUseComposer}
+              autoFocusOnMount={autoFocusComposer}
+              focusRequestId={composerFocusRequestId}
+              replyTarget={replyTarget}
+              selectedAttachments={selectedAttachments}
+              onAddSelectedFiles={addSelectedFiles}
+              onCancelComposerMode={cancelComposerMode}
+              onCancelReply={() => setReplyTarget(null)}
+              onOpenFilePicker={openFilePicker}
+              onChangeSelectedAttachments={setSelectedAttachments}
+              onSetDraft={setDraft}
+              onSetDraftMentions={setDraftMentions}
+              onSubmitMessage={submitMessage}
+            />
+            {(error || hasUnreadBoundaryLoadFailure) && (
+              <div className={styles.messageLoadError} role="status">
+                <p className={styles.textError}>
+                  {error ?? serverCopy.messages.loadFailed}
+                </p>
+                {hasUnreadBoundaryLoadFailure && (
+                  <button type="button" onClick={retryUnreadBoundaryLoad}>
+                    {serverCopy.browser.retry}
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      <PinnedMessagesPanel
-        isOpen={isPinnedPanelOpen}
-        isLoading={isLoadingPinnedMessages}
-        messages={displayedPinnedMessages}
-        onJumpToMessage={requestJumpToMessage}
-        onRequestDownload={requestAssetDownload}
-        onClose={() => setIsPinnedPanelOpen(false)}
-      />
-      {privateMessageTrash ? (
-        <DeletedMessagesPanel
-          isOpen={isTrashPanelOpen}
-          isLoading={privateMessageTrash.isLoading}
-          isLoadingOlder={privateMessageTrash.isLoadingOlder}
-          hasOlder={privateMessageTrash.hasOlder}
-          isClearing={privateMessageTrash.isClearing}
-          messages={activeTrashMessages}
-          error={privateMessageTrash.error}
-          restoringMessageId={privateMessageTrash.restoringMessageId}
-          now={trashNow}
-          onRestore={(messageId) =>
-            void privateMessageTrash.onRestoreMessage(messageId)
-          }
-          onLoadOlder={() => void privateMessageTrash.onLoadOlder()}
-          onClear={() => {
-            void privateMessageTrash.onClear()
-          }}
-          onClose={() => {
-            setIsTrashPanelOpen(false)
-            window.requestAnimationFrame(() => trashToggleRef.current?.focus())
-          }}
-        />
-      ) : null}
+          <PinnedMessagesPanel
+            isOpen={isPinnedPanelOpen}
+            isLoading={isLoadingPinnedMessages}
+            messages={displayedPinnedMessages}
+            onJumpToMessage={requestJumpToMessage}
+            onOpenMessageContextMenu={openMessageContextMenu}
+            onRequestDownload={requestAssetDownload}
+            onClose={() => setIsPinnedPanelOpen(false)}
+          />
+          {privateMessageTrash ? (
+            <DeletedMessagesPanel
+              isOpen={isTrashPanelOpen}
+              isLoading={privateMessageTrash.isLoading}
+              isLoadingOlder={privateMessageTrash.isLoadingOlder}
+              hasOlder={privateMessageTrash.hasOlder}
+              isClearing={privateMessageTrash.isClearing}
+              messages={activeTrashMessages}
+              error={privateMessageTrash.error}
+              restoringMessageId={privateMessageTrash.restoringMessageId}
+              now={trashNow}
+              onRestore={(messageId) =>
+                void privateMessageTrash.onRestoreMessage(messageId)
+              }
+              onLoadOlder={() => void privateMessageTrash.onLoadOlder()}
+              onClear={() => {
+                void privateMessageTrash.onClear()
+              }}
+              onClose={() => {
+                setIsTrashPanelOpen(false)
+                window.requestAnimationFrame(() => trashToggleRef.current?.focus())
+              }}
+            />
+          ) : null}
+        </div>
       <MessagePanelOverlays
         messageContextMenu={messageContextMenu}
         messageContextItems={getMessageContextItems()}
@@ -1164,6 +1181,8 @@ export function ServerMessagePanel({
         onCloseDownloadWarning={() => setDownloadWarning(null)}
         onCloseReport={() => setReportRequest(null)}
         onConfirmAssetDownload={confirmAssetDownload}
+        onOpenMessageContextMenu={openMessageContextMenu}
+        attachmentActionFailed={attachmentActionFailed}
       />
       {isAssetDropActive && (
         <div className={panelStyles.assetDropOverlay} aria-live="polite">

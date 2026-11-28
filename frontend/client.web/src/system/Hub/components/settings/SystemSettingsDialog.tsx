@@ -61,6 +61,8 @@ type SystemSettingsDialogProps = {
   voiceDiagnostics?: VoiceConnectionDiagnostics | null
   voiceNoiseSuppressionTelemetry?: VoiceNoiseSuppressionTelemetry | null
   defaultSettings: ProfileSettingsDraft
+  isServerRailResizeEnabled: boolean
+  onServerRailResizeEnabledChange: (enabled: boolean) => void
   isSaving: boolean
   onChange: (settings: ProfileSettingsDraft) => void
   onCommit: (settings: ProfileSettingsDraft) => Promise<void> | void
@@ -164,6 +166,8 @@ export function SystemSettingsDialog({
   voiceDiagnostics = null,
   voiceNoiseSuppressionTelemetry = null,
   defaultSettings,
+  isServerRailResizeEnabled,
+  onServerRailResizeEnabledChange,
   isSaving,
   onChange,
   onCommit,
@@ -440,6 +444,8 @@ export function SystemSettingsDialog({
               <SystemSettingsInterfaceTab
                 settings={settingsDraft}
                 defaultSettings={defaultSettings}
+                isServerRailResizeEnabled={isServerRailResizeEnabled}
+                onServerRailResizeEnabledChange={onServerRailResizeEnabledChange}
                 onChange={onChange}
                 onCommit={onCommit}
               />

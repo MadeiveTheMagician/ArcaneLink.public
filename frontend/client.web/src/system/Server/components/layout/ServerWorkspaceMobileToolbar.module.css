@@ -4,7 +4,7 @@
     top: 0;
     z-index: 4;
     display: grid;
-    grid-template-columns: 30px minmax(0, auto) minmax(56px, 1fr) 36px;
+    grid-template-columns: 30px minmax(0, auto) minmax(56px, 1fr);
     align-items: center;
     min-height: 44px;
     border: 0;
@@ -30,7 +30,6 @@
   }
 
   .mobileSpaceBack,
-  .mobileSpaceSearch,
   .mobileSpacePinned {
     display: inline-flex;
     min-width: 0;
@@ -81,20 +80,5 @@
     white-space: nowrap;
   }
 
-  .mobileSpaceSearch {
-    justify-self: stretch;
-    padding: 0;
-    color: var(--color-text);
-  }
-
-  .mobileSpaceSearch svg {
-    width: 23px;
-    height: 23px;
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 2.2;
-  }
 }
 

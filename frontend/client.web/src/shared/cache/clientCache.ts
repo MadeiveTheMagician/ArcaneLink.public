@@ -18,6 +18,7 @@ export type LayoutCacheWorkspace =
   | 'profile'
   | 'server'
   | 'servers'
+  | 'favorites'
   | 'friends'
   | 'invites'
   | 'private-space'

@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiJson, apiNoContent } from '../../../../shared/api/api'
 import type {
@@ -450,7 +451,7 @@ function NotificationRow({
       </span>
       <span className={styles.actor}>
         {image ? (
-          <img src={image.src} alt="" style={{ transform: image.transform }} />
+          <img src={image.src} alt="" style={image.style} />
         ) : (
           (item.actorDisplayName ?? item.serverTitle ?? item.body)
             .slice(0, 1)
@@ -563,7 +564,9 @@ function getNotificationImage(
       : item.actorAvatarCropZoom
   return {
     src: `/api/assets/${assetId}/content`,
-    transform: `translate(${offsetX * 100}%, ${offsetY * 100}%) scale(${zoom})`,
+    style: item.kind === 'invite'
+      ? getServerIconImageStyle(offsetX, offsetY, zoom)
+      : { transform: `translate(${offsetX * 100}%, ${offsetY * 100}%) scale(${zoom})` },
   }
 }
 

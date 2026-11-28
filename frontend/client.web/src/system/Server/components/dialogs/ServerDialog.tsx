@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import type { FormEvent, RefObject } from 'react'
 import type { ServerAccessMode } from '../../../../shared/types'
 import { serverCopy } from '../../../shared'
@@ -80,13 +81,11 @@ export function ServerDialog({
                     className="ui-media-fit"
                     src={form.iconPreviewUrl}
                     alt=""
-                    style={{
-                      transform: `translate(${
-                        form.iconCropOffsetX * 100
-                      }%, ${form.iconCropOffsetY * 100}%) scale(${
-                        form.iconCropZoom
-                      })`,
-                    }}
+                    style={getServerIconImageStyle(
+                      form.iconCropOffsetX,
+                      form.iconCropOffsetY,
+                      form.iconCropZoom,
+                    )}
                   />
                 ) : (
                   <span>

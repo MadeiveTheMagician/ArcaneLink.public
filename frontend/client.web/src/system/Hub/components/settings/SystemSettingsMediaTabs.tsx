@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   getStreamingTierLabel,
   isStreamingTierAllowed,
@@ -12,6 +13,7 @@ import type {
 } from '../../../../shared/streaming/streamingSettings'
 import type { UserResponse } from '../../../../shared/types'
 import { settingsCopy } from '../../../shared/copy'
+import { SystemSelect } from '../../../shared/ui/SystemSelect'
 import { SettingsSection } from './SystemSettingsControls'
 import styles from './SystemSettingsControls.module.css'
 
@@ -32,6 +34,10 @@ export function StreamingSettingsTab({
 }: StreamingSettingsTabProps) {
   return (
     <>
+      <CameraDeviceSettings
+        cameraDeviceId={settings.cameraDeviceId}
+        onChange={(cameraDeviceId) => onChange({ cameraDeviceId })}
+      />
       <SettingsSection
         title={settingsCopy.streaming.qualityTitle}
         description={settingsCopy.streaming.qualityDescription}
@@ -67,6 +73,117 @@ export function StreamingSettingsTab({
         {settingsCopy.actions.resetStreaming}
       </button>
     </>
+  )
+}
+
+function CameraDeviceSettings({
+  cameraDeviceId,
+  onChange,
+}: {
+  cameraDeviceId: string
+  onChange: (deviceId: string) => void
+}) {
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
+  const [status, setStatus] = useState<
+    'idle' | 'loading' | 'ready' | 'permission' | 'error'
+  >('idle')
+  const refreshSequenceRef = useRef(0)
+
+  const refreshDevices = useCallback(async (requestPermission = false) => {
+    const sequence = ++refreshSequenceRef.current
+    const mediaDevices = navigator.mediaDevices
+    if (!mediaDevices?.enumerateDevices) {
+      setStatus('error')
+      return
+    }
+
+    setStatus('loading')
+    try {
+      let cameras = (await mediaDevices.enumerateDevices()).filter(
+        (device) => device.kind === 'videoinput',
+      )
+      if (
+        requestPermission && mediaDevices.getUserMedia &&
+        !cameras.some((camera) => camera.deviceId)
+      ) {
+        const permissionStream = await mediaDevices.getUserMedia({ video: true })
+        try {
+          cameras = (await mediaDevices.enumerateDevices()).filter(
+            (device) => device.kind === 'videoinput',
+          )
+        } finally {
+          permissionStream.getTracks().forEach((track) => track.stop())
+        }
+      }
+
+      if (sequence === refreshSequenceRef.current) {
+        setDevices(cameras.filter((camera) => camera.deviceId && camera.deviceId !== 'default'))
+        setStatus(cameras.some((camera) => !camera.deviceId) ? 'permission' : 'ready')
+      }
+    } catch {
+      if (sequence === refreshSequenceRef.current) {
+        setStatus('error')
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const onDevicesChanged = () => void refreshDevices()
+    onDevicesChanged()
+    navigator.mediaDevices?.addEventListener?.('devicechange', onDevicesChanged)
+    return () => {
+      refreshSequenceRef.current += 1
+      navigator.mediaDevices?.removeEventListener?.('devicechange', onDevicesChanged)
+    }
+  }, [refreshDevices])
+
+  const selectedCameraMissing =
+    cameraDeviceId !== 'default' &&
+    !devices.some((device) => device.deviceId === cameraDeviceId)
+
+  return (
+    <SettingsSection title={settingsCopy.streaming.camera}>
+      <SystemSelect
+        aria-label={settingsCopy.streaming.camera}
+        value={cameraDeviceId}
+        onValueChange={onChange}
+      >
+        <option value="default">{settingsCopy.streaming.cameraDefault}</option>
+        {selectedCameraMissing && (
+          <option value={cameraDeviceId} disabled>
+            {settingsCopy.streaming.cameraDeviceUnavailable}
+          </option>
+        )}
+        {devices.map((device, index) => (
+          <option key={device.deviceId} value={device.deviceId}>
+            {device.label || `${settingsCopy.streaming.cameraDeviceFallback} ${index + 1}`}
+          </option>
+        ))}
+      </SystemSelect>
+      <button
+        className={styles.secondaryAction}
+        type="button"
+        disabled={status === 'loading'}
+        onClick={() => void refreshDevices(true)}
+      >
+        {settingsCopy.streaming.cameraDevicesRefresh}
+      </button>
+      {status === 'error' && (
+        <p className={styles.statusText} role="status">
+          {settingsCopy.streaming.cameraDevicesUnavailable}
+        </p>
+      )}
+      {status === 'permission' && (
+        <p className={styles.statusText} role="status">
+          {settingsCopy.streaming.cameraPermissionNeeded}
+        </p>
+      )}
+      {status === 'ready' && devices.length === 0 && (
+        <p className={styles.statusText} role="status">
+          {settingsCopy.streaming.cameraDevicesMissing}
+        </p>
+      )}
+    </SettingsSection>
   )
 }
 

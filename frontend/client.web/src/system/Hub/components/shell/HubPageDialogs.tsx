@@ -56,6 +56,8 @@ type HubPageDialogsProps = {
   voiceNoiseSuppressionTelemetry: VoiceNoiseSuppressionTelemetry | null
   isProfileSettingsOpen: boolean
   isSavingProfileSettings: boolean
+  isServerRailResizeEnabled: boolean
+  onServerRailResizeEnabledChange: (enabled: boolean) => void
   onProfileSettingsChange: Dispatch<SetStateAction<ProfileSettingsDraft>>
   onProfileSettingsCommit: (nextDraft: ProfileSettingsDraft) => Promise<void>
   onProfileIdentityChanged: () => Promise<void> | void
@@ -80,6 +82,8 @@ export function HubPageDialogs({
   voiceNoiseSuppressionTelemetry,
   isProfileSettingsOpen,
   isSavingProfileSettings,
+  isServerRailResizeEnabled,
+  onServerRailResizeEnabledChange,
   onProfileSettingsChange,
   onProfileSettingsCommit,
   onProfileIdentityChanged,
@@ -157,6 +161,8 @@ export function HubPageDialogs({
           voiceNoiseSuppressionTelemetry={voiceNoiseSuppressionTelemetry}
           defaultSettings={defaultProfileSettings}
           isSaving={isSavingProfileSettings}
+          isServerRailResizeEnabled={isServerRailResizeEnabled}
+          onServerRailResizeEnabledChange={onServerRailResizeEnabledChange}
           onChange={onProfileSettingsChange}
           onCommit={onProfileSettingsCommit}
           onProfileIdentityChanged={onProfileIdentityChanged}

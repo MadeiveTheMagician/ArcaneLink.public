@@ -251,6 +251,7 @@ export function ServerVoiceChannel({
     workspaceKey,
     title,
     participantCards,
+    isConnected: isConnectedToVoiceChannel,
     isMuted,
     isDeafened,
     isCameraEnabled,
@@ -357,7 +358,7 @@ export function ServerVoiceChannel({
         setIsMobileVoiceChromeVisible((isVisible) => !isVisible)
       }}
     >
-      <header onClick={(event) => event.stopPropagation()}>
+      <header data-workspace-channel-header="true" onClick={(event) => event.stopPropagation()}>
         {leadingAction}
         <div>
           <span>

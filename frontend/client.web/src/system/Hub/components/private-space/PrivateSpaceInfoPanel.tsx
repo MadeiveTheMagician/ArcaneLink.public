@@ -3,9 +3,6 @@ import type {
   PrivateSpaceResponse,
 } from '../../../../shared/types'
 import { commonCopy, communityCopy, PresenceName } from '../../../shared'
-import { MessageSearchControl } from '../../../shared/components/message-search/MessageSearchControl'
-import { MessageSearchResults } from '../../../shared/components/message-search/MessageSearchResults'
-import type { useMessageSearch } from '../../../shared/hooks/useMessageSearch'
 import { PrivateMemberAvatar } from './PrivateSpaceVoiceParts'
 import styles from './PrivateSpaceInfoPanel.module.css'
 
@@ -14,8 +11,6 @@ type PrivateSpaceInfoPanelProps = {
   activeMembers: PrivateSpaceMemberResponse[]
   isCompact: boolean
   otherMember: PrivateSpaceMemberResponse | null
-  messageSearch: ReturnType<typeof useMessageSearch>
-  onOpenSearchResult: (message: import('../../../../shared/types').SpaceMessageResponse) => void
 }
 
 export function PrivateSpaceInfoPanel({
@@ -23,8 +18,6 @@ export function PrivateSpaceInfoPanel({
   activeMembers,
   isCompact,
   otherMember,
-  messageSearch,
-  onOpenSearchResult,
 }: PrivateSpaceInfoPanelProps) {
   const otherMemberLastSeenLabel = otherMember
     ? getLastSeenLabel(otherMember)
@@ -36,38 +29,7 @@ export function PrivateSpaceInfoPanel({
         isCompact ? styles.compactPrivateInfo : ''
       }`}
     >
-      <div className={styles.privateSearch}>
-        <MessageSearchControl
-          name="privateMessageSearch"
-          ariaLabel={communityCopy.direct.search}
-          query={messageSearch.query}
-          filters={messageSearch.filters}
-          userOptions={activeMembers.map((member) => ({
-            id: member.userId,
-            displayName: member.user.displayName,
-            login: member.user.login,
-            avatarAssetId: member.user.avatarAssetId,
-            avatarCropOffsetX: member.user.avatarCropOffsetX,
-            avatarCropOffsetY: member.user.avatarCropOffsetY,
-            avatarCropZoom: member.user.avatarCropZoom,
-          }))}
-          placeholder={communityCopy.direct.searchPlaceholder}
-          onQueryChange={messageSearch.setQuery}
-          onFiltersChange={messageSearch.setFilters}
-          onSubmit={messageSearch.submitSearch}
-          onClear={messageSearch.clearSearch}
-        />
-      </div>
-
-      {messageSearch.isActive ? (
-        <MessageSearchResults
-          query={messageSearch.submittedQuery}
-          results={messageSearch.results}
-          isSearching={messageSearch.isSearching}
-          error={messageSearch.error}
-          onOpenMessage={onOpenSearchResult}
-        />
-      ) : isCompact && spaceKind === 'group' ? (
+      {isCompact && spaceKind === 'group' ? (
         <section
           className={`${styles.privateMembers} ${styles.compactMembers}`}
           aria-label={communityCopy.direct.serverMembers}

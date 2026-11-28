@@ -299,6 +299,28 @@ export type PushToTalkKeyModifiers = {
   isComposing?: boolean
 }
 
+const pushToTalkMouseBindings = [
+  { code: 'MouseX1', button: 3, mask: 8, label: 'X1' },
+  { code: 'MouseX2', button: 4, mask: 16, label: 'X2' },
+] as const
+
+export function getPushToTalkMouseBinding(codeOrButton: string | number | null) {
+  return pushToTalkMouseBindings.find(
+    (binding) => binding.code === codeOrButton || binding.button === codeOrButton,
+  )
+}
+
+export function formatPushToTalkBinding(code: string) {
+  if (/^Key[A-Z]$/.test(code)) {
+    return code.slice(3)
+  }
+  if (/^Digit[0-9]$/.test(code)) {
+    return code.slice(5)
+  }
+
+  return getPushToTalkMouseBinding(code)?.label ?? code
+}
+
 const allowedPushToTalkCodes = new Set([
   'Backquote',
   'Backslash',
@@ -424,7 +446,8 @@ function readPushToTalkKeyCode(value: unknown) {
   }
 
   const normalizedValue = value.trim().slice(0, 64)
-  return isPushToTalkKeyCodeAllowed(normalizedValue)
+  return isPushToTalkKeyCodeAllowed(normalizedValue) ||
+    getPushToTalkMouseBinding(normalizedValue)
     ? normalizedValue
     : null
 }

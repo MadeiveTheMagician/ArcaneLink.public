@@ -8,6 +8,9 @@ COPY frontend/client.web/ ./
 
 FROM web-source AS web-tests
 
+COPY frontend/client.mobile/android/app/src/main/AndroidManifest.xml \
+    /client.mobile/android/app/src/main/AndroidManifest.xml
+
 FROM web-source AS web-build
 RUN npm run build
 

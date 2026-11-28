@@ -1,3 +1,5 @@
+export const messageBodyMaxLength = 4000
+
 export type MessageComposerFocusState = {
   hasHandledInitialFocus: boolean
   handledRequestId: number
@@ -64,7 +66,7 @@ export function insertMessageEmoji({
   emoji,
   selectionStart,
   selectionEnd,
-  maximumLength = 4000,
+  maximumLength = messageBodyMaxLength,
 }: InsertMessageEmojiInput): InsertMessageEmojiResult {
   const left = clampSelection(selectionStart, text.length)
   const right = clampSelection(selectionEnd, text.length)

@@ -1,3 +1,4 @@
+import { MobileComposerPlaceholder } from '../../../Mobile/components/MobileComposerPlaceholder'
 import type {
   ChangeEvent,
   Dispatch,
@@ -40,6 +41,7 @@ import {
   advanceMessageComposerFocus,
   createMessageComposerFocusState,
   insertMessageEmoji,
+  messageBodyMaxLength,
 } from './messageComposerInteractionModel'
 import { MessageComposerEmojiPicker } from './MessageComposerEmojiPicker'
 import styles from './MessageComposer.module.css'
@@ -92,8 +94,14 @@ function resizeMessageBody(textarea: HTMLTextAreaElement) {
     textarea.form?.parentElement?.parentElement?.clientHeight ||
     textarea.form?.parentElement?.clientHeight ||
     window.innerHeight
+  const isMobile = window.matchMedia('(max-width: 760px)').matches
+  if (isMobile && !textarea.value) {
+    textarea.style.height = `${minimumHeight}px`
+    textarea.style.overflowY = 'hidden'
+    return
+  }
   const maximumHeight = getMessageComposerMaximumHeight({
-    isMobile: window.matchMedia('(max-width: 760px)').matches,
+    isMobile,
     lineHeight,
     minimumHeight,
     verticalPadding,
@@ -612,6 +620,10 @@ export function MessageComposer({
               mentions={draftMentions}
               overlayRef={mentionOverlayRef}
             />
+            {!draft && (
+              <MobileComposerPlaceholder text={canSendMessages
+                ? serverCopy.messages.typeInSpace(title) : serverCopy.messages.sendRestricted} />
+            )}
             <textarea
               ref={messageBodyRef}
               name="messageBody"
@@ -650,7 +662,12 @@ export function MessageComposer({
                 }
               }}
               onKeyDown={handleMessageKeyDown}
-              onPaste={() => {
+              onPaste={(event) => {
+                if (event.clipboardData.files.length) {
+                  event.preventDefault()
+                  onAddSelectedFiles(event.clipboardData.files)
+                  return
+                }
                 isPastePendingRef.current = true
               }}
               onScroll={(event) => {
@@ -671,7 +688,7 @@ export function MessageComposer({
                   ? serverCopy.messages.typeInSpace(title)
                   : serverCopy.messages.sendRestricted
               }
-              maxLength={4000}
+              maxLength={messageBodyMaxLength}
               rows={1}
             />
           </span>

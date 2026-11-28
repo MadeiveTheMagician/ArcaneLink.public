@@ -12,7 +12,6 @@ import {
   subscribeAudioOutputDeviceChanges,
 } from '../../../shared/voice/audioOutput'
 import {
-  clampVoiceParticipantVolume,
   createVoicePlaybackAudioEngine,
 } from '../../../shared/voice/voiceSpatialAudio'
 import type {
@@ -32,7 +31,10 @@ import {
   requestVoicePlaybackUnlock,
   subscribeVoicePlaybackUnlock,
 } from '../../../shared/voice/voicePlaybackUnlock'
-import { requiresVoiceParticipantGain } from '../../../shared/voice/voiceParticipantVolume'
+import {
+  requiresVoiceParticipantGain,
+  voiceParticipantVolumeToGain,
+} from '../../../shared/voice/voiceParticipantVolume'
 import {
   canStartVoiceAudioPlayback,
   resolveVoiceAudioTrackPlaybackState,
@@ -284,6 +286,7 @@ function VoiceAudioSink({
   ) => void
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const sourceAudioRef = useRef<HTMLAudioElement | null>(null)
   const outputDeviceApplicationRef = useRef<Promise<void>>(Promise.resolve())
   const outputDeviceGenerationRef = useRef(0)
   const isOutputRoutingReadyRef = useRef(false)
@@ -298,7 +301,7 @@ function VoiceAudioSink({
       return false
     }
 
-    const participantVolume = clampVoiceParticipantVolume(settings.volume)
+    const participantVolume = voiceParticipantVolumeToGain(settings.volume)
     const spatialAudioPath = spatialAudioPathRef.current
     spatialAudioPath?.setParticipantVolume(participantVolume)
 
@@ -368,7 +371,11 @@ function VoiceAudioSink({
     }
 
     try {
-      await audio.play()
+      const sourceAudio = sourceAudioRef.current
+      await Promise.all([
+        sourceAudio?.srcObject === stream ? sourceAudio.play() : undefined,
+        audio.play(),
+      ])
       if (
         playbackGeneration !== playbackGenerationRef.current ||
         audioRef.current !== audio
@@ -522,6 +529,7 @@ function VoiceAudioSink({
       return
     }
 
+    const sourceAudio = sourceAudioRef.current
     let spatialAudioPath: VoiceSpatialAudioPath | null = null
     let playbackStream = stream
     if (spatialAudioEngine) {
@@ -551,6 +559,11 @@ function VoiceAudioSink({
       }
     }
 
+    if (spatialAudioPath && sourceAudio) {
+      // Chromium needs a media element playing the remote stream to feed Web Audio.
+      sourceAudio.muted = true
+      sourceAudio.srcObject = stream
+    }
     audio.srcObject = playbackStream
     applyPlaybackMixRef.current()
 
@@ -612,6 +625,10 @@ function VoiceAudioSink({
         audio.pause()
         audio.srcObject = null
       }
+      if (sourceAudio?.srcObject === stream) {
+        sourceAudio.pause()
+        sourceAudio.srcObject = null
+      }
       if (spatialAudioPathRef.current === spatialAudioPath) {
         spatialAudioPathRef.current = null
       }
@@ -636,7 +653,14 @@ function VoiceAudioSink({
     unlockToken,
   ])
 
-  return <audio ref={audioRef} playsInline preload="auto" />
+  return (
+    <>
+      <audio ref={audioRef} playsInline preload="auto" />
+      {spatialAudioEngine ? (
+        <audio ref={sourceAudioRef} muted playsInline preload="auto" />
+      ) : null}
+    </>
+  )
 }
 
 function normalizeParticipantId(participantId: string) {

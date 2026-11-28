@@ -48,7 +48,7 @@ export function SystemTooltipProvider({ children }: { children: ReactNode }) {
       const activeTarget = activeTargetRef.current
       const nativeTitle = nativeTitleRef.current
 
-      if (activeTarget && nativeTitle !== null) {
+      if (activeTarget && nativeTitle !== null && !activeTarget.hasAttribute('title')) {
         activeTarget.setAttribute('title', nativeTitle)
       }
 

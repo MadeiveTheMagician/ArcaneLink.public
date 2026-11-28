@@ -24,18 +24,20 @@ type ServerTooltipProps = {
   anchorRef: RefObject<HTMLElement | null>
   id: string
   isOpen: boolean
-  members: ServerMemberDetailsResponse[]
-  participants: VoiceParticipant[]
+  members?: ServerMemberDetailsResponse[]
+  participants?: VoiceParticipant[]
   serverTitle: string
+  serverNames?: string[]
 }
 
 export function ServerTooltip({
   anchorRef,
   id,
   isOpen,
-  members,
-  participants,
+  members = [],
+  participants = [],
   serverTitle,
+  serverNames,
 }: ServerTooltipProps) {
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const [isVisible, setIsVisible] = useState(false)
@@ -60,16 +62,14 @@ export function ServerTooltip({
 
     const anchorRect = anchor.getBoundingClientRect()
     const tooltipHeight = tooltip.offsetHeight
+    const preferredLeft = anchorRect.right + anchorGap
     const preferredTop = anchorRect.top + (anchorRect.height - tooltipHeight) / 2
 
     setPosition({
-      left: anchorRect.right + anchorGap,
-      top: Math.min(
-        window.innerHeight - tooltipHeight - viewportGutter,
-        Math.max(viewportGutter, preferredTop),
-      ),
+      left: Math.max(viewportGutter, Math.min(preferredLeft, window.innerWidth - tooltip.offsetWidth - viewportGutter)),
+      top: Math.max(viewportGutter, Math.min(preferredTop, window.innerHeight - tooltipHeight - viewportGutter)),
     })
-  }, [anchorRef, isVisible, participants.length, serverTitle])
+  }, [anchorRef, isVisible, participants.length, serverNames, serverTitle])
 
   if (!isVisible) return null
 
@@ -85,6 +85,11 @@ export function ServerTooltip({
       style={position}
     >
       <strong className={styles.title}>{serverTitle}</strong>
+      {serverNames && (
+        <ul className={styles.serverNames} role="list">
+          {serverNames.map((name, index) => <li key={index}>{name}</li>)}
+        </ul>
+      )}
       {participants.length > 0 && (
         <span
           className={styles.participants}

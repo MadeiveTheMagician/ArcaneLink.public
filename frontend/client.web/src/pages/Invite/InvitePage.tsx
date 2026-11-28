@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../shared/media/serverIconImageStyle'
 import { useEffect, useState } from 'react'
 import { apiJson } from '../../shared/api/api'
 import type {
@@ -146,13 +147,11 @@ export function InvitePage({
                     <img
                       src={iconUrl}
                       alt=""
-                      style={{
-                        transform: `translate(${
-                          -50 + activePreview.serverIconCropOffsetX * 100
-                        }%, ${
-                          -50 + activePreview.serverIconCropOffsetY * 100
-                        }%) scale(${activePreview.serverIconCropZoom})`,
-                      }}
+                      style={getServerIconImageStyle(
+                        activePreview.serverIconCropOffsetX,
+                        activePreview.serverIconCropOffsetY,
+                        activePreview.serverIconCropZoom,
+                      )}
                     />
                   ) : (
                     title.slice(0, 1).toUpperCase()

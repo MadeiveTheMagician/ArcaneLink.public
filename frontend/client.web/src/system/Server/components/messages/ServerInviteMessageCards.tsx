@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import { useEffect, useMemo, useState } from 'react'
 import { ApiError, apiJson } from '../../../../shared/api/api'
 import type { ServerInvitePreviewResponse } from '../../../../shared/types'
@@ -254,13 +255,11 @@ function ServerInviteActiveCard({
             <img
               src={iconUrl}
               alt=""
-              style={{
-                transform: `translate(${
-                  -50 + preview.serverIconCropOffsetX * 100
-                }%, ${
-                  -50 + preview.serverIconCropOffsetY * 100
-                }%) scale(${preview.serverIconCropZoom})`,
-              }}
+              style={getServerIconImageStyle(
+                preview.serverIconCropOffsetX,
+                preview.serverIconCropOffsetY,
+                preview.serverIconCropZoom,
+              )}
             />
           ) : (
             serverTitle.slice(0, 1).toUpperCase()

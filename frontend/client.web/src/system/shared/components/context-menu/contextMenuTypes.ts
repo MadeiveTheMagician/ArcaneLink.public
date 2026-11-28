@@ -39,6 +39,13 @@ export type ContextMenuItem =
     }
   | {
       id?: string
+      type: 'move'
+      label: string
+      onUp?: () => void
+      onDown?: () => void
+    }
+  | {
+      id?: string
       type: 'range'
       label: string
       icon?: ContextMenuIcon

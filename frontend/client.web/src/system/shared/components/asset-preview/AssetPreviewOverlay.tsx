@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { SystemCloseIcon } from '../../icons/components/SystemCloseIcon'
 import { assetPreviewCopy } from './assetPreview.copy.ts'
@@ -24,6 +24,7 @@ type AssetPreviewOverlayProps = {
   asset: AssetPreviewItem
   author: AssetPreviewAuthor
   onClose: () => void
+  onMediaContextMenu?: (event: MouseEvent<HTMLImageElement | HTMLVideoElement>) => void
   onNavigate?: (direction: 'previous' | 'next') => void
 }
 
@@ -32,6 +33,7 @@ export function AssetPreviewOverlay({
   author,
   onClose,
   onNavigate,
+  onMediaContextMenu,
 }: AssetPreviewOverlayProps) {
   const [isChromeVisible, setIsChromeVisible] = useState(true)
   const [isClosing, setIsClosing] = useState(false)
@@ -172,6 +174,7 @@ export function AssetPreviewOverlay({
             <video
               className={styles.image}
               src={asset.url}
+              onContextMenu={onMediaContextMenu}
               aria-label={asset.title}
               controls
               playsInline
@@ -182,6 +185,7 @@ export function AssetPreviewOverlay({
             <img
               className={styles.image}
               src={asset.url}
+              onContextMenu={onMediaContextMenu}
               alt={asset.title || assetPreviewCopy.imageAlt}
             />
           )}

@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import { useState, type CSSProperties } from 'react'
 import { SystemIcon } from '../../../shared/icons/SystemIcon'
 import { notificationCopy } from '../../../shared/copy'
@@ -84,13 +85,11 @@ export function WebNotificationStack({
               <img
                 src={`/api/assets/${notification.serverIconAssetId}/content`}
                 alt=""
-                style={{
-                  transform: `translate(${
-                    (notification.serverIconCropOffsetX ?? 0) * 100
-                  }%, ${
-                    (notification.serverIconCropOffsetY ?? 0) * 100
-                  }%) scale(${notification.serverIconCropZoom ?? 1})`,
-                }}
+                style={getServerIconImageStyle(
+                  notification.serverIconCropOffsetX,
+                  notification.serverIconCropOffsetY,
+                  notification.serverIconCropZoom,
+                )}
               />
             </span>
           ) : (notification.kind === 'private-message' ||

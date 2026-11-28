@@ -3,15 +3,34 @@
   --server-composer-padding-start: 6px;
   --server-composer-padding-end: 6px;
   --server-composer-height: 44px;
+  --workspace-header-height: 42px;
+  --private-members-width: var(--profile-member-panel-width, 300px);
+  --workspace-members-open: 1;
+  --workspace-member-track: calc(var(--private-members-width) * var(--workspace-members-open));
+  --private-search-width: calc(var(--workspace-search-input-width) + 58px);
+  --private-search-reserve: max(0px, calc(var(--private-search-width) - var(--workspace-member-track)));
 
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--profile-member-panel-width, 300px);
+  grid-template-columns: minmax(0, 1fr) var(--workspace-member-track);
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  background: var(--theme-frame-bg-strong);
-  transition: grid-template-columns 220ms cubic-bezier(0.2, 0.82, 0.2, 1);
+  background-color: var(--theme-frame-bg-strong);
+  transition: --workspace-members-open 220ms cubic-bezier(0.2, 0.82, 0.2, 1);
 }
+
+.searchToolbar {
+  position: absolute;
+  z-index: 8;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  height: var(--workspace-header-height);
+  width: var(--private-search-width);
+}
+.privateSpaceLayout[data-info-collapsed=true] { --workspace-members-open: 0; }
+.privateSpaceLayout[data-info-collapsed=true] .privateInfoResizer { display: none; }
 
 .privateChatColumn {
   grid-column: 1;
@@ -98,15 +117,36 @@
 
 .privateChatColumn :global([class*="textMain"]) {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   min-width: 0;
   min-height: 0;
   flex: 1 1 auto;
 }
 
-.privateChatColumn :global([class*="textMain"] > header),
+.privateChatColumn :global([class*="textSurface"] > [data-workspace-channel-header]),
 .privateChatColumn :global([class*="textComposer"]) {
   position: static;
+}
+
+.privateChatColumn :global([data-workspace-channel-header]) {
+  box-sizing: border-box;
+  min-height: var(--workspace-header-height);
+  padding-inline-end: calc(12px + var(--private-search-reserve));
+}
+
+@media (min-width: 761px) {
+  .privateChatColumn:not(.withPrivateVoicePanel, .closingPrivateVoicePanel) > :global([class*="textSurface"]),
+  .privateChatColumn.withPrivateVoicePanel > :global([class*="privateVoiceStrip"]) {
+    background-size: 100% calc(100% - var(--workspace-header-height));
+    background-position: bottom;
+    background-repeat: no-repeat;
+    border-inline-color: transparent;
+  }
+
+  .privateChatColumn:not(.withPrivateVoicePanel, .closingPrivateVoicePanel) :global([data-workspace-channel-header]) {
+    border-bottom-color: transparent;
+    background: transparent;
+  }
 }
 
 .privateChatColumn :global([class*="textFeed"]) {
@@ -139,7 +179,8 @@
   grid-row: 1;
   justify-self: end;
   width: 10px;
-  height: 100%;
+  margin-block-start: var(--workspace-header-height);
+  height: calc(100% - var(--workspace-header-height));
   margin-right: -5px;
   border: 0;
   border-radius: 0;
@@ -179,7 +220,7 @@
 
 @media (max-width: 1200px) and (min-width: 761px) {
   .privateSpaceLayout {
-    grid-template-columns: minmax(0, 1fr) 54px;
+    --private-members-width: 54px;
   }
 
   .privateInfoResizer {
@@ -208,6 +249,9 @@
     --server-composer-padding-start: 8px;
     --server-composer-padding-end: 8px;
     --server-composer-height: 56px;
+    --workspace-header-height: var(--mobile-nav-panel-height, 54px);
+    --private-members-width: 0px;
+    --private-search-width: 44px;
 
     grid-template-columns: minmax(0, 1fr);
     width: 100%;
@@ -271,7 +315,7 @@
     overflow-x: hidden;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"] > header) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textSurface"] > [data-workspace-channel-header]) {
     position: relative;
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr) auto;
@@ -285,12 +329,12 @@
     overflow: visible;
     min-height: var(--mobile-nav-panel-height, 54px);
     border: 0;
-    padding: 8px 14px 6px 8px;
+    padding: 8px calc(8px + var(--private-search-reserve)) 6px 8px;
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-raised), transparent 10%), transparent);
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"] > header)::after {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textSurface"] > [data-workspace-channel-header])::after {
     position: absolute;
     right: 0;
     bottom: -26px;
@@ -308,7 +352,7 @@
       );
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"] > header > div:not([class*="messageHeaderActions"])) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textSurface"] > [data-workspace-channel-header] > div:not([class*="messageHeaderActions"])) {
     display: flex;
     align-items: center;
     flex: 1 1 auto;
@@ -317,7 +361,7 @@
     margin-right: 6px;
   }
 
-  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textMain"] > header > div:not([class*="messageHeaderActions"]) strong) {
+  :global(.profile-page.is-mobile-tab-messages.is-private-space) .privateChatColumn :global([class*="textSurface"] > [data-workspace-channel-header] > div:not([class*="messageHeaderActions"]) strong) {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;

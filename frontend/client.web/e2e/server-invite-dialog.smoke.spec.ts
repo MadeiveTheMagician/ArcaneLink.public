@@ -70,6 +70,7 @@ test('invite dialog uses a portal, tabs, scrolling and creates a link', async ({
   const backdrop = dialog.locator('xpath=..')
 
   await expect(dialog).toBeVisible()
+  await expect(dialog).toHaveCSS('background-color', /^rgb\(/)
   await expect(closeButton).toBeFocused()
   await expect(backdrop).toHaveAttribute('data-state', 'open')
   await expect.poll(() => inviteLoadCount).toBe(1)
@@ -120,10 +121,10 @@ test('invite dialog uses a portal, tabs, scrolling and creates a link', async ({
   await expect(inviteUrlInput).toHaveValue(serverCopy.invites.linkEmpty)
   await expect(dialog.getByText(serverCopy.invites.linkEmptyHint)).toBeVisible()
 
-  await dialog
-    .getByLabel(serverCopy.invites.expirationLabel)
-    .selectOption('never')
-  await dialog.getByLabel(serverCopy.invites.maxUsesLabel).selectOption('5')
+  await dialog.getByRole('combobox', { name: serverCopy.invites.expirationLabel }).click()
+  await page.getByRole('option', { name: serverCopy.invites.expirationOptions.never, exact: true }).click()
+  await dialog.getByRole('combobox', { name: serverCopy.invites.maxUsesLabel }).click()
+  await page.getByRole('option', { name: serverCopy.invites.maxUsesOptions.uses5, exact: true }).click()
   await dialog
     .getByRole('button', { name: serverCopy.invites.submitNewLink })
     .click()
@@ -136,7 +137,7 @@ test('invite dialog uses a portal, tabs, scrolling and creates a link', async ({
     expiresAt: null,
   })
   await expect(inviteUrlInput).toHaveValue(
-    'http://127.0.0.1:5173/invite/palas-generated-1',
+    new URL('/invite/palas-generated-1', page.url()).href,
   )
   await expect(dialog.getByRole('status')).toHaveText(
     serverCopy.invites.created,
@@ -207,7 +208,7 @@ test('invite dialog separates load and clipboard errors and reloads on reopen', 
     serverCopy.invites.linkPanelTitle,
   )
   await expect(inviteUrlInput).toHaveValue(
-    'http://127.0.0.1:5173/invite/palas-active',
+    new URL('/invite/palas-active', page.url()).href,
   )
   await dialog
     .getByRole('button', { name: serverCopy.invites.copy })

@@ -1,15 +1,11 @@
 .topbar {
-  grid-column: 1 / -1;
-  grid-row: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  min-height: 0;
-  height: 0;
-  overflow: hidden;
-  border: 0;
-  padding: 0;
-  background: transparent;
+  position: absolute;
+  z-index: 100;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  width: var(--workspace-search-width);
+  height: var(--workspace-header-height);
+  min-width: 0;
 }
 
 .resizer {
@@ -35,6 +31,8 @@
 .memberResizer {
   grid-column: 2;
   grid-row: 2;
+  margin-block-start: var(--workspace-header-height);
+  height: calc(100% - var(--workspace-header-height));
 }
 
 .resizer::before {
@@ -64,7 +62,8 @@
   grid-column: 3;
   grid-row: 2;
   min-height: 0;
-  height: 100%;
+  margin-block-start: var(--workspace-header-height);
+  height: calc(100% - var(--workspace-header-height));
   border: 0;
   border-left: 1px solid var(--theme-border-soft);
   border-radius: 0;
@@ -93,13 +92,8 @@
 }
 
 @media (max-width: 760px) {
-  .topbar {
-    grid-column: 1;
-    min-width: 0;
-    height: 0;
-    border: 0;
-    padding: 0;
-    background: transparent;
+  :global([data-server-workspace]:not([data-has-workspace-detail])) .topbar {
+    display: none;
   }
 
   .resizer,

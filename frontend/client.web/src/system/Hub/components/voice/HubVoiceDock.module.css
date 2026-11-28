@@ -1,12 +1,12 @@
 .dock {
   position: fixed;
-  left: 10px;
+  left: calc(var(--profile-rail-offset, 0px) + 10px);
   bottom: 10px;
   z-index: 18;
   display: grid;
   box-sizing: border-box;
   width: calc(var(--profile-side-panel-width) - 20px);
-  max-width: calc(100vw - 20px);
+  max-width: calc(100vw - var(--profile-rail-offset, 0px) - 20px);
   min-height: 44px;
   grid-template-columns: 30px minmax(0, 1fr) auto;
   align-items: center;
@@ -22,7 +22,6 @@
     0 0 28px color-mix(in srgb, var(--theme-accent), transparent 86%);
   transform-origin: bottom left;
   transition:
-    left 220ms ease,
     box-shadow 220ms ease,
     padding 220ms ease;
 }
@@ -37,11 +36,6 @@
   box-shadow:
     0 20px 52px rgba(0, 0, 0, 0.52),
     0 0 34px color-mix(in srgb, var(--theme-accent), transparent 82%);
-}
-
-.railOpen {
-  left: calc(var(--profile-rail-width) + 10px);
-  max-width: calc(100vw - var(--profile-rail-width) - 20px);
 }
 
 .connectionOverview {

@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import type { ImageCrop } from '../../../../shared/media/ImageCropEditor'
@@ -264,9 +265,11 @@ export function ServerGeneralSettings({
                     className="ui-media-fit"
                     src={form.iconPreviewUrl}
                     alt=""
-                    style={{
-                      transform: `translate(${form.iconCropOffsetX * 100}%, ${form.iconCropOffsetY * 100}%) scale(${form.iconCropZoom})`,
-                    }}
+                    style={getServerIconImageStyle(
+                      form.iconCropOffsetX,
+                      form.iconCropOffsetY,
+                      form.iconCropZoom,
+                    )}
                   />
                 ) : (
                   <span>

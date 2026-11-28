@@ -1,3 +1,4 @@
+import { recordVoiceTransportTrace } from './voiceTransportTrace'
 import {
   createSafeVoicePeerStatsSummary,
   serializeSafeVoicePeerStatsSummary,
@@ -18,6 +19,7 @@ function resolveVoiceDebugEnabled() {
 }
 
 export function voiceDebug(event: string, details?: unknown) {
+  recordVoiceTransportTrace(event, details)
   if (!isVoiceDebugEnabled) {
     return
   }

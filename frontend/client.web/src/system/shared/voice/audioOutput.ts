@@ -1,3 +1,5 @@
+import { voiceVolumeToAttenuationGain } from './voiceVolumeGain'
+
 export const defaultAudioOutputDeviceId = ''
 
 export type AudioOutputDeviceLike = {
@@ -59,7 +61,9 @@ export function combineVoicePlaybackVolume(
     return 0
   }
 
-  const globalVolume = clampAudioOutputVolumePercent(outputVolumePercent) / 100
+  const globalVolume = voiceVolumeToAttenuationGain(
+    clampAudioOutputVolumePercent(outputVolumePercent) / 100,
+  )
   const normalizedParticipantVolume = Number.isFinite(participantVolume)
     ? Math.min(1, Math.max(0, participantVolume))
     : 1

@@ -39,12 +39,12 @@ type VoiceHubConnectionHandlers = {
 }
 
 export function createVoiceHubConnection(
-  accessToken: string,
+  getAccessToken: () => string,
   handlers: VoiceHubConnectionHandlers,
 ) {
   const connection = new signalR.HubConnectionBuilder()
     .withUrl('/hubs/realtime', {
-      accessTokenFactory: () => accessToken,
+      accessTokenFactory: getAccessToken,
     })
     .withAutomaticReconnect({
       nextRetryDelayInMilliseconds: ({ previousRetryCount }) =>

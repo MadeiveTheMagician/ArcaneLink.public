@@ -274,6 +274,19 @@ export const serverCopy = {
     contextUnpin: 'Открепить сообщение',
     contextReply: 'Ответить',
     contextReport: 'Пожаловаться',
+    imageContext: {
+      open: 'Открыть ссылку на изображение',
+      copyLink: 'Копировать ссылку на изображение',
+      copy: 'Копировать изображение',
+      save: 'Сохранить изображение',
+    },
+    fileContext: {
+      open: 'Открыть ссылку на файл',
+      copyLink: 'Копировать ссылку на файл',
+      copy: 'Копировать файл',
+      save: 'Сохранить файл',
+    },
+    attachmentActionFailed: 'Не удалось выполнить действие с вложением.',
     downloadAttachment: 'Скачать вложение',
     downloadAttachmentWaiting: (seconds: number) =>
       `Скачать вложение. Подождите ${seconds} с`,

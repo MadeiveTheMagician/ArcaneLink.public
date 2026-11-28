@@ -9,7 +9,7 @@
     right: 18px;
     bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 8px);
     left: 18px;
-    z-index: 79;
+    z-index: 99;
     display: grid;
     box-sizing: border-box;
     gap: 8px;
@@ -178,7 +178,7 @@
     position: fixed;
     right: 18px;
     bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 10px);
-    z-index: 83;
+    z-index: 101;
     display: grid;
     width: 58px;
     height: 58px;
@@ -194,12 +194,7 @@
     box-shadow:
       0 14px 30px rgba(0, 0, 0, 0.46),
       0 0 20px var(--theme-glow-strong);
-    transform:
-      translate3d(
-        var(--mobile-voice-dock-x, 0),
-        var(--mobile-voice-dock-y, 0),
-        0
-      );
+    user-select: none;
   }
 
   .collapsedDock img {

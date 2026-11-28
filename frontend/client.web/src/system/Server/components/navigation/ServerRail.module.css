@@ -1,4 +1,4 @@
-﻿.drawer {
+.drawer {
   position: fixed;
   left: 0;
   top: 0;
@@ -17,15 +17,12 @@
   background: var(--theme-control-bg-strong);
   box-shadow: 28px 0 80px rgba(0, 0, 0, 0.52);
   font-size: calc(16px * var(--profile-font-scale));
-  transform: translateX(calc(-1 * (var(--profile-rail-width) + 8px)));
-  transition:
-    transform 260ms ease,
-    opacity 180ms ease;
+  transform: translateX(var(--profile-rail-translation, calc(-1 * (var(--profile-rail-width) + 8px))));
   opacity: 0.98;
 }
 
 .open {
-  transform: translateX(0);
+  transform: translateX(var(--profile-rail-translation, 0px));
 }
 
 .avatar,
@@ -63,8 +60,7 @@
     0 0 18px var(--theme-glow);
 }
 
-.avatar:hover,
-.server:hover {
+.avatar:hover {
   transform: translateY(-2px);
 }
 
@@ -80,24 +76,46 @@
   object-position: center;
 }
 
+.favoritesButton {
+  display: grid;
+  width: var(--profile-rail-server);
+  height: var(--profile-rail-server);
+  place-items: center;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 14px;
+  color: var(--theme-accent-light);
+  background: var(--theme-surface-raised);
+  font-size: 23px;
+}
+.favoritesButton:hover, .favoritesButton[aria-pressed="true"] {
+  border-color: var(--theme-accent-light);
+  background: var(--theme-hover-bg);
+}
+
 .list {
   position: relative;
   display: grid;
   width: 100%;
   min-height: 0;
+  grid-template-columns: repeat(var(--server-rail-columns, 1), minmax(0, 1fr));
   align-content: start;
   justify-items: center;
-  gap: 7px;
+  gap: 9px;
   margin: 0 auto;
   padding: 6px 0 9px;
   overflow-x: hidden;
   overflow-y: auto;
 }
 
+.list[data-wide] {
+  padding-inline: 5px 3px;
+}
+
 .list::after {
   position: sticky;
   bottom: -12px;
   z-index: 2;
+  grid-column: 1 / -1;
   display: block;
   width: 100%;
   height: 20px;
@@ -137,6 +155,7 @@
     var(--theme-control-bg);
   cursor: grab;
   touch-action: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .server:hover {
@@ -149,12 +168,28 @@
 }
 
 .dragging {
-  z-index: 20;
-  opacity: 0.82;
-  box-shadow:
-    0 0 0 3px var(--theme-border-accent),
-    0 14px 32px rgba(0, 0, 0, 0.48);
-  transition: none;
+  visibility: hidden;
+}
+
+.dragPreview {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 12px;
+  background: var(--theme-control-bg-strong);
+  color: var(--color-text);
+  font-weight: 900;
+  opacity: 0.9;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.dragPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .serverDropSlot {
@@ -209,8 +244,8 @@
   bottom: -5px;
 }
 
-.dropBefore::before,
-.dropAfter::after {
+.serverDropSlot[data-drop-placement='before']::before,
+.serverDropSlot[data-drop-placement='after']::after {
   opacity: 1;
   transform: scaleX(1);
 }
@@ -296,6 +331,16 @@
   padding-top: 3px;
 }
 
+.utilities[data-wide] {
+  width: min(100%, calc(3 * var(--profile-rail-button) + 4px));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.utilities[data-wide] .tool,
+.utilities[data-wide] .toolIcon {
+  width: 100%;
+}
+
 .tool {
   position: relative;
   display: grid;
@@ -336,4 +381,245 @@
   .drawer {
     display: none;
   }
+}
+
+.serverDropSlot[data-drop-axis='x']::before,
+.serverDropSlot[data-drop-axis='x']::after {
+  top: 6px;
+  bottom: auto;
+  width: 3px;
+  height: calc(100% - 12px);
+}
+
+.serverDropSlot[data-drop-axis='x']::before {
+  right: auto;
+  left: -6px;
+}
+
+.serverDropSlot[data-drop-axis='x']::after {
+  right: -6px;
+  left: auto;
+}
+
+.serverDropSlot[data-drop-placement='inside'] > button,
+.serverDropSlot[data-drop-placement='inside'] .folderButton {
+  outline: 2px solid var(--theme-border-accent);
+  outline-offset: 1px;
+  box-shadow: 0 0 12px var(--theme-glow-strong);
+}
+
+.folderSlot {
+  color: var(--color-text);
+}
+
+.folderHeader {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+}
+
+.folderButton {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: var(--profile-rail-server);
+  min-width: 0;
+  place-items: center;
+  padding: 5px;
+  background: var(--theme-control-bg);
+  border: 1px solid var(--server-folder-color);
+  border-radius: 12px;
+  color: inherit;
+  cursor: grab;
+  touch-action: none;
+}
+
+.folderButton:hover,
+.folderSelected {
+  background: color-mix(in srgb, var(--server-folder-color) 21%, var(--theme-control-bg));
+}
+
+.folderSlot:has(:focus-visible) {
+  outline: 2px solid var(--theme-border-accent);
+  outline-offset: 1px;
+}
+
+.folderPreview {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.folderPreview > span {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--theme-control-bg-strong);
+  color: var(--color-text);
+  font-size: 0.62em;
+  font-weight: 800;
+}
+
+.folderPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.folderExpanded {
+  width: 100%;
+  height: auto;
+  grid-column: 1 / -1;
+  gap: 8px;
+  padding: 6px 0 9px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--server-folder-color) 9%, var(--theme-control-bg));
+  box-shadow: inset 0 0 0 1px var(--server-folder-color);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .folderSlot[data-merged] {
+    animation: folderMerged 480ms ease-out;
+  }
+
+  @keyframes folderMerged {
+    0% {
+      box-shadow: inset 0 0 0 2px var(--server-folder-color), 0 0 0 3px var(--server-folder-color);
+      background-color: color-mix(in srgb, var(--server-folder-color) 40%, var(--theme-control-bg));
+    }
+    100% {
+      box-shadow: inset 0 0 0 1px var(--server-folder-color), 0 0 0 0 transparent;
+    }
+  }
+}
+
+.folderExpanded > .folderHeader {
+  padding-inline: 3px;
+}
+
+.folderExpanded .folderButton {
+  height: auto;
+  min-height: 23px;
+  padding: 2px 1px;
+  justify-items: stretch;
+  background: transparent;
+  border-color: transparent;
+  border-radius: 5px;
+}
+
+.folderTitle {
+  display: grid;
+  place-items: center;
+}
+
+.folderExpanded .folderButton:hover {
+  background: var(--theme-active-bg);
+}
+
+.folderDisclosure {
+  display: grid;
+  width: 100%;
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.folderDisclosure[data-folder-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.folderMembersClip {
+  min-height: 0;
+  overflow: clip;
+  overflow-clip-margin: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .folderDisclosure {
+    transition: grid-template-rows 220ms ease, opacity 180ms ease;
+  }
+
+  @starting-style {
+    .folderDisclosure[data-folder-open="true"] {
+      grid-template-rows: 0fr;
+      opacity: 0;
+    }
+  }
+}
+
+.folderMembers {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(var(--server-rail-columns, 1), minmax(0, 1fr));
+  justify-items: center;
+  gap: calc(14px * var(--profile-interface-scale)) calc(10px * var(--profile-interface-scale));
+  padding-inline: 6px;
+}
+
+.folderMembers > .serverDropSlot {
+  width: min(100%, calc(var(--profile-rail-server) + 2px * var(--profile-interface-scale)));
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+}
+
+.folderMembers .server {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+}
+
+.folderDialog {
+  width: min(360px, calc(100vw - 28px));
+  margin: auto;
+  padding: 20px;
+  border: 1px solid var(--theme-border-accent);
+  border-radius: 13px;
+  background: var(--theme-control-bg-strong);
+  color: var(--color-text);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 55%);
+}
+
+.folderDialog::backdrop {
+  background: rgb(0 0 0 / 58%);
+}
+
+.folderDialog form {
+  display: grid;
+  gap: 14px;
+}
+
+.folderDialog h2 {
+  margin: 0;
+  font-size: 1.1em;
+}
+
+.folderDialog label {
+  display: grid;
+  gap: 6px;
+}
+
+.folderDialog input {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--theme-border-control);
+  border-radius: 7px;
+  background: var(--theme-control-bg);
+  color: var(--color-text);
+}
+
+.folderDialogActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }

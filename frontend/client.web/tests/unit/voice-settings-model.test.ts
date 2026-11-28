@@ -3,6 +3,8 @@ import {
   VOICE_SETTINGS_VERSION,
   createVoiceAudioConstraints,
   defaultVoiceSettings,
+  formatPushToTalkBinding,
+  getPushToTalkMouseBinding,
   isPushToTalkKeyCodeAllowed,
   normalizeVoiceSettings,
   parseVoiceSettings,
@@ -179,6 +181,20 @@ test.describe('voice settings model', () => {
       noiseSuppression: true,
       autoGainControl: true,
     })
+  })
+
+  test('persists both side mouse bindings with their button and release masks', () => {
+    expect(getPushToTalkMouseBinding(3)).toMatchObject({ code: 'MouseX1', mask: 8 })
+    expect(getPushToTalkMouseBinding('MouseX2')).toMatchObject({ button: 4, mask: 16 })
+    expect(getPushToTalkMouseBinding(0)).toBeUndefined()
+    expect(getPushToTalkMouseBinding(1)).toBeUndefined()
+    expect(formatPushToTalkBinding('MouseX1')).toBe('X1')
+    expect(formatPushToTalkBinding('MouseX2')).toBe('X2')
+
+    for (const code of ['MouseX1', 'MouseX2']) {
+      expect(normalizeVoiceSettings({ pushToTalkKeyCode: code }).pushToTalkKeyCode).toBe(code)
+    }
+    expect(normalizeVoiceSettings({ pushToTalkKeyCode: 'MouseX3' }).pushToTalkKeyCode).toBeNull()
   })
 
   test('allows ordinary push-to-talk keys but rejects navigation and modifiers', () => {

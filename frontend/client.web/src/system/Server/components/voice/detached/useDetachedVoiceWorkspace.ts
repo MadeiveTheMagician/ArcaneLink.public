@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createDetachedVoiceRenderSignature } from './detachedVoiceCards'
+import { DetachedVoiceWorkspaceContext } from './detachedVoiceWorkspaceContext'
 import { loadDetachedVoiceLayoutPresetsFromApi } from './detachedVoiceLayoutApi'
 import {
   loadDetachedVoiceLayoutStorage,
@@ -20,6 +21,7 @@ type UseDetachedVoiceWorkspaceOptions = {
   workspaceKey: string
   title: string
   participantCards: VoiceParticipantCard[]
+  isConnected: boolean
   isMuted: boolean
   isDeafened: boolean
   isCameraEnabled: boolean
@@ -32,12 +34,14 @@ export function useDetachedVoiceWorkspace({
   workspaceKey,
   title,
   participantCards,
+  isConnected,
   isMuted,
   isDeafened,
   isCameraEnabled,
   isScreenSharing,
   actions,
 }: UseDetachedVoiceWorkspaceOptions) {
+  const onDetachedWorkspaceChange = useContext(DetachedVoiceWorkspaceContext)
   const surfaceRef = useRef<HTMLElement | null>(null)
   const detachedWindowRef = useRef<DetachedVoiceWorkspaceWindow | null>(null)
   const renderSignatureRef = useRef<string | null>(null)
@@ -82,7 +86,7 @@ export function useDetachedVoiceWorkspace({
       participantWindows.clear()
       participantSignatures.clear()
     }
-  }, [workspaceKey])
+  }, [isConnected, workspaceKey])
 
   useEffect(() => {
     const detachedWindow = detachedWindowRef.current
@@ -222,7 +226,10 @@ export function useDetachedVoiceWorkspace({
           setIsDetachedVoiceChatOpen((isOpen) => !isOpen),
       }),
       existingWindow: detachedWindowRef.current,
-      onVoiceChatHostChange: setDetachedVoiceChatHost,
+      onVoiceChatHostChange: (host) => {
+        setDetachedVoiceChatHost(host)
+        onDetachedWorkspaceChange?.(workspaceKey, host !== null)
+      },
     })
     detachedWindowRef.current = detachedWindow
     detachedWindow?.updateVoiceWorkspaceChatState?.(nextVoiceChatOpen)
@@ -230,6 +237,7 @@ export function useDetachedVoiceWorkspace({
     accessToken,
     controlState,
     isDetachedVoiceChatOpen,
+    onDetachedWorkspaceChange,
     participantCards,
     title,
     workspaceKey,

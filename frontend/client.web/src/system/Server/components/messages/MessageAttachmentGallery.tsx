@@ -251,6 +251,7 @@ function AttachmentTile({
       <button
         className={tileClassName}
         type="button"
+        data-attachment-id={isRevealed ? asset.assetId : undefined}
         onClick={() => revealOr(() => onOpenPreview(asset))}
       >
         {isVideo ? (
@@ -275,6 +276,7 @@ function AttachmentTile({
   return (
     <button
       className={`${tileClassName} ${styles.fileTile}`}
+      data-attachment-id={asset.assetId}
       type="button"
       onClick={() => onRequestDownload(asset)}
     >
@@ -307,6 +309,7 @@ function SingleFileAttachment({
     <button
       className={styles.singleFile}
       type="button"
+      data-attachment-id={asset.assetId}
       onClick={() => onRequestDownload(asset)}
     >
       <span className={styles.singleFileIcon}>

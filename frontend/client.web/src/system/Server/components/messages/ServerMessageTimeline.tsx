@@ -49,6 +49,7 @@ type ServerMessageTimelineProps = {
     x: number,
     y: number,
     focusOnOpen: boolean,
+    asset?: SpaceMessageAssetResponse,
   ) => void
   defaultAttachmentExpanded: boolean
   loadExternalMediaPreviews: boolean
@@ -186,8 +187,8 @@ export const ServerMessageTimeline = memo(function ServerMessageTimeline({
                 onJumpToMessage={onJumpToMessage}
                 onOpenPreview={(asset) => onOpenPreview(asset, message)}
                 onRequestDownload={onRequestDownload}
-                onContextMenu={(x, y, focusOnOpen) =>
-                  onContextMenu(message, x, y, focusOnOpen)
+                onContextMenu={(x, y, focusOnOpen, asset) =>
+                  onContextMenu(message, x, y, focusOnOpen, asset)
                 }
               />
             )

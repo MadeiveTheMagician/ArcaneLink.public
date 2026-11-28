@@ -127,6 +127,7 @@ type HubWorkspacePaneProps = {
   onCreateDirectServerInvite: (serverId: string, targetUserId: string) => void
   onRemoveFriend: (userId: string) => void
   onCreateServer: () => void
+  onOpenFavorites?: () => void
   onServerJoined: (membership: ServerMemberResponse) => void
   onOpenServer: (membership: ServerMemberResponse) => void
   onAcceptDirectServerInvite: (inviteId: string) => void
@@ -211,6 +212,7 @@ export function HubWorkspacePane({
   onCreateDirectServerInvite,
   onRemoveFriend,
   onCreateServer,
+  onOpenFavorites,
   onServerJoined,
   onOpenServer,
   onAcceptDirectServerInvite,
@@ -364,6 +366,7 @@ export function HubWorkspacePane({
               onStartPrivateInfoResize={onStartPrivateInfoResize}
               onRemoveFriend={onRemoveFriend}
               onCreateServer={onCreateServer}
+              onOpenFavorites={onOpenFavorites}
               onReturnToDirectMessages={onReturnToDirectMessages}
               focusedPrivateMessage={focusedPrivateMessage}
               onOpenPrivateSearchResult={onOpenPrivateSearchResult}

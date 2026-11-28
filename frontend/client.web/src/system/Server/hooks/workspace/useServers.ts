@@ -127,6 +127,8 @@ export function useServers(accessToken: string, userId: string) {
   const serverMembersServerIdRef = useRef<string | null>(null)
   const serverMemberRequestVersionRef = useRef(0)
   const isLoadingMoreServerMembersRef = useRef(false)
+  const serverLoadScopeRef = useRef(0)
+  const authoritativeServersUserIdRef = useRef<string | null>(null)
 
   useUserPresenceChanged((payload) => {
     setServerMembers((current) =>
@@ -135,6 +137,7 @@ export function useServers(accessToken: string, userId: string) {
   })
 
   async function loadServers(silent = false) {
+    const loadScope = serverLoadScopeRef.current
     if (!silent) {
       setIsLoadingServers(true)
     }
@@ -149,6 +152,10 @@ export function useServers(accessToken: string, userId: string) {
         readServerOrder(userId),
       )
 
+      if (serverLoadScopeRef.current !== loadScope) {
+        return orderedMemberships
+      }
+      authoritativeServersUserIdRef.current = userId
       setServerMemberships(orderedMemberships)
       setLoadedServersUserId(userId)
       void writeUserDataCache(userId, 'serverMemberships', orderedMemberships)
@@ -161,7 +168,7 @@ export function useServers(accessToken: string, userId: string) {
 
       return orderedMemberships
     } finally {
-      if (!silent) {
+      if (!silent && serverLoadScopeRef.current === loadScope) {
         setIsLoadingServers(false)
       }
     }
@@ -171,7 +178,11 @@ export function useServers(accessToken: string, userId: string) {
     let isDisposed = false
 
     void readUserDataCache(userId, 'serverMemberships').then((memberships) => {
-      if (!isDisposed && memberships && memberships.length > 0) {
+      if (
+        !isDisposed &&
+        authoritativeServersUserIdRef.current !== userId &&
+        memberships && memberships.length > 0
+      ) {
         setServerMemberships(applyServerOrder(memberships, readServerOrder(userId)))
       }
     })
@@ -179,6 +190,7 @@ export function useServers(accessToken: string, userId: string) {
     void loadServers()
     return () => {
       isDisposed = true
+      serverLoadScopeRef.current += 1
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, userId])

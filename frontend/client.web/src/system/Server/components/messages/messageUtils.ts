@@ -4,7 +4,7 @@ import { serverCopy } from '../../../shared'
 
 export type DownloadWarningState = {
   asset: SpaceMessageAssetResponse
-  url: string
+  onConfirm: () => void
   title: string
   body: string
   openedAtMs: number

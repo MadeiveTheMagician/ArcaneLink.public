@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import {
   useEffect,
   useId,
@@ -582,7 +583,9 @@ function ProfileAsset({
         <img
           src={`/api/assets/${assetId}/content`}
           alt=""
-          style={{ transform: `translate(${offsetX * 100}%, ${offsetY * 100}%) scale(${zoom})` }}
+          style={cropPrefix === 'icon'
+            ? getServerIconImageStyle(offsetX, offsetY, zoom)
+            : { transform: `translate(${offsetX * 100}%, ${offsetY * 100}%) scale(${zoom})` }}
         />
       ) : fallback}
     </span>

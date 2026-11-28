@@ -8,6 +8,8 @@ import viewportStyles from './ServerWorkspaceViewport.module.css'
 
 type ServerWorkspaceLayoutProps = {
   channelTree: ReactNode
+  isFavoritesContent?: boolean
+  messageSearch: ReactNode
   detail: ReactNode
   hasSelectedDetail: boolean
   isMembersPanelCollapsed: boolean
@@ -28,6 +30,8 @@ type ServerWorkspaceLayoutProps = {
 
 export function ServerWorkspaceLayout({
   channelTree,
+  isFavoritesContent = false,
+  messageSearch,
   detail,
   hasSelectedDetail,
   isMembersPanelCollapsed,
@@ -62,28 +66,27 @@ export function ServerWorkspaceLayout({
   return (
     <section
       data-server-workspace="true"
+      data-workspace-header-backdrop="true"
+      data-favorites-content={isFavoritesContent || undefined}
+      data-has-workspace-detail={hasSelectedDetail || undefined}
       data-members-panel-collapsed={isMembersPanelCollapsed ? 'true' : 'false'}
       tabIndex={-1}
       className={`${styles.workspace} ui-panel ${
         hasSelectedDetail ? styles.withDetail : styles.spacesOnly
       }`}
     >
-      <header
-        className={chromeStyles.topbar}
-        aria-live="polite"
-        aria-label={serverCopy.labels.systemNotifications}
-      />
+      <div className={chromeStyles.topbar}>{messageSearch}</div>
 
       {channelTree}
 
-      <button
+      {!isFavoritesContent && <button
         className={`${chromeStyles.resizer} ${chromeStyles.spaceResizer}`}
         type="button"
         aria-label="Resize spaces panel"
         aria-hidden="true"
         tabIndex={-1}
         onPointerDown={(event) => handleStartPaneResize('spaces', event)}
-      />
+      />}
 
       <section
         className={`${styles.spaceViewport} ${viewportStyles.spaceViewport} ${
@@ -126,13 +129,6 @@ export function ServerWorkspaceLayout({
           </span>
           <button className={mobileToolbarStyles.mobileSpacePinned} type="button">
             {pinnedSpaceMessagePreview ?? ''}
-          </button>
-          <button
-            className={mobileToolbarStyles.mobileSpaceSearch}
-            type="button"
-            aria-label={serverCopy.labels.searchSpace}
-          >
-            <SystemIcon name="search" size={22} />
           </button>
         </div>
 

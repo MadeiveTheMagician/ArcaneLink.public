@@ -24,6 +24,7 @@ type ResolveSystemSelectPopupPositionOptions = {
   margin?: number
   maxHeight?: number
   minWidth?: number
+  align?: 'start' | 'end'
 }
 
 export const systemSelectTransitionDurationMs = 160
@@ -62,6 +63,7 @@ export function resolveSystemSelectPopupPosition({
   margin = 8,
   maxHeight = 320,
   minWidth = 160,
+  align = 'start',
 }: ResolveSystemSelectPopupPositionOptions): SystemSelectPopupPosition {
   const safeViewportWidth = Math.max(0, viewportWidth)
   const safeViewportHeight = Math.max(0, viewportHeight)
@@ -71,7 +73,7 @@ export function resolveSystemSelectPopupPosition({
     availableViewportWidth,
   )
   const left = clamp(
-    trigger.left,
+    align === 'end' ? trigger.left + trigger.width - width : trigger.left,
     margin,
     Math.max(margin, safeViewportWidth - margin - width),
   )

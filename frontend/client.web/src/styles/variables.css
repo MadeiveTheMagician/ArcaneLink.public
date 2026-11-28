@@ -18,6 +18,7 @@
   --theme-bg-start: color-mix(in srgb, var(--color-bg), #000 48%);
   --theme-bg-mid: var(--color-bg);
   --theme-bg-end: color-mix(in srgb, var(--color-bg), #000 34%);
+  --workspace-search-input-width: 256px;
   --theme-border-soft: color-mix(in srgb, var(--color-border), var(--theme-accent) 16%);
   --theme-border-control: color-mix(in srgb, var(--color-border), var(--theme-accent) 12%);
   --theme-border-accent: color-mix(in srgb, var(--theme-accent), transparent 42%);

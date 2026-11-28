@@ -1,17 +1,8 @@
-import {
-  DndContext,
-  PointerSensor,
-  useDraggable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragMoveEvent,
-  type Modifier,
-} from '@dnd-kit/core'
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import type { UserResponse } from '../../../shared/types'
 import type { VoiceChannelController } from '../../Server/hooks/voice/useVoiceChannel'
 import { SystemIcon, voiceCopy } from '../../shared'
+import { MobileCollapsedVoiceDock, type DockPosition } from './MobileCollapsedVoiceDock'
 import styles from './MobileVoiceDock.module.css'
 
 type MobileVoiceDockProps = {
@@ -24,79 +15,6 @@ type MobileVoiceDockProps = {
   voice: VoiceChannelController
 }
 
-type DockOffset = {
-  x: number
-  y: number
-}
-
-const collapsedDockSize = 58
-const collapsedDockEdge = 12
-
-const keepCollapsedDockInViewport: Modifier = ({
-  draggingNodeRect,
-  transform,
-}) => {
-  if (!draggingNodeRect || typeof window === 'undefined') return transform
-
-  return {
-    ...transform,
-    x: Math.min(
-      Math.max(
-        transform.x,
-        collapsedDockEdge - draggingNodeRect.left,
-      ),
-      window.innerWidth -
-        collapsedDockEdge -
-        draggingNodeRect.right,
-    ),
-    y: Math.min(
-      Math.max(
-        transform.y,
-        collapsedDockEdge - draggingNodeRect.top,
-      ),
-      window.innerHeight -
-        collapsedDockEdge -
-        draggingNodeRect.bottom,
-    ),
-  }
-}
-
-function CollapsedVoiceDock({
-  avatarSrc,
-  offset,
-  onExpand,
-}: {
-  avatarSrc: string
-  offset: DockOffset
-  onExpand: () => void
-}) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: 'mobile-voice-dock',
-  })
-  const style = {
-    '--mobile-voice-dock-x': `${offset.x + (transform?.x ?? 0)}px`,
-    '--mobile-voice-dock-y': `${offset.y + (transform?.y ?? 0)}px`,
-  } as CSSProperties
-
-  return (
-    <button
-      ref={setNodeRef}
-      className={styles.collapsedDock}
-      style={style}
-      type="button"
-      aria-label={voiceCopy.channel.expandConnectionPanel}
-      onClick={onExpand}
-      {...attributes}
-      {...listeners}
-    >
-      <img src={avatarSrc} alt="" />
-      <span className={styles.collapsedCallIcon} aria-hidden="true">
-        <SystemIcon name="phone-call" size={14} />
-      </span>
-    </button>
-  )
-}
-
 export function MobileVoiceDock({
   avatarSrc,
   connectionTitle,
@@ -107,79 +25,23 @@ export function MobileVoiceDock({
   voice,
 }: MobileVoiceDockProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [collapsedOffset, setCollapsedOffset] = useState<DockOffset>({
-    x: 0,
-    y: 0,
-  })
-  const didDragRef = useRef(false)
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    }),
-  )
+  const [collapsedPosition, setCollapsedPosition] = useState<DockPosition | null>(null)
 
   useEffect(() => {
+    if (!voice.connectedChannel?.spaceId) return
     setIsCollapsed(false)
-    setCollapsedOffset({ x: 0, y: 0 })
+    setCollapsedPosition(null)
   }, [voice.connectedChannel?.channelScope, voice.connectedChannel?.spaceId])
-
-  function handleDragMove(event: DragMoveEvent) {
-    if (Math.abs(event.delta.x) > 2 || Math.abs(event.delta.y) > 2) {
-      didDragRef.current = true
-    }
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    const initialRect = event.active.rect.current.initial
-    if (!initialRect || typeof window === 'undefined') return
-
-    const left = Math.min(
-      Math.max(
-        initialRect.left + event.delta.x,
-        collapsedDockEdge,
-      ),
-      window.innerWidth - collapsedDockEdge - collapsedDockSize,
-    )
-    const top = Math.min(
-      Math.max(
-        initialRect.top + event.delta.y,
-        collapsedDockEdge,
-      ),
-      window.innerHeight - collapsedDockEdge - collapsedDockSize,
-    )
-
-    setCollapsedOffset((current) => ({
-      x: current.x + left - initialRect.left,
-      y: current.y + top - initialRect.top,
-    }))
-  }
-
-  function expandCollapsedDock() {
-    if (didDragRef.current) {
-      didDragRef.current = false
-      return
-    }
-
-    setIsCollapsed(false)
-  }
 
   if (isCollapsed) {
     return (
-      <DndContext
-        sensors={sensors}
-        modifiers={[keepCollapsedDockInViewport]}
-        onDragStart={() => {
-          didDragRef.current = false
-        }}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      >
-        <CollapsedVoiceDock
-          avatarSrc={avatarSrc}
-          offset={collapsedOffset}
-          onExpand={expandCollapsedDock}
-        />
-      </DndContext>
+      <MobileCollapsedVoiceDock
+        avatarSrc={avatarSrc}
+        position={collapsedPosition}
+        isClosing={isClosing}
+        onMove={setCollapsedPosition}
+        onExpand={() => setIsCollapsed(false)}
+      />
     )
   }
 

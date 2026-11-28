@@ -7,7 +7,10 @@ import {
   runVoiceLocalOffer,
 } from './voiceLocalOfferGuard'
 import type { VoiceVideoSenderKind } from './useVoiceVideoSenders'
-import { registerVoiceVideoReceiverTrack } from './voiceVideoTrackKinds'
+import {
+  getVoiceVideoReceiverTrackKind,
+  registerVoiceVideoReceiverTrack,
+} from './voiceVideoTrackKinds'
 import type {
   ConnectedVoiceChannel,
   VoiceParticipant,
@@ -113,6 +116,10 @@ export function useVoicePeerOrchestrator({
   const peerCreationPromisesRef = useRef<
     Map<string, Promise<RTCPeerConnection>>
   >(new Map())
+  const latestLocalOfferByPeerRef = useRef(
+    new WeakMap<RTCPeerConnection, RTCSessionDescriptionInit>(),
+  )
+
   async function sendLocalOfferSignal(
     participantId: string,
     kind: 'offer' | 'renegotiate-offer',
@@ -149,7 +156,7 @@ export function useVoicePeerOrchestrator({
       return false
     }
 
-    scheduleLocalOfferWatchdog(normalizedParticipantId, peer)
+    scheduleLocalOfferWatchdog(normalizedParticipantId, peer, offer)
     return true
   }
 
@@ -193,6 +200,7 @@ export function useVoicePeerOrchestrator({
           return null
         }
 
+        latestLocalOfferByPeerRef.current.set(peer, offer)
         await peer.setLocalDescription(offer)
         if (!isCurrent()) {
           return null
@@ -218,17 +226,18 @@ export function useVoicePeerOrchestrator({
   function scheduleLocalOfferWatchdog(
     participantId: string,
     peer: RTCPeerConnection,
+    offer: RTCSessionDescriptionInit,
   ) {
     if (peer.signalingState !== 'have-local-offer') {
       return
     }
 
-    const expectedOfferSdp = peer.localDescription?.sdp
+    // The browser can add ICE candidates to localDescription while awaiting an answer.
     window.setTimeout(() => {
       if (
         !isCurrentPeerConnection(participantId, peer) ||
         peer.signalingState !== 'have-local-offer' ||
-        peer.localDescription?.sdp !== expectedOfferSdp
+        latestLocalOfferByPeerRef.current.get(peer) !== offer
       ) {
         return
       }
@@ -422,6 +431,44 @@ export function useVoicePeerOrchestrator({
       closePeerIfCurrent(normalizedRemoteParticipantId, peer)
       throw error
     }
+  }
+
+  async function bindVideoSendersForAnswer(
+    participantId: string,
+    peer: RTCPeerConnection,
+  ) {
+    const transceivers = peer.getTransceivers()
+    const offeredVideoTransceivers = transceivers.filter(
+      ({ mid, receiver, direction }) =>
+        mid !== null && receiver.track.kind === 'video' && direction !== 'stopped',
+    )
+    const kinds = ['camera', 'screen'] as const
+
+    // Remote offers create new transceivers instead of reusing the ones
+    // that addTransceiver() reserved locally without a negotiated MID.
+    await Promise.all(kinds.map(async (kind, index) => {
+      const transceiver = offeredVideoTransceivers[index]
+      if (
+        !transceiver ||
+        getVoiceVideoReceiverTrackKind(transceiver.receiver.track) === kind
+      ) {
+        return
+      }
+
+      const reservedTransceiver = transceivers.find(
+        ({ mid, receiver, direction }) =>
+          mid === null &&
+          direction !== 'stopped' &&
+          getVoiceVideoReceiverTrackKind(receiver.track) === kind,
+      )
+      transceiver.direction = 'sendrecv'
+      setVideoSender(participantId, kind, transceiver.sender)
+      registerVoiceVideoReceiverTrack(transceiver.receiver.track, kind)
+      await replaceVideoTrackForPeer(participantId, kind)
+      if (reservedTransceiver && peer.signalingState !== 'closed') {
+        reservedTransceiver.stop()
+      }
+    }))
   }
 
   async function renegotiatePeer(participantId: string) {
@@ -647,6 +694,7 @@ export function useVoicePeerOrchestrator({
   return {
     syncPeers,
     ensurePeerConnection,
+    bindVideoSendersForAnswer,
     renegotiatePeer,
     recoverPeer,
     closePeer,

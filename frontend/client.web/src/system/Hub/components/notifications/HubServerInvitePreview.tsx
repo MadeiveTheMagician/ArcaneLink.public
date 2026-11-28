@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SystemIcon } from '../../../shared/icons/SystemIcon'
 import { notificationCopy } from '../../../shared/copy'
@@ -75,13 +76,11 @@ export function HubServerInvitePreview({
               <img
                 src={iconUrl}
                 alt=""
-                style={{
-                  transform: `translate(${
-                    -50 + (notification.serverIconCropOffsetX ?? 0) * 100
-                  }%, ${
-                    -50 + (notification.serverIconCropOffsetY ?? 0) * 100
-                  }%) scale(${notification.serverIconCropZoom ?? 1})`,
-                }}
+                style={getServerIconImageStyle(
+                  notification.serverIconCropOffsetX,
+                  notification.serverIconCropOffsetY,
+                  notification.serverIconCropZoom,
+                )}
               />
             ) : (
               notification.body.slice(0, 1).toUpperCase()

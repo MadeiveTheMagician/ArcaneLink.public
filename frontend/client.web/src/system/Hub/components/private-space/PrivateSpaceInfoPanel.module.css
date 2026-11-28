@@ -1,8 +1,9 @@
 .privateInfoPanel {
   grid-column: 2;
   grid-row: 1;
+  margin-block-start: var(--workspace-header-height);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   align-content: start;
   gap: 14px;
   min-width: 0;
@@ -26,7 +27,6 @@
   overflow: hidden;
 }
 
-.compactPrivateInfo .privateSearch,
 .compactPrivateInfo .privateMembers h2,
 .compactPrivateInfo .privateProfileCard .privateName,
 .compactPrivateInfo .privateProfileCard strong,
@@ -69,11 +69,6 @@
 
 .compactMember .memberIdentity {
   display: none;
-}
-
-.privateSearch {
-  display: grid;
-  gap: 8px;
 }
 
 .privateMembers h2 {

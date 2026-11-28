@@ -1,0 +1,17 @@
+.placeholder { display: none; }
+
+@media (max-width: 760px) {
+  .placeholder {
+    position: absolute;
+    inset-inline: 4px;
+    inset-block-start: 50%;
+    display: block;
+    transform: translateY(-50%);
+    overflow: hidden;
+    pointer-events: none;
+    color: var(--theme-text-faint);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .placeholder ~ textarea[name="messageBody"]:placeholder-shown::placeholder { color: transparent; }
+}

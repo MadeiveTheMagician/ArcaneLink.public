@@ -4,6 +4,7 @@ import type {
   SpaceMessageResponse,
 } from '../../../../shared/types'
 import { commonCopy, serverCopy, SystemIcon } from '../../../shared'
+import type { OpenMessageContextMenu } from './MessagePanelOverlays'
 import styles from './PinnedMessagesPanel.module.css'
 import {
   formatFileSize,
@@ -16,6 +17,7 @@ export function PinnedMessagesPanel({
   messages,
   onJumpToMessage,
   onRequestDownload,
+  onOpenMessageContextMenu,
   onClose,
 }: {
   isOpen: boolean
@@ -23,6 +25,7 @@ export function PinnedMessagesPanel({
   messages: SpaceMessageResponse[]
   onJumpToMessage: (messageId: string, createdAt?: string | null) => void
   onRequestDownload: (asset: SpaceMessageAssetResponse) => void
+  onOpenMessageContextMenu: OpenMessageContextMenu
   onClose: () => void
 }) {
   const [expandedAssetIds, setExpandedAssetIds] = useState<Set<string>>(
@@ -126,6 +129,18 @@ export function PinnedMessagesPanel({
                           className={styles.pinnedAsset}
                           data-expanded={isExpanded ? 'true' : 'false'}
                           onClick={(event) => event.stopPropagation()}
+                          onContextMenu={(event) => {
+                            event.preventDefault()
+                            event.stopPropagation()
+                            onOpenMessageContextMenu(message, event.clientX, event.clientY, false, asset.isSpoiler ? undefined : asset)
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return
+                            event.preventDefault()
+                            event.stopPropagation()
+                            const bounds = event.currentTarget.getBoundingClientRect()
+                            onOpenMessageContextMenu(message, bounds.left + 12, bounds.bottom, true, asset.isSpoiler ? undefined : asset)
+                          }}
                         >
                           <button
                             type="button"

@@ -1,3 +1,4 @@
+import { getServerIconImageStyle } from '../../../../shared/media/serverIconImageStyle'
 import { useEffect, useState } from 'react'
 import type {
   DragEvent as ReactDragEvent,
@@ -177,11 +178,11 @@ export function ServerChannelTree({
                 className="ui-media-fit"
                 src={`/api/assets/${server.iconAssetId}/content`}
                 alt=""
-                style={{
-                  transform: `translate(${server.iconCropOffsetX * 100}%, ${
-                    server.iconCropOffsetY * 100
-                  }%) scale(${server.iconCropZoom})`,
-                }}
+                style={getServerIconImageStyle(
+                  server.iconCropOffsetX,
+                  server.iconCropOffsetY,
+                  server.iconCropZoom,
+                )}
               />
             ) : (
               server.title.slice(0, 1).toUpperCase()

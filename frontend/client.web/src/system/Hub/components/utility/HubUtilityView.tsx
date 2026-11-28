@@ -103,6 +103,7 @@ type HubUtilityViewProps = {
   onCancelFriendRequest: (requestId: string) => void
   onRemoveFriend: (userId: string) => void
   onCreateServer: () => void
+  onOpenFavorites?: () => void
   onStartPrivateInfoResize: (event: ReactPointerEvent<HTMLButtonElement>) => void
   onReturnToDirectMessages: () => void
   focusedPrivateMessage?: FocusPrivateMessageRequest | null
@@ -161,6 +162,7 @@ export function HubUtilityView({
   onCancelFriendRequest,
   onRemoveFriend,
   onCreateServer,
+  onOpenFavorites,
   onStartPrivateInfoResize,
   onReturnToDirectMessages,
   focusedPrivateMessage,
@@ -279,6 +281,7 @@ export function HubUtilityView({
       accessToken={accessToken}
       memberships={visibleServerMemberships}
       onCreateServer={onCreateServer}
+      onOpenFavorites={onOpenFavorites}
       onOpenServer={onOpenServer}
       onServerJoined={onServerJoined}
     />

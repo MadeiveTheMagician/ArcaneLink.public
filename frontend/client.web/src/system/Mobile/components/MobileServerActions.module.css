@@ -1,0 +1,22 @@
+.actions { display: none; }
+
+@media (max-width: 760px) {
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .actions button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--theme-border-control);
+    border-radius: 9px;
+    padding: 0;
+    color: var(--theme-accent-light);
+    background: var(--theme-control-bg);
+    font-size: 21px;
+  }
+  .actions button:active { background: var(--theme-active-bg); }
+}

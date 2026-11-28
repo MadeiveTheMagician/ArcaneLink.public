@@ -20,6 +20,12 @@ location / {
     try_files $uri $uri/ /index.html;
 }
 
+location = /index.html {
+    try_files $uri =404;
+    include /etc/nginx/snippets/security-headers.inc;
+    add_header Cache-Control "no-cache" always;
+}
+
 location ~* \.(?:css|js|mjs|woff2?|png|jpe?g|gif|svg|webp|ico)$ {
     try_files $uri =404;
     include /etc/nginx/snippets/security-headers.inc;

@@ -9,6 +9,7 @@ import {
   SystemTabs,
   useSystemSkeletonPresence,
 } from '../../../shared'
+import { MobileServerActions } from '../../../Mobile/components/MobileServerActions'
 import { useServerDirectory } from '../../hooks/workspace/useServerDirectory'
 import { ServerDirectoryCard } from './ServerDirectoryCard'
 import { ServerDirectoryGridSkeleton } from './ServerDirectoryGridSkeleton'
@@ -24,6 +25,7 @@ type ServersBrowserProps = {
   accessToken: string
   memberships: ServerMemberResponse[]
   onCreateServer: () => void
+  onOpenFavorites?: () => void
   onServerJoined: (membership: ServerMemberResponse) => void
   onOpenServer: (membership: ServerMemberResponse) => void
 }
@@ -32,6 +34,7 @@ export function ServersBrowser({
   accessToken,
   memberships,
   onCreateServer,
+  onOpenFavorites,
   onServerJoined,
   onOpenServer,
 }: ServersBrowserProps) {
@@ -148,9 +151,14 @@ export function ServersBrowser({
     <section className={styles.serverBrowser}>
       <header className={styles.heading}>
         <h1>{serverCopy.browser.title}</h1>
-        <SystemButton onClick={onCreateServer}>
-          {serverCopy.browser.createServer}
-        </SystemButton>
+        <div className={styles.desktopActions}>
+          {onOpenFavorites && <SystemButton onClick={onOpenFavorites}>★ Избранное</SystemButton>}
+          <SystemButton onClick={onCreateServer}>
+            {serverCopy.browser.createServer}
+          </SystemButton>
+        </div>
+        <MobileServerActions onOpenFavorites={onOpenFavorites}
+          onCreateServer={onCreateServer} createLabel={serverCopy.browser.createServer} />
       </header>
 
       <SystemTabs

@@ -197,39 +197,59 @@ export function ServerWorkspaceDialogs({
               </div>
               <button
                 type="button"
+                className={`${buttonStyles.button} ${buttonStyles.ghost} ${buttonStyles.icon}`}
                 onClick={onCloseCreateSpaceDialog}
                 aria-label={serverCopy.workspaceDialogs.closeCreateSpace}
               >
                 <SystemCloseIcon size="medium" />
               </button>
             </header>
-            <div className={dialogModuleStyles.createSpaceForm}>
-              <input
-                className="ui-field-control"
-                name="spaceTitle"
-                value={spaceTitleDraft}
-                onChange={(event) => onSetSpaceTitleDraft(event.target.value)}
-                placeholder={serverCopy.workspaceDialogs.spaceTitlePlaceholder}
-                maxLength={128}
-              />
-              <input
-                className="ui-field-control"
-                name="spaceDescription"
-                value={spaceDescriptionDraft}
-                onChange={(event) => onSetSpaceDescriptionDraft(event.target.value)}
-                placeholder={serverCopy.workspaceDialogs.spaceDescriptionPlaceholder}
-                maxLength={512}
-              />
-              <button
-                type="button"
-                disabled={isMutatingSpaces || !spaceTitleDraft.trim()}
-                onClick={onSubmitCreateSpace}
-              >
-                {isMutatingSpaces
-                  ? serverCopy.workspaceDialogs.creatingSpace
-                  : serverCopy.workspaceDialogs.createSpace}
-              </button>
-            </div>
+            <form
+              className={dialogModuleStyles.newSpaceForm}
+              onSubmit={(event) => {
+                event.preventDefault()
+                if (!isMutatingSpaces && spaceTitleDraft.trim()) onSubmitCreateSpace()
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') onCloseCreateSpaceDialog()
+              }}
+            >
+              <label>
+                <span>Название</span>
+                <input
+                  className="ui-field-control"
+                  name="spaceTitle"
+                  value={spaceTitleDraft}
+                  onChange={(event) => onSetSpaceTitleDraft(event.target.value)}
+                  placeholder={serverCopy.workspaceDialogs.spaceTitlePlaceholder}
+                  maxLength={128}
+                  required
+                />
+              </label>
+              <label>
+                <span>{serverCopy.workspaceDialogs.spaceDescriptionPlaceholder}</span>
+                <textarea
+                  className="ui-field-control"
+                  name="spaceDescription"
+                  value={spaceDescriptionDraft}
+                  onChange={(event) => onSetSpaceDescriptionDraft(event.target.value)}
+                  maxLength={512}
+                  rows={3}
+                />
+              </label>
+              <div className={dialogModuleStyles.actions}>
+                <button className={`${buttonStyles.button} ${buttonStyles.ghost}`}
+                  type="button" onClick={onCloseCreateSpaceDialog}>
+                  {commonCopy.actions.cancel}
+                </button>
+                <button className={`${buttonStyles.button} ${buttonStyles.primary}`}
+                  type="submit" disabled={isMutatingSpaces || !spaceTitleDraft.trim()}>
+                  {isMutatingSpaces
+                    ? serverCopy.workspaceDialogs.creatingSpace
+                    : serverCopy.workspaceDialogs.createSpace}
+                </button>
+              </div>
+            </form>
           </section>
         </div>
       )}

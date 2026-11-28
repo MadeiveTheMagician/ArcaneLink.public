@@ -224,7 +224,7 @@ function App() {
   return (
     <Suspense fallback={<AppLoading />}>
       {session && !accountAction ? (
-        <HubPage session={session} onLogout={handleLogout} />
+        <HubPage key={session.user.id} session={session} onLogout={handleLogout} />
       ) : (
         <AuthPage
           accountAction={accountAction}

@@ -47,7 +47,7 @@ type LocalVoiceState = {
 }
 
 type VoiceHubConnectionLifecycleOptions = {
-  accessToken: string
+  getAccessToken: () => string
   currentUserId: string
   connectionRef: RefObject<signalR.HubConnection | null>
   connectedChannelRef: RefObject<ConnectedVoiceChannel | null>
@@ -99,7 +99,7 @@ type VoiceHubConnectionLifecycleOptions = {
 }
 
 export function useVoiceHubConnectionLifecycle({
-  accessToken,
+  getAccessToken,
   currentUserId,
   connectionRef,
   connectedChannelRef,
@@ -136,6 +136,7 @@ export function useVoiceHubConnectionLifecycle({
     let isDisposed = false
     let leaseTimerId: number | null = null
     let isLeaseRenewalInFlight = false
+    let moveSyncOperationId: number | null = null
     let rejoinTimerId: number | null = null
     let identityRefreshTimerId: number | null = null
     const voiceSignalHandlingQueue = createVoiceSignalHandlingQueue()
@@ -229,7 +230,10 @@ export function useVoiceHubConnectionLifecycle({
     }
 
     function scheduleVoiceAccessLeaseHeartbeat(
-      delayMs = voiceAccessLeaseIntervalMs,
+      delayMs = moveSyncOperationId !== null &&
+        isCurrentVoiceOperation(moveSyncOperationId)
+        ? voiceAccessLeaseRetryMs
+        : voiceAccessLeaseIntervalMs,
     ) {
       if (isDisposed) {
         return
@@ -249,6 +253,7 @@ export function useVoiceHubConnectionLifecycle({
       }
 
       const channel = connectedChannelRef.current
+      const operationId = getCurrentVoiceOperationId()
       const localParticipantId = localParticipantIdRef.current
       if (
         !channel ||
@@ -260,7 +265,7 @@ export function useVoiceHubConnectionLifecycle({
       }
 
       isLeaseRenewalInFlight = true
-      let nextLeaseDelayMs = voiceAccessLeaseIntervalMs
+      let nextLeaseDelayMs: number | undefined
       try {
         const result = await runVoiceAccessLeaseCheck({
           renew: () =>
@@ -273,6 +278,7 @@ export function useVoiceHubConnectionLifecycle({
             const currentChannel = connectedChannelRef.current
             return Boolean(
               !isDisposed &&
+                isCurrentVoiceOperation(operationId) &&
                 currentChannel &&
                 localParticipantIdRef.current === localParticipantId &&
                 normalizeUserId(currentChannel.spaceId) ===
@@ -286,7 +292,14 @@ export function useVoiceHubConnectionLifecycle({
               channel,
               localParticipantId,
             ),
-          onAccepted: applyVoiceState,
+          onAccepted: (payload) => {
+            applyVoiceState(payload)
+            if (moveSyncOperationId === operationId) {
+              moveSyncOperationId = null
+              markSpaceFresh(channel.spaceId)
+              setVoiceLifecycle('connected')
+            }
+          },
           onDenied: async () => {
             voiceDebug('channel:access-lease-denied', {
               serverId: channel.serverId,
@@ -430,7 +443,7 @@ export function useVoiceHubConnectionLifecycle({
     }
 
 
-    const connection = createVoiceHubConnection(accessToken, {
+    const connection = createVoiceHubConnection(getAccessToken, {
       onStateChanged: applyVoiceState,
       onSignal: (payload?: VoiceSignalPayload) => {
         if (!payload) {
@@ -537,7 +550,7 @@ export function useVoiceHubConnectionLifecycle({
         void disconnectLocalVoiceSession(operationId, 'idle')
       },
       onParticipantMoved: (payload?: VoiceParticipantMovedPayload) => {
-        if (!payload?.targetSpaceId || !payload.participantId) {
+        if (isDisposed || !payload?.targetSpaceId || !payload.participantId) {
           return
         }
 
@@ -559,6 +572,7 @@ export function useVoiceHubConnectionLifecycle({
         }
         stopVoiceRejoinRetry()
         const operationId = beginVoiceOperation('switching')
+        moveSyncOperationId = operationId
 
         if (previousChannel?.spaceId) {
           markSpaceStale(previousChannel.spaceId)
@@ -577,12 +591,7 @@ export function useVoiceHubConnectionLifecycle({
             activeConnection,
             nextChannel.channelScope,
           )
-          void invokeGetVoiceChannelState(activeConnection, nextChannel).finally(() => {
-            if (isCurrentVoiceOperation(operationId)) {
-              markSpaceFresh(nextChannel.spaceId)
-              setVoiceLifecycle('connected')
-            }
-          })
+          scheduleVoiceAccessLeaseHeartbeat(0)
         } else if (isCurrentVoiceOperation(operationId)) {
           setVoiceLifecycle('reconnecting')
         }
@@ -682,7 +691,7 @@ export function useVoiceHubConnectionLifecycle({
         }
       })
     }
-    // The connection must be recreated only when authentication identity changes.
+    // Recreate on a session change. Token refreshes update the credential reader.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, currentUserId])
+  }, [getAccessToken, currentUserId])
 }

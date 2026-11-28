@@ -43,6 +43,7 @@ import {
   DirectUserProfileDialog,
   InvitePrivateSpaceMemberDialog,
 } from '../direct-messages/PrivateSpaceDialogs'
+import { WorkspaceMessageSearch } from '../../../shared/components/message-search/WorkspaceMessageSearch'
 import { PrivateSpaceInfoPanel } from './PrivateSpaceInfoPanel'
 import {
   PrivateSpaceHeaderActions,
@@ -261,9 +262,44 @@ export function PrivateSpaceWorkspace({
       )
     : messageSearch.results
   const canUseVoice = Boolean(activePrivateSpaceId && privateSpace)
+  const [isInfoCollapsed, setIsInfoCollapsed] = useState(false)
 
   return (
-    <section className={privateStyles.privateSpaceLayout}>
+    <section className={privateStyles.privateSpaceLayout} data-workspace-header-backdrop="true" data-info-collapsed={isInfoCollapsed}>
+      <div className={privateStyles.searchToolbar}>
+        <WorkspaceMessageSearch
+          control={{
+            name: 'privateMessageSearch',
+            ariaLabel: communityCopy.direct.search,
+            query: messageSearch.query,
+            filters: messageSearch.filters,
+            userOptions: effectiveActiveMembers.map(({ userId, user }) => ({ ...user, id: userId })),
+            placeholder: communityCopy.direct.searchPlaceholder,
+            onQueryChange: messageSearch.setQuery,
+            onFiltersChange: messageSearch.setFilters,
+            onSubmit: messageSearch.submitSearch,
+            onClear: messageSearch.clearSearch,
+          }}
+          results={messageSearch.isActive ? {
+            query: messageSearch.submittedQuery,
+            results: effectiveSearchResults,
+            isSearching: messageSearch.isSearching,
+            error: messageSearch.error,
+            onOpenMessage: (message) => {
+              onOpenSearchResult(message)
+              messageSearch.clearSearch()
+            },
+          } : undefined}
+          actions={
+            <button type="button"
+              aria-label={isInfoCollapsed ? 'Показать участников' : 'Скрыть участников'}
+              aria-expanded={!isInfoCollapsed}
+              onClick={() => setIsInfoCollapsed((current) => !current)}>
+              <SystemIcon name="friends" size={18} />
+            </button>
+          }
+        />
+      </div>
       <div
         className={`${privateStyles.privateChatColumn} ${
           voicePanel.isRendered ? privateStyles.withPrivateVoicePanel : ''
@@ -493,17 +529,12 @@ export function PrivateSpaceWorkspace({
         aria-label={communityCopy.direct.resizePrivateInfoPanel}
         onPointerDown={onStartInfoResize}
       />
-      <PrivateSpaceInfoPanel
+      {!isInfoCollapsed && <PrivateSpaceInfoPanel
         spaceKind={privateSpace?.kind ?? null}
         activeMembers={effectiveActiveMembers}
         isCompact={isMemberPanelCompact}
         otherMember={otherMember}
-        messageSearch={{
-          ...messageSearch,
-          results: effectiveSearchResults,
-        }}
-        onOpenSearchResult={onOpenSearchResult}
-      />
+      />}
       {isInviteOpen && privateSpace && activePrivateSpaceId && (
         <InvitePrivateSpaceMemberDialog
           candidates={inviteCandidates}

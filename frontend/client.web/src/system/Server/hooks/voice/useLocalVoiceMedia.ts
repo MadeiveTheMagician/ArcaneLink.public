@@ -11,6 +11,8 @@ import { publishVoiceInputLevel } from '../../../shared/voice/voiceInputEvents'
 import { subscribeVoicePlaybackUnlock } from '../../../shared/voice/voicePlaybackUnlock'
 import {
   createVoiceAudioConstraints,
+  formatPushToTalkBinding,
+  getPushToTalkMouseBinding,
   getVoiceSettings,
   subscribeVoiceSettings,
   updateVoiceSettings,
@@ -138,6 +140,11 @@ export function useLocalVoiceMedia({
   const inputTrackStabilityTimerRef = useRef<number | null>(null)
   const inputTrackRecoveryAttemptRef = useRef(0)
   const localVideoStreamRef = useRef<MediaStream | null>(null)
+  const previousCameraStreamRef = useRef<MediaStream | null>(null)
+  const cameraRequestedEnabledRef = useRef(false)
+  const cameraRequestedDeviceIdRef = useRef('default')
+  const cameraOperationIdRef = useRef(0)
+  const cameraOperationRef = useRef<Promise<void>>(Promise.resolve())
   const screenStreamRef = useRef<MediaStream | null>(null)
   const stateRef = useRef<LocalVoiceState>({
     isMuted: false,
@@ -205,35 +212,88 @@ export function useLocalVoiceMedia({
   )
 
   useEffect(() => {
+    function pressPushToTalk(event: KeyboardEvent | MouseEvent) {
+      event.preventDefault()
+      if (!isPushToTalkPressedRef.current) {
+        isPushToTalkPressedRef.current = true
+        void resumeVoiceAudioContexts()
+        updateOutboundAudioGate()
+      }
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
       const settings = voiceSettingsRef.current
       if (
+        !localStreamRef.current ||
+        event.defaultPrevented ||
         settings.inputMode !== 'push-to-talk' ||
-        !settings.pushToTalkKeyCode ||
-        isEditableKeyboardTarget(event.target) ||
-        !isPushToTalkKeyEvent(event, settings.pushToTalkKeyCode)
+        event.code !== settings.pushToTalkKeyCode ||
+        isInteractivePushToTalkTarget(event)
       ) {
         return
       }
 
-      isPushToTalkPressedRef.current = true
-      void resumeVoiceAudioContexts()
-      updateOutboundAudioGate()
-      event.preventDefault()
+      if (event.repeat && isPushToTalkPressedRef.current) {
+        event.preventDefault()
+      } else if (isPushToTalkKeyEvent(event, settings.pushToTalkKeyCode)) {
+        pressPushToTalk(event)
+      }
     }
 
     function handleKeyUp(event: KeyboardEvent) {
-      const settings = voiceSettingsRef.current
       if (
-        settings.inputMode !== 'push-to-talk' ||
-        !settings.pushToTalkKeyCode ||
-        event.code !== settings.pushToTalkKeyCode
+        isPushToTalkPressedRef.current &&
+        event.code === voiceSettingsRef.current.pushToTalkKeyCode
       ) {
+        resetPushToTalkState()
+        event.preventDefault()
+      }
+    }
+
+    function getActiveMouseBinding() {
+      const settings = voiceSettingsRef.current
+      if (localStreamRef.current && settings.inputMode === 'push-to-talk') {
+        return getPushToTalkMouseBinding(settings.pushToTalkKeyCode)
+      }
+    }
+
+    function handleMouseDown(event: MouseEvent) {
+      if (!event.defaultPrevented && getActiveMouseBinding()?.button === event.button) {
+        pressPushToTalk(event)
+      }
+    }
+
+    function handleMouseUp(event: MouseEvent) {
+      if (
+        isPushToTalkPressedRef.current &&
+        getActiveMouseBinding()?.button === event.button
+      ) {
+        resetPushToTalkState()
+        event.preventDefault()
+      }
+    }
+
+    function handleMouseMove(event: MouseEvent) {
+      if (!isPushToTalkPressedRef.current) {
         return
       }
 
-      resetPushToTalkState()
-      event.preventDefault()
+      const binding = getActiveMouseBinding()
+      if (binding && (event.buttons & binding.mask) === 0) {
+        resetPushToTalkState()
+      }
+    }
+
+    function handleMouseOut(event: MouseEvent) {
+      if (event.relatedTarget === null && getActiveMouseBinding()) {
+        resetPushToTalkState()
+      }
+    }
+
+    function preventMouseNavigation(event: MouseEvent) {
+      if (getActiveMouseBinding()?.button === event.button) {
+        event.preventDefault()
+      }
     }
 
     function resumeForegroundAudio() {
@@ -274,7 +334,14 @@ export function useLocalVoiceMedia({
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('keyup', handleKeyUp, true)
+    window.addEventListener('mousedown', handleMouseDown)
+    window.addEventListener('mouseup', handleMouseUp, true)
+    window.addEventListener('mousemove', handleMouseMove, true)
+    window.addEventListener('mouseout', handleMouseOut, true)
+    // Chromium can run history navigation if only the mouse events are canceled.
+    window.addEventListener('pointerup', preventMouseNavigation, true)
+    window.addEventListener('auxclick', preventMouseNavigation, true)
     window.addEventListener('blur', resetPushToTalkState)
     window.addEventListener('pagehide', handleBackgroundInputLifecycle)
     window.addEventListener('pageshow', handlePageShow)
@@ -282,7 +349,13 @@ export function useLocalVoiceMedia({
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('keyup', handleKeyUp, true)
+      window.removeEventListener('mousedown', handleMouseDown)
+      window.removeEventListener('mouseup', handleMouseUp, true)
+      window.removeEventListener('mousemove', handleMouseMove, true)
+      window.removeEventListener('mouseout', handleMouseOut, true)
+      window.removeEventListener('pointerup', preventMouseNavigation, true)
+      window.removeEventListener('auxclick', preventMouseNavigation, true)
       window.removeEventListener('blur', resetPushToTalkState)
       window.removeEventListener('pagehide', handleBackgroundInputLifecycle)
       window.removeEventListener('pageshow', handlePageShow)
@@ -321,18 +394,28 @@ export function useLocalVoiceMedia({
   })
 
   useEffect(() => {
+    function applyStreamingSettings(settings: StreamingSettings) {
+      if (
+        cameraRequestedEnabledRef.current &&
+        settings.cameraDeviceId !== cameraRequestedDeviceIdRef.current
+      ) {
+        void requestCameraCapture(settings)
+      }
+      void applyStreamingSettingsToActiveTracks(settings)
+    }
+
     function handleStreamingSettingsChanged(event: Event) {
       const settings =
         event instanceof CustomEvent
           ? event.detail as StreamingSettings
           : loadStreamingSettings()
 
-      void applyStreamingSettingsToActiveTracks(settings)
+      applyStreamingSettings(settings)
     }
 
     function handleStreamingSettingsStorageChanged(event: StorageEvent) {
       if (event.key === 'arcanelink.streamingSettings.v1') {
-        void applyStreamingSettingsToActiveTracks(loadStreamingSettings())
+        applyStreamingSettings(loadStreamingSettings())
       }
     }
 
@@ -1007,7 +1090,9 @@ export function useLocalVoiceMedia({
     const body = isPushToTalkClosed
       ? settingsCopy.voice.pushToTalkNotHeldNotification.replace(
           '{key}',
-          formatPushToTalkKey(settings.pushToTalkKeyCode),
+          settings.pushToTalkKeyCode
+            ? formatPushToTalkBinding(settings.pushToTalkKeyCode)
+            : settingsCopy.voice.pushToTalkKeyMissing,
         )
       : settingsCopy.voice.speakingWhileMutedNotification
 
@@ -1100,33 +1185,114 @@ export function useLocalVoiceMedia({
   }
 
   async function enableCamera() {
-    if (stateRef.current.isCameraEnabled && localVideoStreamRef.current) {
+    if (cameraRequestedEnabledRef.current) {
       return
     }
 
-    const streamingSettings = loadStreamingSettings()
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: createStreamingVideoConstraints(streamingSettings),
+    cameraRequestedEnabledRef.current = true
+    await requestCameraCapture(loadStreamingSettings())
+  }
+
+  function requestCameraCapture(settings: StreamingSettings) {
+    cameraRequestedDeviceIdRef.current = settings.cameraDeviceId
+    return queueCameraOperation(async (operationId) => {
+      const previousStream = localVideoStreamRef.current
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          ...createStreamingVideoConstraints(settings),
+          ...(settings.cameraDeviceId === 'default'
+            ? {}
+            : { deviceId: { exact: settings.cameraDeviceId } }),
+        },
+      })
+      const track = stream.getVideoTracks()[0]
+      if (operationId !== cameraOperationIdRef.current) {
+        stopCameraStream(stream)
+        return
+      }
+      if (!track || track.readyState !== 'live') {
+        stopCameraStream(stream)
+        throw new DOMException('No camera track is available.', 'NotFoundError')
+      }
+
+      await applyStreamingTrackConstraints(track)
+      if (operationId !== cameraOperationIdRef.current) {
+        stopCameraStream(stream)
+        return
+      }
+
+      previousCameraStreamRef.current = previousStream
+      localVideoStreamRef.current = stream
+      try {
+        await replaceVideoTrackForAllPeers('camera', track)
+      } catch (error) {
+        stopCameraStream(stream)
+        if (localVideoStreamRef.current === stream) {
+          localVideoStreamRef.current = previousStream
+          await replaceVideoTrackForAllPeers(
+            'camera',
+            previousStream?.getVideoTracks()[0] ?? null,
+          )
+        } else {
+          stopCameraStream(previousStream)
+        }
+        throw error
+      } finally {
+        if (previousCameraStreamRef.current === previousStream) {
+          previousCameraStreamRef.current = null
+        }
+      }
+
+      stopCameraStream(previousStream)
+      if (localVideoStreamRef.current !== stream) {
+        return
+      }
+      track.onended = () => {
+        if (localVideoStreamRef.current === stream) {
+          void disableCamera()
+        }
+      }
+      setLocalCameraPreviewStream(stream)
+      updateLocalVoiceState(
+        stateRef.current.isMuted,
+        stateRef.current.isDeafened,
+        true,
+        stateRef.current.isScreenSharing,
+      )
     })
-    await applyStreamingTrackConstraints(stream.getVideoTracks()[0] ?? null)
-    localVideoStreamRef.current = stream
-    setLocalCameraPreviewStream(stream)
-    await replaceVideoTrackForAllPeers('camera', stream.getVideoTracks()[0] ?? null)
-    updateLocalVoiceState(
-      stateRef.current.isMuted,
-      stateRef.current.isDeafened,
-      true,
-      stateRef.current.isScreenSharing,
-    )
+  }
+
+  function queueCameraOperation(run: (operationId: number) => Promise<void>) {
+    const operationId = ++cameraOperationIdRef.current
+    const operation = cameraOperationRef.current
+      .then(async () => {
+        if (operationId === cameraOperationIdRef.current) {
+          await run(operationId)
+        }
+      })
+      .catch(() => {
+        if (operationId === cameraOperationIdRef.current) {
+          cameraRequestedEnabledRef.current = localVideoStreamRef.current !== null
+          dispatchVoiceSystemNotification(
+            'camera-capture-failed',
+            settingsCopy.streaming.cameraCaptureFailed,
+            settingsCopy.streaming.camera,
+          )
+        }
+      })
+    cameraOperationRef.current = operation
+    return operation
   }
 
   async function disableCamera() {
-    localVideoStreamRef.current?.getTracks().forEach((track) => track.stop())
+    cameraRequestedEnabledRef.current = false
+    stopCameraStream(previousCameraStreamRef.current)
+    previousCameraStreamRef.current = null
+    stopCameraStream(localVideoStreamRef.current)
     localVideoStreamRef.current = null
 
     setLocalCameraPreviewStream(null)
-    await replaceVideoTrackForAllPeers('camera', null)
 
     updateLocalVoiceState(
       stateRef.current.isMuted,
@@ -1134,10 +1300,11 @@ export function useLocalVoiceMedia({
       false,
       stateRef.current.isScreenSharing,
     )
+    await queueCameraOperation(() => replaceVideoTrackForAllPeers('camera', null))
   }
 
   async function toggleCamera() {
-    if (stateRef.current.isCameraEnabled) {
+    if (cameraRequestedEnabledRef.current) {
       await disableCamera()
       return
     }
@@ -1568,7 +1735,12 @@ export function useLocalVoiceMedia({
     retainedPipelineRetryCountRef.current.clear()
     void voiceInputAudioContextRef.current?.close()
     voiceInputAudioContextRef.current = null
-    localVideoStreamRef.current?.getTracks().forEach((track) => track.stop())
+    cameraRequestedEnabledRef.current = false
+    cameraOperationIdRef.current += 1
+    cameraOperationRef.current = Promise.resolve()
+    stopCameraStream(previousCameraStreamRef.current)
+    previousCameraStreamRef.current = null
+    stopCameraStream(localVideoStreamRef.current)
     localVideoStreamRef.current = null
     screenStreamRef.current?.getTracks().forEach((track) => track.stop())
     screenStreamRef.current = null
@@ -1733,7 +1905,18 @@ function describeAudioGateTrack(track: MediaStreamTrack) {
   }
 }
 
-function dispatchVoiceSystemNotification(id: string, body: string) {
+function stopCameraStream(stream: MediaStream | null) {
+  stream?.getTracks().forEach((track) => {
+    track.onended = null
+    track.stop()
+  })
+}
+
+function dispatchVoiceSystemNotification(
+  id: string,
+  body: string,
+  title: string = settingsCopy.voice.notificationTitle,
+) {
   if (typeof window === 'undefined') {
     return
   }
@@ -1742,29 +1925,15 @@ function dispatchVoiceSystemNotification(id: string, body: string) {
     new CustomEvent('arcanelink:system-notification', {
       detail: {
         id,
-        title: settingsCopy.voice.notificationTitle,
+        title,
         body,
       },
     }),
   )
 }
 
-function formatPushToTalkKey(keyCode: string | null) {
-  if (!keyCode) {
-    return settingsCopy.voice.pushToTalkKeyMissing
-  }
-
-  if (keyCode.startsWith('Key')) {
-    return keyCode.slice(3)
-  }
-  if (keyCode.startsWith('Digit')) {
-    return keyCode.slice(5)
-  }
-
-  return keyCode
-}
-
-function isEditableKeyboardTarget(target: EventTarget | null) {
+function isInteractivePushToTalkTarget(event: KeyboardEvent) {
+  const { target } = event
   if (!(target instanceof HTMLElement)) {
     return false
   }
@@ -1773,7 +1942,9 @@ function isEditableKeyboardTarget(target: EventTarget | null) {
     target.isContentEditable ||
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement
+    target instanceof HTMLSelectElement ||
+    (event.code === 'Space' &&
+      target.closest('button, summary, [role="button"], [role="checkbox"], [role="switch"], [role="radio"], [role="tab"]') != null)
   )
 }
 

@@ -23,6 +23,7 @@ import type {
   MessageBubbleWidth,
 } from '../../../shared'
 import styles from './MessageRow.module.css'
+import { findMessageAttachment } from './attachmentContextItems'
 import { MessageAttachmentGallery } from './MessageAttachmentGallery'
 import { MessageReactions } from './MessageReactions'
 import { ExternalMediaPreviews } from './ExternalMediaPreview'
@@ -66,7 +67,7 @@ export function MessageRow({
   isHighlighted: boolean
   onOpenPreview: (asset: SpaceMessageAssetResponse) => void
   onRequestDownload: (asset: SpaceMessageAssetResponse) => void
-  onContextMenu: (x: number, y: number, focusOnOpen: boolean) => void
+  onContextMenu: (x: number, y: number, focusOnOpen: boolean, asset?: SpaceMessageAssetResponse) => void
   defaultAttachmentExpanded: boolean
   loadExternalMediaPreviews: boolean
   horizontalVideoCardSize: number
@@ -197,7 +198,7 @@ export function MessageRow({
         onContextMenu={(event) => {
           event.preventDefault()
           event.stopPropagation()
-          onContextMenu(event.clientX, event.clientY, false)
+          onContextMenu(event.clientX, event.clientY, false, findMessageAttachment(message.assets, event.target))
         }}
         onKeyDown={(event) => {
           const opensContextMenu =
@@ -210,11 +211,14 @@ export function MessageRow({
 
           event.preventDefault()
           event.stopPropagation()
-          const bounds = event.currentTarget.getBoundingClientRect()
+          const asset = findMessageAttachment(message.assets, event.target)
+          const anchor = asset && event.target instanceof HTMLElement ? event.target : event.currentTarget
+          const bounds = anchor.getBoundingClientRect()
           onContextMenu(
             bounds.left + Math.min(32, bounds.width / 2),
             bounds.top + Math.min(32, bounds.height / 2),
             true,
+            asset,
           )
         }}
       >

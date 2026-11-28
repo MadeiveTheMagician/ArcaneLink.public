@@ -39,6 +39,7 @@ import {
   type VoicePlaybackState,
   type VoiceUserAudioSettings,
 } from '../../../shared/types/voicePlayback'
+import { ServerMessageSearch } from '../members/ServerMessageSearch'
 import { ServerMembersPanel } from './ServerWorkspaceSections'
 import {
   ServerMemberCompactProfile,
@@ -187,6 +188,11 @@ type ServerWorkspaceProps = {
   isSettingsOpen: boolean
   voice: VoiceChannelController
   externalMessageFocus?: MessageFocusRequest | null
+  externalSpace?: { spaceId: string; openVoiceChat: boolean } | null
+  onExternalSpaceConsumed?: () => void
+  isFavoritesContent?: boolean
+  favoriteSpaceIds: string[]
+  onToggleFavoriteSpace: (spaceId: string) => void
   onExternalMessageFocusConsumed?: () => void
 }
 
@@ -271,6 +277,11 @@ export function ServerWorkspace({
   voicePlaybackStatesByParticipantId,
   onChangeVoiceAudioSettings,
   externalMessageFocus,
+  externalSpace,
+  onExternalSpaceConsumed,
+  isFavoritesContent = false,
+  favoriteSpaceIds,
+  onToggleFavoriteSpace,
   onExternalMessageFocusConsumed,
 }: ServerWorkspaceProps) {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
@@ -379,6 +390,8 @@ export function ServerWorkspace({
     onOpenVoiceChat: setOpenVoiceChatSpaceId,
     effectivePermissions: serverEffectivePermissions,
     externalMessageFocus,
+    externalSpace,
+    onExternalSpaceConsumed,
     onExternalMessageFocusConsumed,
   })
   const memberProfile = useServerMemberProfileOverlay({
@@ -518,6 +531,8 @@ export function ServerWorkspace({
     maxCategoryDepth: MAX_CATEGORY_DEPTH,
     onCreateServerInvite,
     onCreateSpace: openCreateSpaceDialog,
+    favoriteSpaceIds,
+    onToggleFavoriteSpace,
     onEditSpace: openEditSpaceDialog,
     onDeleteSpace: setPendingDeleteSpace,
     onOpenMemberProfile: memberProfile.openFull,
@@ -642,6 +657,9 @@ export function ServerWorkspace({
   return (
     <>
       <ServerWorkspaceLayout
+        isFavoritesContent={isFavoritesContent}
+        messageSearch={<ServerMessageSearch accessToken={accessToken} serverId={server.id}
+          spaces={serverSpaces} members={serverMembers} onOpenSearchResult={openSearchResult} />}
         hasSelectedDetail={hasSelectedDetail}
         isMembersPanelCollapsed={isMembersPanelCollapsed}
         visibleChannel={visibleChannel}
@@ -649,7 +667,7 @@ export function ServerWorkspace({
         pinnedSpaceMessagePreview={pinnedSpaceMessagePreview}
         onCloseDetail={() => selectDetail(null)}
         onStartPaneResize={onStartPaneResize}
-        channelTree={
+        channelTree={!isFavoritesContent && (
           <ServerChannelTree
             server={server}
             rootSpaces={rootSpaces}
@@ -717,7 +735,7 @@ export function ServerWorkspace({
               )
             }
           />
-        }
+        )}
         detail={
           <ServerChannelDetail
             accessToken={accessToken}
@@ -809,7 +827,6 @@ export function ServerWorkspace({
         }
         membersPanel={
           <ServerMembersPanel
-            accessToken={accessToken}
             id={membersPanelId}
             isCompact={isMemberPanelCompact}
             isLoading={isLoadingServerMembers}
@@ -817,12 +834,9 @@ export function ServerWorkspace({
             hasMore={hasMoreServerMembers}
             members={serverMembers}
             totalCount={serverMemberCount}
-            serverId={server.id}
-            spaces={serverSpaces}
             selectedMemberId={memberProfile.overlay?.member.id ?? null}
             onSelectMember={memberProfile.openCompact}
             onOpenMemberContextMenu={openMemberContextMenu}
-            onOpenSearchResult={openSearchResult}
             onLoadMore={onLoadMoreServerMembers}
           />
         }

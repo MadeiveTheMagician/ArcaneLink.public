@@ -33,7 +33,7 @@ export function ServerMessageHeader({
   trashToggleRef?: RefObject<HTMLButtonElement | null>
 }) {
   return (
-    <header>
+    <header data-workspace-channel-header="true">
       {leadingAction}
       <div>
         {titleIcon ?? <span>#</span>}

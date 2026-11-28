@@ -199,7 +199,7 @@ export function HubVoiceDock({
   return (
     <>
       <aside
-        className={`${styles.dock} ${isServerPanelOpen ? styles.railOpen : ''} ${
+        className={`${styles.dock} ${
           isExpanded ? styles.connected : ''
         } ${!isServerPanelPinned ? styles.withRailToggle : ''} ${
           !isConnected ? styles.mobileDisconnected : ''

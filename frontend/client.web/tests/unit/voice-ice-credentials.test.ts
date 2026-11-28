@@ -190,6 +190,7 @@ test.describe('voice ICE credentials', () => {
     })
 
     expect(configuration.iceTransportPolicy).toBe('relay')
+    expect(configuration.bundlePolicy).toBe('max-bundle')
     expect(configuration.iceServers).toHaveLength(1)
   })
 
@@ -228,6 +229,7 @@ test.describe('voice ICE credentials', () => {
     expect(configuration).toEqual({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       iceTransportPolicy: 'all',
+      bundlePolicy: 'max-bundle',
     })
   })
 })

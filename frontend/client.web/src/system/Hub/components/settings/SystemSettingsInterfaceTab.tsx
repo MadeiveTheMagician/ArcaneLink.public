@@ -1,3 +1,4 @@
+import { arcaneDesktop } from '../../../shared/services/arcaneDesktop'
 import type { CSSProperties } from 'react'
 import {
   getProfileColor,
@@ -20,6 +21,8 @@ import { MessagePresentationSettingsField } from './MessagePresentationSettingsF
 type SystemSettingsInterfaceTabProps = {
   settings: ProfileSettingsDraft
   defaultSettings: ProfileSettingsDraft
+  isServerRailResizeEnabled: boolean
+  onServerRailResizeEnabledChange: (enabled: boolean) => void
   onChange: (settings: ProfileSettingsDraft) => void
   onCommit: (settings: ProfileSettingsDraft) => Promise<void> | void
 }
@@ -27,6 +30,8 @@ type SystemSettingsInterfaceTabProps = {
 export function SystemSettingsInterfaceTab({
   settings,
   defaultSettings,
+  isServerRailResizeEnabled,
+  onServerRailResizeEnabledChange,
   onChange,
   onCommit,
 }: SystemSettingsInterfaceTabProps) {
@@ -50,6 +55,7 @@ export function SystemSettingsInterfaceTab({
   }
 
   function resetInterfaceSettings() {
+    onServerRailResizeEnabledChange(true)
     onChange(defaultSettings)
     void onCommit(defaultSettings)
   }
@@ -299,6 +305,15 @@ export function SystemSettingsInterfaceTab({
       </SettingsSection>
 
       <SettingsSection title={settingsCopy.interface.advancedFeatures}>
+        {arcaneDesktop()?.openWindowSettings && (
+          <button
+            className={sharedStyles.secondaryAction}
+            type="button"
+            onClick={() => void arcaneDesktop()?.openWindowSettings?.()}
+          >
+            {settingsCopy.interface.desktopWindowSettings}
+          </button>
+        )}
         <ToggleField
           label={settingsCopy.interface.toggleServerRailPinned}
           description={settingsCopy.interface.toggleServerRailPinnedDescription}
@@ -306,6 +321,12 @@ export function SystemSettingsInterfaceTab({
           onChange={(isServerRailPinned) =>
             commitSettings({ isServerRailPinned })
           }
+        />
+        <ToggleField
+          label={settingsCopy.interface.enableServerRailResize}
+          description={settingsCopy.interface.enableServerRailResizeDescription}
+          checked={isServerRailResizeEnabled}
+          onChange={onServerRailResizeEnabledChange}
         />
         <ToggleField
           label={settingsCopy.interface.showPrivateReadAllButton}

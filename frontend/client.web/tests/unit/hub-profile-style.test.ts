@@ -40,12 +40,14 @@ test.describe('hub profile style', () => {
       hubPanelWidth: 280,
       spacePanelWidth: 310,
       memberPanelWidth: 260,
+      serverRailExtraWidth: 57.75,
     })
 
     expect(style).toMatchObject({
       '--profile-interface-scale': 1.1,
       '--profile-font-scale': 0.9,
       '--profile-server-scale': 1.2,
+      '--profile-rail-extra-width': '57.75px',
       '--profile-side-panel-width': '280px',
       '--profile-space-panel-width': '310px',
       '--profile-member-panel-width': '260px',
@@ -62,6 +64,7 @@ test.describe('hub profile style', () => {
       hubPanelWidth: 300,
       spacePanelWidth: 300,
       memberPanelWidth: 300,
+      serverRailExtraWidth: 0,
     })
 
     expect(style).toMatchObject({

@@ -1,5 +1,7 @@
 import {
   useEffect,
+  useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -7,8 +9,13 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import type { MessageSearchFilters } from '../../hooks/useMessageSearch'
 import { SystemIcon } from '../../icons/SystemIcon'
+import {
+  resolveSystemSelectPopupPosition,
+  type SystemSelectPopupPosition,
+} from '../../ui/systemSelectModel'
 import { messageSearchCopy } from './messageSearch.copy.ts'
 import styles from './MessageSearchControl.module.css'
 
@@ -31,6 +38,8 @@ export type MessageSearchSpaceOption = {
 type MessageSearchControlProps = {
   name: string
   ariaLabel: string
+  autoFocus?: boolean
+  openFiltersOnFocus?: boolean
   query: string
   filters: MessageSearchFilters
   userOptions: MessageSearchUserOption[]
@@ -45,6 +54,8 @@ type MessageSearchControlProps = {
 
 type SearchMode = 'root' | 'sender' | 'space' | 'attachment'
 
+const searchTabStops = 'input, button:not([disabled]), a[href], [tabindex="0"]'
+
 const attachmentOptions = [
   { value: 'image', label: messageSearchCopy.attachments.image, icon: '▧' },
   { value: 'video', label: messageSearchCopy.attachments.video, icon: '■' },
@@ -56,6 +67,8 @@ const attachmentOptions = [
 export function MessageSearchControl({
   name,
   ariaLabel,
+  autoFocus = false,
+  openFiltersOnFocus = true,
   query,
   filters,
   userOptions,
@@ -69,7 +82,11 @@ export function MessageSearchControl({
 }: MessageSearchControlProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [mode, setMode] = useState<SearchMode>('root')
+  const [menuPosition, setMenuPosition] = useState<SystemSelectPopupPosition | null>(null)
+  const menuId = useId()
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const afterMenuRef = useRef<HTMLSpanElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const selectedUser = userOptions.find((user) => user.id === filters.senderUserId)
   const selectedSpace = spaceOptions.find((space) => space.id === filters.spaceId)
@@ -88,7 +105,8 @@ export function MessageSearchControl({
     function handleDocumentPointerDown(event: PointerEvent) {
       if (
         event.target instanceof Node &&
-        rootRef.current?.contains(event.target)
+        (rootRef.current?.contains(event.target) ||
+          menuRef.current?.contains(event.target))
       ) {
         return
       }
@@ -104,10 +122,110 @@ export function MessageSearchControl({
     }
   }, [isOpen])
 
+  useLayoutEffect(() => {
+    const anchor = rootRef.current
+    const menu = menuRef.current
+    if (!isOpen || !anchor || !menu) return
+
+    const viewport = window.visualViewport
+    function updatePosition() {
+      if (!anchor || !menu) return
+      const rect = anchor.getBoundingClientRect()
+      const viewportLeft = viewport?.offsetLeft ?? 0
+      const viewportTop = viewport?.offsetTop ?? 0
+      const viewportWidth = viewport?.width ?? document.documentElement.clientWidth
+      const viewportHeight = viewport?.height ?? window.innerHeight
+      if (
+        rect.width === 0 || rect.height === 0 ||
+        rect.right <= viewportLeft || rect.left >= viewportLeft + viewportWidth ||
+        rect.bottom <= viewportTop || rect.top >= viewportTop + viewportHeight
+      ) {
+        setMenuPosition(null)
+        return
+      }
+
+      const position = resolveSystemSelectPopupPosition({
+        trigger: {
+          top: rect.top - viewportTop,
+          bottom: rect.bottom - viewportTop,
+          left: rect.left - viewportLeft,
+          width: rect.width,
+        },
+        viewportWidth,
+        viewportHeight,
+        contentHeight: menu.scrollHeight + menu.offsetHeight - menu.clientHeight,
+        gap: 8,
+        maxHeight: 560,
+        minWidth: 360,
+        align: 'end',
+      })
+      setMenuPosition({
+        ...position,
+        left: position.left + viewportLeft,
+        top: position.top + viewportTop,
+      })
+    }
+
+    updatePosition()
+    const resizeObserver = new ResizeObserver(updatePosition)
+    resizeObserver.observe(anchor)
+    resizeObserver.observe(menu)
+    document.addEventListener('scroll', updatePosition, true)
+    window.addEventListener('resize', updatePosition)
+    viewport?.addEventListener('resize', updatePosition)
+    viewport?.addEventListener('scroll', updatePosition)
+
+    return () => {
+      resizeObserver.disconnect()
+      document.removeEventListener('scroll', updatePosition, true)
+      window.removeEventListener('resize', updatePosition)
+      viewport?.removeEventListener('resize', updatePosition)
+      viewport?.removeEventListener('scroll', updatePosition)
+    }
+  }, [isOpen, mode, userOptions.length, spaceOptions.length])
+
+  function closeMenu() {
+    setMode('root')
+    setIsOpen(false)
+  }
+
+  function handleTriggerTab(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.defaultPrevented || event.key !== 'Tab' || event.shiftKey || !isOpen) return
+    const tabStops = rootRef.current?.querySelectorAll<HTMLElement>(searchTabStops)
+    const menuButton = menuRef.current?.querySelector('button')
+    if (menuButton && event.target === tabStops?.[tabStops.length - 1]) {
+      event.preventDefault()
+      menuButton.focus()
+    }
+  }
+
+  function handleMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const buttons = [...event.currentTarget.querySelectorAll('button')]
+    const active = buttons.findIndex((button) => button === event.target)
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      inputRef.current?.focus()
+      closeMenu()
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const direction = event.key === 'ArrowDown' ? 1 : -1
+      buttons[(active + direction + buttons.length) % buttons.length]?.focus()
+    } else if (event.key === 'Tab' && event.shiftKey && active === 0) {
+      event.preventDefault()
+      const tabStops = rootRef.current?.querySelectorAll<HTMLElement>(searchTabStops)
+      tabStops?.[tabStops.length - 1]?.focus()
+    } else if (event.key === 'Tab' && !event.shiftKey && active === buttons.length - 1) {
+      // Continue keyboard navigation after the search control in DOM order.
+      afterMenuRef.current?.focus({ preventScroll: true })
+      closeMenu()
+    }
+  }
+
   function openMode(nextMode: SearchMode) {
+    inputRef.current?.focus()
     setMode(nextMode)
     setIsOpen(true)
-    window.requestAnimationFrame(() => inputRef.current?.focus())
   }
 
   function openRootMenu() {
@@ -140,9 +258,25 @@ export function MessageSearchControl({
       return
     }
 
-    if (event.key === 'Escape') {
-      setIsOpen(false)
-      setMode('root')
+    if (event.key === 'Escape' && isOpen) {
+      event.preventDefault()
+      closeMenu()
+    }
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const focusFirst = event.key === 'ArrowDown'
+      const focusOption = () => {
+        const buttons = menuRef.current?.querySelectorAll('button')
+        const index = focusFirst ? 0 : (buttons?.length ?? 0) - 1
+        buttons?.[index]?.focus()
+      }
+      if (isOpen) {
+        focusOption()
+      } else {
+        openRootMenu()
+        window.requestAnimationFrame(focusOption)
+      }
     }
   }
 
@@ -155,9 +289,8 @@ export function MessageSearchControl({
       ...current,
       [key]: value,
     }))
-    setMode('root')
-    setIsOpen(false)
-    window.requestAnimationFrame(() => inputRef.current?.focus())
+    inputRef.current?.focus()
+    closeMenu()
   }
 
   function clearFilter(key: keyof MessageSearchFilters) {
@@ -181,7 +314,7 @@ export function MessageSearchControl({
   }
 
   return (
-    <div ref={rootRef} className={styles.wrap}>
+    <div ref={rootRef} className={styles.wrap} onKeyDown={handleTriggerTab}>
       <div className={styles.shell}>
         <span className={styles.icon} aria-hidden="true">
           <SystemIcon name="search" size={16} />
@@ -221,11 +354,13 @@ export function MessageSearchControl({
             ref={inputRef}
             name={name}
             aria-label={ariaLabel}
+            aria-controls={isOpen ? menuId : undefined}
             value={query}
             placeholder={hasSelectedFilters ? '' : placeholder}
             onChange={handleInputChange}
             onClick={openRootMenu}
-            onFocus={openRootMenu}
+            autoFocus={autoFocus}
+            onFocus={openFiltersOnFocus ? openRootMenu : undefined}
             onKeyDown={handleInputKeyDown}
           />
         </div>
@@ -244,10 +379,24 @@ export function MessageSearchControl({
         {actions && <div className={styles.actions}>{actions}</div>}
       </div>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div
+          ref={menuRef}
+          id={menuId}
           className={styles.menu}
           role="listbox"
+          aria-label={ariaLabel}
+          data-placement={menuPosition?.placement}
+          data-dismissable-layer-branch="true"
+          style={menuPosition
+            ? {
+              top: menuPosition.top,
+              left: menuPosition.left,
+              width: menuPosition.width,
+              maxHeight: menuPosition.maxHeight,
+            }
+            : { visibility: 'hidden' }}
+          onKeyDown={handleMenuKeyDown}
           onMouseDown={keepFocus}
         >
           {mode === 'root' ? (
@@ -264,8 +413,10 @@ export function MessageSearchControl({
               onSelect={(value) => setFilter('attachmentType', value)}
             />
           )}
-        </div>
+        </div>,
+        document.body,
       )}
+      <span ref={afterMenuRef} tabIndex={-1} className={styles.tabAnchor} />
     </div>
   )
 }

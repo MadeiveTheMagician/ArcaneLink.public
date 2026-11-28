@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import type { VoiceConnectionDiagnostics } from '../../../Server/hooks/voice/voiceChannelTypes'
 import type { VoiceNoiseSuppressionTelemetry } from '../../../Server/hooks/voice/useVoiceChannel'
 import { settingsCopy } from '../../../shared/copy'
 import { SystemSelect } from '../../../shared/ui/SystemSelect'
 import {
+  formatPushToTalkBinding,
+  getPushToTalkMouseBinding,
   getVoiceSettings,
   isVoiceSpatialAudioAvailable,
   isPushToTalkKeyCodeAllowed,
@@ -61,18 +63,76 @@ export function VoiceSettingsTab({
   function beginKeyCapture() {
     setKeyCaptureStatus(null)
     setIsCapturingKey(true)
-    requestAnimationFrame(() => keyCaptureButtonRef.current?.focus())
+    keyCaptureButtonRef.current?.focus()
   }
+
+  function completeKeyCapture(code: string | null) {
+    updateSettings({ pushToTalkKeyCode: code })
+    setIsCapturingKey(false)
+    setKeyCaptureStatus(null)
+  }
+
+  const captureMouseBinding = useEffectEvent((event: MouseEvent) => {
+    const binding = getPushToTalkMouseBinding(event.button)
+    if (!isCapturingKey || !binding) {
+      return false
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    completeKeyCapture(binding.code)
+    return true
+  })
+
+  useEffect(() => {
+    let capturedButton: number | null = null
+
+    function handleMouseDown(event: MouseEvent) {
+      if (captureMouseBinding(event)) {
+        capturedButton = event.button
+      } else if (event.button === capturedButton) {
+        capturedButton = null
+      }
+    }
+
+    function suppressCapturedMouseButton(event: MouseEvent) {
+      if (event.button === capturedButton) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+
+    function cancelOnWindowBlur() {
+      capturedButton = null
+      setIsCapturingKey(false)
+    }
+
+    window.addEventListener('mousedown', handleMouseDown, true)
+    window.addEventListener('pointerup', suppressCapturedMouseButton, true)
+    window.addEventListener('mouseup', suppressCapturedMouseButton, true)
+    window.addEventListener('auxclick', suppressCapturedMouseButton, true)
+    window.addEventListener('blur', cancelOnWindowBlur)
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown, true)
+      window.removeEventListener('pointerup', suppressCapturedMouseButton, true)
+      window.removeEventListener('mouseup', suppressCapturedMouseButton, true)
+      window.removeEventListener('auxclick', suppressCapturedMouseButton, true)
+      window.removeEventListener('blur', cancelOnWindowBlur)
+    }
+  }, [])
 
   function handlePushToTalkKey(
     event: ReactKeyboardEvent<HTMLButtonElement>,
   ) {
-    if (!isCapturingKey) {
+    if (!isCapturingKey || event.code === 'Tab' || event.nativeEvent.isComposing) {
       return
     }
 
     event.preventDefault()
     event.stopPropagation()
+    if (event.repeat) {
+      return
+    }
 
     if (event.code === 'Escape') {
       setIsCapturingKey(false)
@@ -81,9 +141,7 @@ export function VoiceSettingsTab({
     }
 
     if (event.code === 'Delete' || event.code === 'Backspace') {
-      updateSettings({ pushToTalkKeyCode: null })
-      setIsCapturingKey(false)
-      setKeyCaptureStatus(null)
+      completeKeyCapture(null)
       return
     }
 
@@ -92,9 +150,7 @@ export function VoiceSettingsTab({
       return
     }
 
-    updateSettings({ pushToTalkKeyCode: event.code })
-    setIsCapturingKey(false)
-    setKeyCaptureStatus(null)
+    completeKeyCapture(event.code)
   }
 
   async function selectAudioOutput() {
@@ -450,7 +506,7 @@ export function VoiceSettingsTab({
               <strong>{settingsCopy.voice.pushToTalkKey}</strong>
               <small>
                 {settings.pushToTalkKeyCode
-                  ? formatKeyboardCode(settings.pushToTalkKeyCode)
+                  ? formatPushToTalkBinding(settings.pushToTalkKeyCode)
                   : settingsCopy.voice.pushToTalkKeyMissing}
               </small>
             </span>
@@ -461,6 +517,7 @@ export function VoiceSettingsTab({
                 type="button"
                 aria-pressed={isCapturingKey}
                 onClick={beginKeyCapture}
+                onBlur={() => setIsCapturingKey(false)}
                 onKeyDown={handlePushToTalkKey}
               >
                 {isCapturingKey
@@ -700,18 +757,6 @@ function RangeField({
       />
     </label>
   )
-}
-
-function formatKeyboardCode(code: string) {
-  if (/^Key[A-Z]$/.test(code)) {
-    return code.slice(3)
-  }
-
-  if (/^Digit[0-9]$/.test(code)) {
-    return code.slice(5)
-  }
-
-  return code
 }
 
 function getProcessingDescription(description: string, isSupported: boolean) {

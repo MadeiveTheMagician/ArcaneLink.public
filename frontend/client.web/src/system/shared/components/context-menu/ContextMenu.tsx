@@ -31,6 +31,7 @@ type ContextMenuProps = {
   y: number
   items: ContextMenuItem[]
   autoFocus?: boolean
+  wrapLabels?: boolean
   onClose: () => void
 }
 
@@ -415,6 +416,32 @@ function ContextMenuList({
           )
         }
 
+        if (item.type === 'move') {
+          return (
+            <div key={getContextMenuItemKey(item, index)} className={styles.moveRow} role="group" aria-label={item.label}>
+              <span>{item.label}</span>
+              {[
+                { label: 'Переместить вверх', action: item.onUp, up: true },
+                { label: 'Переместить вниз', action: item.onDown, up: false },
+              ].map(({ label, action, up }) => (
+                <button
+                  key={label}
+                  type="button"
+                  className={styles.moveButton}
+                  aria-label={label}
+                  title={label}
+                  disabled={!action}
+                  onClick={() => { action?.(); onClose() }}
+                >
+                  <span className={up ? styles.moveUp : undefined} aria-hidden="true">
+                    <SystemIcon name="chevron-down" size={18} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          )
+        }
+
         if (item.type === 'range') {
           return (
             <ContextMenuRangeRow
@@ -468,6 +495,7 @@ export function ContextMenu({
   y,
   items,
   autoFocus = false,
+  wrapLabels = false,
   onClose,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -569,7 +597,7 @@ export function ContextMenu({
     window.addEventListener('resize', updatePosition)
 
     return () => window.removeEventListener('resize', updatePosition)
-  }, [x, y])
+  }, [items.length, wrapLabels, x, y])
 
   const style = {
     left: position.left,
@@ -583,6 +611,7 @@ export function ContextMenu({
       className={`${styles.menu} ${
         position.openSubmenuLeft ? styles.submenuLeft : ''
       }`}
+      data-wrap-labels={wrapLabels || undefined}
       data-context-row={position.row}
       data-context-column={position.column}
       {...contextMenuBoundaryAttributes}

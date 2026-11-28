@@ -1,6 +1,10 @@
+import workspaceChromeStyles from '../../../Server/components/layout/ServerWorkspaceChrome.module.css'
+import { FavoriteSpacesView } from './FavoriteSpacesView'
+import { useFavoriteSpaces, type FavoriteSpace } from './favoriteSpaces'
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -10,14 +14,18 @@ import {
 import { MobileHubNav } from '../../../Mobile/components/MobileHubNav'
 import { MobileMenuTab } from '../../../Mobile/components/MobileMenuTab'
 import { ServerRail } from '../../../Server/components/navigation/ServerRail'
+import { DetachedVoiceWorkspaceContext } from '../../../Server/components/voice/detached/detachedVoiceWorkspaceContext'
 import { ProfileHeader } from '../../../Profile/components/page/ProfileHeader'
 import { HubVoiceAudioSinks } from '../voice/HubVoiceAudioSinks'
 import { HubVoiceDock } from '../voice/HubVoiceDock'
 import { HubPageDialogs } from './HubPageDialogs'
+import { ServerRailResizer } from './ServerRailResizer'
+import { useServerRailPreferences } from './useServerRailPreferences'
 import { HubWorkspacePane } from './HubWorkspacePane'
 import {
   ContextMenu,
   ContextMenuPositioningLayer,
+  type ContextMenuItem,
 } from '../../../shared/components/context-menu/ContextMenu'
 import { useProfileSettings } from '../../../Profile/hooks/useProfileSettings'
 import { useProfileAvatar } from '../../../Profile/hooks/useProfileAvatar'
@@ -27,6 +35,7 @@ import { useHubRealtimeSync } from './useHubRealtimeSync'
 import { useServerGovernance } from '../../../Server/hooks/workspace/useServerGovernance'
 import { useServerDialog } from '../../../Server/hooks/workspace/useServerDialog'
 import { usePanelResize } from '../../../shared/hooks/usePanelResize'
+import { useServerRailLayout } from '../../../Server/hooks/workspace/useServerRailLayout'
 import { useServers } from '../../../Server/hooks/workspace/useServers'
 import { useServerSpaces } from '../../../Server/hooks/workspace/useServerSpaces'
 import { useVoiceChannel } from '../../../Server/hooks/voice/useVoiceChannel'
@@ -127,6 +136,7 @@ function formatDate(value: string) {
 
 export function HubPage({ session, onLogout }: HubPageProps) {
   const layoutCache = useHubInitialLayout(session.user.id)
+  const serverRail = useServerRailPreferences(session.user.id)
   const initialProfileSettings = useMemo(
     () => ({
       ...session.profileSettings,
@@ -138,7 +148,11 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     session.accessToken,
     session.user,
   )
-  const voice = useVoiceChannel(session.accessToken, session.user.id)
+  const voice = useVoiceChannel(
+    session.accessToken,
+    session.user.id,
+    session.deviceSessionId ?? null,
+  )
   const {
     audioSettingsByUserId: voiceAudioSettingsByUserId,
     playbackStatesByParticipantId: voicePlaybackStatesByParticipantId,
@@ -217,8 +231,12 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     deleteServer,
     removeServerMember,
     updateServerMembership,
-    reorderServerMemberships,
   } = useServers(session.accessToken, session.user.id)
+  const { serverLayout, updateServerLayout } = useServerRailLayout(
+    session.user.id,
+    serverMemberships,
+    hasLoadedServers,
+  )
   const {
     isServerPanelOpen,
     activeWorkspace,
@@ -233,6 +251,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     toggleServerPanel,
     showProfileWorkspace,
     showServersWorkspace,
+    showFavoritesWorkspace,
     showFriendsWorkspace,
     showInvitesWorkspace,
     openPrivateSpace,
@@ -253,6 +272,17 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     initialIsServerPanelOpen: layoutCache?.isServerPanelOpen,
     initialActiveServerId: layoutCache?.activeServerId,
   })
+  const favorites = useFavoriteSpaces(session.user.id)
+  const [favoriteSpaceTarget, setFavoriteSpaceTarget] = useState<(FavoriteSpace & { openVoiceChat: boolean }) | null>(null)
+  const [selectedFavoriteSpace, setSelectedFavoriteSpace] = useState<FavoriteSpace | null>(null)
+  const [detachedVoiceWorkspaceKey, setDetachedVoiceWorkspaceKey] =
+    useState<string | null>(null)
+  const handleDetachedVoiceWorkspaceChange = useCallback((key: string, isOpen: boolean) => {
+    setDetachedVoiceWorkspaceKey((current) => {
+      if (isOpen) return key
+      return current === key ? null : current
+    })
+  }, [])
   const [notificationMessageFocus, setNotificationMessageFocus] =
     useState<MessageFocusRequest | null>(null)
   const [communityNavigationRequest, setCommunityNavigationRequest] =
@@ -277,6 +307,14 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     showProfileWorkspace,
     showServersWorkspace,
   })
+
+  function openFavoriteSpace(target: FavoriteSpace, openVoiceChat = false) {
+    const membership = serverMemberships.find(({ serverId }) => serverId === target.serverId)
+    if (!membership) return
+    setSelectedFavoriteSpace(target)
+    setFavoriteSpaceTarget({ ...target, openVoiceChat })
+    void openServerWorkspace(membership, 'favorites')
+  }
 
   async function openNotificationTarget(target: NotificationTarget) {
     const navigationRequestId =
@@ -500,8 +538,9 @@ export function HubPage({ session, onLogout }: HubPageProps) {
   function openServerContextMenuWithPermissions(
     event: MouseEvent<HTMLButtonElement>,
     membership: ServerMemberResponse,
+    folderItems: ContextMenuItem[] = [],
   ) {
-    openServerContextMenu(event, membership)
+    openServerContextMenu(event, membership, folderItems)
 
     if (membership.server.ownerUserId === user.id) {
       setServerContextSettingsAccess({
@@ -640,11 +679,13 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     profileSettings,
   })
 
+  const serverRailColumnWidth = 61 * profileSettings.interfaceScale
   const profileScaleStyle = buildHubProfileStyle({
     profileSettings,
     hubPanelWidth,
     spacePanelWidth,
     memberPanelWidth,
+    serverRailExtraWidth: (serverRail.columnCount - 1) * serverRailColumnWidth,
   })
   const workspaceTransitionKey = resolveWorkspaceTransitionKey({
     activeWorkspace,
@@ -669,6 +710,17 @@ export function HubPage({ session, onLogout }: HubPageProps) {
     onLeaveServer: leaveServerFromContextMenu,
   })
 
+  const connectedServerVoice = voice.connectedChannel?.channelScope === 'server'
+    ? voice.connectedChannel
+    : null
+  const isFavoritesWorkspace = activeWorkspace === 'favorites'
+  const isServerLayout = activeWorkspace === 'server' || isFavoritesWorkspace
+  const isServerWorkspaceVisible = activeWorkspace === 'server' || (
+    isFavoritesWorkspace && Boolean(activeServerId) && selectedServerMembership?.serverId === activeServerId
+  )
+  const shouldKeepDetachedWorkspace = connectedServerVoice !== null &&
+    selectedServerMembership?.serverId === connectedServerVoice.serverId &&
+    detachedVoiceWorkspaceKey === `${connectedServerVoice.serverId}:${connectedServerVoice.spaceId}`
   const connectedVoiceServerTitle = voice.connectedChannel
     ? (serverMemberships.find(
         (membership) => membership.serverId === voice.connectedChannel?.serverId,
@@ -722,7 +774,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
   return (
     <main
       className={`${styles.page} profile-page is-mobile-tab-${mobileTab} ${
-        activeWorkspace === 'server' ? 'is-server-mode' : ''
+        isServerLayout ? 'is-server-mode' : ''
       } ${isServerPanelOpen ? 'is-bookmark-open' : ''} ${
         voice.connectedChannel ? 'is-voice-connected' : ''
       } ${
@@ -782,26 +834,37 @@ export function HubPage({ session, onLogout }: HubPageProps) {
         isOpen={isServerPanelOpen}
         isLoadingServers={isLoadingServers}
         memberships={serverMemberships}
-        selectedServerId={selectedServerMembership?.serverId}
+        selectedServerId={isFavoritesWorkspace ? undefined : selectedServerMembership?.serverId}
         selectedServerMembers={serverMembers}
         selectedServerVoiceParticipants={selectedServerVoiceParticipants}
         onOpenProfile={showProfileWorkspace}
+        hasFavorites={favorites.items.length > 0}
+        isFavoritesOpen={activeWorkspace === 'favorites'}
+        onOpenFavorites={showFavoritesWorkspace}
         onOpenServer={(membership) => void openServerWorkspace(membership)}
         onOpenContextMenu={openServerContextMenuWithPermissions}
-        onReorderServers={reorderServerMemberships}
+        columnCount={serverRail.columnCount}
+        serverLayout={serverLayout}
+        onServerLayoutChange={updateServerLayout}
         onCreateServer={openCreateServerDialog}
         onShowAllServers={showServersWorkspace}
         onShowFriends={showFriendsWorkspace}
         onShowInvites={showInvitesWorkspace}
       />
+      {isServerPanelOpen && serverRail.resizeEnabled && (
+        <ServerRailResizer
+          columnCount={serverRail.columnCount}
+          columnWidth={serverRailColumnWidth}
+          onColumnCountChange={serverRail.setColumnCount}
+        />
+      )}
       <section
         className={`${styles.shell} profile-shell ${
-          activeWorkspace === 'server' ? `is-server-workspace-shell ${styles.serverShell}` : ''
-        } ${activeWorkspace !== 'server' ? 'is-hub-workspace-shell' : ''
-        } ${activeWorkspace !== 'server' ? styles.hubShell : ''}`}
+          isServerLayout ? `is-server-workspace-shell ${styles.serverShell}` : ''
+        } ${!isServerLayout ? `is-hub-workspace-shell ${styles.hubShell}` : ''}`}
       >
         <WorkspaceTransitionSurface transitionKey={workspaceTransitionKey}>
-        {activeWorkspace !== 'server' && (
+        {!isServerLayout && (
           <ProfileHeader
             activeWorkspace={activeWorkspace}
             selectedServerMembership={selectedServerMembership}
@@ -811,7 +874,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
           />
         )}
 
-        {activeWorkspace !== 'server' && (
+        {activeWorkspace !== 'server' && activeWorkspace !== 'favorites' && (
           <SystemErrorBoundary
             boundaryName="hub-workspace-shell"
             resetKeys={[activeWorkspace, activePrivateSpaceId]}
@@ -906,6 +969,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
             }
             onRemoveFriend={(userId) => void removeFriend(userId)}
             onCreateServer={openCreateServerDialog}
+            onOpenFavorites={favorites.items.length > 0 ? showFavoritesWorkspace : undefined}
             onServerJoined={(membership) => {
               setServerMemberships((current) => [
                 membership,
@@ -951,7 +1015,36 @@ export function HubPage({ session, onLogout }: HubPageProps) {
           />
           </SystemErrorBoundary>
         )}
-        {activeWorkspace === 'server' && selectedServerMembership && (
+        <div className={isFavoritesWorkspace ? styles.favoritesShell : styles.serverContentSlot}>
+        {isFavoritesWorkspace && (
+          <FavoriteSpacesView
+            accessToken={session.accessToken}
+            favorites={favorites.items}
+            memberships={serverMemberships}
+            selection={isServerWorkspaceVisible ? selectedFavoriteSpace : null}
+            onOpen={openFavoriteSpace}
+            onRemove={favorites.toggle}
+          />
+        )}
+        {isFavoritesWorkspace && (
+          <button
+            className={`${workspaceChromeStyles.resizer} ${styles.favoritesResizer}`}
+            data-favorites-resizer="true"
+            type="button"
+            aria-label="Изменить ширину панели избранного"
+            aria-hidden="true"
+            tabIndex={-1}
+            onPointerDown={(event) => startPaneResize('spaces', event)}
+          />
+        )}
+        {isFavoritesWorkspace && !isServerWorkspaceVisible && (
+          <div className={styles.favoritesEmpty}>
+            {favorites.items.length > 0 ? 'Выберите избранный спейс' : 'В избранном пока нет спейсов'}
+          </div>
+        )}
+        {(isServerWorkspaceVisible || shouldKeepDetachedWorkspace) && selectedServerMembership && (
+          <DetachedVoiceWorkspaceContext.Provider value={handleDetachedVoiceWorkspaceChange}>
+          <div style={{ display: isServerWorkspaceVisible ? 'contents' : 'none' }}>
           <SystemErrorBoundary
             boundaryName="server-workspace"
             resetKeys={[selectedServerMembership.serverId]}
@@ -959,6 +1052,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
             <Suspense fallback={null}>
               <ServerWorkspace
               key={selectedServerMembership.serverId}
+              isFavoritesContent={isFavoritesWorkspace && isServerWorkspaceVisible}
               accessToken={session.accessToken}
               selectedServerMembership={selectedServerMembership}
               serverMemberships={serverMemberships}
@@ -1024,8 +1118,15 @@ export function HubPage({ session, onLogout }: HubPageProps) {
                 profileSettings.serverMessageBubbleAlignment
               }
               messageBubbleWidth={profileSettings.serverMessageBubbleWidth}
-              isSettingsOpen={isServerSettingsMenuOpen}
+              isSettingsOpen={activeWorkspace === 'server' && isServerSettingsMenuOpen}
               voice={voice}
+              favoriteSpaceIds={favorites.items.filter(({ serverId }) =>
+                serverId === selectedServerMembership.serverId).map(({ spaceId }) => spaceId)}
+              onToggleFavoriteSpace={(spaceId) =>
+                favorites.toggle({ serverId: selectedServerMembership.serverId, spaceId })}
+              externalSpace={favoriteSpaceTarget?.serverId === selectedServerMembership.serverId
+                ? favoriteSpaceTarget : null}
+              onExternalSpaceConsumed={() => setFavoriteSpaceTarget(null)}
               externalMessageFocus={notificationMessageFocus}
               onExternalMessageFocusConsumed={() =>
                 setNotificationMessageFocus(null)
@@ -1088,7 +1189,10 @@ export function HubPage({ session, onLogout }: HubPageProps) {
             />
             </Suspense>
           </SystemErrorBoundary>
+          </div>
+          </DetachedVoiceWorkspaceContext.Provider>
         )}
+        </div>
         </WorkspaceTransitionSurface>
       </section>
 
@@ -1128,7 +1232,7 @@ export function HubPage({ session, onLogout }: HubPageProps) {
         <ContextMenu
           x={serverContextMenu.x}
           y={serverContextMenu.y}
-          items={serverContextItems}
+          items={[...serverContextItems, ...serverContextMenu.folderItems]}
           onClose={closeServerContextMenu}
         />
       )}
@@ -1146,6 +1250,8 @@ export function HubPage({ session, onLogout }: HubPageProps) {
         voiceNoiseSuppressionTelemetry={voice.noiseSuppressionTelemetry}
         isProfileSettingsOpen={isProfileSettingsOpen}
         isSavingProfileSettings={isSavingProfileSettings}
+        isServerRailResizeEnabled={serverRail.resizeEnabled}
+        onServerRailResizeEnabledChange={serverRail.setResizeEnabled}
         onProfileSettingsChange={setSettingsDraft}
         onProfileSettingsCommit={persistProfileSettings}
         onProfileIdentityChanged={async () => {
